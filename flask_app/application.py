@@ -2,17 +2,14 @@
 import os
 
 from flask import Flask
-from flask_cors import CORS
-
-import lmsyft.flask_app.sp_cache.routes as sp_cache_routes
-import lmsyft.flask_app.resolver.routes as resolver_routes
 
 
 # .....................................................................................
-def create_app(test_config=None):
+def create_app(blueprint, test_config=None):
     """Create a Flask application.
 
     Args:
+        blueprint: Flask Blueprint to use for this app
         test_config (dict): Testing configuration parameters.
 
     Returns:
@@ -20,9 +17,8 @@ def create_app(test_config=None):
     """
     # create and configure the app
     app = Flask(__name__, instance_relative_config=True)
-    CORS(app)
     app.config.from_mapping(
-        SECRET_KEY='dev',
+        SECRET_KEY=os.environ['SECRET_KEY'],
         # DATABASE=os.path.join(app.instance_path, 'flaskr.sqlite'),
     )
 
@@ -39,16 +35,6 @@ def create_app(test_config=None):
     except OSError:
         pass
 
-    @app.route('/')
-    def syftorium_root():
-        """Root endpoint for all services under syftorium umbrella.
-
-        Returns:
-            str: A string welcoming the user to the syftorium
-        """
-        return 'Welcome to the Syftorium!'
-
-    app.register_blueprint(sp_cache_routes.bp)
-    app.register_blueprint(resolver_routes.bp)
+    app.register_blueprint(blueprint)
 
     return app

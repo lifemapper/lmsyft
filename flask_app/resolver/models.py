@@ -1,5 +1,5 @@
 """Models for Resolver."""
-from lmsyft.flask_app.resolver.config import ARK_PATTERN
+from flask_app.resolver.config import ARK_PATTERN
 
 
 # .....................................................................................

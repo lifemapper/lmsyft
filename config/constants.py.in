@@ -1,8 +1,0 @@
-"""Machine-specific configuration constants."""
-
-SOLR_SERVER = 'http://localhost'  # Flask apps and cron job container would use solr variables to connect
-SOLR_PORT = @SOLR_PORT@
-
-BACKUP_DATA_PATH = '@LMLABDISK@/syftorium_data'  # Used by cron container and flask container to exchange data files.  Could be configured for each's connected volume
-
-FQDN = 'https://@FQDN@/'  # Flask app, needed to fill in url results

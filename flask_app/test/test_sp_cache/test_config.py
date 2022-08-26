@@ -1,7 +1,7 @@
 """Test our Solr config for sp_cache."""
 import pysolr
 
-from lmsyft.flask_app.sp_cache.config import COLLECTIONS_URL, SPECIMENS_URL
+from flask_app.sp_cache.config import COLLECTIONS_URL, SPECIMENS_URL
 
 
 # .....................................................................................

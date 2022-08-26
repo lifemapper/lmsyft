@@ -1,13 +1,26 @@
 """Solr configuration parameters."""
 import os
 
-from lmsyft.config.constants import BACKUP_DATA_PATH, SOLR_PORT, SOLR_SERVER
 
+COLLECTIONS_URL = '{}:{}/solr/sp_collections'.format(
+    os.environ['SOLR_SERVER'],
+    os.environ['SOLR_PORT']
+)
+SPECIMENS_URL = '{}:{}/solr/specimen_records'.format(
+    os.environ['SOLR_SERVER'],
+    os.environ['SOLR_PORT']
+)
 
-COLLECTIONS_URL = '{}:{}/solr/sp_collections'.format(SOLR_SERVER, SOLR_PORT)
-SPECIMENS_URL = '{}:{}/solr/specimen_records'.format(SOLR_SERVER, SOLR_PORT)
-
-COLLECTION_BACKUP_PATH = os.path.join(BACKUP_DATA_PATH, 'collections')
-DWCA_PATH = os.path.join(BACKUP_DATA_PATH, 'new_dwcas')
-PROCESSED_DWCA_PATH = os.path.join(BACKUP_DATA_PATH, 'processed_dwcas')
-ERROR_DWCA_PATH = os.path.join(BACKUP_DATA_PATH, 'error_dwcas')
+COLLECTION_BACKUP_PATH = os.path.join(
+    os.environ['WORKING_DIRECTORY'],
+    'collections'
+)
+DWCA_PATH = os.path.join(os.environ['WORKING_DIRECTORY'], 'new_dwcas')
+PROCESSED_DWCA_PATH = os.path.join(
+    os.environ['WORKING_DIRECTORY'],
+    'processed_dwcas'
+)
+ERROR_DWCA_PATH = os.path.join(
+    os.environ['WORKING_DIRECTORY'],
+    'error_dwcas'
+)

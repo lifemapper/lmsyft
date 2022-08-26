@@ -1,8 +1,8 @@
 """Solr backend controller module for Specify Cache."""
 import pysolr
 
-from lmsyft.flask_app.sp_cache.config import COLLECTIONS_URL, SPECIMENS_URL
-from lmsyft.flask_app.sp_cache.models import SpecimenRecord
+from flask_app.sp_cache.config import COLLECTIONS_URL, SPECIMENS_URL
+from flask_app.sp_cache.models import SpecimenRecord
 
 
 # Need an easy way to get solr classes

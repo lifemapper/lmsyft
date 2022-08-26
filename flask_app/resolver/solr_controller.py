@@ -1,7 +1,7 @@
 """Solr backend controller module for Resolver."""
 import pysolr
 
-from lmsyft.flask_app.resolver.config import RESOLVER_URL
+from flask_app.resolver.config import RESOLVER_URL
 
 
 # Note: A possible evolution of this would be to integrate the Ark class with PySolr
