@@ -1,3 +1,9 @@
+# project virtual env
+venv/
+
+# pydev-eclipse project
+.pydevproject
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -14,7 +20,6 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
 lib64/
 parts/
 sdist/
@@ -60,6 +65,9 @@ coverage.xml
 local_settings.py
 db.sqlite3
 db.sqlite3-journal
+
+# Self-signed dev certificates
+lmtrex/config/localhost.*
 
 # Flask stuff:
 instance/
@@ -138,3 +146,18 @@ dmypy.json
 # Development
 config/fullchain.pem
 config/privkey.pem
+src/web/.DS_Store
+
+# Eclipse/PyDev
+.pydevproject
+.settings/org.eclipse.core.resources.prefs
+.project
+
+# Node.js
+node_modules
+.ash_history
+.npm
+
+# Let's Encrypt
+privkey.pem
+fullchain.pem

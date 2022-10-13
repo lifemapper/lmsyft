@@ -33,3 +33,22 @@ services:
   solr:
     ports:
       - "8983:8983"
+
+  back-end:
+    build:
+      context: ./.
+      target: dev-back-end
+    environment:
+      - FLASK_APP=lmtrex.flask_app.broker.routes:app
+      - FLASK_MANAGE=lmtrex.flask_app.broker.manage
+      - DEBUG_PORT=5001
+    volumes:
+      - "./lmtrex/:/home/specify/lmtrex/"
+
+  front-end:
+    build:
+      context: ./.
+      target: base-front-end
+    command: ["npm", "run", "watch"]
+    volumes:
+      - "./lmtrex/frontend/js_src/lib/:/home/node/lib/"
