@@ -13,7 +13,7 @@ services:
     env_file:
       ./.env.conf
     volumes:
-      - "./flask_app/:/home/lifemapper/flask_app/"
+      - "./flask_app/:/home/specify/flask_app/"
 
   sp_cache:
     build:
@@ -28,13 +28,13 @@ services:
     env_file:
       ./.env.conf
     volumes:
-      - "./flask_app/:/home/lifemapper/flask_app/"
+      - "./flask_app/:/home/specify/flask_app/"
 
   solr:
     ports:
       - "8983:8983"
 
-  back-end:
+  broker:
     build:
       context: ./.
       target: dev-back-end
