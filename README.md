@@ -59,16 +59,25 @@ to provide as much value and feedback to the community as possible.
 # Specify Network Deployment
 
 To run the containers, generate `fullchain.pem` and `privkey.pem` (certificate
-and the private key) using Let's Encrypt and put these files into the
-`./lmsyft/config/` directory.
+and the private key) using Let's Encrypt and link these files in the (currently
+separate config directories) `./specify_cache/lmtrex/config/` and `./specify_cache/config/`.
 
-While in development, you can generate self-signed certificates:
+While in development, you can generate self-signed certificates then link them in 
+./specify_cache/lmtrex/config/ directory for this project:
 
 ```zsh
 openssl req \
   -x509 -sha256 -nodes -newkey rsa:2048 -days 365 \
-  -keyout ./config/privkey.pem \
-  -out ./config/fullchain.pem
+  -keyout ~/self-signed-certificates/privkey.pem \
+  -out ~/self-signed-certificates/fullchain.pem
+  
+cd ./specify_cache/lmtrex/config
+ln -s ~/self-signed-certificates/privkey.pem
+ln -s ~/self-signed-certificates/fullchain.pem
+
+cd ./specify_cache/config
+ln -s ~/self-signed-certificates/privkey.pem
+ln -s ~/self-signed-certificates/fullchain.pem
 ```
 
 To run the production container, or the development container with HTTPs
@@ -140,7 +149,6 @@ port `5002`, `broker` on port `5003`.
 
 You can setup a cron job to process pending DWCAs.
 
-See `./cron/lmsyft_process_dwcas_cron.in`.
+See `./cron/process_dwcas_cron.in`.
 
-Note, you many need to modify `lmsyft-sp_cache-1` to reflect your container
-name.
+Note, you many need to modify `sp_cache-1` to reflect your container name.
