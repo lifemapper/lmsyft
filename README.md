@@ -66,6 +66,8 @@ While in development, you can generate self-signed certificates then link them i
 ./specify_cache/lmtrex/config/ directory for this project:
 
 ```zsh
+mkdir ~/self-signed-certificates
+
 openssl req \
   -x509 -sha256 -nodes -newkey rsa:2048 -days 365 \
   -keyout ~/self-signed-certificates/privkey.pem \
@@ -99,19 +101,84 @@ lmsyft is now available at [https://localhost/](https://localhost:443)
 
 ### Development
 
-TODO: how to test all URLs through localhost and https/port 443??
-
 Run the containers:
 
 ```zsh
 docker compose -f docker-compose.yml -f docker-compose.development.yml up
 ```
 
-specify_network is now available at [http://localhost/](http://localhost:443).
-
 Flask has hot-reload enabled.
 
-### Debugging
+## Testing
+
+**Specify Network** homepage is now available at https://localhost/ and http://localhost.
+
+**Specify Cache**, a summary of records in the Specify Cache, is at 
+https://localhost/sp_cache/ 
+
+**Solr** is available through http://localhost:8983/solr/#/
+
+**Broker** (aka back-end):
+
+   * https://localhost/api/v1/name?namestr=Notemigonus%20crysoleucas%20(Mitchill,%201814)
+   * https://localhost/api/v1/occ?occid=01493b05-4310-4f28-9d81-ad20860311f3
+
+**Webpack** is watching for front-end file changes and rebuilds the bundle when
+needed.
+
+**Flask** is watching for back-end file changes and restarts the server when
+needed.
+
+
+
+
+### Rebuild/restart
+
+To delete all containers, images, networks and volumes, stop any running
+containers:
+
+```zsh
+docker compose stop
+```
+
+And run this command (which ignores running container):
+
+```zsh
+docker system prune --all --volumes
+```
+
+And rebuild/restart:
+
+```zsh
+docker compose up -d
+```
+
+### Examine container
+
+To examine containers at a shell prompt: 
+
+```zsh
+docker exec -it specify_cache-nginx-1 /bin/sh
+```
+
+Error port in use:
+"Error starting userland proxy: listen tcp4 0.0.0.0:443: bind: address already in use"
+
+See what else is using the port.  In my case apache was started on reboot.  Bring down 
+all docker containers, shut down httpd, bring up docker.
+
+```zsh
+lsof -i -P -n | grep 443
+docker compose down
+systemctl stop httpd
+docker compose  up -d
+```
+
+
+
+### Debug mode
+
+
 
 To run flask in debug mode, first setup virtual environment for python at the 
 top level of the repo, activate, then add dependencies from requirements.txt:
@@ -144,6 +211,23 @@ PyCharm](https://kartoza.com/en/blog/using-docker-compose-based-python-interpret
 port `5002`, `broker` on port `5003`.
 
 ## Misc
+
+### SSL certificates
+
+SSL certificates are served from the base VM, and need apache to be renewed.  
+These are administered by Letsencrypt using Certbot and are only valid for 90 days at
+a time. When it is time for a renewal (approx every 60 days), bring the docker
+containers down, and start apache. Renew the certificates, then stop apache,
+and bring the containers up again.
+
+```zsh
+certbot certificates
+docker compose stop
+systemctl start httpd
+certbot renew
+systemctl stop httpd
+docker compose up -d
+```
 
 ### Process DWCAs
 
