@@ -62,11 +62,12 @@ services:
       - 'solr:/var/solr'
 
   nginx:
-    image: nginx:1.21.3-alpine
+    image: nginx:alpine
     restart: unless-stopped
     depends_on:
       - resolver
       - sp_cache
+      - solr
       - broker
       - front-end
 

@@ -53,5 +53,5 @@ services:
       target: base-front-end
     command: ["npm", "run", "watch"]
     volumes:
-      - "./lmtrex/frontend/js_src/lib/:/home/node/lib/"
+      - "./sppy/frontend/js_src/lib/:/home/node/lib/"
 
