@@ -1,0 +1,1805 @@
+openapi: 3.0.0
+info:
+  title: Specify Network services
+  description: API services for returning biological metadata from available data providers
+  version: 1.0.0
+#  termsOfService: 'https://lifemapper.ku.edu/?page_id=1096'
+  contact:
+    name: Aimee Stewart
+    email: aimee.stewart@ku.edu
+  license:
+    name: GPL-3.0 License
+    url: 'https://www.gnu.org/licenses/gpl-3.0.en.html'
+servers:
+  - url: 'https://broker-dev.spcoco.org/api/v1'
+    description: Internal testing broker server
+  - url: 'https://spcoco.org/broker/api/v1'
+    description: Production broker server
+tags:
+  - name: name
+    description: Get taxonomy information for a scientific name
+  - name: occ
+    description: Get specimen occurrences
+  - name: resolve
+    description: Get resolution metadata for a digital specimen object in Specify
+  - name: map
+    description: Get URL for map of species points and predicted distributions
+paths:
+  '/name/{namestr}':
+    get:
+      tags:
+        - name
+      summary: 'Get taxonomy information for a scientific name'
+      description: Get taxonomy information for a scientific name from available providers
+      operationId: name_tentacles
+      parameters:
+        - $ref: '#/components/parameters/namestr'
+        - $ref: '#/components/parameters/provider'
+        - $ref: '#/components/parameters/is_accepted'
+        - $ref: '#/components/parameters/gbif_parse'
+        - $ref: '#/components/parameters/gbif_count'
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/names_tentacles'
+              examples:
+                Denitrobacterium etoxificans:
+                   $ref:
+                    '#/components/examples/names_Denitrobacterium_detoxificans'
+                Plagioecia patina:
+                  $ref: '#/components/examples/names_Plagioecia_patina'
+                Tulipa sylvestris:
+                  $ref: '#/components/examples/names_Tulipa_sylvestris'
+
+  '/occ/{occid}':
+    get:
+      tags:
+        - occ
+      summary: 'Get specimen occurrence information'
+      description: Get specimen occurrence information from available services
+      operationId: occ_tentacles
+      parameters:
+        - $ref: '#/components/parameters/occid'
+        - $ref: '#/components/parameters/provider'
+        - $ref: '#/components/parameters/gbif_dataset_key'
+        - $ref: '#/components/parameters/count_only'
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/occ_tentacles'
+              examples:
+                KU Bird occurrence:
+                  $ref: '#/components/examples/occ_tentacles'
+
+  '/map/{namestr}':
+    get:
+      tags:
+        - map
+      summary: 'Get map information for a species'
+      description: Get map metadata for species points and predicted distributions
+      operationId: map
+      parameters:
+        - $ref: '#/components/parameters/namestr'
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/map_tentacles'
+
+  '/resolve/{occid}':
+    get:
+      tags:
+        - resolve
+      summary: 'Get a metadata record with URL for a Specify GUID'
+      description: Get resolution metadata for a digital specimen object in Specify
+      operationId: resolve
+      parameters:
+        - $ref: '#/components/parameters/occid'
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/resolve_record'
+              examples:
+                KU Bird occurrence:
+                  $ref: '#/components/examples/resolve'
+
+components:
+
+  parameters:
+    namestr:
+      name: namestr
+      in: path
+      description: Scientific name / Full name of a taxa record to search for
+      required: true
+      schema:
+        type: string
+      examples:
+        Plagioecia patina:
+          value: Plagioecia patina
+        Phlox longifolia Nutt.:
+          value: Phlox longifolia Nutt.
+        Tulipa sylvestris L.:
+          value: Tulipa sylvestris L.
+        Medinilla speciosa Blume:
+          value: Medinilla speciosa Blume
+        Acer caesium Wall. ex Brandis:
+          value: Acer caesium Wall. ex Brandis
+        Acer heldreichii Orph. ex Boiss.:
+          value: Acer heldreichii Orph. ex Boiss.
+        Acer pseudoplatanus L.:
+          value: Acer pseudoplatanus L.
+        Acer velutinum Boiss.:
+          value: Acer velutinum Boiss.
+        Acer hyrcanum Fisch. & Meyer:
+          value: Acer hyrcanum Fisch. & Meyer
+        Acer monspessulanum L.:
+          value: Acer monspessulanum L.
+        Acer obtusifolium Sibthorp & Smith:
+          value: Acer obtusifolium Sibthorp & Smith
+        Acer opalus Miller:
+          value: Acer opalus Miller
+        Acer sempervirens L.:
+          value: Acer sempervirens L.
+        Acer floridanum (Chapm.) Pax:
+          value: Acer floridanum (Chapm.) Pax
+        Acer grandidentatum Torr. & Gray:
+          value: Acer grandidentatum Torr. & Gray
+        Acer leucoderme Small:
+          value: Acer leucoderme Small
+        Acer nigrum Michx.f.:
+          value: Acer nigrum Michx.f.
+        Acer skutchii Rehder:
+          value: Acer skutchii Rehder
+        Acer saccharum Marshall:
+          value: Acer saccharum Marshall
+    provider:
+      name: provider
+      in: query
+      schema:
+        type: array
+        items:
+          type: string
+          enum:
+            - 'gbif'
+            - 'idb'
+            - 'ipni'
+            - 'itis'
+            - 'lm'
+            - 'mopho'
+            - 'specify'
+            - 'worms'
+      # Serialize as provider=gbif,idb,specify
+      style: form
+      explode: false
+      description: Code indicating one or more providers to query
+      required: false
+    gbif_parse:
+      name: gbif_parse
+      in: query
+      description: >-
+        whether to parse the scientific name (removing author and date
+        information)
+      required: false
+      schema:
+        type: boolean
+        default: true
+    gbif_count:
+      name: gbif_count
+      in: query
+      description: >-
+        Whether to include in the response `occurrence_count` for a count of
+        specimen occurrences in GBIF and and `occurrence_url` for a query to
+        retrieve those specimen occurrences
+      required: false
+      schema:
+        type: boolean
+        default: true
+    is_accepted:
+      name: is_accepted
+      in: query
+      description: Flag indicating whether to limit the response to `ACCEPTED` or `VALID` names
+      required: false
+      schema:
+        type: boolean
+        default: true
+    gbif_dataset_key:
+      name: gbif_dataset_key
+      in: path
+      description: Dataset GUID from GBIF
+      required: true
+      schema:
+        $ref: '#/components/schemas/guid'
+      examples:
+        Fish dataset 1:
+          value: 56caf05f-1364-4f24-85f6-0c82520c2792
+        Fish dataset 2:
+          value: 8f79c802-a58c-447f-99aa-1d6a0790825a
+        Birds dataset:
+          value: e635240a-3cb1-4d26-ab87-57d8c7afdfdb
+    occid:
+      name: occid
+      in: path
+      description: Occurence ID
+      required: true
+      schema:
+        $ref: '#/components/schemas/guid'
+      examples:
+        Fish occurrence 1:
+          value: 2c1becd5-e641-4e83-b3f5-76a55206539a
+        Fish occurrence 2:
+          value: a413b456-0bff-47da-ab26-f074d9be5219
+        Fish occurrence 3:
+          value: dc92869c-1ed3-11e3-bfac-90b11c41863e
+        Fish occurrence 4:
+          value: 21ac6644-5c55-44fd-b258-67eb66ea231d
+        Bird occurrence 1:
+          value: ed8cfa5a-7b47-11e4-8ef3-782bcb9cd5b5
+        Bird occurrence 2:
+          value: f5725a56-7b47-11e4-8ef3-782bcb9cd5b5
+        Bird occurrence 3:
+          value: f69696a8-7b47-11e4-8ef3-782bcb9cd5b5
+        Bird occurrence 4:
+          value: 5e7ec91c-4d20-42c4-ad98-8854800e82f7
+    count_only:
+      name: count_only
+      in: query
+      description: Whether to limit the response to a count of results
+      required: false
+      schema:
+        type: boolean
+        default: false
+
+
+  schemas:
+    provider:
+      type: object
+      properties:
+        code:
+          type: string
+          enum:
+            - 'gbif'
+            - 'idb'
+            - 'ipni'
+            - 'itis'
+            - 'lm'
+            - 'mopho'
+            - 'specify'
+            - 'worms'
+            - 'specifynetwork'
+        icon_url:
+          type: string
+          example: https://spcoco.org/broker/api/v1/badge?provider=specifynetwork
+        label:
+          type: string
+          description: Human-readable provider name
+          example: Specify Network
+        query_url:
+          type: array
+          items:
+            type: string
+            example: https://spcoco.org/broker/api/v1/name?namestr=Acer saccharum Marshall&provider=gbif,itis,worms&is_accepted=True&gbif_count=True&kingdom=None
+        status_code:
+          type: number
+          example: 200
+    wrapper:
+      type: object
+      properties:
+        count:
+          $ref: '#/components/schemas/count'
+        service:
+          type: string
+        provider:
+          $ref: '#/components/schemas/provider'
+        record_format:
+          type: string
+        errors:
+          type: object
+          properties:
+            error:
+              type: array
+              items:
+                type: string
+            info:
+              type: array
+              items:
+                type: string
+            warning:
+              type: array
+              items:
+                type: string
+    count:
+      type: integer
+      description: >-
+        Number of records that matched the query. For specimen occurrence IDs,
+        there are usually 0 or 1 matches
+      minimum: 0
+      example: 1
+    guid:
+      type: string
+      minLength: 36
+      maxLength: 36
+    nullable_guid:
+      type: string
+      minLength: 36
+      maxLength: 36
+      nullable: true
+    view_url:
+      type: string
+      description: URL to provider web page for this data
+      nullable: true
+    api_url:
+      type: string
+      description: URL for provider api query for this data
+      nullable: true
+    hierarchy:
+      type: array
+      items:
+        type: object
+        properties:
+          kingdom:
+            type: string
+            example: 'Animalia'
+          phylum:
+            type: string
+            example: 'Bryozoa'
+          class:
+            type: string
+            example: 'Stenolaemata'
+          order:
+            type: string
+            example: 'Cyclostomatida'
+          family:
+            type: string
+            example: 'Plagioeciidae'
+          genus:
+            type: string
+            example: 'Plagioecia'
+          species:
+            type: string
+            example: 'Plagioecia patina'
+
+    names_tentacles:
+      allOf:
+        - $ref: '#/components/schemas/wrapper'
+        - type: object
+          properties:
+            service:
+              type: string
+              enum:
+                - 'name'
+            records:
+              type: array
+              items:
+                $ref: '#/components/schemas/names_one_prov'
+              minItems: 3
+              maxItems: 3
+    names_one_prov:
+      allOf:
+        - $ref: '#/components/schemas/wrapper'
+        - type: object
+          properties:
+            service:
+              type: string
+              enum:
+                - 'name'
+            records:
+              type: array
+              items:
+                $ref: '#/components/schemas/name_record'
+    name_record:
+      type: object
+      properties:
+        "s2n:view_url":
+          $ref: '#/components/schemas/view_url'
+        "s2n:api_url":
+          $ref: '#/components/schemas/api_url'
+        "s2n:status":
+          type: string
+          description: taxonomic status of this name
+          example: 'valid'
+        "s2n:scientific_name":
+          type: string
+          example: 'Plagioecia patina (Lamarck, 1816)'
+        "s2n:canonical_name":
+          type: string
+          example: 'Plagioecia patina'
+        "s2n:common_names":
+          type: string
+          example: 'red maple'
+          nullable: true
+        "s2n:kingdom":
+          type: string
+          description: taxonomic kingdom containing this name
+          example: 'Animalia'
+        "s2n:rank":
+          type: string
+          description: taxonomic rank of this name
+          example: 'genus'
+        "s2n:synonyms":
+          type: array
+          items:
+            type: string
+          description: Array of synonyms of this name
+          nullable: true
+        "s2n:hierarchy":
+          $ref: '#/components/schemas/hierarchy'
+        s2n:gbif_occurrence_count:
+          type: integer
+          description: Number of occurrences reported by GBIF for this name. This would be null if gbif_count is False
+          example: 926
+          nullable: true
+        s2n:gbif_occurrence_url:
+          type: string
+          description: API URL to query for specimen occurrences in GBIF for this name. This would be null if gbif_count is False
+          example: 'https://www.gbif.org/species/1004151'
+          nullable: true
+        "s2n:gbif_confidence":
+          type: number
+          description: Confidence score assigned by GBIF
+          minimum: 0
+          maximum: 100
+          example: 98
+          nullable: true
+        "s2n:gbif_taxon_key":
+          type: integer
+          description: GBIF identifier key for this taxon
+          nullable: true
+        "s2n:itis_tsn":
+          type: integer
+          description: ITIS identifier key for this taxon
+          nullable: true
+        "s2n:itis_credibility":
+          type: string
+          description: Category assigned by ITIS indicating taxon credibility
+          example: 'TWG standards met'
+          nullable: true
+        "s2n:worms_valid_AphiaID":
+          type: integer
+          description: WoRMS identifier key for this taxon
+          nullable: true
+        "s2n:worms_lsid":
+          type: string
+          description: WoRMS resolvable unique identifier key for this taxon
+          nullable: true
+        "s2n:worms_isMarine":
+          type: integer
+          description: WoRMS flag indicating if the taxon is a marine organism
+          minimum: 0
+          maximum: 1
+          nullable: true
+        "s2n:worms_isBrackish":
+          type: integer
+          description: WoRMS flag indicating if the organism lives in brackish water
+          minimum: 0
+          maximum: 1
+          nullable: true
+        "s2n:worms_isFreshwater":
+          type: integer
+          description: WoRMS flag indicating if the organism lives in fresh water
+          minimum: 0
+          maximum: 1
+          nullable: true
+        "s2n:worms_isTerrestrial":
+          type: integer
+          description: WoRMS flag indicating if the taxon is a terrestrial organism
+          minimum: 0
+          maximum: 1
+          nullable: true
+        "s2n:worms_isExtinct":
+          type: integer
+          description: WoRMS flag indicating if the taxon is an extinct organism
+          minimum: 0
+          maximum: 1
+          nullable: true
+        "s2n:worms_match_type":
+          type: string
+          description:
+            WoRMS code indicating how the taxon requested matched the response
+          example: 'exact'
+          nullable: true
+
+    occ_tentacles:
+      allOf:
+        - $ref: '#/components/schemas/wrapper'
+        - type: object
+          properties:
+            service:
+              type: string
+              enum:
+                - 'occ'
+            records:
+              type: array
+              items:
+                $ref: '#/components/schemas/occ_one_prov'
+              minItems: 1
+              maxItems: 4
+              description:
+                If GBIF dataset_key is provided, only GBIF response is returned
+    occ_one_prov:
+      allOf:
+        - $ref: '#/components/schemas/wrapper'
+        - type: object
+          properties:
+            service:
+              type: string
+              enum:
+                - 'occ'
+            records:
+              type: array
+              items:
+                $ref: '#/components/schemas/occ_record'
+              description: This array would be empty if count_only is True
+    occ_record:
+      type: object
+      properties:
+        's2n:view_url':
+           $ref: '#/components/schemas/view_url'
+        's2n:api_url':
+          $ref: '#/components/schemas/api_url'
+        'dwc:scientificName':
+          type: string
+          description: Scientific name for this object
+          example: 'Eryngium ebracteatum Lam.'
+          nullable: true
+        'dwc:taxonRank':
+          type: string
+          description: Taxonomic rank for the taxon identified for this object
+          example: 'SPECIES'
+          nullable: true
+        'dwc:kingdom':
+          type: string
+          example: Animalia
+          nullable: true
+        'dwc:phylum':
+          type: string
+          example: Chordata
+          nullable: true
+        'dwc:class':
+          type: string
+          example: Aves
+          nullable: true
+        'dwc:order':
+          type: string
+          example: Passeriformes
+          nullable: true
+        'dwc:family':
+          type: string
+          example: Pachycephalidae
+          nullable: true
+        'dwc:genus':
+          type: string
+          example: Pachycephala
+          nullable: true
+        'dwc:species':
+          type: string
+          example: Pachycephala pectoralis
+          nullable: true
+        'dwc:specificEpithet':
+          type: string
+          example: pectoralis
+          nullable: true
+        'dwc:scientificNameAuthorship':
+          type: string
+          example: 'Pachycephala pectoralis (Latham, 1802)'
+          nullable: true
+        'dwc:catalogNumber':
+          type: string
+          example: '21469'
+        'dwc:collectionCode':
+          type: string
+          example: 'FLOR'
+          nullable: true
+        'dwc:institutionCode':
+          type: string
+          example: 'Universidade Federal de Santa Catarina'
+        'dwc:otherCatalogNumbers':
+          type: string
+          nullable: true
+        'dwc:datasetName':
+          type: string
+          example: 'FLOR - Herbário do Departamento de Botânica da Universidade Federal de Santa Catarina'
+          nullable: true
+        'dwc:year':
+          type: string
+          example: '1999'
+          nullable: true
+        'dwc:month':
+          type: string
+          example: '11'
+          nullable: true
+        'dwc:day':
+          type: string
+          example: '5'
+          nullable: true
+        'dwc:recordedBy':
+          type: string
+          example: 'Bentley, Andrew C; Preston, Mike; Addison, Mark'
+          nullable: true
+        'dwc:fieldNumber':
+          type: string
+          example: 'ACB 02-02'
+          nullable: true
+        'dwc:locality':
+          type: string
+          example: 'Aliwal Shoal - Tiger ledge'
+          nullable: true
+        'dwc:county':
+          type: string
+          example: 'Scottburgh'
+          nullable: true
+        'dwc:stateProvince':
+          type: string
+          example: 'KwaZulu-Natal'
+          nullable: true
+        'dwc:country':
+          type: string
+          example: 'United States'
+          nullable: true
+        'dwc:countryCode':
+          type: string
+          example: 'US'
+          nullable: true
+        'dwc:decimalLongitude':
+          type: string
+          example: '-79.91052'
+          nullable: true
+        'dwc:decimalLatitude':
+          type: string
+          example: '32.753384'
+          nullable: true
+        'dwc:geodeticDatum':
+          type: string
+          example: 'WGS84'
+          nullable: true
+        'dwc:basisOfRecord':
+          type: string
+          example: 'MaterialSample'
+          nullable: true
+        'dwc:preparations':
+          type: string
+          example: 'Tissue - 100'
+          nullable: true
+        'dwc:associatedReferences':
+          type: array
+          items:
+            type: string
+        'dwc:associatedSequences':
+          type: array
+          items:
+            type: string
+        's2n:issues':
+          $ref: '#/components/schemas/issue_pairs'
+        'dcterms:accessRights':
+          type: string
+          example: 'http://biodiversity.ku.edu/research/university-kansas-biodiversity-institute-data-publication-and-use-norms'
+          nullable: true
+        'dcterms:language':
+          type: string
+          example: 'en'
+          nullable: true
+        'dcterms:license':
+          type: string
+          example: 'http://creativecommons.org/licenses/by/4.0/legalcode'
+          nullable: true
+        'dcterms:modified':
+          type: string
+          example: '2019-01-17 10:04:50.0'
+          nullable: true
+        'dcterms:type':
+          type: string
+          example: 'PhysicalObject'
+          nullable: true
+        'gbif:gbifID':
+          type: string
+          example: '656981504'
+          nullable: true
+        'gbif:publishingOrgKey':
+          $ref: '#/components/schemas/nullable_guid'
+        'gbif:datasetKey':
+          $ref: '#/components/schemas/nullable_guid'
+        'gbif:acceptedScientificName':
+          type: string
+          example: 'en'
+          nullable: true
+        'idigbio:uuid':
+          $ref: '#/components/schemas/nullable_guid'
+        'mopho:specimen.specimen_id':
+          type: string
+          example: '25481'
+          nullable: true
+        's2n:specify_identifier':
+          $ref: '#/components/schemas/nullable_guid'
+
+    map_tentacles:
+      allOf:
+        - $ref: '#/components/schemas/wrapper'
+        - type: object
+          properties:
+            service:
+              type: string
+              enum:
+                - 'map'
+            records:
+              type: array
+              items:
+                 $ref: '#/components/schemas/map_one_prov'
+              minItems: 1
+              maxItems: 1
+    map_one_prov:
+      allOf:
+        - $ref: '#/components/schemas/wrapper'
+        - type: object
+          properties:
+            service:
+              type: string
+              enum:
+                - 'map'
+            records:
+              type: array
+              items:
+                $ref: '#/components/schemas/map_record'
+    map_record:
+      type: object
+      properties:
+        's2n:view_url':
+          $ref: '#/components/schemas/view_url'
+        's2n:api_url':
+          $ref: '#/components/schemas/api_url'
+        's2n:endpoint':
+          type: string
+          example: 'https://data.lifemapper.org/api/v2/ogc'
+        's2n:data_link':
+          type: string
+          example: 'https://data.lifemapper.org/api/v2/sdmProject/119965'
+        's2n:layer_type':
+          type: string
+          enum:
+            - 'vector'
+            - 'raster'
+        's2n:layer_name':
+          type: string
+          example: 'prj_119965'
+        's2n:point_count':
+          type: integer
+          example: 456
+        's2n:point_bbox':
+          type: string
+          example: '-180,-90,180,90'
+        's2n:species_name':
+          type: string
+          example: 'Phlox longifolia Nutt.'
+        's2n:sdm_projection_scenario_code':
+          type: string
+          example: 'worldclim-curr'
+        's2n:sdm_projection_scenario_link':
+          type: string
+          example: 'https://data.lifemapper.org/api/v2/scenario/1'
+        's2n:status':
+          type: integer
+          example: 300
+        's2n:modtime':
+          type: string
+          example: '2021-09-05 10:23:09'
+        's2n:vendor_specific_parameters':
+          type: array
+          items:
+            $ref: '#/components/schemas/vsp'
+
+    resolve_record:
+      type: object
+      properties:
+        's2n:ident':
+          $ref: '#/components/schemas/guid'
+        's2n:dataset_guid':
+          $ref: '#/components/schemas/guid'
+        'dwc:institutionCode':
+          type: string
+          example: 'KUIT'
+        'dwc:basisOfRecord':
+          type: string
+          example: 'MaterialSample'
+        's2n:date':
+          type: string
+          example: '2021-09-27'
+        's2n:ark':
+          type: string
+          example: 'http://spcoco.org/ark:/2c1becd5-e641-4e83-b3f5-76a55206539a'
+        's2n:api_url':
+          $ref: '#/components/schemas/api_url'
+
+    vsp:
+      type: object
+      properties:
+        vsp_param:
+          type: string
+        vsp_arg:
+          type: string
+
+    issue_pairs:
+      type: object
+      description: Dictionary of error codes and error messages
+      properties:
+        AMBIGUOUS_COLLECTION:
+          type: string
+        AMBIGUOUS_INSTITUTION:
+          type: string
+        BASIS_OF_RECORD_INVALID:
+          type: string
+        COLLECTION_MATCH_FUZZY:
+          type: string
+        COLLECTION_MATCH_NONE:
+          type: string
+        CONTINENT_COUNTRY_MISMATCH:
+          type: string
+        CONTINENT_DERIVED_FROM_COORDINATES:
+          type: string
+        CONTINENT_INVALID:
+          type: string
+        COORDINATE_ACCURACY_INVALID:
+          type: string
+        COORDINATE_INVALID:
+          type: string
+        COORDINATE_OUT_OF_RANGE:
+          type: string
+        COORDINATE_PRECISION_INVALID:
+          type: string
+        COORDINATE_PRECISION_UNCERTAINTY_MISMATCH:
+          type: string
+        COORDINATE_REPROJECTED:
+          type: string
+        COORDINATE_REPROJECTION_FAILED:
+          type: string
+        COORDINATE_REPROJECTION_SUSPICIOUS:
+          type: string
+        COORDINATE_ROUNDED:
+          type: string
+        COORDINATE_UNCERTAINTY_METERS_INVALID:
+          type: string
+        COUNTRY_COORDINATE_MISMATCH:
+          type: string
+        COUNTRY_DERIVED_FROM_COORDINATES:
+          type: string
+        COUNTRY_INVALID:
+          type: string
+        COUNTRY_MISMATCH:
+          type: string
+        DEPTH_MIN_MAX_SWAPPED:
+          type: string
+        DEPTH_NON_NUMERIC:
+          type: string
+        DEPTH_NOT_METRIC:
+          type: string
+        DEPTH_UNLIKELY:
+          type: string
+        ELEVATION_MIN_MAX_SWAPPED:
+          type: string
+        ELEVATION_NON_NUMERIC:
+          type: string
+        ELEVATION_NOT_METRIC:
+          type: string
+        ELEVATION_UNLIKELY:
+          type: string
+        GEODETIC_DATUM_ASSUMED_WGS84:
+          type: string
+        GEODETIC_DATUM_INVALID:
+          type: string
+        GEOREFERENCED_DATE_INVALID:
+          type: string
+        GEOREFERENCED_DATE_UNLIKELY:
+          type: string
+        IDENTIFIED_DATE_INVALID:
+          type: string
+        IDENTIFIED_DATE_UNLIKELY:
+          type: string
+        INDIVIDUAL_COUNT_CONFLICTS_WITH_OCCURRENCE_STATUS:
+          type: string
+        INDIVIDUAL_COUNT_INVALID:
+          type: string
+        INSTITUTION_COLLECTION_MISMATCH:
+          type: string
+        INSTITUTION_MATCH_FUZZY:
+          type: string
+        INSTITUTION_MATCH_NONE:
+          type: string
+        INTERPRETATION_ERROR:
+          type: string
+        MODIFIED_DATE_INVALID:
+          type: string
+        MODIFIED_DATE_UNLIKELY:
+          type: string
+        MULTIMEDIA_DATE_INVALID:
+          type: string
+        MULTIMEDIA_URI_INVALID:
+          type: string
+        OCCURRENCE_STATUS_INFERRED_FROM_BASIS_OF_RECORD:
+          type: string
+        OCCURRENCE_STATUS_INFERRED_FROM_INDIVIDUAL_COUNT:
+          type: string
+        OCCURRENCE_STATUS_UNPARSABLE:
+          type: string
+        POSSIBLY_ON_LOAN:
+          type: string
+        PRESUMED_NEGATED_LATITUDE:
+          type: string
+        PRESUMED_NEGATED_LONGITUDE:
+          type: string
+        PRESUMED_SWAPPED_COORDINATE:
+          type: string
+        RECORDED_DATE_INVALID:
+          type: string
+        RECORDED_DATE_MISMATCH:
+          type: string
+        RECORDED_DATE_UNLIKELY:
+          type: string
+        REFERENCES_URI_INVALID:
+          type: string
+        TAXON_MATCH_FUZZY:
+          type: string
+        TAXON_MATCH_HIGHERRANK:
+          type: string
+        TAXON_MATCH_NONE:
+          type: string
+        TYPE_STATUS_INVALID:
+          type: string
+        ZERO_COORDINATE:
+          type: string
+        datecollected_bounds:
+          type: string
+        dwc_acceptednameusageid_added:
+          type: string
+        dwc_basisofrecord_invalid:
+          type: string
+        dwc_basisofrecord_paleo_conflict:
+          type: string
+        dwc_basisofrecord_removed:
+          type: string
+        dwc_class_added:
+          type: string
+        dwc_class_replaced:
+          type: string
+        dwc_continent_added:
+          type: string
+        dwc_continent_replaced:
+          type: string
+        dwc_country_added:
+          type: string
+        dwc_country_replaced:
+          type: string
+        dwc_datasetid_added:
+          type: string
+        dwc_datasetid_replaced:
+          type: string
+        dwc_family_added:
+          type: string
+        dwc_family_replaced:
+          type: string
+        dwc_genus_added:
+          type: string
+        dwc_genus_replaced:
+          type: string
+        dwc_infraspecificepithet_added:
+          type: string
+        dwc_infraspecificepithet_replaced:
+          type: string
+        dwc_kingdom_added:
+          type: string
+        dwc_kingdom_replaced:
+          type: string
+        dwc_kingdom_suspect:
+          type: string
+        dwc_multimedia_added:
+          type: string
+        dwc_order_added:
+          type: string
+        dwc_order_replaced:
+          type: string
+        dwc_originalnameusageid_added:
+          type: string
+        dwc_parentnameusageid_added:
+          type: string
+        dwc_phylum_added:
+          type: string
+        dwc_phylum_replaced:
+          type: string
+        dwc_scientificnameauthorship_added:
+          type: string
+        dwc_specificepithet_added:
+          type: string
+        dwc_specificepithet_replaced:
+          type: string
+        dwc_stateprovince_replaced:
+          type: string
+        dwc_taxonid_added:
+          type: string
+        dwc_taxonid_replaced:
+          type: string
+        dwc_taxonomicstatus_added:
+          type: string
+        dwc_taxonomicstatus_replaced:
+          type: string
+        dwc_taxonrank_added:
+          type: string
+        dwc_taxonrank_invalid:
+          type: string
+        dwc_taxonrank_removed:
+          type: string
+        dwc_taxonrank_replaced:
+          type: string
+        dwc_taxonremarks_added:
+          type: string
+        dwc_taxonremarks_replaced:
+          type: string
+        gbif_canonicalname_added:
+          type: string
+        gbif_genericname_added:
+          type: string
+        gbif_reference_added:
+          type: string
+        gbif_taxon_corrected:
+          type: string
+        gbif_vernacularname_added:
+          type: string
+        geopoint_0_coord:
+          type: string
+        geopoint_bounds:
+          type: string
+        geopoint_datum_error:
+          type: string
+        geopoint_datum_missing:
+          type: string
+        geopoint_low_precision:
+          type: string
+        geopoint_pre_flip:
+          type: string
+        geopoint_similar_coord:
+          type: string
+        idigbio_isocountrycode_added:
+          type: string
+        rev_geocode_both_sign:
+          type: string
+        rev_geocode_corrected:
+          type: string
+        rev_geocode_eez:
+          type: string
+        rev_geocode_eez_corrected:
+          type: string
+        rev_geocode_failure:
+          type: string
+        rev_geocode_flip:
+          type: string
+        rev_geocode_flip_both_sign:
+          type: string
+        rev_geocode_flip_lat_sign:
+          type: string
+        rev_geocode_flip_lon_sign:
+          type: string
+        rev_geocode_lat_sign:
+          type: string
+        rev_geocode_lon_sign:
+          type: string
+        rev_geocode_mismatch:
+          type: string
+        scientificname_added:
+          type: string
+        taxon_match_failed:
+          type: string
+
+  examples:
+    names_Denitrobacterium_detoxificans:
+      description: 'namestr: Denitrobacterium detoxificans'
+      value:
+        count: 3
+        errors: {}
+        provider:
+          code: specifynetwork
+          icon_url: https://spcoco.org/broker/api/v1/badge?provider=specifynetwork
+          label: Specify Network
+          query_url:
+            - https://spcoco.org/broker/api/v1/name?namestr=Denitrobacterium detoxificans&provider=gbif,itis,worms&is_accepted=True&gbif_count=True&kingdom=None
+          status_code: 200
+        record_format: ''
+        records:
+          - count: 1
+            errors: {}
+            provider:
+              code: gbif
+              icon_url: https://spcoco.org/broker/api/v1/badge?provider=gbif
+              label: GBIF
+              query_url:
+                - https://api.gbif.org/v1/species/match?name=Denitrobacterium+detoxificans&verbose=true
+                - https://api.gbif.org/v1/occurrence/search?taxonKey=3223473
+              status_code: 200
+            record_format: ''
+            records:
+              - s2n:api_url: https://api.gbif.org/v1/species/3223473
+                s2n:canonical_name: Denitrobacterium detoxificans
+                s2n:common_names: null
+                s2n:gbif_confidence: 98
+                s2n:gbif_occurrence_count: 39
+                s2n:gbif_occurrence_url: https://api.gbif.org/v1/occurrence/search?taxonKey=3223473
+                s2n:gbif_taxon_key: 3223473
+                s2n:hierarchy:
+                  - class: Coriobacteriia
+                    family: Eggerthellaceae
+                    genus: Denitrobacterium
+                    kingdom: Bacteria
+                    order: Coriobacteriales
+                    phylum: Actinobacteriota
+                    species: Denitrobacterium detoxificans
+                s2n:itis_credibility: null
+                s2n:itis_tsn: null
+                s2n:kingdom: Bacteria
+                s2n:rank: SPECIES
+                s2n:scientific_name: Denitrobacterium detoxificans Anderson et al., 2000
+                s2n:status: ACCEPTED
+                s2n:synonyms: []
+                s2n:view_url: https://www.gbif.org/species/3223473
+                s2n:worms_isBrackish: null
+                s2n:worms_isExtinct: null
+                s2n:worms_isFreshwater: null
+                s2n:worms_isMarine: null
+                s2n:worms_isTerrestrial: null
+                s2n:worms_lsid: null
+                s2n:worms_match_type: null
+                s2n:worms_valid_AphiaID: null
+            service: name
+          - count: 1
+            errors: {}
+            provider:
+              code: itis
+              icon_url: https://spcoco.org/broker/api/v1/badge?provider=itis
+              label: ITIS
+              query_url:
+                - https://services.itis.gov?wt=json&q=nameWInd:Denitrobacterium\%20detoxificans
+              status_code: 200
+            record_format: ''
+            records:
+              - s2n:api_url: https://services.itis.gov?q=tsn:961092
+                s2n:canonical_name: Denitrobacterium detoxificans
+                s2n:common_names: null
+                s2n:gbif_confidence: null
+                s2n:gbif_occurrence_count: null
+                s2n:gbif_occurrence_url: null
+                s2n:gbif_taxon_key: null
+                s2n:hierarchy:
+                  - class: null
+                    family: Coriobacteriaceae
+                    genus: Denitrobacterium
+                    kingdom: Bacteria
+                    order: Coriobacteriales
+                    phylum: Actinobacteria
+                    species: Denitrobacterium detoxificans
+                s2n:itis_credibility: TWG standards met
+                s2n:itis_tsn: '961092'
+                s2n:kingdom: Bacteria
+                s2n:rank: Species
+                s2n:scientific_name: Denitrobacterium detoxificans Anderson et al., 2000
+                s2n:status: valid
+                s2n:synonyms: []
+                s2n:view_url: https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=961092
+                s2n:worms_isBrackish: null
+                s2n:worms_isExtinct: null
+                s2n:worms_isFreshwater: null
+                s2n:worms_isMarine: null
+                s2n:worms_isTerrestrial: null
+                s2n:worms_lsid: null
+                s2n:worms_match_type: null
+                s2n:worms_valid_AphiaID: null
+            service: name
+          - count: 0
+            errors:
+              error:
+                - WormsAPI; URL http://www.marinespecies.org/rest/AphiaRecordsByMatchNames, code = 204, reason = No Content
+            provider:
+              code: worms
+              icon_url: https://spcoco.org/broker/api/v1/badge?provider=worms
+              label: WoRMS
+              query_url:
+                - http://www.marinespecies.org/rest/AphiaRecordsByMatchNames?marine_only=true&scientificnames%5B%5D%3D=Denitrobacterium+detoxificans
+              status_code: 204
+            record_format: ''
+            records: []
+            service: name
+        service: name
+    names_Plagioecia_patina:
+      description: 'namestr: Plagioecia patina'
+      value:
+        count: 3
+        errors: {}
+        provider:
+          code: specifynetwork
+          icon_url: https://spcoco.org/broker/api/v1/badge?provider=specifynetwork
+          label: Specify Network
+          query_url:
+            - https://spcoco.org/broker/api/v1/name?namestr=Plagioecia patina&provider=gbif,itis,worms&is_accepted=True&gbif_count=True&kingdom=None
+          status_code: 200
+        record_format: ''
+        records:
+          - count: 1
+            errors: {}
+            provider:
+              code: gbif
+              icon_url: https://spcoco.org/broker/api/v1/badge?provider=gbif
+              label: GBIF
+              query_url:
+                - https://api.gbif.org/v1/species/match?name=Plagioecia+patina&verbose=true
+                - https://api.gbif.org/v1/occurrence/search?taxonKey=1004151
+              status_code: 200
+            record_format: ''
+            records:
+              - s2n:api_url: https://api.gbif.org/v1/species/1004151
+                s2n:canonical_name: Plagioecia patina
+                s2n:common_names: null
+                s2n:gbif_confidence: 98
+                s2n:gbif_occurrence_count: 1029
+                s2n:gbif_occurrence_url: https://api.gbif.org/v1/occurrence/search?taxonKey=1004151
+                s2n:gbif_taxon_key: 1004151
+                s2n:hierarchy:
+                  - class: Stenolaemata
+                    family: Plagioeciidae
+                    genus: Plagioecia
+                    kingdom: Animalia
+                    order: Cyclostomatida
+                    phylum: Bryozoa
+                    species: Plagioecia patina
+                s2n:itis_credibility: null
+                s2n:itis_tsn: null
+                s2n:kingdom: Animalia
+                s2n:rank: SPECIES
+                s2n:scientific_name: Plagioecia patina (Lamarck, 1816)
+                s2n:status: ACCEPTED
+                s2n:synonyms: []
+                s2n:view_url: https://www.gbif.org/species/1004151
+                s2n:worms_isBrackish: null
+                s2n:worms_isExtinct: null
+                s2n:worms_isFreshwater: null
+                s2n:worms_isMarine: null
+                s2n:worms_isTerrestrial: null
+                s2n:worms_lsid: null
+                s2n:worms_match_type: null
+                s2n:worms_valid_AphiaID: null
+            service: name
+          - count: 1
+            errors: {}
+            provider:
+              code: itis
+              icon_url: https://spcoco.org/broker/api/v1/badge?provider=itis
+              label: ITIS
+              query_url:
+                - https://services.itis.gov?wt=json&q=nameWInd:Plagioecia\%20patina
+              status_code: 200
+            record_format: ''
+            records:
+              - s2n:api_url: https://services.itis.gov?q=tsn:155729
+                s2n:canonical_name: Plagioecia patina
+                s2n:common_names: null
+                s2n:gbif_confidence: null
+                s2n:gbif_occurrence_count: null
+                s2n:gbif_occurrence_url: null
+                s2n:gbif_taxon_key: null
+                s2n:hierarchy:
+                  - class: Stenolaemata
+                    family: Plagioeciidae
+                    genus: Plagioecia
+                    kingdom: Animalia
+                    order: Cyclostomata
+                    phylum: Bryozoa
+                    species: Plagioecia patina
+                s2n:itis_credibility: No review; untreated NODC data
+                s2n:itis_tsn: '155729'
+                s2n:kingdom: Animalia
+                s2n:rank: Species
+                s2n:scientific_name: 'Plagioecia patina '
+                s2n:status: valid
+                s2n:synonyms: []
+                s2n:view_url: https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=155729
+                s2n:worms_isBrackish: null
+                s2n:worms_isExtinct: null
+                s2n:worms_isFreshwater: null
+                s2n:worms_isMarine: null
+                s2n:worms_isTerrestrial: null
+                s2n:worms_lsid: null
+                s2n:worms_match_type: null
+                s2n:worms_valid_AphiaID: null
+            service: name
+          - count: 1
+            errors: {}
+            provider:
+              code: worms
+              icon_url: https://spcoco.org/broker/api/v1/badge?provider=worms
+              label: WoRMS
+              query_url:
+                - http://www.marinespecies.org/rest/AphiaRecordsByMatchNames?marine_only=true&scientificnames%5B%5D%3D=Plagioecia+patina
+              status_code: 200
+            record_format: ''
+            records:
+              - s2n:api_url: http://www.marinespecies.org/rest/AphiaNameByAphiaID/111719
+                s2n:canonical_name: Plagioecia patina
+                s2n:common_names: null
+                s2n:gbif_confidence: null
+                s2n:gbif_occurrence_count: null
+                s2n:gbif_occurrence_url: null
+                s2n:gbif_taxon_key: null
+                s2n:hierarchy:
+                  - class: Stenolaemata
+                    family: Plagioeciidae
+                    genus: Plagioecia
+                    kingdom: Animalia
+                    order: Cyclostomatida
+                    phylum: Bryozoa
+                s2n:itis_credibility: null
+                s2n:itis_tsn: null
+                s2n:kingdom: Animalia
+                s2n:rank: Species
+                s2n:scientific_name: Plagioecia patina (Lamarck, 1816)
+                s2n:status: accepted
+                s2n:synonyms: []
+                s2n:view_url: http://www.marinespecies.org/aphia.php?p=taxdetails&id=111719
+                s2n:worms_isBrackish: 0
+                s2n:worms_isExtinct: null
+                s2n:worms_isFreshwater: 0
+                s2n:worms_isMarine: 1
+                s2n:worms_isTerrestrial: 0
+                s2n:worms_lsid: urn:lsid:marinespecies.org:taxname:111719
+                s2n:worms_match_type: exact
+                s2n:worms_valid_AphiaID: 111719
+            service: name
+        service: name
+    names_Tulipa_sylvestris:
+      description: 'namestr: Tulipa sylvestris'
+      value:
+        count: 3
+        errors: {}
+        provider:
+          code: specifynetwork
+          icon_url: https://spcoco.org/broker/api/v1/badge?provider=specifynetwork
+          label: Specify Network
+          query_url:
+            - https://spcoco.org/broker/api/v1/name?namestr=Tulipa sylvestris&provider=gbif,itis,worms&is_accepted=True&gbif_count=True&kingdom=None
+          status_code: 200
+        record_format: ''
+        records:
+          - count: 2
+            errors: {}
+            provider:
+              code: gbif
+              icon_url: https://spcoco.org/broker/api/v1/badge?provider=gbif
+              label: GBIF
+              query_url:
+                - https://api.gbif.org/v1/species/match?name=Tulipa+sylvestris&verbose=true
+                - https://api.gbif.org/v1/occurrence/search?taxonKey=5299536
+                - https://api.gbif.org/v1/occurrence/search?taxonKey=5662842
+              status_code: 200
+            record_format: ''
+            records:
+              - s2n:api_url: https://api.gbif.org/v1/species/5299536
+                s2n:canonical_name: Tulipa sylvestris
+                s2n:common_names: null
+                s2n:gbif_confidence: 97
+                s2n:gbif_occurrence_count: 35191
+                s2n:gbif_occurrence_url: https://api.gbif.org/v1/occurrence/search?taxonKey=5299536
+                s2n:gbif_taxon_key: 5299536
+                s2n:hierarchy:
+                  - class: Liliopsida
+                    family: Liliaceae
+                    genus: Tulipa
+                    kingdom: Plantae
+                    order: Liliales
+                    phylum: Tracheophyta
+                    species: Tulipa sylvestris
+                s2n:itis_credibility: null
+                s2n:itis_tsn: null
+                s2n:kingdom: Plantae
+                s2n:rank: SPECIES
+                s2n:scientific_name: Tulipa sylvestris L.
+                s2n:status: ACCEPTED
+                s2n:synonyms: []
+                s2n:view_url: https://www.gbif.org/species/5299536
+                s2n:worms_isBrackish: null
+                s2n:worms_isExtinct: null
+                s2n:worms_isFreshwater: null
+                s2n:worms_isMarine: null
+                s2n:worms_isTerrestrial: null
+                s2n:worms_lsid: null
+                s2n:worms_match_type: null
+                s2n:worms_valid_AphiaID: null
+              - s2n:api_url: https://api.gbif.org/v1/species/5662842
+                s2n:canonical_name: Tulipa silvestris
+                s2n:common_names: null
+                s2n:gbif_confidence: 94
+                s2n:gbif_occurrence_count: 0
+                s2n:gbif_occurrence_url: https://api.gbif.org/v1/occurrence/search?taxonKey=5662842
+                s2n:gbif_taxon_key: 5662842
+                s2n:hierarchy:
+                  - class: Liliopsida
+                    family: Liliaceae
+                    genus: Tulipa
+                    kingdom: Plantae
+                    order: Liliales
+                    phylum: Tracheophyta
+                    species: Tulipa silvestris
+                s2n:itis_credibility: null
+                s2n:itis_tsn: null
+                s2n:kingdom: Plantae
+                s2n:rank: SPECIES
+                s2n:scientific_name: Tulipa silvestris Herb.Bout. ex Willk. & Lange, 1862
+                s2n:status: ACCEPTED
+                s2n:synonyms: []
+                s2n:view_url: https://www.gbif.org/species/5662842
+                s2n:worms_isBrackish: null
+                s2n:worms_isExtinct: null
+                s2n:worms_isFreshwater: null
+                s2n:worms_isMarine: null
+                s2n:worms_isTerrestrial: null
+                s2n:worms_lsid: null
+                s2n:worms_match_type: null
+                s2n:worms_valid_AphiaID: null
+            service: name
+          - count: 1
+            errors: {}
+            provider:
+              code: itis
+              icon_url: https://spcoco.org/broker/api/v1/badge?provider=itis
+              label: ITIS
+              query_url:
+                - https://services.itis.gov?wt=json&q=nameWInd:Tulipa\%20sylvestris
+              status_code: 200
+            record_format: ''
+            records:
+              - s2n:api_url: https://services.itis.gov?q=tsn:43106
+                s2n:canonical_name: Tulipa sylvestris
+                s2n:common_names: null
+                s2n:gbif_confidence: null
+                s2n:gbif_occurrence_count: null
+                s2n:gbif_occurrence_url: null
+                s2n:gbif_taxon_key: null
+                s2n:hierarchy:
+                  - class: Magnoliopsida
+                    family: Liliaceae
+                    genus: Tulipa
+                    kingdom: Plantae
+                    order: Liliales
+                    phylum: null
+                    species: Tulipa sylvestris
+                s2n:itis_credibility: TWG standards met
+                s2n:itis_tsn: '43106'
+                s2n:kingdom: Plantae
+                s2n:rank: Species
+                s2n:scientific_name: Tulipa sylvestris L.
+                s2n:status: accepted
+                s2n:synonyms: []
+                s2n:view_url: https://www.itis.gov/servlet/SingleRpt/SingleRpt?search_topic=TSN&search_value=43106
+                s2n:worms_isBrackish: null
+                s2n:worms_isExtinct: null
+                s2n:worms_isFreshwater: null
+                s2n:worms_isMarine: null
+                s2n:worms_isTerrestrial: null
+                s2n:worms_lsid: null
+                s2n:worms_match_type: null
+                s2n:worms_valid_AphiaID: null
+            service: name
+          - count: 0
+            errors:
+              error:
+                - WormsAPI; URL http://www.marinespecies.org/rest/AphiaRecordsByMatchNames, code = 204, reason = No Content
+            provider:
+              code: worms
+              icon_url: https://spcoco.org/broker/api/v1/badge?provider=worms
+              label: WoRMS
+              query_url:
+                - http://www.marinespecies.org/rest/AphiaRecordsByMatchNames?marine_only=true&scientificnames%5B%5D%3D=Tulipa+sylvestris
+              status_code: 204
+            record_format: ''
+            records: []
+            service: name
+        service: name
+    occ_tentacles:
+      description: 'occid: ed8cfa5a-7b47-11e4-8ef3-782bcb9cd5b5'
+      value:
+        count: 4
+        errors: {}
+        provider:
+          code: specifynetwork
+          icon_url: https://spcoco.org/broker/api/v1/badge?provider=specifynetwork
+          label: Specify Network
+          query_url:
+            - https://spcoco.org/broker/api/v1/occ?occid=ed8cfa5a-7b47-11e4-8ef3-782bcb9cd5b5&provider=specify,gbif,idb,mopho&count_only=False
+          status_code: 200
+        record_format: ''
+        records:
+          - count: 1
+            errors: {}
+            provider:
+              code: specify
+              icon_url: https://spcoco.org/broker/api/v1/badge?provider=specify
+              label: Specify
+              query_url:
+                - https://syftorium.org/api/v1/sp_cache/collection/d4b334b9-8063-4fab-bd0d-71e3fc04ae00/occurrences/ed8cfa5a-7b47-11e4-8ef3-782bcb9cd5b5
+              status_code: 200
+            record_format: ''
+            records:
+              - dcterms:accessRights: http://biodiversity.ku.edu/research/university-kansas-biodiversity-institute-data-publication-and-use-norms
+                dcterms:language: null
+                dcterms:license: null
+                dcterms:modified: '2014-10-29 12:38:05.0'
+                dcterms:type: null
+                dwc:associatedReferences: []
+                dwc:associatedSequences: []
+                dwc:basisOfRecord: PreservedSpecimen
+                dwc:catalogNumber: '66968'
+                dwc:class: Aves
+                dwc:collectionCode: KUO
+                dwc:country: USA
+                dwc:countryCode: null
+                dwc:county: Boulder
+                dwc:datasetName: University of Kansas Biodiversity Institute Ornithology Collection
+                dwc:day: '11'
+                dwc:decimalLatitude: null
+                dwc:decimalLongitude: null
+                dwc:family: Corvidae
+                dwc:fieldNumber: null
+                dwc:genus: Perisoreus
+                dwc:geodeticDatum: null
+                dwc:institutionCode: KU
+                dwc:kingdom: Animalia
+                dwc:locality: Ward, 2.5 mi. W
+                dwc:month: '6'
+                dwc:order: Passeriformes
+                dwc:otherCatalogNumbers: null
+                dwc:phylum: Chordata
+                dwc:preparations: Alcoholic - 1
+                dwc:recordedBy: PATTERSON, R.
+                dwc:scientificName: Perisoreus canadensis
+                dwc:scientificNameAuthorship: null
+                dwc:specificEpithet: canadensis
+                dwc:stateProvince: Colorado
+                dwc:taxonRank: null
+                dwc:year: '1972'
+                gbif:acceptedScientificName: null
+                gbif:datasetKey: null
+                gbif:gbifID: null
+                gbif:publishingOrgKey: null
+                idigbio:uuid: null
+                mopho:specimen.specimen_id: null
+                s2n:api_url: null
+                s2n:issues: {}
+                s2n:specify_identifier: ed8cfa5a-7b47-11e4-8ef3-782bcb9cd5b5
+                s2n:view_url: null
+            service: occ
+          - count: 1
+            errors: {}
+            provider:
+              code: gbif
+              icon_url: https://spcoco.org/broker/api/v1/badge?provider=gbif
+              label: GBIF
+              query_url:
+                - https://api.gbif.org/v1/occurrence/search?occurrenceID=ed8cfa5a-7b47-11e4-8ef3-782bcb9cd5b5
+              status_code: 200
+            record_format: ''
+            records:
+              - dcterms:accessRights: http://biodiversity.ku.edu/research/university-kansas-biodiversity-institute-data-publication-and-use-norms
+                dcterms:language: en
+                dcterms:license: http://creativecommons.org/licenses/by/4.0/legalcode
+                dcterms:modified: null
+                dcterms:type: PhysicalObject
+                dwc:associatedReferences: []
+                dwc:associatedSequences: []
+                dwc:basisOfRecord: PRESERVED_SPECIMEN
+                dwc:catalogNumber: '66968'
+                dwc:class: Aves
+                dwc:collectionCode: Birds
+                dwc:country: United States of America
+                dwc:countryCode: US
+                dwc:county: Boulder
+                dwc:datasetName: University of Kansas Biodiversity Institute Ornithology Collection
+                dwc:day: '11'
+                dwc:decimalLatitude: null
+                dwc:decimalLongitude: null
+                dwc:family: Corvidae
+                dwc:fieldNumber: '2102'
+                dwc:genus: Perisoreus
+                dwc:geodeticDatum: null
+                dwc:institutionCode: KU
+                dwc:kingdom: Animalia
+                dwc:locality: Ward, 2.5 mi. W
+                dwc:month: '6'
+                dwc:order: Passeriformes
+                dwc:otherCatalogNumbers: null
+                dwc:phylum: Chordata
+                dwc:preparations: Alcoholic - 1
+                dwc:recordedBy: PATTERSON, R. R.
+                dwc:scientificName: Perisoreus canadensis (Linnaeus, 1766)
+                dwc:scientificNameAuthorship: null
+                dwc:specificEpithet: canadensis
+                dwc:stateProvince: Colorado
+                dwc:taxonRank: SPECIES
+                dwc:year: '1972'
+                gbif:acceptedScientificName: Perisoreus canadensis (Linnaeus, 1766)
+                gbif:datasetKey: e635240a-3cb1-4d26-ab87-57d8c7afdfdb
+                gbif:gbifID: '686237100'
+                gbif:publishingOrgKey: b554c320-0560-11d8-b851-b8a03c50a862
+                idigbio:uuid: null
+                mopho:specimen.specimen_id: null
+                s2n:api_url: https://api.gbif.org/v1/occurrence/686237100
+                s2n:issues: {}
+                s2n:specify_identifier: null
+                s2n:view_url: https://www.gbif.org/occurrence/686237100
+            service: occ
+          - count: 1
+            errors: {}
+            provider:
+              code: idb
+              icon_url: https://spcoco.org/broker/api/v1/badge?provider=idb
+              label: iDigBio
+              query_url:
+                - https://search.idigbio.org/v2/search/records?rq=%7B%22occurrenceid%22%3A%22ed8cfa5a-7b47-11e4-8ef3-782bcb9cd5b5%22%7D
+              status_code: 200
+            record_format: ''
+            records:
+              - dcterms:accessRights: http://biodiversity.ku.edu/research/university-kansas-biodiversity-institute-data-publication-and-use-norms
+                dcterms:language: en
+                dcterms:license: http://creativecommons.org/licenses/by/4.0/
+                dcterms:modified: '2014-10-29 12:38:05.0'
+                dcterms:type: PhysicalObject
+                dwc:associatedReferences: []
+                dwc:associatedSequences: []
+                dwc:basisOfRecord: PreservedSpecimen
+                dwc:catalogNumber: '66968'
+                dwc:class: Aves
+                dwc:collectionCode: Birds
+                dwc:country: United States
+                dwc:countryCode: usa
+                dwc:county: Boulder
+                dwc:datasetName: University of Kansas Biodiversity Institute Ornithology Collection
+                dwc:day: '11'
+                dwc:decimalLatitude: null
+                dwc:decimalLongitude: null
+                dwc:family: Corvidae
+                dwc:fieldNumber: '2102'
+                dwc:genus: Perisoreus
+                dwc:geodeticDatum: null
+                dwc:institutionCode: KU
+                dwc:kingdom: Animalia
+                dwc:locality: Ward, 2.5 mi. W
+                dwc:month: '6'
+                dwc:order: Passeriformes
+                dwc:otherCatalogNumbers: null
+                dwc:phylum: Chordata
+                dwc:preparations: Alcoholic - 1
+                dwc:recordedBy: PATTERSON, R. R.
+                dwc:scientificName: Perisoreus canadensis
+                dwc:scientificNameAuthorship: null
+                dwc:specificEpithet: canadensis
+                dwc:stateProvince: Colorado
+                dwc:taxonRank: species
+                dwc:year: '1972'
+                gbif:acceptedScientificName: null
+                gbif:datasetKey: null
+                gbif:gbifID: null
+                gbif:publishingOrgKey: null
+                idigbio:uuid: 438c6349-f17c-4908-88bd-c6cf9fe48747
+                mopho:specimen.specimen_id: null
+                s2n:api_url: https://search.idigbio.org/v2/view/records/438c6349-f17c-4908-88bd-c6cf9fe48747
+                s2n:issues:
+                  dwc_datasetid_added: Darwin Core Dataset ID (dwc:datasetID) added where none was provided.
+                  dwc_multimedia_added: TBD
+                  dwc_originalnameusageid_added: Darwin Core Original Name Usage ID (dwc:originalNameUsageID) added where none was provided.
+                  dwc_parentnameusageid_added: Darwin Core Parent Name Usage ID (dwc:parentNameUsageID) added where none was provided.
+                  dwc_scientificnameauthorship_added: Darwin Core Scientific Name Authorship (dwc:scientificNameAuthorship) added where none was provided.
+                  dwc_taxonid_added: Darwin Core Taxon ID (dwc:taxonID) added where none was provided.
+                  dwc_taxonomicstatus_added: Darwin Core Taxonomic Status (dwc:taxonomicStatus) added where none was provided.
+                  dwc_taxonrank_replaced: Darwin Core Taxon Rank (dwc:taxonRank) replaced with a standardized value from GBIF Backbone Taxonomy.
+                  gbif_canonicalname_added: GBIF Canonical Name added from GBIF Backbone Taxonomy.
+                  gbif_genericname_added: GBIF Generic Name added from GBIF Backbone Taxonomy.
+                  gbif_reference_added: GBIF Reference added from GBIF Backbone Taxonomy
+                  gbif_taxon_corrected: A match in GBIF Backbone Taxonomy was found. Inverse of taxon_match_failed flag.
+                  gbif_vernacularname_added: GBIF Vernacular Name (common name) added.
+                  idigbio_isocountrycode_added: iDigBio ISO 3166-1 alpha-3 Country Code added.
+                s2n:specify_identifier: null
+                s2n:view_url: https://www.idigbio.org/portal/records/438c6349-f17c-4908-88bd-c6cf9fe48747
+            service: occ
+          - count: 1
+            errors: {}
+            provider:
+              code: mopho
+              icon_url: https://spcoco.org/broker/api/v1/badge?provider=mopho
+              label: MorphoSource
+              query_url:
+                - https://ms1.morphosource.org/api/v1/find/specimens?start=0&limit=1000&q=occurrence_id%3Aed8cfa5a-7b47-11e4-8ef3-782bcb9cd5b5
+              status_code: 200
+            record_format: ''
+            records:
+              - dcterms:accessRights: null
+                dcterms:language: null
+                dcterms:license: null
+                dcterms:modified: null
+                dcterms:type: null
+                dwc:associatedReferences: []
+                dwc:associatedSequences: []
+                dwc:basisOfRecord: null
+                dwc:catalogNumber: '66968'
+                dwc:class: null
+                dwc:collectionCode: null
+                dwc:country: null
+                dwc:countryCode: null
+                dwc:county: null
+                dwc:datasetName: null
+                dwc:day: null
+                dwc:decimalLatitude: null
+                dwc:decimalLongitude: null
+                dwc:family: null
+                dwc:fieldNumber: null
+                dwc:genus: null
+                dwc:geodeticDatum: null
+                dwc:institutionCode: ku
+                dwc:kingdom: null
+                dwc:locality: null
+                dwc:month: null
+                dwc:order: null
+                dwc:otherCatalogNumbers: null
+                dwc:phylum: null
+                dwc:preparations: null
+                dwc:recordedBy: null
+                dwc:scientificName: null
+                dwc:scientificNameAuthorship: null
+                dwc:specificEpithet: null
+                dwc:stateProvince: null
+                dwc:taxonRank: null
+                dwc:year: null
+                gbif:acceptedScientificName: null
+                gbif:datasetKey: null
+                gbif:gbifID: null
+                gbif:publishingOrgKey: null
+                idigbio:uuid: 438c6349-f17c-4908-88bd-c6cf9fe48747
+                mopho:specimen.specimen_id: null
+                s2n:api_url: null
+                s2n:issues: {}
+                s2n:specify_identifier: null
+                s2n:view_url: https://www.morphosource.org/concern/biological_specimens/000S25481
+            service: occ
+        service: occ
+    resolve:
+      description: 'occid: ed8cfa5a-7b47-11e4-8ef3-782bcb9cd5b5'
+      value:
+        count: 1
+        errors: {}
+        provider:
+          code: specifynetwork
+          icon_url: https://spcoco.org/broker/api/v1/badge?provider=specifynetwork
+          label: Specify Network
+          query_url:
+            - https://spcoco.org/broker/api/v1/resolve?occid=ed8cfa5a-7b47-11e4-8ef3-782bcb9cd5b5
+          status_code: 200
+        record_format: ''
+        records:
+          - count: 1
+            errors: {}
+            provider:
+              code: specify
+              icon_url: https://spcoco.org/broker/api/v1/badge?provider=specify
+              label: Specify
+              query_url:
+                - https://syftorium.org/api/v1/resolve/ed8cfa5a-7b47-11e4-8ef3-782bcb9cd5b5
+              status_code: 200
+            record_format: ''
+            records:
+              - dwc:basisOfRecord: PreservedSpecimen
+                dwc:institutionCode: KUO
+                s2n:api_url: https://syftorium.org/api/v1/sp_cache/collection/d4b334b9-8063-4fab-bd0d-71e3fc04ae00/occurrences/ed8cfa5a-7b47-11e4-8ef3-782bcb9cd5b5
+                s2n:ark: http://spcoco.org/ark:/ed8cfa5a-7b47-11e4-8ef3-782bcb9cd5b5
+                s2n:dataset_guid: d4b334b9-8063-4fab-bd0d-71e3fc04ae00
+                s2n:date: '2021-09-29'
+                s2n:ident: ed8cfa5a-7b47-11e4-8ef3-782bcb9cd5b5
+            service: resolve
+        service: resolve

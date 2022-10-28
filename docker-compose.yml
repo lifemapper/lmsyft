@@ -29,6 +29,22 @@ services:
     volumes:
       - "scratch-path:/scratch-path"
 
+  broker:
+    build:
+      context: ./.
+      target: flask
+    networks:
+      - nginx
+    environment:
+      - FLASK_APP=flask_app.broker:app
+    env_file:
+      ./.env.conf
+    restart: unless-stopped
+    volumes:
+      - "scratch-path:/scratch-path"
+      - "webpack-output:/volumes/webpack-output"
+      - "static-files:/home/specify/frontend/static"
+
   solr:
     image: solr:8.10.1-slim
     networks:
@@ -51,7 +67,7 @@ services:
     depends_on:
       - resolver
       - sp_cache
-      - back-end
+      - broker
       - front-end
 
     networks:
@@ -69,19 +85,19 @@ services:
       - "./config/privkey.pem:/etc/letsencrypt/privkey.pem:ro"
 
 
-  back-end:
-    build:
-      context: ./.
-      target: back-end
-    networks:
-      - nginx
-    environment:
-      - FLASK_APP=lmtrex.flask_app.broker.routes:app
-    restart: unless-stopped
-    volumes:
-      - "scratch-path:/scratch-path"
-      - "webpack-output:/volumes/webpack-output"
-      - "static-files:/home/specify/lmtrex/frontend/static"
+#  back-end:
+#    build:
+#      context: ./.
+#      target: back-end
+#    networks:
+#      - nginx
+#    environment:
+#      - FLASK_APP=lmtrex.flask_app.broker.routes:app
+#    restart: unless-stopped
+#    volumes:
+#      - "scratch-path:/scratch-path"
+#      - "webpack-output:/volumes/webpack-output"
+#      - "static-files:/home/specify/lmtrex/frontend/static"
 
   front-end:
     build:

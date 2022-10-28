@@ -34,18 +34,18 @@ services:
     ports:
       - "8983:8983"
 
-  back-end:
+  broker:
     build:
       context: ./.
-      target: dev-back-end
+      target: dev-flask
     ports:
       - "5003:5003"
     environment:
-      - FLASK_APP=lmtrex.flask_app.broker.routes:app
-      - FLASK_MANAGE=lmtrex.flask_app.broker.manage
+      - FLASK_APP=flask_app.broker:app
+      - FLASK_MANAGE=flask_app.broker.manage
       - DEBUG_PORT=5003
     volumes:
-      - "./lmtrex/:/home/specify/lmtrex/"
+      - "./flask_app/:/home/specify/flask_app/"
 
   front-end:
     build:

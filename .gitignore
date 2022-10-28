@@ -1,6 +1,9 @@
 # project virtual env
 venv/
 
+# pycharm project
+.idea/
+
 # pydev-eclipse project
 .pydevproject
 

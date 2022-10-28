@@ -24,7 +24,7 @@ COPY --chown=specify:specify ./requirements.txt .
 RUN python -m venv venv \
  && venv/bin/pip install --no-cache-dir -r ./requirements.txt
 
-COPY --chown=specify:specify ./lmtrex ./lmtrex
+COPY --chown=specify:specify ./sppy ./sppy
 
 #############################
 # back-end-base == base
@@ -45,7 +45,7 @@ CMD venv/bin/python -m debugpy --listen 0.0.0.0:${DEBUG_PORT} -m ${FLASK_MANAGE}
 
 FROM base as flask
 
-COPY --chown=lifemapper:lifemapper ./flask_app ./flask_app
+COPY --chown=specify:specify ./flask_app ./flask_app
 ENV FLASK_ENV=production
 CMD venv/bin/python -m gunicorn -w 4 --bind 0.0.0.0:5000 ${FLASK_APP}
 
@@ -53,23 +53,26 @@ CMD venv/bin/python -m gunicorn -w 4 --bind 0.0.0.0:5000 ${FLASK_APP}
 #############################
 # old lmtrex aka broker
 #############################
-FROM base as dev-back-end
-# Debug image reusing the base
-# Install dev dependencies for debugging
-RUN venv/bin/pip install debugpy
-# Keeps Python from generating .pyc files in the container
-ENV PYTHONDONTWRITEBYTECODE 1
-# Turns off buffering for easier container logging
-ENV PYTHONUNBUFFERED 1
+#FROM base as dev-back-end
+## Debug image reusing the base
+## Install dev dependencies for debugging
+#RUN venv/bin/pip install debugpy
+## Keeps Python from generating .pyc files in the container
+#ENV PYTHONDONTWRITEBYTECODE 1
+## Turns off buffering for easier container logging
+#ENV PYTHONUNBUFFERED 1
+#
+#ENV FLASK_ENV=development
+#CMD venv/bin/python -m debugpy --listen 0.0.0.0:${DEBUG_PORT} -m ${FLASK_MANAGE} run --host=0.0.0.0
 
-ENV FLASK_ENV=development
-CMD venv/bin/python -m debugpy --listen 0.0.0.0:${DEBUG_PORT} -m ${FLASK_MANAGE} run --host=0.0.0.0
 
-
-
-FROM back-end-base as back-end
-ENV FLASK_ENV=production
-CMD venv/bin/python -m gunicorn -w 4 --bind 0.0.0.0:5000 ${FLASK_APP}
+#############################
+# same as flask
+#############################
+#FROM base as back-end
+##FROM back-end-base as back-end
+#ENV FLASK_ENV=production
+#CMD venv/bin/python -m gunicorn -w 4 --bind 0.0.0.0:5000 ${FLASK_APP}
 
 
 FROM node:16.10.0-buster as base-front-end
@@ -79,13 +82,15 @@ LABEL maintainer="Specify Collections Consortium <github.com/specify>"
 USER node
 WORKDIR /home/node
 
-COPY --chown=node:node lmtrex/frontend/js_src/package*.json ./
+#COPY --chown=node:node lmtrex/frontend/js_src/package*.json ./
+COPY --chown=node:node sppy/frontend/js_src/package*.json ./
 RUN npm install
 
 RUN mkdir dist \
  && chown node:node dist
 
-COPY --chown=node:node lmtrex/frontend/js_src .
+#COPY --chown=node:node lmtrex/frontend/js_src .
+COPY --chown=node:node sppy/frontend/js_src .
 
 
 FROM base-front-end as front-end

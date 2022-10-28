@@ -111,6 +111,17 @@ Flask has hot-reload enabled.
 
 ## Testing
 
+On a development server, check the following URL endpoints:
+
+* Index page: https://localhost
+* Solr http://localhost:8983/solr/#/
+* Specify Cache: https://localhost/sp_cache/
+* Resolver: https://localhost/resolve/
+* Broker: http://localhost/broker/ (and api/v1/address, api/v1/name, api/v1/occ ...)
+
+For local testing in a development environment, tests in the lm_tests directory 
+require the lmtest module available at https://github.com/lifemapper/lmtest.
+
 **Specify Network** homepage is now available at https://localhost/ and http://localhost.
 
 **Specify Cache**, a summary of records in the Specify Cache, is at 
@@ -120,8 +131,8 @@ https://localhost/sp_cache/
 
 **Broker** (aka back-end):
 
-   * https://localhost/api/v1/name?namestr=Notemigonus%20crysoleucas%20(Mitchill,%201814)
-   * https://localhost/api/v1/occ?occid=01493b05-4310-4f28-9d81-ad20860311f3
+   * https://localhost/broker/api/v1/name?namestr=Notemigonus%20crysoleucas%20(Mitchill,%201814)
+   * https://localhost/broker/api/v1/occ?occid=01493b05-4310-4f28-9d81-ad20860311f3
 
 **Webpack** is watching for front-end file changes and rebuilds the bundle when
 needed.
