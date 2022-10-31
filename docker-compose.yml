@@ -67,7 +67,6 @@ services:
     depends_on:
       - resolver
       - sp_cache
-      - solr
       - broker
       - front-end
 

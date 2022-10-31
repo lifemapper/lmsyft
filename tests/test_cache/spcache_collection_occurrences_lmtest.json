@@ -3,6 +3,6 @@
     "test_class": "SpCacheCollectionOccurrencePostTest",
     "parameters": {
         "occurrence_endpoint": "https://notyeti-195.lifemapper.org/api/v1/sp_cache/collection/test_collection/occurrences/",
-        "dwca_filename": "/DATA/envs/lmtest/test_data/dwc_update.zip"
+        "dwca_filename": "../test_data/dwc_update.zip"
     }
 }

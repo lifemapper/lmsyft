@@ -5,148 +5,13 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7da7499e-1ec6-4bd7-974b-80f0bb5c6fdd" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/flask_app/broker/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/tests/README.rst" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/tests/test_data/kui-dwca.zip" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/tests/test_data/kuit-dwca.zip" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/tests/test_post_data.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/lmtrex.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/lmtrex.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/Dockerfile" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config/nginx.conf" beforeDir="false" afterPath="$PROJECT_DIR$/config/nginx.conf" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docker-compose.development.yml" beforeDir="false" afterPath="$PROJECT_DIR$/docker-compose.development.yml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/docker-compose.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/flask_app/test/test_data/dwc_update.zip" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_data/dwc_update.zip" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/flask_app/test/test_sp_cache/test_config.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_config.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/flask_app/test/test_sp_cache/test_solr_controller.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_solr_controller.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lm_tests/sp_cache_tests.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/sp_cache_tests.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lm_tests/spcache_collection_lmtest.json" beforeDir="false" afterPath="$PROJECT_DIR$/tests/spcache_collection_lmtest.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lm_tests/spcache_collection_occurrences_lmtest.json" beforeDir="false" afterPath="$PROJECT_DIR$/tests/spcache_collection_occurrences_lmtest.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/common/issue_definitions.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/common/lmconstants.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/broker/constants.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/common/s2n_type.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/broker/s2n_type.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/config/nginx.conf" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/flask_app/broker/address.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/broker/address.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/flask_app/broker/badge.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/broker/badge.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/flask_app/broker/base.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/broker/base.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/flask_app/broker/frontend.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/broker/frontend.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/flask_app/broker/manage.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/broker/manage.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/flask_app/broker/map.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/broker/map.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/flask_app/broker/name.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/broker/name.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/flask_app/broker/occ.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/broker/occ.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/flask_app/broker/resolve.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/broker/resolve.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/flask_app/broker/routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/broker/routes.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/flask_app/broker/stats.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/broker/stats.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/flask_app/templates/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/templates/index.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/flask_app/templates/swagger_ui.html" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/templates/swagger_ui.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/js_src/.eslintrc.js" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/js_src/.eslintrc.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/js_src/.stylelintrc.js" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/js_src/.stylelintrc.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/js_src/css/frontend.css" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/js_src/css/frontend.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/js_src/css/header.css" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/js_src/css/header.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/js_src/css/leaflet.css" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/js_src/css/leaflet.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/js_src/css/loader.css" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/js_src/css/loader.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/js_src/css/main.css" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/js_src/css/main.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/js_src/css/response.css" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/js_src/css/response.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/js_src/css/slider.css" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/js_src/css/slider.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/js_src/css/stats.css" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/js_src/css/stats.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/js_src/css/table.css" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/js_src/css/table.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/js_src/lib/cache.ts" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/js_src/lib/cache.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/js_src/lib/cacheDefinitions.ts" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/js_src/lib/cacheDefinitions.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/js_src/lib/components/common.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/js_src/lib/components/common.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/js_src/lib/components/errorBoundary.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/js_src/lib/components/errorBoundary.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/js_src/lib/components/leaflet.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/js_src/lib/components/leaflet.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/js_src/lib/components/loading.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/js_src/lib/components/loading.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/js_src/lib/components/main.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/js_src/lib/components/main.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/js_src/lib/config.ts" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/js_src/lib/config.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/js_src/lib/frontend/components.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/js_src/lib/frontend/components.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/js_src/lib/frontend/config.ts" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/js_src/lib/frontend/config.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/js_src/lib/frontend/entry.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/js_src/lib/frontend/entry.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/js_src/lib/frontend/fieldMapper.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/js_src/lib/frontend/fieldMapper.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/js_src/lib/frontend/formatTable.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/js_src/lib/frontend/formatTable.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/js_src/lib/frontend/formatValue.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/js_src/lib/frontend/formatValue.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/js_src/lib/frontend/leaflet.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/js_src/lib/frontend/leaflet.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/js_src/lib/frontend/leafletOccurrence.ts" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/js_src/lib/frontend/leafletOccurrence.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/js_src/lib/frontend/leafletOverlays.ts" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/js_src/lib/frontend/leafletOverlays.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/js_src/lib/frontend/leafletProjection.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/js_src/lib/frontend/leafletProjection.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/js_src/lib/frontend/leafletReducer.ts" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/js_src/lib/frontend/leafletReducer.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/js_src/lib/frontend/leafletState.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/js_src/lib/frontend/leafletState.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/js_src/lib/frontend/occurrence.ts" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/js_src/lib/frontend/occurrence.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/js_src/lib/frontend/reducer.ts" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/js_src/lib/frontend/reducer.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/js_src/lib/frontend/reorderFields.ts" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/js_src/lib/frontend/reorderFields.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/js_src/lib/frontend/responseToTable.ts" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/js_src/lib/frontend/responseToTable.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/js_src/lib/frontend/state.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/js_src/lib/frontend/state.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/js_src/lib/frontend/utils.ts" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/js_src/lib/frontend/utils.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/js_src/lib/helper.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/js_src/lib/helper.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/js_src/lib/leaflet.ts" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/js_src/lib/leaflet.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/js_src/lib/leafletUtils.ts" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/js_src/lib/leafletUtils.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/js_src/lib/localization/common.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/js_src/lib/localization/common.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/js_src/lib/localization/frontend.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/js_src/lib/localization/frontend.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/js_src/lib/localization/stats.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/js_src/lib/localization/stats.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/js_src/lib/localization/utils.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/js_src/lib/localization/utils.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/js_src/lib/stats/components.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/js_src/lib/stats/components.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/js_src/lib/stats/config.ts" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/js_src/lib/stats/config.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/js_src/lib/stats/entry.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/js_src/lib/stats/entry.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/js_src/lib/stats/utils.ts" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/js_src/lib/stats/utils.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/js_src/lib/utils.ts" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/js_src/lib/utils.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/js_src/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/js_src/package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/js_src/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/js_src/package.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/js_src/tsconfig.eslint.json" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/js_src/tsconfig.eslint.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/js_src/tsconfig.json" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/js_src/tsconfig.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/js_src/webpack.config.js" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/js_src/webpack.config.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/static/icon/gbif_active-01.png" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/static/icon/gbif_active-01.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/static/icon/gbif_hover-01-01.png" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/static/icon/gbif_hover-01-01.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/static/icon/gbif_inactive-01.png" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/static/icon/gbif_inactive-01.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/static/icon/idigbio_colors_active-01.png" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/static/icon/idigbio_colors_active-01.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/static/icon/idigbio_colors_hover-01.png" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/static/icon/idigbio_colors_hover-01.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/static/icon/idigbio_colors_inactive-01.png" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/static/icon/idigbio_colors_inactive-01.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/static/icon/itis_active.png" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/static/icon/itis_active.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/static/icon/itis_hover.png" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/static/icon/itis_hover.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/static/icon/itis_inactive.png" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/static/icon/itis_inactive.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/static/icon/lm_active.png" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/static/icon/lm_active.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/static/icon/lm_hover-01.png" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/static/icon/lm_hover-01.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/static/icon/lm_inactive-01.png" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/static/icon/lm_inactive-01.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/static/icon/morpho_active-01.png" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/static/icon/morpho_active-01.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/static/icon/morpho_hover-01.png" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/static/icon/morpho_hover-01.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/static/icon/morpho_inactive-01.png" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/static/icon/morpho_inactive-01.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/static/icon/specify_network_active.png" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/static/icon/specify_network_active.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/static/icon/worms_active.png" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/static/icon/worms_active.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/static/img/full-screen.svg" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/static/img/full-screen.svg" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/static/img/specify_network_long.svg" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/static/img/specify_network_long.svg" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/static/img/specify_network_square.svg" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/static/img/specify_network_square.svg" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/static/schema/open_api.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/static/schema/open_api.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/templates.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/templates.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/frontend/templates/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/templates/index.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/services/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/services/index.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/services/public/css/style.css" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/services/public/css/style.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/services/public/js/gen.js" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/services/public/js/gen.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/tools/fileop/chunkfile.sh" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/fileop/chunkfile.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/tools/fileop/csvtools.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/fileop/csvtools.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/tools/fileop/geotools.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/fileop/geotools.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/tools/fileop/logtools.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/fileop/logtools.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/tools/fileop/readwrite.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/fileop/readwrite.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/tools/fileop/ready_file.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/fileop/ready_file.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/tools/fileop/split_providers.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/fileop/split_providers.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/tools/misc/attribute_object.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/misc/attribute_object.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/tools/misc/dwca.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/misc/dwca.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/tools/misc/gdalcompare.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/misc/gdalcompare.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/tools/misc/lm_solr.sh.in" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/misc/lm_solr.sh.in" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/tools/misc/lm_xml.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/misc/lm_xml.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/tools/misc/solr.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/misc/solr.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/tools/provider/api.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/provider/api.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/tools/provider/gbif.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/provider/gbif.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/tools/provider/idigbio.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/provider/idigbio.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/tools/provider/ipni.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/provider/ipni.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/tools/provider/itis.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/provider/itis.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/tools/provider/lifemapper.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/tools/provider/mopho.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/provider/mopho.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/tools/provider/specify.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/provider/specify.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/tools/provider/specify_resolver.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/provider/specify_resolver.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/tools/provider/worms.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/provider/worms.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lmtrex/tools/s2n/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/s2n/utils.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_specify_resolver/test_dwca.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_dwca.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/sp_cache_tests.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_cache/sp_cache_tests.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/spcache_collection_lmtest.json" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_cache/spcache_collection_lmtest.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/spcache_collection_occurrences_lmtest.json" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_cache/spcache_collection_occurrences_lmtest.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_post_data.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_post_data.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -169,11 +34,12 @@
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
-    "last_opened_file_path": "/home/astewart/git/lmtrex"
+    "last_opened_file_path": "/home/astewart/git/old_specify_cache"
   }
 }]]></component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/tests/test_cache" />
       <recent name="$PROJECT_DIR$/tests" />
       <recent name="$PROJECT_DIR$/sppy" />
       <recent name="$PROJECT_DIR$" />

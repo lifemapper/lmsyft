@@ -119,8 +119,14 @@ On a development server, check the following URL endpoints:
 * Resolver: https://localhost/resolve/
 * Broker: http://localhost/broker/ (and api/v1/address, api/v1/name, api/v1/occ ...)
 
-For local testing in a development environment, tests in the lm_tests directory 
+For local testing in a development environment, tests in the tests directory 
 require the lmtest module available at https://github.com/lifemapper/lmtest.
+
+Environment variables set in the Docker containers from the .env.conf file are 
+necessary to test containers from the host machine.
+
+Temp: Added these files to the local virtual python environment through the 
+bin/activate script there. 
 
 **Specify Network** homepage is now available at https://localhost/ and http://localhost.
 
@@ -188,8 +194,6 @@ docker compose  up -d
 
 
 ### Debug mode
-
-
 
 To run flask in debug mode, first setup virtual environment for python at the 
 top level of the repo, activate, then add dependencies from requirements.txt:
