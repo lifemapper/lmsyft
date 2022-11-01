@@ -2,8 +2,8 @@
 Testing
 ==============================
 
-Post data to Specify Cache
-Retrieve data through the Resolver
+Post data to Specify Cache: collection and specimen
+Retrieve data through the Resolver: specimen with identifier
 
 
 -----------------------------------

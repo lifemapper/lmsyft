@@ -1,34 +1,34 @@
 import os
+import json
+import requests
 
 import flask_app.sp_cache.solr_controller as app_solr
+from flask_app.sp_cache.models import Collection, SpecimenRecord
+from flask_app.sp_cache.config import (
+    COLLECTIONS_URL, SPECIMENS_URL, COLLECTION_BACKUP_PATH, DWCA_PATH,
+    PROCESSED_DWCA_PATH, ERROR_DWCA_PATH)
+
+from tests.test_cache.sp_cache_tests import SpCacheCollectionTest
+from tests.test_cache.sp_cache_tests import SpCacheCollectionOccurrencePostTest
+
+kui_coll_fname = "tests/test_data/kui_coll.json"
+kuit_coll_fname = "tests/test_data/kuit_coll.json"
+
+f = open(kui_coll_fname)
+kui = json.load(f)
+f.close()
+kui_coll = Collection(kui)
+conn = app_solr.get_collection_solr()
+resp = conn.add(kui_coll.serialize_json(), commit=True)
 
 
-# From Docker env_file for resolver and sp_cache containers
-SOLR_SERVER="http://localhost"
-SOLR_PORT=8983
-SECRET_KEY="dev"
-WORKING_DIRECTORY="/tmp/scratch-path"
+resp = app_solr.post_collection(kui_coll)
 
-COLLECTIONS_URL = '{}:{}/solr/sp_collections'.format(SOLR_SERVER, SOLR_PORT)
-SPECIMENS_URL = '{}:{}/solr/specimen_records'.format(SOLR_SERVER, SOLR_PORT)
-RESOLVER_URL = '{}:{}/solr/spcoco'.format(SOLR_SERVER, SOLR_PORT)
 
-COLLECTION_BACKUP_PATH = os.path.join(WORKING_DIRECTORY, "collections")
-DWCA_PATH = os.path.join(WORKING_DIRECTORY, "new_dwcas")
-PROCESSED_DWCA_PATH = os.path.join(WORKING_DIRECTORY, "processed_dwcas")
-ERROR_DWCA_PATH = os.path.join(WORKING_DIRECTORY, "error_dwcas")
 
-collection_id = 'test_collection'
-collection_data = {
-    'collection_id': collection_id,
-    'institution_name': 'test institution',
-    'last_updated': '2021-05-03T11:06:00Z',
-    'public_key': 'specify_pub_key',
-    'collection_location': 'Specify HQ',
-    'contact_name': 'Test User',
-    'contact_email': 'test@sfytorium.org',
-}
-app_solr.post_collection(collection_data)
-_ = app_solr.get_collection(collection_id)
-app_solr.delete_collection(collection_id)
-_ = app_solr.get_collection(collection_id)
+# _ = app_solr.get_collection(coll_id)
+# app_solr.delete_collection(coll_id)
+# _ = app_solr.get_collection(coll_id)
+
+# tst = SpCacheCollectionTest(coll_vals, endpt, do_verify=False)
+# tst.run_test()

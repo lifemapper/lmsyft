@@ -125,8 +125,15 @@ require the lmtest module available at https://github.com/lifemapper/lmtest.
 Environment variables set in the Docker containers from the .env.conf file are 
 necessary to test containers from the host machine.
 
-Temp: Added these files to the local virtual python environment through the 
-bin/activate script there. 
+**Temp solution:** Export these variables to the local environment in the python
+virtual environment activation script (bin/activate) script.
+
+```zsh
+export SOLR_SERVER="https://localhost"
+export SOLR_PORT=8983
+export SECRET_KEY="dev"
+export WORKING_DIRECTORY="scratch-path"
+```
 
 **Specify Network** homepage is now available at https://localhost/ and http://localhost.
 

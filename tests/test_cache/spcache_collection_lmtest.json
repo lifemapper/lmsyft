@@ -1,8 +1,8 @@
 {
-    "module": "tests.sp_cache_tests",
+    "module": "tests.test_cache.sp_cache_tests",
     "test_class": "SpCacheCollectionTest",
     "parameters": {
-        "collection_endpoint": "",
+        "collection_endpoint": "https://localhost/api/v1/sp_cache/collection",
         "collection_values_json": {
             "collection_name": "test collection",
             "institution_name": "Lifemapper's house of tests",
