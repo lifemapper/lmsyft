@@ -9,7 +9,7 @@ from flask_app.sp_cache.models import SpecimenRecord
 # Try using results_cls parameter to get and post proper results
 
 # .....................................................................................
-def get_collection_solr():
+def get_collection_solr(do_verify=True):
     """Get solr connection to collections core.
 
     Returns:
@@ -18,7 +18,7 @@ def get_collection_solr():
     Todo:
         Incorporate this into flask better.
     """
-    return pysolr.Solr(COLLECTIONS_URL)
+    return pysolr.Solr(COLLECTIONS_URL, verify=do_verify)
 
 
 # .....................................................................................
@@ -35,13 +35,13 @@ def get_specimen_solr():
 
 
 # .....................................................................................
-def post_collection(collection):
+def post_collection(collection, do_verify=True):
     """Post a new collection.
 
     Args:
         collection (Collection): A Collection object to add to the solr index.
     """
-    collection_solr = get_collection_solr()
+    collection_solr = get_collection_solr(do_verify=do_verify)
     collection_solr.add(collection.serialize_json(), commit=True)
 
 

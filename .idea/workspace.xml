@@ -6,11 +6,13 @@
   <component name="ChangeListManager">
     <list default="true" id="7da7499e-1ec6-4bd7-974b-80f0bb5c6fdd" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/Dockerfile" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/docker-compose.yml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/sp_cache_tests.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_cache/sp_cache_tests.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/spcache_collection_lmtest.json" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_cache/spcache_collection_lmtest.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/spcache_collection_occurrences_lmtest.json" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_cache/spcache_collection_occurrences_lmtest.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flask_app/application.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/application.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flask_app/sp_cache/config.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/sp_cache/config.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flask_app/sp_cache/solr_controller.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/sp_cache/solr_controller.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_data/kui_coll.json" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_data/kui_coll.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_data/kuit_coll.json" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_data/kuit_coll.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tests/test_post_data.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_post_data.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -34,10 +36,14 @@
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
-    "last_opened_file_path": "/home/astewart/git/old_specify_cache"
+    "last_opened_file_path": "/home/astewart/git/old_specify_cache",
+    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable"
   }
 }]]></component>
   <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/tests" />
+    </key>
     <key name="MoveFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/tests/test_cache" />
       <recent name="$PROJECT_DIR$/tests" />
@@ -66,5 +72,26 @@
         </entry>
       </map>
     </option>
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/tests/test_post_data.py</url>
+          <line>34</line>
+          <option name="timeStamp" value="1" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/tests/test_post_data.py</url>
+          <line>21</line>
+          <option name="timeStamp" value="2" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/tests/test_post_data.py</url>
+          <line>44</line>
+          <option name="timeStamp" value="3" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
 </project>

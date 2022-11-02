@@ -14,6 +14,10 @@ RUN mkdir -p /home/specify \
 
 RUN mkdir -p /scratch-path/log \
  && mkdir -p /scratch-path/sessions \
+ && mkdir -p /scratch-path/collections')
+ && mkdir -p /scratch-path/new_dwcas')
+PROCESSED_DWCA_PATH = os.path.join(WORKING_DIRECTORY, 'processed_dwcas')
+ERROR_DWCA_PATH = os.path.join(WORKING_DIRECTORY, 'error_dwcas')
  && chown -R specify.specify /scratch-path
 
 WORKDIR /home/specify
