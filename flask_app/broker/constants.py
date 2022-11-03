@@ -35,38 +35,38 @@ SCHEMA_FNAME = 'open_api.yaml'
 
 ICON_CONTENT = 'image/png'
     
-# .............................................................................
-class DWC:
-    QUALIFIER = 'dwc:'
-    URL = 'http://rs.tdwg.org/dwc'
-    SCHEMA = 'http://rs.tdwg.org/dwc.json'
-    RECORD_TITLE = 'digital specimen object'
-
-# .............................................................................
-class DWCA:
-    NS = '{http://rs.tdwg.org/dwc/text/}'
-    META_FNAME = 'meta.xml'
-    DATASET_META_FNAME = 'eml.xml'
-    # Meta.xml element/attribute keys
-    DELIMITER_KEY = 'fieldsTerminatedBy'
-    LINE_DELIMITER_KEY = 'linesTerminatedBy'
-    QUOTE_CHAR_KEY = 'fieldsEnclosedBy'
-    LOCATION_KEY = 'location'
-    UUID_KEY = 'id'
-    FLDMAP_KEY = 'fieldname_index_map'
-    FLDS_KEY = 'fieldnames'
-    CORE_FIELDS_OF_INTEREST = [
-        'id',
-        'institutionCode',
-        'collectionCode',
-        'datasetName',
-        'basisOfRecord',
-        'year',
-        'month',
-        'day']
-    # Human readable
-    CORE_TYPE = '{}/terms/Occurrence'.format(DWC.URL)
-
+# # .............................................................................
+# class DWC:
+#     QUALIFIER = 'dwc:'
+#     URL = 'http://rs.tdwg.org/dwc'
+#     SCHEMA = 'http://rs.tdwg.org/dwc.json'
+#     RECORD_TITLE = 'digital specimen object'
+#
+# # .............................................................................
+# class DWCA:
+#     NS = '{http://rs.tdwg.org/dwc/text/}'
+#     META_FNAME = 'meta.xml'
+#     DATASET_META_FNAME = 'eml.xml'
+#     # Meta.xml element/attribute keys
+#     DELIMITER_KEY = 'fieldsTerminatedBy'
+#     LINE_DELIMITER_KEY = 'linesTerminatedBy'
+#     QUOTE_CHAR_KEY = 'fieldsEnclosedBy'
+#     LOCATION_KEY = 'location'
+#     UUID_KEY = 'id'
+#     FLDMAP_KEY = 'fieldname_index_map'
+#     FLDS_KEY = 'fieldnames'
+#     CORE_FIELDS_OF_INTEREST = [
+#         'id',
+#         'institutionCode',
+#         'collectionCode',
+#         'datasetName',
+#         'basisOfRecord',
+#         'year',
+#         'month',
+#         'day']
+#     # Human readable
+#     CORE_TYPE = '{}/terms/Occurrence'.format(DWC.URL)
+#
 JSON_HEADERS = {'Content-Type': 'application/json'}
 
 
@@ -78,8 +78,8 @@ class TST_VALUES:
 
     SPECIFY_RSS = 'https://ichthyology.specify.ku.edu/export/rss/'
     SPECIFY_URLS = [
-    'https://ichthyology.specify.ku.edu/static/depository/export_feed/kui-dwca.zip',
-    'https://ichthyology.specify.ku.edu/static/depository/export_feed/kuit-dwca.zip'
+    'http://ichthyology.specify.ku.edu/static/depository/export_feed/kui-dwca.zip',
+    'http://ichthyology.specify.ku.edu/static/depository/export_feed/kuit-dwca.zip'
     ]
 
     DS_GUIDS_W_SPECIFY_ACCESS_RECS = [

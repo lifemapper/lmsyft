@@ -3,17 +3,19 @@ import csv
 import glob
 import io
 import os
+import re
 import requests
 import shutil
 import xml.etree.ElementTree as ET
 import zipfile
 
-import flask_app.sp_cache.solr_controller as controller
+import flask_app.sp_cache.solr_controller as solr
 import flask_app.sp_cache.config as config
 
-
+DEFAULT_EML_FILENAME = "eml.xml"
 DEFAULT_META_FILENAME = 'meta.xml'
 DEFAULT_NAMESPACE = 'http://rs.tdwg.org/dwc/terms/'
+ALTERNATE_NAMESPACES = ["http://purl.org/dc/terms/license"]
 TARGET_NAMESPACE = '{http://rs.tdwg.org/dwc/text/}'
 CSV_PARAMS = [
     ('delimiter', 'fieldsTerminatedBy'),
@@ -32,11 +34,62 @@ VALIDATE_KEYS = {
     'decimallongitude': float
 }
 
-SERVER_URL = os.environ['FQDN']
-RESOLVER_ENDPOINT_URL = '{}/api/v1/resolve'.format(SERVER_URL)
+# .............................................................................
+class DWC:
+    QUALIFIER = 'dwc:'
+    URL = 'http://rs.tdwg.org/dwc'
+    SCHEMA = 'http://rs.tdwg.org/dwc.json'
+    RECORD_TITLE = 'digital specimen object'
+
+# .............................................................................
+class DWCA:
+    NS = '{http://rs.tdwg.org/dwc/text/}'
+    META_FNAME = 'meta.xml'
+    DATASET_META_FNAME = 'eml.xml'
+    # Meta.xml element/attribute keys
+    DELIMITER_KEY = 'fieldsTerminatedBy'
+    LINE_DELIMITER_KEY = 'linesTerminatedBy'
+    QUOTE_CHAR_KEY = 'fieldsEnclosedBy'
+    LOCATION_KEY = 'location'
+    UUID_KEY = 'id'
+    FLDMAP_KEY = 'fieldname_index_map'
+    FLDS_KEY = 'fieldnames'
+    CORE_FIELDS_OF_INTEREST = [
+        'id',
+        'institutionCode',
+        'collectionCode',
+        'datasetName',
+        'basisOfRecord',
+        'year',
+        'month',
+        'day']
+    # Human readable
+    CORE_TYPE = '{}/terms/Occurrence'.format(DWC.URL)
+
+JSON_HEADERS = {'Content-Type': 'application/json'}
+
+RESOLVER_ENDPOINT_URL = '{}/api/v1/resolve'.format(config.SERVER_URL)
 SOLR_POST_LIMIT = 1000
 # Valid fields for identifier in reverse preference order (best option last)
 VALID_IDENTIFIERS = ['occurrenceID', 'globaluniqueidentifier']
+
+# .....................................................................................
+def is_valid_guid(str):
+    # Regex to check valid GUID (Globally Unique Identifier)
+    regex = "^[{]?[0-9a-fA-F]{8}" + "-([0-9a-fA-F]{4}-)" + "{3}[0-9a-fA-F]{12}[}]?$"
+
+    # Compile the ReGex
+    p = re.compile(regex)
+
+    # If the string is empty, return false
+    if (str == None):
+        return False
+
+    # Return if the string matched the ReGex
+    if (re.search(p, str)):
+        return True
+    else:
+        return False
 
 
 # .....................................................................................
@@ -64,7 +117,7 @@ def post_results(post_recs, collection_id, mod_time):
             these records.
         mod_time (tuple): A tuple of year, month, day modification time.
     """
-    _ = controller.update_collection_occurrences(collection_id, post_recs)
+    _ = solr.update_collection_occurrences(collection_id, post_recs)
     resolver_recs = []
     for rec in post_recs:
         try:
@@ -77,7 +130,7 @@ def post_results(post_recs, collection_id, mod_time):
                     'what': rec.get('basisOfRecord', 'unknown'),
                     'when': '{}-{}-{}'.format(*mod_time),
                     'url': '{}api/v1/sp_cache/collection/{}/occurrences/{}'.format(
-                        SERVER_URL,
+                        config.SERVER_URL,
                         collection_id,
                         rec['id']
                      )
@@ -87,6 +140,32 @@ def post_results(post_recs, collection_id, mod_time):
             pass
     resolver_response = requests.post(RESOLVER_ENDPOINT_URL, json=resolver_recs)
     print(resolver_response)
+
+
+# ......................................................
+def read_dataset_uuid(eml_contents):
+    idstr = None
+    tree = ET.fromstring(eml_contents)
+    root = tree.getroot()
+    elt = root.find('dataset')
+    id_elts = elt.findall('alternateIdentifier')
+    for ie in id_elts:
+        idstr = ie.text
+        if is_valid_guid(idstr):
+            break
+    return idstr
+
+# .....................................................................................
+def get_short_fieldname(term):
+    short_fld = term
+    if term.startswith(DEFAULT_NAMESPACE):
+        short_fld = term.split(DEFAULT_NAMESPACE)[1]
+    else:
+        for ns in ALTERNATE_NAMESPACES:
+            if term.startswith(ns):
+                short_fld = term.split(ns)[1]
+                break
+    return short_fld
 
 
 # .....................................................................................
@@ -124,9 +203,8 @@ def process_meta_xml(meta_contents):
     for field_el in core_el.findall(get_full_tag('field')):
         # Process field
         if 'index' in field_el.attrib.keys():
-            fields[
-                int(field_el.attrib['index'])
-            ] = field_el.attrib['term'].split(DEFAULT_NAMESPACE)[1]
+            term = get_short_fieldname(field_el.attrib['term'])
+            fields[int(field_el.attrib['index'])] = term
         else:
             constants.append((field_el.attrib['term'], field_el.attrib['default']))
     for id_el in core_el.findall(get_full_tag('id')):
@@ -135,7 +213,7 @@ def process_meta_xml(meta_contents):
 
 
 # .....................................................................................
-def process_occurrence_file(
+def post_occurrence_file(
     occurrence_file,
     fields,
     my_params,
@@ -164,6 +242,10 @@ def process_occurrence_file(
         for ident_field in VALID_IDENTIFIERS:
             if ident_field in rec.keys() and len(rec[ident_field]) > 0:
                 rec['identifier'] = rec[ident_field]
+                # Add special identifier - concatenated collection ID + occurrence ID
+                # to handle replicated records between collections
+                rec[solr.specimen_identifier_fieldname] = \
+                    solr.assemble_specimen_identifier(collection_id, rec[ident_field])
         # Remove empty strings
         pop_keys = []
         for k in rec.keys():
@@ -173,6 +255,7 @@ def process_occurrence_file(
             rec.pop(k)
         if validate_rec(rec):
             solr_post_recs.append(rec)
+        # When reach the limit, post and clear the list
         if len(solr_post_recs) >= SOLR_POST_LIMIT:
             post_results(solr_post_recs, collection_id, mod_time)
             solr_post_recs = []
@@ -181,8 +264,10 @@ def process_occurrence_file(
 
 
 # .....................................................................................
-def process_dwca(dwca_filename, collection_id, meta_filename=DEFAULT_META_FILENAME):
-    """Process the Darwin Core Archive.
+def process_dwca(
+        dwca_filename, collection_id=None, meta_filename=DEFAULT_META_FILENAME,
+        eml_filename=DEFAULT_EML_FILENAME):
+    """Process the Darwin Core Archive, placed and renamed by the post API.
 
     Args:
         dwca_filename (str): A filename for a DarwinCore Archive file.
@@ -195,15 +280,17 @@ def process_dwca(dwca_filename, collection_id, meta_filename=DEFAULT_META_FILENA
     mod_time = time_parts[:3]
 
     with zipfile.ZipFile(dwca_filename) as zip_archive:
+        if collection_id is None:
+            eml_contents = zip_archive.read(eml_filename)
+            collection_id = read_dataset_uuid(eml_contents)
+
         meta_xml_contents = zip_archive.read(meta_filename)
         occurrence_filename, fields, my_params, csv_reader_params = process_meta_xml(
             meta_xml_contents
         )
-        process_occurrence_file(
+        post_occurrence_file(
             io.TextIOWrapper(
-                zip_archive.open(
-                    occurrence_filename, mode='r'
-                )
+                zip_archive.open(occurrence_filename, mode='r')
             ), fields, my_params, csv_reader_params, collection_id, mod_time
         )
 

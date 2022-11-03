@@ -1,55 +1,54 @@
-import os
+import datetime
+import glob
 import json
-import requests
-from flask import Blueprint, request
-from werkzeug.exceptions import NotFound
+import os
+from flask import request
 
 import flask_app.sp_cache.config as config
 import flask_app.sp_cache.models as models
-import flask_app.sp_cache.solr_controller as controller
+import flask_app.sp_cache.process_dwca as dwca_proc
+import flask_app.sp_cache.solr_controller as solr
 
-import flask_app.sp_cache.solr_controller as app_solr
-from flask_app.sp_cache.models import Collection, SpecimenRecord
-from flask_app.sp_cache.config import (
-    COLLECTIONS_URL, SPECIMENS_URL, COLLECTION_BACKUP_PATH, DWCA_PATH,
-    PROCESSED_DWCA_PATH, ERROR_DWCA_PATH)
+datadir = os.path.join(os.getcwd(), "test_data")
 
-from tests.test_cache.sp_cache_tests import SpCacheCollectionTest
-from tests.test_cache.sp_cache_tests import SpCacheCollectionOccurrencePostTest
-pwd = os.getcwd()
+tst_collections = [
+    (os.path.join(datadir, "kui_coll.json"), os.path.join(datadir, "kui-dwca.zip")),
+    (os.path.join(datadir, "kuit_coll.json"), os.path.join(datadir, "kuit-dwca.zip"))
+]
 
-kui_coll_fname = os.path.join(pwd, "test_data/kui_coll.json")
-kuit_coll_fname = os.path.join(pwd, "test_data/kuit_coll.json")
+# .....................................................................................
+def test_post_get_collection():
+    """Test post collection function."""
+    for meta_fname, dwca_fname in tst_collections:
+        f = open(meta_fname)
+        collection_json = json.load(f)
+        f.close()
 
+        collection_id = collection_json['collection_id']
+        collection = models.Collection(collection_json)
+        solr.post_collection(collection)
+        retval = solr.get_collection(collection_id)
 
-f = open(kui_coll_fname)
-collection_json = json.load(f)
-f.close()
+        dwca_proc.process_dwca(dwca_fname, collection_id=collection_id)
 
-# kui_coll = Collection(kui)
-# conn = app_solr.get_collection_solr()
-# resp = conn.add(kui_coll.serialize_json(), commit=True)
-# resp = app_solr.post_collection(kui_coll)
+# .....................................................................................
+def test_submit_dwca():
+    """Test various specimen operations."""
+    for coll_id, dwca_fname in tst_collections:
+        dwca_proc.process_dwca(dwca_fname, collection_id=coll_id)
 
-# collection_json = request.get_json(force=True)
-collection = models.Collection(collection_json)
-controller.post_collection(collection, do_verify=False)
-
-
-# Write collection information backup file
-collection_id = collection.attributes['collection_id']
-collection_filename = os.path.join(
-    config.COLLECTION_BACKUP_PATH, '{}.json'.format(collection_id)
-)
-
-with open(collection_filename, mode='wt') as out_json:
-    json.dump(collection_json, out_json)
-print(controller.get_collection(collection_id).docs[0])
+# .....................................................................................
+def test_process_dwca():
+    """Test various specimen operations."""
+    dwca_proc.main()
 
 
-# _ = app_solr.get_collection(coll_id)
-# app_solr.delete_collection(coll_id)
-# _ = app_solr.get_collection(coll_id)
+# .....................................................................................
+def test_post_get_collection_occurrences():
+    """Test post collection function."""
+    pass
 
-# tst = SpCacheCollectionTest(coll_vals, endpt, do_verify=False)
-# tst.run_test()
+
+# .............................................................................
+if __name__ == '__main__':
+    test_post_get_collection()

@@ -41,11 +41,12 @@ def get_dwca_urls(rss_url, isIPT=False):
         link_key = 'link'
     datasets = {}
     api = APIQuery(rss_url)
-    api.query_by_get(output_type='xml')
+    api.query_by_get(output_type='xml', verify=False)
     # API should return XML as ElementTree element
     root = api.output
     elt = root.find('channel')
     ds_elts = elt.findall('item')
+    INCR_KEY = 0
     for delt in ds_elts:
         ds_id_elt = delt.find(ds_ident_key)
         url_elt = delt.find(link_key)

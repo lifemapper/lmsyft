@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<schema name="occurrences" version="1.5">
+	<field name="_version_" type="long" indexed="true" stored="true" />
+
+    <field name="identifier" type="string" indexed="true" stored="true" />
+	<field name="collection_id" type="string" indexed="true" stored="true" />
+	<field name="collection_occurrence_id" type="string" indexed="true" stored="true" />
+
+    <field name="accessRights" type="string" indexed="true" stored="true" />
+    <field name="basisOfRecord" type="string" indexed="true" stored="true" />
+    <field name="catalogNumber" type="string" indexed="true" stored="true" />
+    <field name="class" type="string" indexed="true" stored="true" />
+    <field name="collectionCode" type="string" indexed="true" stored="true" />
+    <field name="continent" type="string" indexed="true" stored="true" />
+    <field name="country" type="string" indexed="true" stored="true" />
+    <field name="county" type="string" indexed="true" stored="true" />
+    <field name="datasetName" type="string" indexed="true" stored="true" />
+    <field name="day" type="int" indexed="true" stored="true" />
+    <field name="decimalLatitude" type="float" indexed="true" stored="true" />
+    <field name="decimalLongitude" type="float" indexed="true" stored="true" />
+    <field name="eventDate" type="string" indexed="true" stored="true" />
+    <field name="family" type="string" indexed="true" stored="true" />
+    <field name="fieldnumber" type="string" indexed="true" stored="true" />
+    <field name="genus" type="string" indexed="true" stored="true" />
+    <field name="geodeticDatum" type="string" indexed="true" stored="true" />
+    <field name="globalUniqueIdentifier" type="string" indexed="true" stored="true" />
+    <field name="higherGeography" type="string" indexed="true" stored="true" />
+    <field name="institutionCode" type="string" indexed="true" stored="true" />
+    <field name="institutionID" type="string" indexed="true" stored="true" />
+    <field name="kingdom" type="string" indexed="true" stored="true" />
+    <field name="license" type="string" indexed="true" stored="true" />
+    <field name="locality" type="string" indexed="true" stored="true" />
+    <field name="modified" type="string" indexed="true" stored="true" />
+    <field name="month" type="int" indexed="true" stored="true" />
+    <field name="occurrenceID" type="string" indexed="true" stored="true" />
+    <field name="order" type="string" indexed="true" stored="true" />
+    <field name="phylum" type="string" indexed="true" stored="true" />
+    <field name="preparations" type="string" indexed="true" stored="true" />
+    <field name="recordedBy" type="string" indexed="true" stored="true" />
+    <field name="rights" type="string" indexed="true" stored="true" />
+    <field name="scientificName" type="string" indexed="true" stored="true" />
+    <field name="scientificNameAuthorship" type="string" indexed="true" stored="true" />
+    <field name="specificEpithet" type="string" indexed="true" stored="true" />
+    <field name="stateProvince" type="string" indexed="true" stored="true" />
+    <field name="year" type="int" indexed="true" stored="true" />
+    <field name="waterbody" type="string" indexed="true" stored="true" />
+
+    <!-- Extra specify field -->
+    <field name="id" type="string" indexed="true" stored="true" />
+
+    <uniqueKey>collection_occurrence_id</uniqueKey>
+
+    <!-- Field types -->
+	<fieldType name="string" class="solr.StrField" sortMissingLast="true" />
+	<fieldType name="float" class="solr.FloatPointField" />
+    <fieldType name="long" class="solr.LongPointField" />
+    <fieldType name="int" class="solr.IntPointField" />
+</schema>

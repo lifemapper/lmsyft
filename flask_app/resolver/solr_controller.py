@@ -8,6 +8,7 @@ from flask_app.resolver.config import RESOLVER_URL
 #    encoding and decoding so that it could work with the class directly rather than
 #    having a translation.  This pattern would be useful for all solr controllers
 
+
 # .....................................................................................
 def get_resolver_solr():
     """Get solr connection to resolver core.
