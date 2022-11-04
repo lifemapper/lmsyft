@@ -8,6 +8,19 @@ from flask_app.sp_cache.models import SpecimenRecord
 # Need an easy way to get solr classes
 # Try using results_cls parameter to get and post proper results
 
+
+# ......................................................
+def count_docs(solr_conn):
+    """Return the number of documents in the index for the Solr connection object.
+
+    solr_conn (pysolr.Solr): A solr connection object
+
+    Returns:
+        int: the number of objects in the solr index
+    """
+    retval = solr_conn.search("*:*")
+    return len(retval.docs)
+
 # .....................................................................................
 def get_collection_solr():
     """Get solr connection to collections core.

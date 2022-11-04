@@ -56,7 +56,7 @@ services:
       # See https://github.com/docker-solr/docker-solr/issues/188
       - bash
       - "-c"
-      - "precreate-core sp_collections /opt/solr/server/solr/sp_collections/conf; precreate-core spcoco /opt/solr/server/solr/spcoco/conf; precreate-core specimen_records /opt/solr/server/solr/specimen_records/conf; exec solr -f"
+      - "precreate-core sp_collections /opt/solr/server/solr/sp_collections/conf; precreate-core spcoco /opt/solr/server/solr/spcoco/conf; precreate-core specimen_records /opt/solr/server/solr/specimen_records/conf; precreate-core occurrences  /opt/solr/server/solr/occurrences/conf; exec solr -f"
     volumes:
       - './solr_cores/:/opt/solr/server/solr'
       - 'solr:/var/solr'

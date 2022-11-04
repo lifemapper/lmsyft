@@ -1,5 +1,6 @@
 """Process a Darwin Core Archive and add the data to the Specify Cache."""
 import csv
+import datetime
 import glob
 import io
 import os
@@ -72,6 +73,43 @@ RESOLVER_ENDPOINT_URL = '{}/api/v1/resolve'.format(config.SERVER_URL)
 SOLR_POST_LIMIT = 1000
 # Valid fields for identifier in reverse preference order (best option last)
 VALID_IDENTIFIERS = ['occurrenceID', 'globaluniqueidentifier']
+
+# .....................................................................................
+def parse_queue_filename(dwca_filename):
+    collection_id = None
+    method = None
+    date_string = None
+    mod_time = None
+    basename = os.path.basename(os.path.split(dwca_filename)[1])
+    if basename.startswith("collection") and dwca_filename.endswith(".zip"):
+        _, collection_id, method, date_string = basename.split("-")
+        time_parts = date_string.split("_")
+        # Year month day are the first three parts to time information
+        mod_time = time_parts[:3]
+    return collection_id, method, date_string, mod_time
+
+
+# .....................................................................................
+def create_queue_filename(method, collection_id):
+    # Write data to file system for another process to pick up and handle
+    now = datetime.datetime.now()
+    date_string = now.strftime("%Y_%m_%d_%H_%M_%S")
+    dwca_filename = os.path.join(
+        config.DWCA_PATH, "collection-{}-{}-{}.zip".format(
+            collection_id, method, date_string
+        )
+    )
+    return dwca_filename
+
+
+# .....................................................................................
+def move_to_queue(method, collection_id, data):
+    # Write data to file system for another process to pick up and handle
+    dwca_filename = create_queue_filename(method, collection_id)
+    with open(dwca_filename, mode='wb') as dwca_out:
+        dwca_out.write(data)
+    return dwca_filename
+
 
 # .....................................................................................
 def is_valid_guid(str):
@@ -274,15 +312,16 @@ def process_dwca(
         collection_id (str): An identifier for the collection containing these data.
         meta_filename (str): A file contained in the archive containing metadata.
     """
-    # Get the last segment which should contain time information
-    time_parts = dwca_filename.split('-post-')[-1].split('_')
-    # Year month day are the first three parts to time information
-    mod_time = time_parts[:3]
+    collection_id, _, _, mod_time = parse_queue_filename(dwca_filename)
+    if mod_time is None:
+        datestr = datetime.datetime.now().strftime("%Y_%m_%d")
+        mod_time = datestr.split("_")
 
     with zipfile.ZipFile(dwca_filename) as zip_archive:
         if collection_id is None:
-            eml_contents = zip_archive.read(eml_filename)
-            collection_id = read_dataset_uuid(eml_contents)
+            if collection_id is None:
+                eml_contents = zip_archive.read(eml_filename)
+                collection_id = read_dataset_uuid(eml_contents)
 
         meta_xml_contents = zip_archive.read(meta_filename)
         occurrence_filename, fields, my_params, csv_reader_params = process_meta_xml(
