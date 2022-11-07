@@ -55,8 +55,8 @@ def sp_cache_collection_post():
 
 
 # .....................................................................................
-@bp.route('/collection/<string:collection_id>', methods=['GET', 'PUT'])
-def sp_cache_collection_get_or_put(collection_id):
+@bp.route('/collection/<string:collection_id>', methods=['GET', 'PUT', "DELETE"])
+def sp_cache_collection_get_put_delete(collection_id):
     """Return information about a cached collection.
 
     Args:
@@ -68,13 +68,20 @@ def sp_cache_collection_get_or_put(collection_id):
     Raises:
         NotFound: Raised if the collection is not found.
     """
-    if request.method.lower() == 'put':
-        collection_json = request.get_json(force=True)
-        collection = models.Collection(collection_json)
-        solr.update_collection(collection)
-    collection = solr.get_collection(collection_id)
-    if collection.hits > 0:
-        return collection.docs[0]
+    if request.method.lower() == 'delete':
+        count = solr.count_occurrences_for_collection(collection_id)
+        if count == 0:
+            solr.delete_collection(collection_id)
+        else:
+            raise Exception(f"Collection {collection_id} contains {count} occurrences.")
+    else:
+        if request.method.lower() == 'put':
+            collection_json = request.get_json(force=True)
+            collection = models.Collection(collection_json)
+            solr.update_collection(collection)
+        collection = solr.get_collection(collection_id)
+        if collection.hits > 0:
+            return collection.docs[0]
     raise NotFound()
 
 
