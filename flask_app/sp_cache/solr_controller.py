@@ -21,6 +21,19 @@ def count_docs(solr_conn):
     retval = solr_conn.search("*:*")
     return len(retval.docs)
 
+# ......................................................
+def count_occurrences_for_collection(collection_id):
+    """Return the number of documents in the index for the Solr connection object.
+
+    solr_conn (pysolr.Solr): A solr connection object
+
+    Returns:
+        int: the number of objects in the solr index
+    """
+    solr_conn = get_specimen_solr()
+    retval = solr_conn.search(f"collection_id:{collection_id}")
+    return len(retval.docs)
+
 # .....................................................................................
 def get_collection_solr():
     """Get solr connection to collections core.
@@ -91,7 +104,7 @@ def update_collection(collection):
         collection (dict): Updated collection information that replaces old.
     """
     solr_coll = get_collection_solr()
-    retval = solr_coll.update(collection)
+    retval = solr_coll.update(collection, commit=True)
     return retval
 
 # .....................................................................................
