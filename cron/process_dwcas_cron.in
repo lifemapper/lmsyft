@@ -1,3 +1,4 @@
 # Run specify_cache dwca processing tool every 10 minutes
 #*/10 * * * * root docker exec specify_cache-sp_cache-1 python app/manage.py process_dwcas
-*/10 * * * * root docker exec specify_cache-sp_cache-1 python flask_app/sp_cache/manage.py
+
+*/10 * * * * root docker exec specify_cache-sp_cache-1 . venv/bin/activate; python flask_app/sp_cache/manage.py

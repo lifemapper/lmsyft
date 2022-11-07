@@ -73,10 +73,6 @@ openssl req \
   -keyout ~/self-signed-certificates/privkey.pem \
   -out ~/self-signed-certificates/fullchain.pem
   
-cd ./specify_cache/lmtrex/config
-ln -s ~/self-signed-certificates/privkey.pem
-ln -s ~/self-signed-certificates/fullchain.pem
-
 cd ./specify_cache/config
 ln -s ~/self-signed-certificates/privkey.pem
 ln -s ~/self-signed-certificates/fullchain.pem
