@@ -111,17 +111,29 @@ On a development server, check the following URL endpoints:
 
 * Index page: https://localhost
 * Solr http://localhost:8983/solr/#/
+
 * Specify Cache: 
-  * https://localhost/sp_cache/
-  * https://localhost/sp_cache/collection/test_collection
+  * https://localhost/sp_cache/api/v1/
+  * 
+  * https://localhost/sp_cache/api/v1/collection/
   * https://syftorium.org/api/v1/sp_cache/collection/052ab79f-416c-4d5e-bc1d-afbde6744589
   * https://syftorium.org/api/v1/sp_cache/collection/052ab79f-416c-4d5e-bc1d-afbde6744589/occurrences/2facc7a2-dd88-44af-b95a-733cc27527d4
+
 * Resolver: 
   * https://localhost/resolve/
+  * 
   * https://syftorium.org/api/v1/resolve/
   * https://syftorium.org/api/v1/resolve/2facc7a2-dd88-44af-b95a-733cc27527d4
+
 * Broker: 
-  * http://localhost/broker/ (and api/v1/address, api/v1/name, api/v1/occ ...)
+  * https://localhost/broker/api/v1/
+    * https://localhost/broker/api/v1/address/
+    * https://localhost/broker/api/v1/badge/
+    * https://localhost/broker/api/v1/name/
+    * https://localhost/broker/api/v1/occ/
+    * https://localhost/broker/api/v1/resolve/
+    * https://localhost/broker/api/v1/frontend/
+    * 
   * https://localhost/broker/api/v1/occ/?occid=a7156437-55ec-4c6f-89de-938f9361753d 
 
 For local testing in a development environment, tests in the tests directory 

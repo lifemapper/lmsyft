@@ -15,7 +15,7 @@ from sppy.tools.s2n.utils import get_traceback
 # .............................................................................
 class NameSvc(_S2nService):
     SERVICE_TYPE = APIService.Name
-    ORDERED_FIELDNAMES = S2nSchema.get_s2n_fields(APIService.Name['endpoint'])
+    ORDERED_FIELDNAMES = S2nSchema.get_s2n_fields(APIService.Name["endpoint"])
     
     # ...............................................
     @classmethod
@@ -25,8 +25,8 @@ class NameSvc(_S2nService):
         except Exception as e:
             traceback = get_traceback()
             output = GbifAPI.get_api_failure(
-                cls.SERVICE_TYPE['endpoint'], HTTPStatus.INTERNAL_SERVER_ERROR, 
-                errinfo={'error': [traceback]})
+                cls.SERVICE_TYPE["endpoint"], HTTPStatus.INTERNAL_SERVER_ERROR, 
+                errinfo={"error": [traceback]})
         else:
             output.set_value(S2nKey.RECORD_FORMAT, cls.SERVICE_TYPE[S2nKey.RECORD_FORMAT])
 
@@ -40,7 +40,7 @@ class NameSvc(_S2nService):
                     try:
                         taxon_key = namerec[keyfld]
                     except Exception as e:
-                        print('No usageKey for counting {} records'.format(namestr))
+                        print("No usageKey for counting {} records".format(namestr))
                     else:
                         # Add more info to each record
                         try:
@@ -54,7 +54,7 @@ class NameSvc(_S2nService):
                                 namerec[cntfld] = count_output.count
                             except Exception as e:
                                 traceback = get_traceback()
-                                output.append_value(S2nKey.ERRORS, {'error': traceback})
+                                output.append_value(S2nKey.ERRORS, {"error": traceback})
                             else:
                                 namerec[urlfld] = count_query
                                 prov_query_list.append(count_query)
@@ -71,8 +71,8 @@ class NameSvc(_S2nService):
         except Exception as e:
             traceback = get_traceback()
             output = IpniAPI.get_api_failure(
-                cls.SERVICE_TYPE['endpoint'], HTTPStatus.INTERNAL_SERVER_ERROR, 
-                errinfo={'error': [traceback]})
+                cls.SERVICE_TYPE["endpoint"], HTTPStatus.INTERNAL_SERVER_ERROR, 
+                errinfo={"error": [traceback]})
         else:
             output.set_value(S2nKey.RECORD_FORMAT, cls.SERVICE_TYPE[S2nKey.RECORD_FORMAT])
             output.format_records(cls.ORDERED_FIELDNAMES)
@@ -86,8 +86,8 @@ class NameSvc(_S2nService):
         except Exception as e:
             traceback = get_traceback()
             output = ItisAPI.get_api_failure(
-                cls.SERVICE_TYPE['endpoint'], HTTPStatus.INTERNAL_SERVER_ERROR, 
-                errinfo={'error': [traceback]})
+                cls.SERVICE_TYPE["endpoint"], HTTPStatus.INTERNAL_SERVER_ERROR, 
+                errinfo={"error": [traceback]})
         else:
             output.set_value(S2nKey.RECORD_FORMAT, cls.SERVICE_TYPE[S2nKey.RECORD_FORMAT])
             output.format_records(cls.ORDERED_FIELDNAMES)
@@ -101,8 +101,8 @@ class NameSvc(_S2nService):
         except Exception as e:
             traceback = get_traceback()
             output = WormsAPI.get_api_failure(
-                cls.SERVICE_TYPE['endpoint'], HTTPStatus.INTERNAL_SERVER_ERROR, 
-                errinfo={'error': [traceback]})
+                cls.SERVICE_TYPE["endpoint"], HTTPStatus.INTERNAL_SERVER_ERROR, 
+                errinfo={"error": [traceback]})
         else:
             output.set_value(S2nKey.RECORD_FORMAT, cls.SERVICE_TYPE[S2nKey.RECORD_FORMAT])
             output.format_records(cls.ORDERED_FIELDNAMES)
@@ -114,10 +114,10 @@ class NameSvc(_S2nService):
             cls, namestr, req_providers, is_accepted, gbif_count, kingdom):
         allrecs = []
         # for response metadata
-        query_term = ''
+        query_term = ""
         if namestr is not None:
-            query_term = 'namestr={}&provider={}&is_accepted={}&gbif_count={}&kingdom={}'.format(
-                namestr, ','.join(req_providers), is_accepted, gbif_count, kingdom)
+            query_term = "namestr={}&provider={}&is_accepted={}&gbif_count={}&kingdom={}".format(
+                namestr, ",".join(req_providers), is_accepted, gbif_count, kingdom)
             
         for pr in req_providers:
             # Address single record
@@ -143,7 +143,7 @@ class NameSvc(_S2nService):
         # Assemble
         prov_meta = cls._get_s2n_provider_response_elt(query_term=query_term)
         full_out = S2nOutput(
-            len(allrecs), cls.SERVICE_TYPE['endpoint'], provider=prov_meta, 
+            len(allrecs), cls.SERVICE_TYPE["endpoint"], provider=prov_meta, 
             records=allrecs, errors={})
 
         return full_out
@@ -159,7 +159,7 @@ class NameSvc(_S2nService):
             namestr: a scientific name
             provider: comma-delimited list of requested provider codes.  Codes are delimited
                 for each in lmtrex.common.lmconstants ServiceProvider
-            is_accepted: flag to indicate whether to limit to 'valid' or  'accepted' taxa 
+            is_accepted: flag to indicate whether to limit to "valid" or  "accepted" taxa 
                 in the ITIS or GBIF Backbone Taxonomy
             gbif_parse: flag to indicate whether to first use the GBIF parser to parse a 
                 scientific name into canonical name
@@ -182,7 +182,7 @@ class NameSvc(_S2nService):
                     gbif_parse=gbif_parse, gbif_count=gbif_count, kingdom=kingdom)
                 # Bad parameters
                 try:
-                    error_description = '; '.join(errinfo['error'])                            
+                    error_description = "; ".join(errinfo["error"])                            
                     raise BadRequest(error_description)
                 except:
                     pass
@@ -193,13 +193,13 @@ class NameSvc(_S2nService):
             try:
                 # Do Query!
                 output = cls._get_records(
-                    good_params['namestr'], good_params['provider'], good_params['is_accepted'], 
-                    good_params['gbif_count'], good_params['kingdom'])
+                    good_params["namestr"], good_params["provider"], good_params["is_accepted"], 
+                    good_params["gbif_count"], good_params["kingdom"])
 
                 # Add message on invalid parameters to output
                 try:
-                    for err in errinfo['warning']:
-                        output.append_error('warning', err)
+                    for err in errinfo["warning"]:
+                        output.append_error("warning", err)
                 except:
                     pass
 
@@ -211,17 +211,17 @@ class NameSvc(_S2nService):
             
 
 # .............................................................................
-if __name__ == '__main__':
+if __name__ == "__main__":
     pass
     # test_names = TST_VALUES.NAMES[0:4]
     test_names = [
-        'Notemigonus crysoleucas (Mitchill, 1814)',
-        # 'Artemisia ludoviciana',
-        # 'Mycteroperca microlepis',
-        # 'Plagiloecia patina Lamarck, 1816', 
-        # 'Poa annua',
-        # 'Gnatholepis cauerensis (Bleeker, 1853)', 
-        # 'Tulipa sylvestris']
+        "Notemigonus crysoleucas (Mitchill, 1814)",
+        "Artemisia ludoviciana",
+        "Mycteroperca microlepis",
+        "Plagiloecia patina Lamarck, 1816",
+        "Poa annua",
+        "Gnatholepis cauerensis (Bleeker, 1853)",
+        "Tulipa sylvestris"
     ]
     
     svc = NameSvc()

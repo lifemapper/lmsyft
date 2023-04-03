@@ -45,7 +45,7 @@ class ResolveSvc(_S2nService):
         except Exception as e:
             traceback = get_traceback()
             output = SpecifyResolverAPI.get_api_failure(
-                cls.SERVICE_TYPE['endpoint'], HTTPStatus.INTERNAL_SERVER_ERROR, 
+                cls.SERVICE_TYPE['endpoint'], HTTPStatus.INTERNAL_SERVER_ERROR,
                 errinfo={'error': [traceback]})
         return output.response
 
@@ -54,16 +54,16 @@ class ResolveSvc(_S2nService):
     def count_resolvable_specify_recs(cls):
         std_output = SpecifyResolverAPI.count_docs()
         return std_output.response
-    
+
 
     # ...............................................
     @classmethod
     def _get_records(cls, occid):
         allrecs = []
         query_term = 'occid={}'.format(occid)
-        # Address single record
-        sp_output = cls.resolve_specify_guid(occid)
-        allrecs.append(sp_output)
+        # # Address single record
+        # sp_output = cls.resolve_specify_guid(occid)
+        # allrecs.append(sp_output)
         # Assemble
         prov_meta = cls._get_s2n_provider_response_elt(query_term=query_term)
         full_out = S2nOutput(

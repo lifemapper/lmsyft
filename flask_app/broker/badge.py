@@ -30,20 +30,20 @@ class BadgeSvc(_S2nService):
             # ITIS
             elif provider == ServiceProvider.ITISSolr[S2nKey.PARAM]:
                 icon_fname = ServiceProvider.ITISSolr['icon'][icon_status]
-            # Lifemapper
-            elif provider == ServiceProvider.Lifemapper[S2nKey.PARAM]:
-                icon_fname = ServiceProvider.Lifemapper['icon'][icon_status]
+            # # Lifemapper
+            # elif provider == ServiceProvider.Lifemapper[S2nKey.PARAM]:
+            #     icon_fname = ServiceProvider.Lifemapper['icon'][icon_status]
             # MorphoSource
             elif provider == ServiceProvider.MorphoSource[S2nKey.PARAM]:
                 icon_fname = ServiceProvider.MorphoSource['icon'][icon_status]
-            # Specify
-            elif provider == ServiceProvider.Specify[S2nKey.PARAM]:
-                icon_fname = ServiceProvider.Specify['icon'][icon_status]
+            # # Specify
+            # elif provider == ServiceProvider.Specify[S2nKey.PARAM]:
+            #     icon_fname = ServiceProvider.Specify['icon'][icon_status]
             # WoRMS
             elif provider == ServiceProvider.WoRMS[S2nKey.PARAM]:
                 icon_fname = ServiceProvider.WoRMS['icon'][icon_status]
                 
-        except Exception as e:
+        except Exception:
             error_description = get_traceback()
             raise InternalServerError(error_description)
         
@@ -60,15 +60,19 @@ class BadgeSvc(_S2nService):
 
     # ...............................................
     @classmethod
-    def get_icon(cls, provider=None, icon_status=None, stream=True, app_path='', **kwargs):
+    def get_icon(
+            cls, provider=None, icon_status=None, stream=True, app_path='', **kwargs):
         """Get one icon to indicate a provider in a GUI
         
         Args:
-            provider: comma-delimited list of requested provider codes.  Codes are delimited
-                for each in lmtrex.common.lmconstants ServiceProvider
-            icon_status: string indicating which version of the icon to return, valid options are:
-                lmtrex.common.lmconstants.VALID_ICON_OPTIONS (active, inactive, hover) 
-            stream: If true, return a generator for streaming output, else return file contents.
+            provider: comma-delimited list of requested provider codes.  Codes are
+                delimited for each in lmtrex.common.lmconstants ServiceProvider
+            icon_status: string indicating which version of the icon to return,
+                valid options are:
+                    lmtrex.common.lmconstants.VALID_ICON_OPTIONS
+                    (active, inactive, hover)
+            stream: If true, return a generator for streaming output, else return file
+                contents.
             kwargs: any additional keyword arguments are ignored
 
         Return:
@@ -93,7 +97,8 @@ class BadgeSvc(_S2nService):
             error_description = get_traceback()
             raise InternalServerError(error_description)
 
-        icon_basename = cls._get_icon_filename(good_params['provider'], good_params['icon_status'])
+        icon_basename = cls._get_icon_filename(
+            good_params['provider'], good_params['icon_status'])
         icon_fname = os.path.join(app_path, ICON_DIR, icon_basename)
         
         if icon_fname is not None:
@@ -101,7 +106,8 @@ class BadgeSvc(_S2nService):
             image_binary = ifile.read()
             if stream:
                 return send_file(
-                    io.BytesIO(image_binary), mimetype=ICON_CONTENT, as_attachment=False)
+                    io.BytesIO(image_binary), mimetype=ICON_CONTENT,
+                    as_attachment=False)
             else:
                 return send_file(
                     io.BytesIO(image_binary), mimetype=ICON_CONTENT, as_attachment=True, 
@@ -117,11 +123,12 @@ class BadgeSvc(_S2nService):
             # else:
             #     if stream:
             #         return send_file(
-            #             io.BytesIO(image_binary), mimetype=ICON_CONTENT, as_attachment=False)
+            #             io.BytesIO(image_binary), mimetype=ICON_CONTENT,
+            #             as_attachment=False)
             #     else:
             #         return send_file(
-            #             io.BytesIO(image_binary), mimetype=ICON_CONTENT, as_attachment=True, 
-            #             attachment_filename=icon_fname)
+            #             io.BytesIO(image_binary), mimetype=ICON_CONTENT,
+            #             as_attachment=True, attachment_filename=icon_fname)
             # finally:
             #     ifile.close()
             
@@ -135,7 +142,7 @@ class BadgeSvc(_S2nService):
 if __name__ == '__main__':
     svc = BadgeSvc()
     # Get all providers
-    valid_providers = svc.get_valid_providers()
+    valid_providers = svc._get_valid_providers()
     for pr in valid_providers:
         for stat in VALID_ICON_OPTIONS:
             retval = svc.get_icon(provider=pr, icon_status=stat)

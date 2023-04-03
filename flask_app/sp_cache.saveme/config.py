@@ -23,7 +23,9 @@ except:
 
 COLLECTIONS_URL = '{}:{}/solr/sp_collections'.format(SOLR_SERVER, SOLR_PORT)
 SPECIMENS_URL = '{}:{}/solr/specimen_records'.format(SOLR_SERVER, SOLR_PORT)
-OCCURRENCES_URL = '{}:{}/solr/occurrences'.format(SOLR_SERVER, SOLR_PORT)
+# TODO: identifier collection_occurrence_id: concatenate collectionID and occurrenceID
+#       to handle duplicates from different collections
+# OCCURRENCES_URL = '{}:{}/solr/occurrences'.format(SOLR_SERVER, SOLR_PORT)
 
 COLLECTION_BACKUP_PATH = os.path.join(WORKING_DIRECTORY, 'collections')
 DWCA_PATH = os.path.join(WORKING_DIRECTORY, 'new_dwcas')

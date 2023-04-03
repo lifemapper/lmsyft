@@ -49,9 +49,6 @@ class _S2nService:
     def _order_providers(cls, provnames):
         provnames = list(provnames)
         provnames.sort()
-        if ServiceProvider.Specify[S2nKey.PARAM] in provnames:
-            provnames.remove(ServiceProvider.Specify[S2nKey.PARAM])
-            provnames.insert(0, ServiceProvider.Specify[S2nKey.PARAM])
         return provnames
     
     # ...............................................
@@ -60,9 +57,8 @@ class _S2nService:
         """ Return a list of strings indicating all providers valid for this service. 
         
         Note:
-            This returns a list of provider values.  If Specify Resolver is present, it will 
-            be first, all following providers are in alphabetical order.  The values are used 
-            as URL query parameters.  
+            This returns a list of provider values in alphabetical order.  The values
+            are used as URL query parameters.
         Note: 
             The order of these providers determines the order of records returned for 
             multi-provider responses. 
@@ -81,9 +77,8 @@ class _S2nService:
         """ Return a list of strings indicating all providers valid for this service. 
 
         Note:
-            This returns a list of provider values.  If Specify Resolver is present, it will 
-            be first, all following providers are in alphabetical order.  The values are used 
-            as URL query parameters.  
+            This returns a list of provider values in alphabetical order.  The values
+            are used as URL query parameters.
         Note: 
             The order of these providers determines the order of records returned for 
             multi-provider responses. 

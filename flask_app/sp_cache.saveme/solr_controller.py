@@ -1,7 +1,7 @@
 """Solr backend controller module for Specify Cache."""
 import pysolr
 
-from flask_app.sp_cache.config import COLLECTIONS_URL, OCCURRENCES_URL, SPECIMENS_URL
+from flask_app.sp_cache.config import COLLECTIONS_URL, SPECIMENS_URL
 from flask_app.sp_cache.models import SpecimenRecord
 
 
@@ -57,8 +57,8 @@ def get_specimen_solr():
     Todo:
         Incorporate this into flask better.
     """
-    return pysolr.Solr(OCCURRENCES_URL)
-    # return pysolr.Solr(SPECIMENS_URL)
+    # return pysolr.Solr(OCCURRENCES_URL)
+    return pysolr.Solr(SPECIMENS_URL)
 
 # .....................................................................................
 def assemble_specimen_identifier(collection_id, occurrence_id):

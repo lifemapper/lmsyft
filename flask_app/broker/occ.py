@@ -7,8 +7,8 @@ from flask_app.broker.s2n_type import (S2nKey, S2nOutput, S2nSchema, print_s2n_o
 from sppy.tools.provider.gbif import GbifAPI
 from sppy.tools.provider.idigbio import IdigbioAPI
 from sppy.tools.provider.mopho import MorphoSourceAPI
-from sppy.tools.provider.specify import SpecifyPortalAPI
-from sppy.tools.provider.specify_resolver import SpecifyResolverAPI
+# from sppy.tools.provider.specify import SpecifyPortalAPI
+# from sppy.tools.provider.specify_resolver import SpecifyResolverAPI
 
 from sppy.tools.s2n.utils import get_traceback
 
@@ -32,25 +32,25 @@ class OccurrenceSvc(_S2nService):
             provnames = set([ServiceProvider.GBIF[S2nKey.PARAM]])
         return provnames
 
-    # ...............................................
-    @classmethod
-    def _get_specify_records(cls, occid, count_only):
-        # Resolve for record URL
-        spark = SpecifyResolverAPI()
-
-        api_url = spark.resolve_guid_to_url(occid)
-                
-        try:
-            output = SpecifyPortalAPI.get_specify_record(occid, api_url, count_only)
-        except Exception as e:
-            traceback = get_traceback()
-            output = SpecifyPortalAPI.get_api_failure(
-                cls.SERVICE_TYPE['endpoint'], HTTPStatus.INTERNAL_SERVER_ERROR, 
-                errinfo={'error': [traceback]})
-        else:
-            output.set_value(S2nKey.RECORD_FORMAT, cls.SERVICE_TYPE[S2nKey.RECORD_FORMAT])
-            output.format_records(cls.ORDERED_FIELDNAMES)
-        return output.response
+    # # ...............................................
+    # @classmethod
+    # def _get_specify_records(cls, occid, count_only):
+    #     # Resolve for record URL
+    #     spark = SpecifyResolverAPI()
+    #
+    #     api_url = spark.resolve_guid_to_url(occid)
+    #
+    #     try:
+    #         output = SpecifyPortalAPI.get_specify_record(occid, api_url, count_only)
+    #     except Exception as e:
+    #         traceback = get_traceback()
+    #         output = SpecifyPortalAPI.get_api_failure(
+    #             cls.SERVICE_TYPE['endpoint'], HTTPStatus.INTERNAL_SERVER_ERROR,
+    #             errinfo={'error': [traceback]})
+    #     else:
+    #         output.set_value(S2nKey.RECORD_FORMAT, cls.SERVICE_TYPE[S2nKey.RECORD_FORMAT])
+    #         output.format_records(cls.ORDERED_FIELDNAMES)
+    #     return output.response
 
     # ...............................................
     @classmethod
@@ -112,7 +112,7 @@ class OccurrenceSvc(_S2nService):
         query_term = None
         provstr = ','.join(req_providers)
         if occid is not None:
-            query_term = 'occid={}&provider={}&count_only={}'.format(occid, provstr, count_only)
+            query_term = f"occid={occid}&provider={provstr}&count_only={count_only}"
         elif gbif_dataset_key:
             try:
                 query_term = 'gbif_dataset_key={}&provider={}&count_only={}'.format(gbif_dataset_key, provstr, count_only)
@@ -135,9 +135,9 @@ class OccurrenceSvc(_S2nService):
                     mopho_output = cls._get_mopho_records(occid, count_only)
                     allrecs.append(mopho_output)
                 # Specify
-                elif pr == ServiceProvider.Specify[S2nKey.PARAM]:
-                    sp_output = cls._get_specify_records(occid, count_only)
-                    allrecs.append(sp_output)
+                # elif pr == ServiceProvider.Specify[S2nKey.PARAM]:
+                #     sp_output = cls._get_specify_records(occid, count_only)
+                #     allrecs.append(sp_output)
             # Filter by parameters
             elif gbif_dataset_key:
                 if pr == ServiceProvider.GBIF[S2nKey.PARAM]:
@@ -210,7 +210,7 @@ class OccurrenceSvc(_S2nService):
 
 # .............................................................................
 if __name__ == '__main__':
-    from lmtrex.common.lmconstants import TST_VALUES
+    # from flask_app.broker.constants import import TST_VALUES
     # occids = TST_VALUES.GUIDS_WO_SPECIFY_ACCESS[0:3]
     occids = ['84fe1494-c378-4657-be15-8c812b228bf4', 
               '04c05e26-4876-4114-9e1d-984f78e89c15', 
@@ -227,7 +227,10 @@ if __name__ == '__main__':
     
     svc = OccurrenceSvc()
     out = svc.get_endpoint()
-    
+    out = svc.get_occurrence_records(occid="a7156437-55ec-4c6f-89de-938f9361753d")
+
+    print(out)
+
     for occid in occids:
         out = svc.get_occurrence_records(occid=occid, provider=None, count_only=False)
         outputs = out['records']

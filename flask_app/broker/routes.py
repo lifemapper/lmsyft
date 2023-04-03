@@ -3,13 +3,13 @@ import os
 
 from flask_app.broker.constants import (
     TEMPLATE_DIR, STATIC_DIR, SCHEMA_DIR, SCHEMA_FNAME, S2nEndpoint)
-from flask_app.broker.address import AddressSvc
+# from flask_app.broker.address import AddressSvc
 from flask_app.broker.badge import BadgeSvc
 from flask_app.broker.frontend import FrontendSvc
-from flask_app.broker.map import MapSvc
+# from flask_app.broker.map import MapSvc
 from flask_app.broker.name import NameSvc
 from flask_app.broker.occ import OccurrenceSvc
-from flask_app.broker.resolve import ResolveSvc
+# from flask_app.broker.resolve import ResolveSvc
 from flask_app.broker.stats import StatsSvc
 
 # downloadable from <baseurl>/static/schema/open_api.yaml
@@ -63,11 +63,11 @@ def display_raw_schema():
 def swagger_ui():
     return render_template('swagger_ui.html')
 
-# .....................................................................................
-@bp.route("/address")
-def address_endpoint():
-    response = AddressSvc.get_endpoint()
-    return response
+# # .....................................................................................
+# @bp.route("/address")
+# def address_endpoint():
+#     response = AddressSvc.get_endpoint()
+#     return response
 
 # .....................................................................................
 @bp.route("/badge/")
@@ -94,43 +94,43 @@ def badge_get(provider):
         provider=provider, icon_status=icon_status, stream=stream, app_path=app.root_path)
     return response
 
-# .....................................................................................
-@bp.route("/map/")
-def map_endpoint():
-    name_arg = request.args.get('namestr', default = None, type = str)
-    provider = request.args.get('provider', default = None, type = str)
-    is_accepted = request.args.get('is_accepted', default = 'True', type = str)
-    gbif_parse = request.args.get('gbif_parse', default = 'True', type = str)
-    scenariocode = request.args.get('scenariocode', default = None, type = str)
-    color = request.args.get('color', default = 'red', type = str)
-    if name_arg is None:
-        response = MapSvc.get_endpoint()
-    else:
-        response = NameSvc.get_name_records(
-            namestr=name_arg, provider=provider, is_accepted=is_accepted, gbif_parse=gbif_parse,
-            scenariocode=scenariocode, color=color)
-    return response
-
-# .....................................................................................
-@bp.route('/map/<string:namestr>', methods=['GET'])
-def map_get(namestr):
-    """Get map layer records from available providers.
-
-    Args:
-        namestr (str): A scientific name to search for among map providers.
-
-    Returns:
-        dict: A dictionary of metadata for the requested record.
-    """
-    provider = request.args.get('provider', default = None, type = str)
-    is_accepted = request.args.get('is_accepted', default = 'True', type = str)
-    gbif_parse = request.args.get('gbif_parse', default = 'True', type = str)
-    scenariocode = request.args.get('scenariocode', default = None, type = str)
-    color = request.args.get('color', default = 'red', type = str)
-    response = MapSvc.get_map_meta(
-        namestr=namestr, provider=provider, is_accepted=is_accepted, gbif_parse=gbif_parse,
-        scenariocode=scenariocode, color=color)
-    return response
+# # .....................................................................................
+# @bp.route("/map/")
+# def map_endpoint():
+#     name_arg = request.args.get('namestr', default = None, type = str)
+#     provider = request.args.get('provider', default = None, type = str)
+#     is_accepted = request.args.get('is_accepted', default = 'True', type = str)
+#     gbif_parse = request.args.get('gbif_parse', default = 'True', type = str)
+#     scenariocode = request.args.get('scenariocode', default = None, type = str)
+#     color = request.args.get('color', default = 'red', type = str)
+#     if name_arg is None:
+#         response = MapSvc.get_endpoint()
+#     else:
+#         response = NameSvc.get_name_records(
+#             namestr=name_arg, provider=provider, is_accepted=is_accepted, gbif_parse=gbif_parse,
+#             scenariocode=scenariocode, color=color)
+#     return response
+#
+# # .....................................................................................
+# @bp.route('/map/<string:namestr>', methods=['GET'])
+# def map_get(namestr):
+#     """Get map layer records from available providers.
+#
+#     Args:
+#         namestr (str): A scientific name to search for among map providers.
+#
+#     Returns:
+#         dict: A dictionary of metadata for the requested record.
+#     """
+#     provider = request.args.get('provider', default = None, type = str)
+#     is_accepted = request.args.get('is_accepted', default = 'True', type = str)
+#     gbif_parse = request.args.get('gbif_parse', default = 'True', type = str)
+#     scenariocode = request.args.get('scenariocode', default = None, type = str)
+#     color = request.args.get('color', default = 'red', type = str)
+#     response = MapSvc.get_map_meta(
+#         namestr=namestr, provider=provider, is_accepted=is_accepted, gbif_parse=gbif_parse,
+#         scenariocode=scenariocode, color=color)
+#     return response
 
 # .....................................................................................
 @bp.route("/name/")
@@ -204,29 +204,29 @@ def occ_get(identifier):
         occid=identifier, provider=provider, gbif_dataset_key=gbif_dataset_key, count_only=count_only)
     return response
 
-# .....................................................................................
-@bp.route("/resolve/")
-def resolve_endpoint():
-    response = ResolveSvc.get_endpoint()
-    return response
-
-# .....................................................................................
-@bp.route('/resolve/<string:identifier>', methods=['GET'])
-def resolve_get(identifier):
-    """Get a Specify GUID resolution record from the Specify Resolver.
-    Args:
-        identifier (str): An occurrence identifier to search for among the Specify Cache of
-        registered Specify records.
-
-    Returns:
-        dict: A dictionary of metadata including a direct URL for the requested record.
-    """
-    # response = OccurrenceSvc.get_occurrence_records(occid='identifier')
-    occ_arg = request.args.get('occid', default = None, type = str)
-    if occ_arg is not None:
-        identifier = occ_arg
-    response = ResolveSvc.get_guid_resolution(occid=identifier)
-    return response
+# # .....................................................................................
+# @bp.route("/resolve/")
+# def resolve_endpoint():
+#     response = ResolveSvc.get_endpoint()
+#     return response
+#
+# # .....................................................................................
+# @bp.route('/resolve/<string:identifier>', methods=['GET'])
+# def resolve_get(identifier):
+#     """Get a Specify GUID resolution record from the Specify Resolver.
+#     Args:
+#         identifier (str): An occurrence identifier to search for among the Specify Cache of
+#         registered Specify records.
+#
+#     Returns:
+#         dict: A dictionary of metadata including a direct URL for the requested record.
+#     """
+#     # response = OccurrenceSvc.get_occurrence_records(occid='identifier')
+#     occ_arg = request.args.get('occid', default = None, type = str)
+#     if occ_arg is not None:
+#         identifier = occ_arg
+#     response = ResolveSvc.get_guid_resolution(occid=identifier)
+#     return response
 
 # .....................................................................................
 @bp.route("/stats/")
