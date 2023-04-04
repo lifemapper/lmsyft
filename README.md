@@ -275,3 +275,32 @@ You can setup a cron job to process pending DWCAs.
 See `./cron/process_dwcas_cron.in`.
 
 Note, you many need to modify `sp_cache-1` to reflect your container name.
+
+
+# Local development setup
+
+## Installing dependencies
+* 
+* Create a virtual environment and install python libs there
+
+## Troubleshooting 
+* pip errors with SSL
+
+```commandline
+pip install --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org ~/git/lmpy
+```
+
+* pre-commit errors with self-signed certificate
+  * turn off verification (but this leaves you open to man-in-the-middle attacks)
+
+```commandline
+git config --global http.sslVerify false
+
+```
+
+  * turn on again with 
+
+```commandline
+git config --global http.sslVerify true
+
+```

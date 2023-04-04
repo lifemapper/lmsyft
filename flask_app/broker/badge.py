@@ -23,25 +23,25 @@ class BadgeSvc(_S2nService):
         try:
             # GBIF
             if provider == ServiceProvider.GBIF[S2nKey.PARAM]:
-                icon_fname = ServiceProvider.GBIF['icon'][icon_status]
+                icon_fname = ServiceProvider.GBIF["icon"][icon_status]
             # iDigBio
             elif provider == ServiceProvider.iDigBio[S2nKey.PARAM]:
-                icon_fname = ServiceProvider.iDigBio['icon'][icon_status]
+                icon_fname = ServiceProvider.iDigBio["icon"][icon_status]
             # ITIS
             elif provider == ServiceProvider.ITISSolr[S2nKey.PARAM]:
-                icon_fname = ServiceProvider.ITISSolr['icon'][icon_status]
+                icon_fname = ServiceProvider.ITISSolr["icon"][icon_status]
             # # Lifemapper
             # elif provider == ServiceProvider.Lifemapper[S2nKey.PARAM]:
-            #     icon_fname = ServiceProvider.Lifemapper['icon'][icon_status]
+            #     icon_fname = ServiceProvider.Lifemapper["icon"][icon_status]
             # MorphoSource
             elif provider == ServiceProvider.MorphoSource[S2nKey.PARAM]:
-                icon_fname = ServiceProvider.MorphoSource['icon'][icon_status]
+                icon_fname = ServiceProvider.MorphoSource["icon"][icon_status]
             # # Specify
             # elif provider == ServiceProvider.Specify[S2nKey.PARAM]:
-            #     icon_fname = ServiceProvider.Specify['icon'][icon_status]
+            #     icon_fname = ServiceProvider.Specify["icon"][icon_status]
             # WoRMS
             elif provider == ServiceProvider.WoRMS[S2nKey.PARAM]:
-                icon_fname = ServiceProvider.WoRMS['icon'][icon_status]
+                icon_fname = ServiceProvider.WoRMS["icon"][icon_status]
                 
         except Exception:
             error_description = get_traceback()
@@ -53,15 +53,15 @@ class BadgeSvc(_S2nService):
     # ...............................................
     @classmethod
     def _get_json_service_info(cls, output):
-        # cherrypy.response.headers['Content-Type'] = 'application/json'
+        # cherrypy.response.headers["Content-Type"] = "application/json"
         # import json
-        boutput = bytes(json.dumps(output.response), 'utf-8')
+        boutput = bytes(json.dumps(output.response), "utf-8")
         return boutput
 
     # ...............................................
     @classmethod
     def get_icon(
-            cls, provider=None, icon_status=None, stream=True, app_path='', **kwargs):
+            cls, provider=None, icon_status=None, stream=True, app_path="", **kwargs):
         """Get one icon to indicate a provider in a GUI
         
         Args:
@@ -87,7 +87,7 @@ class BadgeSvc(_S2nService):
                 provider=provider, icon_status=icon_status)
             # Bad parameters
             try:
-                error_description = '; '.join(errinfo['error'])                            
+                error_description = "; ".join(errinfo["error"])                            
                 raise BadRequest(error_description)
             except:
                 pass
@@ -98,11 +98,11 @@ class BadgeSvc(_S2nService):
             raise InternalServerError(error_description)
 
         icon_basename = cls._get_icon_filename(
-            good_params['provider'], good_params['icon_status'])
+            good_params["provider"], good_params["icon_status"])
         icon_fname = os.path.join(app_path, ICON_DIR, icon_basename)
         
         if icon_fname is not None:
-            ifile = open(icon_fname, mode='rb')
+            ifile = open(icon_fname, mode="rb")
             image_binary = ifile.read()
             if stream:
                 return send_file(
@@ -114,7 +114,7 @@ class BadgeSvc(_S2nService):
                     attachment_filename=icon_fname)
             # # Return image data or file
             # try:
-            #     ifile = open(icon_fname, mode='rb')
+            #     ifile = open(icon_fname, mode="rb")
             #     image_binary = io.BytesIO(ifile.read())
             # except Exception as e:
             #     # Unknown error
@@ -133,18 +133,19 @@ class BadgeSvc(_S2nService):
             #     ifile.close()
             
         else:
-            error_description = 'Badge {} not implemented for provider {}'.format(
-                icon_status, provider)
-            raise NotImplemented(error_description)
+            raise NotImplemented(
+                f"Badge {icon_status} not implemented for provider {provider}")
 
 
 # .............................................................................
-if __name__ == '__main__':
+if __name__ == "__main__":
     svc = BadgeSvc()
     # Get all providers
     valid_providers = svc._get_valid_providers()
     for pr in valid_providers:
         for stat in VALID_ICON_OPTIONS:
-            retval = svc.get_icon(provider=pr, icon_status=stat)
+            retval = svc.get_icon(
+                provider=pr, icon_status=stat,
+                app_path="/home/astewart/git/specify_cache/sppy/frontend")
             print(retval)
     

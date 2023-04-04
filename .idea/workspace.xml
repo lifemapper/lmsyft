@@ -5,37 +5,17 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7da7499e-1ec6-4bd7-974b-80f0bb5c6fdd" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.env.conf" beforeDir="false" afterPath="$PROJECT_DIR$/.env.conf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.github/linters/.markdownlint" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.github/linters/regex-blacklist.txt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.github/workflows/build_sphinx_docs.yml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.pre-commit-hooks.yaml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.github/linters/.flake8" beforeDir="false" afterPath="$PROJECT_DIR$/.github/linters/.flake8" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.github/linters/.isort.cfg" beforeDir="false" afterPath="$PROJECT_DIR$/.github/linters/.isort.cfg" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.project" beforeDir="false" afterPath="$PROJECT_DIR$/.project" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.pre-commit-config.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/.pre-commit-config.yaml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/flask_app/broker/address.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/broker/address.py.saveme" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/flask_app/broker/badge.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/broker/badge.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/flask_app/broker/base.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/broker/base.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/flask_app/broker/constants.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/broker/constants.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/flask_app/broker/map.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/broker/map.py.saveme" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/flask_app/broker/name.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/broker/name.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/flask_app/broker/occ.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/broker/occ.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/flask_app/broker/resolve.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/broker/resolve.py.saveme" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/flask_app/broker/routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/broker/routes.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/flask_app/broker/s2n_type.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/broker/s2n_type.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/flask_app/resolver/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/resolver.saveme/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/flask_app/resolver/config.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/resolver.saveme/config.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/flask_app/resolver/manage.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/resolver.saveme/manage.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/flask_app/resolver/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/resolver.saveme/models.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/flask_app/resolver/routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/resolver.saveme/routes.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/flask_app/resolver/solr_controller.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/resolver.saveme/solr_controller.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/flask_app/sp_cache/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/sp_cache.saveme/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/flask_app/sp_cache/config.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/sp_cache.saveme/config.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/flask_app/sp_cache/manage.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/sp_cache.saveme/manage.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/flask_app/sp_cache/models.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/sp_cache.saveme/models.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/flask_app/sp_cache/process_dwca.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/sp_cache.saveme/process_dwca.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/flask_app/sp_cache/routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/sp_cache.saveme/routes.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/flask_app/sp_cache/solr_controller.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/sp_cache.saveme/solr_controller.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sppy/tools/provider/specify.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/provider/specify.py.saveme" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sppy/tools/provider/specify_resolver.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/provider/specify_resolver.py.saveme" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sppy/tools/s2n/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/s2n/utils.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/static/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/static/index.html" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -56,19 +36,20 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "last_opened_file_path": "/home/astewart/git/lmtrex",
-    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;last_opened_file_path&quot;: &quot;/home/astewart/git/specify_cache&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;
   },
-  "keyToStringList": {
-    "com.intellij.ide.scratch.ScratchImplUtil$2/New Scratch File": [
-      "HTML"
+  &quot;keyToStringList&quot;: {
+    &quot;com.intellij.ide.scratch.ScratchImplUtil$2/New Scratch File&quot;: [
+      &quot;HTML&quot;
     ]
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$" />
       <recent name="$PROJECT_DIR$/solr_cores" />
       <recent name="$PROJECT_DIR$/tests" />
     </key>

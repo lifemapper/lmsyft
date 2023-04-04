@@ -1,4 +1,3 @@
-# from collections import OrderedDict
 from flask_app.broker.s2n_type import S2nEndpoint, S2nKey
 
 # .............................................................................
@@ -7,10 +6,7 @@ from flask_app.broker.s2n_type import S2nEndpoint, S2nKey
 CONFIG_DIR = "config"
 TEST_SPECIFY7_SERVER = "http://preview.specifycloud.org"
 TEST_SPECIFY7_RSS_URL = "{}/export/rss".format(TEST_SPECIFY7_SERVER)
-
-# # Always point to production Syftorium
-# SYFT_BASE = "https://syftorium.org"
-
+JSON_HEADERS = {"Content-Type": "application/json"}
 
 # For saving Specify7 server URL (used to download individual records)
 SPECIFY7_SERVER_KEY = "specify7-server"
@@ -21,7 +17,6 @@ DATA_DUMP_DELIMITER = "\t"
 GBIF_MISSING_KEY = "unmatched_gbif_ids"
 
 # VALID broker parameter options, must be list
-# VALID_MAP_REQUESTS = ["getmap", "getlegendgraphic"]
 VALID_ICON_OPTIONS = ["active", "inactive", "hover"]
 
 STATIC_DIR="../frontend/static"
@@ -66,7 +61,6 @@ ICON_API = '/api/v1/badge'
 #     # Human readable
 #     CORE_TYPE = "{}/terms/Occurrence".format(DWC.URL)
 #
-JSON_HEADERS = {"Content-Type": "application/json"}
 
 
 # .............................................................................
@@ -201,14 +195,6 @@ class ServiceProvider:
                  "inactive": "itis_inactive.png",
                  "hover": "itis_hover.png"}
         }
-    # Lifemapper = {
-    #     S2nKey.NAME: "Lifemapper",
-    #     S2nKey.PARAM: "lm",
-    #     S2nKey.SERVICES: [S2nEndpoint.Map, S2nEndpoint.Badge],
-    #     "icon": {"active": "lm_active.png",
-    #              "inactive": "lm_inactive-01.png",
-    #              "hover": "lm_hover-01.png"}
-    #     }
     MorphoSource = {
         S2nKey.NAME: "MorphoSource", 
         S2nKey.PARAM: "mopho", 
@@ -218,12 +204,6 @@ class ServiceProvider:
                  "inactive": "morpho_inactive-01.png",
                  "hover": "morpho_hover-01.png"}
         }
-    # Specify = {
-    #     S2nKey.NAME: "Specify",
-    #     S2nKey.PARAM: "specify",
-    #     S2nKey.SERVICES: [
-    #         S2nEndpoint.Badge, S2nEndpoint.Occurrence, S2nEndpoint.Resolve],
-    #     "icon": {"active": "specify_network_active.png",}}
     # TODO: need an WoRMS badge
     WoRMS = {
         S2nKey.NAME: "WoRMS",
@@ -249,15 +229,9 @@ class ServiceProvider:
         elif param_or_name in (
             ServiceProvider.ITISSolr[S2nKey.NAME], ServiceProvider.ITISSolr[S2nKey.PARAM]):
             return ServiceProvider.ITISSolr
-        # elif param_or_name in (
-        #     ServiceProvider.Lifemapper[S2nKey.NAME], ServiceProvider.Lifemapper[S2nKey.PARAM]):
-        #     return ServiceProvider.Lifemapper
         elif param_or_name in (
             ServiceProvider.MorphoSource[S2nKey.NAME], ServiceProvider.MorphoSource[S2nKey.PARAM]):
             return ServiceProvider.MorphoSource
-        # elif param_or_name in (
-        #     ServiceProvider.Specify[S2nKey.NAME], ServiceProvider.Specify[S2nKey.PARAM]):
-        #     return ServiceProvider.Specify
         elif param_or_name in (
             ServiceProvider.WoRMS[S2nKey.NAME], ServiceProvider.WoRMS[S2nKey.PARAM]):
             return ServiceProvider.WoRMS
@@ -309,74 +283,6 @@ URL_ESCAPES = [[" ", "\%20"], [",", "\%2C"]]
 ENCODING = "utf-8"
 
 
-"""  
-http://preview.specifycloud.org/static/depository/export_feed/kui-dwca.zip
-http://preview.specifycloud.org/static/depository/export_feed/kuit-dwca.zip
-
-curl "{}{}".format(http://preview.specifycloud.org/export/record/
-  | python -m json.tool
-
-"""
-
-# # .............................................................................
-# # These fields must match the Solr core fields in spcoco/conf/schema.xml
-# SPCOCO_FIELDS = [
-#     # GUID and solr uniqueKey
-#     "id",
-#     # pull dataset/alternateIdentfier from DWCA eml.xml
-#     "dataset_guid",
-#     # ARK metadata
-#     # similar to DC Creator, Contributor, Publisher
-#     "who",
-#     # similar to DC Title
-#     "what",
-#     # similar to DC Date
-#     "when",
-#     # similar to DC Identifier, optional as this is the ARK
-#     "where",
-#     # Supplemental ARK metadata
-#     # redirection URL to specify7-server
-#     "url"]
-#
-# # ......................................................
-# class Lifemapper:
-#     URL = "https://data.lifemapper.org/api/v2"
-#     OCC_RESOURCE = "occurrence"
-#     PROJ_RESOURCE = "sdmproject"
-#     MAP_RESOURCE = "ogc"
-#     OBSERVED_SCENARIO_CODE = "worldclim-curr"
-#     PAST_SCENARIO_CODES = ["CMIP5-CCSM4-lgm-10min", "CMIP5-CCSM4-mid-10min"]
-#     FUTURE_SCENARIO_CODES = [
-#         "AR5-CCSM4-RCP8.5-2050-10min", "AR5-CCSM4-RCP4.5-2050-10min",
-#         "AR5-CCSM4-RCP4.5-2070-10min", "AR5-CCSM4-RCP8.5-2070-10min"]
-#     OTHER_RESOURCES = ["taxonomy", "scenario", "envlayer"]
-#     NAME_KEY = "displayname"
-#     ATOM_KEY = "atom"
-#     MIN_STAT_KEY ="after_status"
-#     MAX_STAT_KEY = "before_status"
-#     COMPLETE_STAT_VAL = 300
-#     SCENARIO_KEY = "projectionscenariocode"
-#     PROJECTION_METADATA_KEYS = [
-#         "modelScenario", "projectionScenario", "algorithm", "spatialRaster"]
-#     COMMANDS = ["count"]
-#     # VALID broker parameter options must be list
-#     VALID_MAPLAYER_TYPES = ["occ", "prj", "bmng"]
-#     VALID_MAP_FORMAT = ["image/png", "image/gif", "image/jpeg", "image/tiff", "image/x-aaigrid"]
-#     VALID_SRS = ["epsg:4326", "epsg:3857", "AUTO:42003"]
-#     VALID_PALETTES = [
-#         "red", "gray", "green", "blue", "safe", "pretty", "yellow",
-#         "fuschia", "aqua", "bluered", "bluegreen", "greenred"]
-#     # TODO: replace with a schema definition
-#     RECORD_FORMAT_MAP = "lifemapper_layer schema TBD"
-#     RECORD_FORMAT_OCC = "lifemapper_occ schema TBD"
-#
-#     @staticmethod
-#     def valid_scenario_codes():
-#         valid_scenario_codes = [Lifemapper.OBSERVED_SCENARIO_CODE]
-#         valid_scenario_codes.extend(Lifemapper.PAST_SCENARIO_CODES)
-#         valid_scenario_codes.extend(Lifemapper.FUTURE_SCENARIO_CODES)
-#         return valid_scenario_codes
-
 BrokerParameters = {
     "provider": {
         "type": "", "default": None, "options": [
@@ -397,36 +303,6 @@ BrokerParameters = {
     "gbif_dataset_key": {"type": "", "default": None},
     "count_only": {"type": False, "default": False},
     "url": {"type": "", "default": None},
-    # "scenariocode": {
-    #     "type": "",
-    #     "options": Lifemapper.valid_scenario_codes(),
-    #     "default": None},
-    # "url": {"type": "", "default": None},
-    # "bbox": {"type": "", "default": "-180,-90,180,90"},
-    # "color": {
-    #     "type": "",
-    #     "options": Lifemapper.VALID_PALETTES,
-    #     "default": Lifemapper.VALID_PALETTES[0]},
-    # "exceptions": {"type": "", "default": None},
-    # "height": {"type": 300, "default": 300},
-    # "width": {"type": 600, "default": 600},
-    # "layers": {
-    #     "type": "",
-    #     "options": Lifemapper.VALID_MAPLAYER_TYPES,
-    #     "default": Lifemapper.VALID_MAPLAYER_TYPES[0]},
-    # "request": {
-    #     "type": "",
-    #     "options": VALID_MAP_REQUESTS,
-    #     "default": VALID_MAP_REQUESTS[0]},
-    # "format": {
-    #     "type": "",
-    #     "options": Lifemapper.VALID_MAP_FORMAT,
-    #     "default": Lifemapper.VALID_MAP_FORMAT[0]},
-    # "srs": {
-    #     "type": "",
-    #     "options": Lifemapper.VALID_SRS,
-    #     "default": Lifemapper.VALID_SRS[0]},
-    # "transparent": {"type": True, "default": True},
     "icon_status": {
         "type": "", 
         "options": VALID_ICON_OPTIONS, 
@@ -1047,3 +923,9 @@ ISSUE_DEFINITIONS = {
             "gbif_taxon_corrected flag."
   }
   }
+
+
+"""  
+http://preview.specifycloud.org/static/depository/export_feed/kui-dwca.zip
+http://preview.specifycloud.org/static/depository/export_feed/kuit-dwca.zip
+"""
