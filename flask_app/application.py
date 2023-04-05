@@ -3,6 +3,10 @@ import os
 
 from flask import Flask
 
+try:
+    SECRET_KEY = os.environ['SECRET_KEY']
+except:
+    SECRET_KEY = "dev"
 
 # .....................................................................................
 def create_app(blueprint, test_config=None):
@@ -18,7 +22,7 @@ def create_app(blueprint, test_config=None):
     # create and configure the app
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_mapping(
-        SECRET_KEY=os.environ['SECRET_KEY'],
+        SECRET_KEY=SECRET_KEY,
         # DATABASE=os.path.join(app.instance_path, 'flaskr.sqlite'),
     )
 

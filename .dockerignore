@@ -1,0 +1,5 @@
+__pycache__/
+Dockerfile
+.github
+**/node_modules
+**/.npm

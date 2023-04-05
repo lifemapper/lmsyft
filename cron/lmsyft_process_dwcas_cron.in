@@ -1,2 +1,0 @@
-# Run specify_cache dwca processing tool every 10 minutes
-*/10 * * * * root docker exec lmsyft-sp_cache-1 python app/manage.py process_dwcas

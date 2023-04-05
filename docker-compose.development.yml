@@ -13,7 +13,7 @@ services:
     env_file:
       ./.env.conf
     volumes:
-      - "./flask_app/:/home/lifemapper/flask_app/"
+      - "./flask_app/:/home/specify/flask_app/"
 
   sp_cache:
     build:
@@ -28,8 +28,29 @@ services:
     env_file:
       ./.env.conf
     volumes:
-      - "./flask_app/:/home/lifemapper/flask_app/"
+      - "./flask_app/:/home/specify/flask_app/"
 
   solr:
     ports:
       - "8983:8983"
+
+  broker:
+    build:
+      context: ./.
+      target: dev-flask
+    ports:
+      - "5003:5003"
+    environment:
+      - FLASK_APP=flask_app.broker:app
+      - FLASK_MANAGE=flask_app.broker.manage
+      - DEBUG_PORT=5003
+    volumes:
+      - "./flask_app/:/home/specify/flask_app/"
+
+  front-end:
+    build:
+      context: ./.
+      target: base-front-end
+    command: ["npm", "run", "watch"]
+    volumes:
+      - "./sppy/frontend/js_src/lib/:/home/node/lib/"

@@ -1,0 +1,8 @@
+{
+    "module": "tests.test_cache.sp_cache_tests",
+    "test_class": "SpCacheCollectionOccurrencePostTest",
+    "parameters": {
+        "occurrence_endpoint": "https://localhost/api/v1/sp_cache/collection/test_collection/occurrences/",
+        "dwca_filename": "../test_data/dwc_update.zip"
+    }
+}
