@@ -3,7 +3,6 @@ from werkzeug.exceptions import (BadRequest, InternalServerError)
 
 from flask_app.broker.constants import (APIService, ServiceProvider)
 from flask_app.broker.s2n_type import (S2nKey, S2nOutput, S2nSchema, print_s2n_output)
-
 from flask_app.broker.base import _S2nService
 
 from sppy.tools.provider.gbif import GbifAPI
@@ -14,6 +13,7 @@ from sppy.tools.s2n.utils import get_traceback
 
 # .............................................................................
 class NameSvc(_S2nService):
+    """Service for retrieving taxonomic information."""
     SERVICE_TYPE = APIService.Name
     ORDERED_FIELDNAMES = S2nSchema.get_s2n_fields(APIService.Name["endpoint"])
 
@@ -22,7 +22,7 @@ class NameSvc(_S2nService):
     def _get_gbif_records(cls, namestr, is_accepted, gbif_count):
         try:
             output = GbifAPI.match_name(namestr, is_accepted=is_accepted)
-        except Exception as e:
+        except Exception:
             traceback = get_traceback()
             output = GbifAPI.get_api_failure(
                 cls.SERVICE_TYPE["endpoint"], HTTPStatus.INTERNAL_SERVER_ERROR,
@@ -40,14 +40,14 @@ class NameSvc(_S2nService):
                 for namerec in output.records:
                     try:
                         taxon_key = namerec[keyfld]
-                    except Exception as e:
-                        print("No usageKey for counting {} records".format(namestr))
+                    except Exception:
+                        print(f"No usageKey for counting {namestr} records")
                     else:
                         # Add more info to each record
                         try:
                             count_output = GbifAPI.count_occurrences_for_taxon(
                                 taxon_key)
-                        except Exception as e:
+                        except Exception:
                             traceback = get_traceback()
                             print(traceback)
                         else:
@@ -55,7 +55,7 @@ class NameSvc(_S2nService):
                                 count_query = count_output.provider[
                                     S2nKey.PROVIDER_QUERY_URL][0]
                                 namerec[cntfld] = count_output.count
-                            except Exception as e:
+                            except Exception:
                                 traceback = get_traceback()
                                 output.append_value(S2nKey.ERRORS, {"error": traceback})
                             else:
@@ -71,7 +71,7 @@ class NameSvc(_S2nService):
     def _get_ipni_records(cls, namestr, is_accepted):
         try:
             output = IpniAPI.match_name(namestr, is_accepted=is_accepted)
-        except Exception as e:
+        except Exception:
             traceback = get_traceback()
             output = IpniAPI.get_api_failure(
                 cls.SERVICE_TYPE["endpoint"], HTTPStatus.INTERNAL_SERVER_ERROR,
@@ -88,7 +88,7 @@ class NameSvc(_S2nService):
         try:
             output = ItisAPI.match_name(
                 namestr, is_accepted=is_accepted, kingdom=kingdom)
-        except Exception as e:
+        except Exception:
             traceback = get_traceback()
             output = ItisAPI.get_api_failure(
                 cls.SERVICE_TYPE["endpoint"], HTTPStatus.INTERNAL_SERVER_ERROR,
@@ -104,7 +104,7 @@ class NameSvc(_S2nService):
     def _get_worms_records(cls, namestr, is_accepted):
         try:
             output = WormsAPI.match_name(namestr, is_accepted=is_accepted)
-        except Exception as e:
+        except Exception:
             traceback = get_traceback()
             output = WormsAPI.get_api_failure(
                 cls.SERVICE_TYPE["endpoint"], HTTPStatus.INTERNAL_SERVER_ERROR,
@@ -195,7 +195,7 @@ class NameSvc(_S2nService):
                     raise BadRequest(error_description)
                 except:
                     pass
-            except Exception as e:
+            except Exception:
                 error_description = get_traceback()
                 raise BadRequest(error_description)
 
@@ -213,7 +213,7 @@ class NameSvc(_S2nService):
                 except:
                     pass
 
-            except Exception as e:
+            except Exception:
                 error_description = get_traceback()
                 raise InternalServerError(error_description)
 

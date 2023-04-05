@@ -5,8 +5,9 @@ from flask import Flask
 
 try:
     SECRET_KEY = os.environ['SECRET_KEY']
-except:
+except KeyError:
     SECRET_KEY = "dev"
+
 
 # .....................................................................................
 def create_app(blueprint, test_config=None):

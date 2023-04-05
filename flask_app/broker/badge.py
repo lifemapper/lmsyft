@@ -30,15 +30,9 @@ class BadgeSvc(_S2nService):
             # ITIS
             elif provider == ServiceProvider.ITISSolr[S2nKey.PARAM]:
                 icon_fname = ServiceProvider.ITISSolr["icon"][icon_status]
-            # # Lifemapper
-            # elif provider == ServiceProvider.Lifemapper[S2nKey.PARAM]:
-            #     icon_fname = ServiceProvider.Lifemapper["icon"][icon_status]
             # MorphoSource
             elif provider == ServiceProvider.MorphoSource[S2nKey.PARAM]:
                 icon_fname = ServiceProvider.MorphoSource["icon"][icon_status]
-            # # Specify
-            # elif provider == ServiceProvider.Specify[S2nKey.PARAM]:
-            #     icon_fname = ServiceProvider.Specify["icon"][icon_status]
             # WoRMS
             elif provider == ServiceProvider.WoRMS[S2nKey.PARAM]:
                 icon_fname = ServiceProvider.WoRMS["icon"][icon_status]
@@ -48,7 +42,6 @@ class BadgeSvc(_S2nService):
             raise InternalServerError(error_description)
 
         return icon_fname
-
 
     # ...............................................
     @classmethod
@@ -89,10 +82,10 @@ class BadgeSvc(_S2nService):
             try:
                 error_description = "; ".join(errinfo["error"])
                 raise BadRequest(error_description)
-            except:
+            except Exception:
                 pass
 
-        except Exception as e:
+        except Exception:
             # Unknown error
             error_description = get_traceback()
             raise InternalServerError(error_description)
@@ -133,7 +126,7 @@ class BadgeSvc(_S2nService):
             #     ifile.close()
 
         else:
-            raise NotImplemented(
+            raise NotImplementedError(
                 f"Badge {icon_status} not implemented for provider {provider}")
 
 

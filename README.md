@@ -283,6 +283,12 @@ Note, you many need to modify `sp_cache-1` to reflect your container name.
 
 * Create a virtual environment and install python libs there
 
+```commandline
+python3 -m venv venv
+. venv/bin/activate
+pip install -r requirements.txt
+```
+
 ## Troubleshooting
 
 ## pip errors with SSL

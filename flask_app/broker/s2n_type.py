@@ -549,7 +549,10 @@ class S2nOutput(object):
     errors: dict = {}
 
     def __init__(
-            self, count, service, provider={}, record_format="", records=[], errors={}):
+            self, count, service, provider={}, record_format="", records=[],
+            errors=None):
+        if errors is None:
+            errors = {}
         # Dictionary is json-serializable
         self._response = {
             S2nKey.COUNT: count,

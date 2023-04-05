@@ -11,17 +11,20 @@ SPECIFY7_SERVER_KEY = "specify7-server"
 SPECIFY7_RECORD_ENDPOINT = "export/record"
 SPECIFY_ARK_PREFIX = "http://spcoco.org/ark:/"
 
+URL_ESCAPES = [[" ", r"\%20"], [",", r"\%2C"]]
+ENCODING = "utf-8"
+
 DATA_DUMP_DELIMITER = "\t"
 GBIF_MISSING_KEY = "unmatched_gbif_ids"
 
 # VALID broker parameter options, must be list
 VALID_ICON_OPTIONS = ["active", "inactive", "hover"]
 
-STATIC_DIR="../frontend/static"
-ICON_DIR="{}/icon".format(STATIC_DIR)
+STATIC_DIR = "../frontend/static"
+ICON_DIR = "{}/icon".format(STATIC_DIR)
 
 TEMPLATE_DIR = "../templates"
-SCHEMA_DIR="{}/schema".format(STATIC_DIR)
+SCHEMA_DIR = "{}/schema".format(STATIC_DIR)
 SCHEMA_FNAME = "open_api.yaml"
 
 ICON_CONTENT = "image/png"
@@ -60,7 +63,6 @@ ICON_API = '/api/v1/badge'
 #     CORE_TYPE = "{}/terms/Occurrence".format(DWC.URL)
 #
 
-
 # .............................................................................
 class TST_VALUES:
     SPECIFY_SOLR_COLLECTION = "spcoco"
@@ -69,8 +71,8 @@ class TST_VALUES:
 
     SPECIFY_RSS = "https://ichthyology.specify.ku.edu/export/rss/"
     SPECIFY_URLS = [
-    "http://ichthyology.specify.ku.edu/static/depository/export_feed/kui-dwca.zip",
-    "http://ichthyology.specify.ku.edu/static/depository/export_feed/kuit-dwca.zip"
+        "http://ichthyology.specify.ku.edu/static/depository/export_feed/kui-dwca.zip",
+        "http://ichthyology.specify.ku.edu/static/depository/export_feed/kuit-dwca.zip"
     ]
     GUIDS_WO_SPECIFY_ACCESS = [
         "ed8cfa5a-7b47-11e4-8ef3-782bcb9cd5b5",
@@ -110,52 +112,55 @@ class TST_VALUES:
 
 # .............................................................................
 class APIService:
-    Root = {"endpoint": S2nEndpoint.Root, "params": None,
-        S2nKey.RECORD_FORMAT: None}
-    # # Direct access to syftorium upload
-    # Address = {"endpoint": S2nEndpoint.Address, "params": None,
-    #     S2nKey.RECORD_FORMAT: "url string"}
+    Root = {
+        "endpoint": S2nEndpoint.Root, "params": None,
+        S2nKey.RECORD_FORMAT: None
+    }
     # Icons for service providers
     Badge = {
         "endpoint": S2nEndpoint.Badge,
         "params": ["provider", "icon_status"],
-        S2nKey.RECORD_FORMAT: "image/png"}
+        S2nKey.RECORD_FORMAT: "image/png"
+    }
     # Health for service providers
-    Heartbeat = {"endpoint": S2nEndpoint.Heartbeat, "params": None,
-        S2nKey.RECORD_FORMAT: ""}
-    # # Metadata for map services
-    # Map = {
-    #     "endpoint": S2nEndpoint.Map,
-    #     "params": ["provider", "namestr", "gbif_parse", "is_accepted", "scenariocode", "color"],
-    #     S2nKey.RECORD_FORMAT: ""}
+    Heartbeat = {
+        "endpoint": S2nEndpoint.Heartbeat, "params": None,
+        S2nKey.RECORD_FORMAT: ""
+    }
     # Taxonomic Resolution
     Name = {
         "endpoint": S2nEndpoint.Name,
-        "params": ["provider", "namestr", "is_accepted", "gbif_parse", "gbif_count", "kingdom"],
-        S2nKey.RECORD_FORMAT: ""}
+        "params": [
+            "provider", "namestr", "is_accepted", "gbif_parse", "gbif_count", "kingdom"
+        ],
+        S2nKey.RECORD_FORMAT: ""
+    }
     # Specimen occurrence records
-    Occurrence = {"endpoint": S2nEndpoint.Occurrence, "params": ["provider", "occid", "gbif_dataset_key", "count_only"],
-        S2nKey.RECORD_FORMAT: ""}
-    # # Specify guid resolver
-    # Resolve = {
-    #     "endpoint": "resolve",
-    #     "params": ["occid"],
-    #     S2nKey.RECORD_FORMAT: ""}
+    Occurrence = {
+        "endpoint": S2nEndpoint.Occurrence,
+        "params": ["provider", "occid", "gbif_dataset_key", "count_only"],
+        S2nKey.RECORD_FORMAT: ""
+    }
     # TODO: Consider an Extension service for Digital Object Architecture
-    SpecimenExtension = {"endpoint": S2nEndpoint.SpecimenExtension, "params": None,
-        S2nKey.RECORD_FORMAT: ""}
+    SpecimenExtension = {
+        "endpoint": S2nEndpoint.SpecimenExtension, "params": None,
+        S2nKey.RECORD_FORMAT: ""
+    }
     Frontend = {
         "endpoint": S2nEndpoint.Frontend,
         "params": ["occid", "namestr"],
-        S2nKey.RECORD_FORMAT: ""}
+        S2nKey.RECORD_FORMAT: ""
+    }
     Stats = {
         "endpoint": S2nEndpoint.Stats,
         "params": [],
-        S2nKey.RECORD_FORMAT: ""}
+        S2nKey.RECORD_FORMAT: ""
+    }
 
 
 # .............................................................................
 class ServiceProvider:
+    """Name and metadata for external Specify Network data providers."""
     Broker = {
         S2nKey.NAME: "Specify Network",
         S2nKey.PARAM: "specifynetwork",
@@ -163,45 +168,53 @@ class ServiceProvider:
         # "icon": {"active": "{}/SpNetwork_active.png",
         #          "inactive": "{}/SpNetwork_inactive.png",
         #          "hover": "{}/SpNetwork_hover.png"}
-        }
+    }
     GBIF = {
         S2nKey.NAME: "GBIF",
         S2nKey.PARAM: "gbif",
         S2nKey.SERVICES: [S2nEndpoint.Occurrence, S2nEndpoint.Name, S2nEndpoint.Badge],
-        "icon": {"active": "gbif_active-01.png",
-                 "inactive": "gbif_inactive-01.png",
-                 "hover": "gbif_hover-01-01.png"}
+        "icon": {
+            "active": "gbif_active-01.png",
+            "inactive": "gbif_inactive-01.png",
+            "hover": "gbif_hover-01-01.png"
         }
+    }
     iDigBio = {
         S2nKey.NAME: "iDigBio",
         S2nKey.PARAM: "idb",
         S2nKey.SERVICES: [S2nEndpoint.Occurrence, S2nEndpoint.Badge],
-        "icon": {"active": "idigbio_colors_active-01.png",
-                 "inactive": "idigbio_colors_inactive-01.png",
-                 "hover": "idigbio_colors_hover-01.png"}
+        "icon": {
+            "active": "idigbio_colors_active-01.png",
+             "inactive": "idigbio_colors_inactive-01.png",
+             "hover": "idigbio_colors_hover-01.png"
         }
+    }
     IPNI = {
         S2nKey.NAME: "IPNI",
         S2nKey.PARAM: "ipni",
         S2nKey.SERVICES: []
-        }
+    }
     ITISSolr = {
         S2nKey.NAME: "ITIS",
         S2nKey.PARAM: "itis",
         S2nKey.SERVICES: [S2nEndpoint.Badge, S2nEndpoint.Name],
-        "icon": {"active": "itis_active.png",
-                 "inactive": "itis_inactive.png",
-                 "hover": "itis_hover.png"}
+        "icon": {
+            "active": "itis_active.png",
+             "inactive": "itis_inactive.png",
+             "hover": "itis_hover.png"
         }
+    }
     MorphoSource = {
         S2nKey.NAME: "MorphoSource",
         S2nKey.PARAM: "mopho",
         S2nKey.SERVICES: [
             S2nEndpoint.Badge, S2nEndpoint.Occurrence, S2nEndpoint.SpecimenExtension],
-        "icon": {"active": "morpho_active-01.png",
-                 "inactive": "morpho_inactive-01.png",
-                 "hover": "morpho_hover-01.png"}
+        "icon": {
+            "active": "morpho_active-01.png",
+             "inactive": "morpho_inactive-01.png",
+             "hover": "morpho_hover-01.png"
         }
+    }
     # TODO: need an WoRMS badge
     WoRMS = {
         S2nKey.NAME: "WoRMS",
@@ -212,42 +225,80 @@ class ServiceProvider:
         }
     }
 
-# ....................
+    # ....................
     @classmethod
     def get_values(cls, param_or_name):
+        """Return the ServiceProvider object for standard provider long or short name.
+
+        Args:
+            param_or_name: full name or URL parameter for a ServiceProvider.
+
+        Returns:
+            ServiceProvider object.
+        """
         if param_or_name in (
-            ServiceProvider.GBIF[S2nKey.NAME], ServiceProvider.GBIF[S2nKey.PARAM]):
+                ServiceProvider.GBIF[S2nKey.NAME], ServiceProvider.GBIF[S2nKey.PARAM]
+        ):
             return ServiceProvider.GBIF
         elif param_or_name in (
-            ServiceProvider.iDigBio[S2nKey.NAME], ServiceProvider.iDigBio[S2nKey.PARAM]):
+                ServiceProvider.iDigBio[S2nKey.NAME],
+                ServiceProvider.iDigBio[S2nKey.PARAM]
+        ):
             return ServiceProvider.iDigBio
         elif param_or_name in (
-            ServiceProvider.IPNI[S2nKey.NAME], ServiceProvider.IPNI[S2nKey.PARAM]):
+                ServiceProvider.IPNI[S2nKey.NAME], ServiceProvider.IPNI[S2nKey.PARAM]
+        ):
             return ServiceProvider.IPNI
         elif param_or_name in (
-            ServiceProvider.ITISSolr[S2nKey.NAME], ServiceProvider.ITISSolr[S2nKey.PARAM]):
+                ServiceProvider.ITISSolr[S2nKey.NAME],
+                ServiceProvider.ITISSolr[S2nKey.PARAM]
+        ):
             return ServiceProvider.ITISSolr
         elif param_or_name in (
-            ServiceProvider.MorphoSource[S2nKey.NAME], ServiceProvider.MorphoSource[S2nKey.PARAM]):
+                ServiceProvider.MorphoSource[S2nKey.NAME],
+                ServiceProvider.MorphoSource[S2nKey.PARAM]
+        ):
             return ServiceProvider.MorphoSource
         elif param_or_name in (
-            ServiceProvider.WoRMS[S2nKey.NAME], ServiceProvider.WoRMS[S2nKey.PARAM]):
+                ServiceProvider.WoRMS[S2nKey.NAME], ServiceProvider.WoRMS[S2nKey.PARAM]
+        ):
             return ServiceProvider.WoRMS
         elif param_or_name in (
-            ServiceProvider.Broker[S2nKey.NAME], ServiceProvider.Broker[S2nKey.PARAM]):
+                ServiceProvider.Broker[S2nKey.NAME],
+                ServiceProvider.Broker[S2nKey.PARAM]
+        ):
             return ServiceProvider.Broker
         else:
             return None
+
 # ....................
     @classmethod
     def is_valid_param(cls, param):
+        """Return a flag indicating if the parameter key is valid for services.
+
+        Args:
+            param: keyword for URL request to a sp_network service
+
+        Returns:
+            boolean flag
+        """
         params = [svc[S2nKey.PARAM] for svc in cls.all()]
         if param in params:
             return True
         return False
+
 # ....................
     @classmethod
     def is_valid_service(cls, param, svc):
+        """Return a flag indicating if the parameter key is valid for given service.
+
+        Args:
+            param: keyword for URL request to a sp_network service
+            svc: name of a sp_network service
+
+        Returns:
+            boolean flag
+        """
         if param is not None:
             val_dict = ServiceProvider.get_values(param)
             if svc in (val_dict["services"]):
@@ -257,6 +308,14 @@ class ServiceProvider:
 # ....................
     @classmethod
     def get_name_from_param(cls, param):
+        """Return a full name of a service for the given service parameter value.
+
+        Args:
+            param: keyword for URL request to a sp_network service
+
+        Returns:
+            name for the service
+        """
         name = None
         if param is not None:
             val_dict = ServiceProvider.get_values(param)
@@ -266,21 +325,18 @@ class ServiceProvider:
 # ....................
     @classmethod
     def all(cls):
+        """Return all available ServiceProviders for the Specify network.
+
+        Returns:
+            list of ServiceProviders
+        """
         return [
             ServiceProvider.GBIF, ServiceProvider.iDigBio, ServiceProvider.IPNI,
             ServiceProvider.ITISSolr, ServiceProvider.MorphoSource,
-            # ServiceProvider.Lifemapper, ServiceProvider.Specify,
             ServiceProvider.WoRMS, ServiceProvider.Broker]
-
- # .............................................................................
 
 
 # .............................................................................
-
-URL_ESCAPES = [[" ", r"\%20"], [",", r"\%2C"]]
-ENCODING = "utf-8"
-
-
 BrokerParameters = {
     "provider": {
         "type": "", "default": None, "options": [
@@ -288,7 +344,6 @@ BrokerParameters = {
             ServiceProvider.iDigBio[S2nKey.PARAM],
             ServiceProvider.ITISSolr[S2nKey.PARAM],
             ServiceProvider.MorphoSource[S2nKey.PARAM],
-            # ServiceProvider.Lifemapper[S2nKey.PARAM],  ServiceProvider.Specify[S2nKey.PARAM],
             ]
         },
     "namestr": {"type": "", "default": None},
@@ -328,8 +383,16 @@ class MorphoSource:
 
     @classmethod
     def get_occurrence_view(cls, local_id):
-        """
-        Example:
+        """Get the URL for viewing a MorphoSource record.
+
+        Args:
+             local_id: string for the MorpoSource identifier of the record
+
+        Returns:
+            url: for webpage displaying the record
+
+        Note:
+            Example:
             https://www.morphosource.org/concern/biological_specimens/000S27385
         """
         url = None
@@ -342,6 +405,14 @@ class MorphoSource:
 
     @classmethod
     def get_occurrence_data(cls, occurrence_id):
+        """Get the URL for returning a MorphoSource record as parsable data.
+
+        Args:
+             occurrence_id: string for the MorpoSource identifier of the record
+
+        Returns:
+            url: for API call for the record
+        """
         url = None
         if occurrence_id:
             url = "{}/find/specimens?start=0&limit=1000&q=occurrence_id%3A{}".format(
@@ -350,17 +421,10 @@ class MorphoSource:
 
 # ......................................................
 class SPECIFY:
-    """Specify constants enumeration
-    """
+    """Specify constants enumeration."""
     DATA_DUMP_DELIMITER = "\t"
     RECORD_FORMAT = "http://rs.tdwg.org/dwc.json"
     RESOLVER_COLLECTION = "spcoco"
-    # RESOLVER_LOCATION = SYFT_BASE
-
-# # ......................................................
-# class SYFTER:
-#     REST_URL = "{}/api/v1".format(SYFT_BASE)
-#     RESOLVE_RESOURCE = "resolve"
 
 
 # ......................................................
@@ -429,10 +493,23 @@ class GBIF:
 
     @classmethod
     def species_url(cls):
+        """Get the base URL for viewing a GBIF taxonomic records.
+
+        Returns:
+            url: for webpage displaying a search interface to the records
+        """
         return "{}/{}".format(GBIF.VIEW_URL, GBIF.SPECIES_SERVICE)
 
     @classmethod
     def get_occurrence_view(cls, key):
+        """Get the URL for viewing a GBIF occurrence record.
+
+        Args:
+            key: gbifID for the occurrence record to view
+
+        Returns:
+            url: for webpage displaying a GBIF occurrence record.
+        """
         url = None
         if key:
             url = "{}/{}/{}".format(GBIF.VIEW_URL, GBIF.OCCURRENCE_SERVICE, key)
@@ -440,6 +517,14 @@ class GBIF:
 
     @classmethod
     def get_occurrence_data(cls, key):
+        """Get the URL for returning a GBIF occurrence record.
+
+        Args:
+            key: gbifID for the occurrence record to retrieve.
+
+        Returns:
+            url: for API call to retrieve a GBIF occurrence record.
+        """
         url = None
         if key:
             url = "{}/{}/{}".format(GBIF.REST_URL, GBIF.OCCURRENCE_SERVICE, key)
@@ -447,6 +532,14 @@ class GBIF:
 
     @classmethod
     def get_species_view(cls, key):
+        """Get the URL for viewing a GBIF taxon record.
+
+        Args:
+            key: taxonKey for the taxon record to view
+
+        Returns:
+            url: for webpage displaying a GBIF species record.
+        """
         url = None
         if key:
             url = "{}/{}/{}".format(GBIF.VIEW_URL, GBIF.SPECIES_SERVICE, key)
@@ -454,18 +547,27 @@ class GBIF:
 
     @classmethod
     def get_species_data(cls, key):
+        """Get the URL for returning a GBIF taxonomic/species record.
+
+        Args:
+            key: taxonKey for the taxonomic record to retrieve.
+
+        Returns:
+            url: for API call to retrieve a GBIF species record.
+        """
         url = None
         if key:
             url = "{}/{}/{}".format(GBIF.REST_URL, GBIF.SPECIES_SERVICE, key)
         return url
 
 
-
 # .............................................................................
 class WORMS:
-    """World Register of Marine Species, WoRMS, constants enumeration
-    http://www.marinespecies.org/rest/AphiaRecordsByMatchNames
-    ?scientificnames[]=Plagioecia%20patina&marine_only=false
+    """World Register of Marine Species, WoRMS, constants enumeration.
+
+    Notes:
+        http://www.marinespecies.org/rest/AphiaRecordsByMatchNames
+        ?scientificnames[]=Plagioecia%20patina&marine_only=false
     """
     REST_URL = "http://www.marinespecies.org/rest"
     NAME_MATCH_SERVICE = "AphiaRecordsByMatchNames"
@@ -475,20 +577,33 @@ class WORMS:
 
     @classmethod
     def get_species_data(cls, key):
+        """Get the URL for returning a WORMS taxonomic/species record.
+
+        Args:
+            key: identifier for the taxonomic record to retrieve.
+
+        Returns:
+            url: for API call to retrieve a GBIF species record.
+        """
         url = None
         if key:
             url = "{}/{}/{}".format(WORMS.REST_URL, WORMS.NAME_SERVICE, key)
         return url
 
+
 class IPNI:
+    """IPNI constants enumeration."""
     base_url = "http://beta.ipni.org/api/1"
 
 # .............................................................................
 class ITIS:
     """ITIS constants enumeration.
+
+    Notes:
         http://www.itis.gov/ITISWebService/services/ITISService/getAcceptedNamesFromTSN
         ?tsn=183671
-        TODO: for JSON output use jsonservice instead of ITISService
+
+    TODO: for JSON output use jsonservice instead of ITISService
     """
     DATA_NAMESPACE = "{http://data.itis_service.itis.usgs.gov/xsd}"
     NAMESPACE = "{http://itis_service.itis.usgs.gov}"
@@ -527,11 +642,28 @@ class ITIS:
 
     @classmethod
     def get_taxon_view(cls, tsn):
+        """Get the URL for viewing a ITIS taxon record.
+
+        Args:
+            key: identifier for the taxon record to view
+
+        Returns:
+            url: for webpage displaying a ITIS taxon record.
+        """
         return "{}?search_topic=TSN&search_value={}".format(ITIS.VIEW_URL, tsn)
 
     @classmethod
     def get_taxon_data(cls, tsn):
+        """Get the URL for returning an ITIS taxon record.
+
+        Args:
+            tsn: identifier for the taxonomic record to retrieve.
+
+        Returns:
+            url: for API call to retrieve an ITIS taxon record.
+        """
         return "{}?q=tsn:{}".format(ITIS.SOLR_URL, tsn)
+
 
 # .............................................................................
 # .                           iDigBio constants                               .
@@ -569,6 +701,14 @@ class Idigbio:
 
     @classmethod
     def get_occurrence_view(cls, uuid):
+        """Get the URL for viewing an iDigBio occurrence record.
+
+        Args:
+            uuid: identifier for the occurrence record to view.
+
+        Returns:
+            url: for webpage for an iDigBio occurrence record.
+        """
         url = None
         if uuid:
             url = "{}/{}".format(Idigbio.VIEW_URL, uuid)
@@ -576,6 +716,14 @@ class Idigbio:
 
     @classmethod
     def get_occurrence_data(cls, uuid):
+        """Get the URL for returning an iDigBio occurrence record.
+
+        Args:
+            uuid: identifier for the occurrence record to retrieve.
+
+        Returns:
+            url: for API call to retrieve an iDigBio occurrence record.
+        """
         url = None
         if uuid:
             url = "{}/{}".format(Idigbio.REST_URL, uuid)
