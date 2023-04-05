@@ -54,4 +54,3 @@ services:
     command: ["npm", "run", "watch"]
     volumes:
       - "./sppy/frontend/js_src/lib/:/home/node/lib/"
-

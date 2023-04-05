@@ -1,8 +1,6 @@
 from flask_app.broker.s2n_type import S2nEndpoint, S2nKey
 
 # .............................................................................
-# hierarchySoFarWRanks <class "list">: ["41107:$Kingdom:Plantae$Subkingdom:Viridiplantae$Infrakingdom:Streptophyta$Superdivision:Embryophyta$Division:Tracheophyta$Subdivision:Spermatophytina$Class:Magnoliopsida$Superorder:Lilianae$Order:Poales$Family:Poaceae$Genus:Poa$Species:Poa annua$"]
-# hierarchyTSN <class "list">: ["$202422$954898$846494$954900$846496$846504$18063$846542$846620$40351$41074$41107$"]
 CONFIG_DIR = "config"
 TEST_SPECIFY7_SERVER = "http://preview.specifycloud.org"
 TEST_SPECIFY7_RSS_URL = "{}/export/rss".format(TEST_SPECIFY7_SERVER)
@@ -81,8 +79,8 @@ class TST_VALUES:
         "5e7ec91c-4d20-42c4-ad98-8854800e82f7"]
     DS_GUIDS_WO_SPECIFY_ACCESS_RECS = ["e635240a-3cb1-4d26-ab87-57d8c7afdfdb"]
     BAD_GUIDS = [
-        "KU :KUIZ:2200", "KU :KUIZ:1663", "KU :KUIZ:1569", "KU :KUIZ:2462", 
-        "KU :KUIZ:1743", "KU :KUIZ:3019", "KU :KUIZ:1816", "KU :KUIZ:2542", 
+        "KU :KUIZ:2200", "KU :KUIZ:1663", "KU :KUIZ:1569", "KU :KUIZ:2462",
+        "KU :KUIZ:1743", "KU :KUIZ:3019", "KU :KUIZ:1816", "KU :KUIZ:2542",
         "KU :KUIZ:2396"]
     NAMES = [
         "Eucosma raracana",
@@ -93,20 +91,20 @@ class TST_VALUES:
         "Phlox longifolia Nutt.",
         "Tulipa sylvestris L.",
         "Medinilla speciosa Blume",
-        "Acer caesium Wall. ex Brandis", 
-        "Acer heldreichii Orph. ex Boiss.", 
-        "Acer pseudoplatanus L.", 
-        "Acer velutinum Boiss.", 
-        "Acer hyrcanum Fisch. & Meyer", 
-        "Acer monspessulanum L.", 
-        "Acer obtusifolium Sibthorp & Smith", 
-        "Acer opalus Miller", 
-        "Acer sempervirens L.", 
-        "Acer floridanum (Chapm.) Pax", 
-        "Acer grandidentatum Torr. & Gray", 
-        "Acer leucoderme Small", 
-        "Acer nigrum Michx.f.", 
-        "Acer skutchii Rehder", 
+        "Acer caesium Wall. ex Brandis",
+        "Acer heldreichii Orph. ex Boiss.",
+        "Acer pseudoplatanus L.",
+        "Acer velutinum Boiss.",
+        "Acer hyrcanum Fisch. & Meyer",
+        "Acer monspessulanum L.",
+        "Acer obtusifolium Sibthorp & Smith",
+        "Acer opalus Miller",
+        "Acer sempervirens L.",
+        "Acer floridanum (Chapm.) Pax",
+        "Acer grandidentatum Torr. & Gray",
+        "Acer leucoderme Small",
+        "Acer nigrum Michx.f.",
+        "Acer skutchii Rehder",
         "Acer saccharum Marshall"]
     ITIS_TSNS = [526853, 183671, 182662, 566578]
 
@@ -119,7 +117,7 @@ class APIService:
     #     S2nKey.RECORD_FORMAT: "url string"}
     # Icons for service providers
     Badge = {
-        "endpoint": S2nEndpoint.Badge, 
+        "endpoint": S2nEndpoint.Badge,
         "params": ["provider", "icon_status"],
         S2nKey.RECORD_FORMAT: "image/png"}
     # Health for service providers
@@ -132,7 +130,7 @@ class APIService:
     #     S2nKey.RECORD_FORMAT: ""}
     # Taxonomic Resolution
     Name = {
-        "endpoint": S2nEndpoint.Name, 
+        "endpoint": S2nEndpoint.Name,
         "params": ["provider", "namestr", "is_accepted", "gbif_parse", "gbif_count", "kingdom"],
         S2nKey.RECORD_FORMAT: ""}
     # Specimen occurrence records
@@ -159,45 +157,45 @@ class APIService:
 # .............................................................................
 class ServiceProvider:
     Broker = {
-        S2nKey.NAME: "Specify Network", 
-        S2nKey.PARAM: "specifynetwork", 
+        S2nKey.NAME: "Specify Network",
+        S2nKey.PARAM: "specifynetwork",
         S2nKey.SERVICES: [S2nEndpoint.Badge],
         # "icon": {"active": "{}/SpNetwork_active.png",
         #          "inactive": "{}/SpNetwork_inactive.png",
         #          "hover": "{}/SpNetwork_hover.png"}
         }
     GBIF = {
-        S2nKey.NAME: "GBIF", 
-        S2nKey.PARAM: "gbif", 
+        S2nKey.NAME: "GBIF",
+        S2nKey.PARAM: "gbif",
         S2nKey.SERVICES: [S2nEndpoint.Occurrence, S2nEndpoint.Name, S2nEndpoint.Badge],
         "icon": {"active": "gbif_active-01.png",
                  "inactive": "gbif_inactive-01.png",
                  "hover": "gbif_hover-01-01.png"}
         }
     iDigBio = {
-        S2nKey.NAME: "iDigBio", 
-        S2nKey.PARAM: "idb", 
+        S2nKey.NAME: "iDigBio",
+        S2nKey.PARAM: "idb",
         S2nKey.SERVICES: [S2nEndpoint.Occurrence, S2nEndpoint.Badge],
         "icon": {"active": "idigbio_colors_active-01.png",
                  "inactive": "idigbio_colors_inactive-01.png",
                  "hover": "idigbio_colors_hover-01.png"}
         }
     IPNI = {
-        S2nKey.NAME: "IPNI", 
-        S2nKey.PARAM: "ipni", 
+        S2nKey.NAME: "IPNI",
+        S2nKey.PARAM: "ipni",
         S2nKey.SERVICES: []
         }
     ITISSolr = {
-        S2nKey.NAME: "ITIS", 
-        S2nKey.PARAM: "itis", 
+        S2nKey.NAME: "ITIS",
+        S2nKey.PARAM: "itis",
         S2nKey.SERVICES: [S2nEndpoint.Badge, S2nEndpoint.Name],
         "icon": {"active": "itis_active.png",
                  "inactive": "itis_inactive.png",
                  "hover": "itis_hover.png"}
         }
     MorphoSource = {
-        S2nKey.NAME: "MorphoSource", 
-        S2nKey.PARAM: "mopho", 
+        S2nKey.NAME: "MorphoSource",
+        S2nKey.PARAM: "mopho",
         S2nKey.SERVICES: [
             S2nEndpoint.Badge, S2nEndpoint.Occurrence, S2nEndpoint.SpecimenExtension],
         "icon": {"active": "morpho_active-01.png",
@@ -207,13 +205,13 @@ class ServiceProvider:
     # TODO: need an WoRMS badge
     WoRMS = {
         S2nKey.NAME: "WoRMS",
-        S2nKey.PARAM: "worms", 
+        S2nKey.PARAM: "worms",
         S2nKey.SERVICES: [S2nEndpoint.Badge, S2nEndpoint.Name],
         "icon": {
             "active": "worms_active.png",
         }
     }
-    
+
 # ....................
     @classmethod
     def get_values(cls, param_or_name):
@@ -269,7 +267,7 @@ class ServiceProvider:
     @classmethod
     def all(cls):
         return [
-            ServiceProvider.GBIF, ServiceProvider.iDigBio, ServiceProvider.IPNI, 
+            ServiceProvider.GBIF, ServiceProvider.iDigBio, ServiceProvider.IPNI,
             ServiceProvider.ITISSolr, ServiceProvider.MorphoSource,
             # ServiceProvider.Lifemapper, ServiceProvider.Specify,
             ServiceProvider.WoRMS, ServiceProvider.Broker]
@@ -279,16 +277,16 @@ class ServiceProvider:
 
 # .............................................................................
 
-URL_ESCAPES = [[" ", "\%20"], [",", "\%2C"]]
+URL_ESCAPES = [[" ", r"\%20"], [",", r"\%2C"]]
 ENCODING = "utf-8"
 
 
 BrokerParameters = {
     "provider": {
         "type": "", "default": None, "options": [
-            ServiceProvider.GBIF[S2nKey.PARAM], 
+            ServiceProvider.GBIF[S2nKey.PARAM],
             ServiceProvider.iDigBio[S2nKey.PARAM],
-            ServiceProvider.ITISSolr[S2nKey.PARAM], 
+            ServiceProvider.ITISSolr[S2nKey.PARAM],
             ServiceProvider.MorphoSource[S2nKey.PARAM],
             # ServiceProvider.Lifemapper[S2nKey.PARAM],  ServiceProvider.Specify[S2nKey.PARAM],
             ]
@@ -304,8 +302,8 @@ BrokerParameters = {
     "count_only": {"type": False, "default": False},
     "url": {"type": "", "default": None},
     "icon_status": {
-        "type": "", 
-        "options": VALID_ICON_OPTIONS, 
+        "type": "",
+        "options": VALID_ICON_OPTIONS,
         "default": None}
     }
 
@@ -349,7 +347,7 @@ class MorphoSource:
             url = "{}/find/specimens?start=0&limit=1000&q=occurrence_id%3A{}".format(
                 MorphoSource.REST_URL, occurrence_id)
         return url
-    
+
 # ......................................................
 class SPECIFY:
     """Specify constants enumeration
@@ -358,13 +356,13 @@ class SPECIFY:
     RECORD_FORMAT = "http://rs.tdwg.org/dwc.json"
     RESOLVER_COLLECTION = "spcoco"
     # RESOLVER_LOCATION = SYFT_BASE
-    
+
 # # ......................................................
 # class SYFTER:
 #     REST_URL = "{}/api/v1".format(SYFT_BASE)
 #     RESOLVE_RESOURCE = "resolve"
-    
-    
+
+
 # ......................................................
 class GBIF:
     """GBIF constants enumeration"""
@@ -385,7 +383,7 @@ class GBIF:
     OCCURRENCE_SERVICE = "occurrence"
     DATASET_SERVICE = "dataset"
     ORGANIZATION_SERVICE = "organization"
-    
+
     COUNT_KEY = "count"
     RECORDS_KEY = "results"
     RECORD_FORMAT_NAME = "https://www.gbif.org/developer/species"
@@ -417,7 +415,7 @@ class GBIF:
     DOWNLOAD_COMMAND = "download"
     DOWNLOAD_REQUEST_COMMAND = "request"
     RESPONSE_NOMATCH_VALUE = "NONE"
-    
+
     NameMatchFieldnames = [
         "scientificName", "kingdom", "phylum", "class", "order", "family",
         "genus", "species", "rank", "genusKey", "speciesKey", "usageKey",
@@ -428,11 +426,11 @@ class GBIF:
     # We are adding the 2 fields: LM_WKT_FIELD and LINK_FIELD
     LINK_FIELD = "gbifurl"
     # Ends in / to allow appending unique id
-    
+
     @classmethod
     def species_url(cls):
         return "{}/{}".format(GBIF.VIEW_URL, GBIF.SPECIES_SERVICE)
-    
+
     @classmethod
     def get_occurrence_view(cls, key):
         url = None
@@ -466,14 +464,15 @@ class GBIF:
 # .............................................................................
 class WORMS:
     """World Register of Marine Species, WoRMS, constants enumeration
-    http://www.marinespecies.org/rest/AphiaRecordsByMatchNames?scientificnames[]=Plagioecia%20patina&marine_only=false
+    http://www.marinespecies.org/rest/AphiaRecordsByMatchNames
+    ?scientificnames[]=Plagioecia%20patina&marine_only=false
     """
     REST_URL = "http://www.marinespecies.org/rest"
     NAME_MATCH_SERVICE = "AphiaRecordsByMatchNames"
     NAME_SERVICE = "AphiaNameByAphiaID"
     MATCH_PARAM = "scientificnames[]="
     ID_FLDNAME = "valid_AphiaID"
-    
+
     @classmethod
     def get_species_data(cls, key):
         url = None
@@ -483,12 +482,13 @@ class WORMS:
 
 class IPNI:
     base_url = "http://beta.ipni.org/api/1"
-    
+
 # .............................................................................
 class ITIS:
-    """ITIS constants enumeration
-    http://www.itis.gov/ITISWebService/services/ITISService/getAcceptedNamesFromTSN?tsn=183671
-    @todo: for JSON output use jsonservice instead of ITISService
+    """ITIS constants enumeration.
+        http://www.itis.gov/ITISWebService/services/ITISService/getAcceptedNamesFromTSN
+        ?tsn=183671
+        TODO: for JSON output use jsonservice instead of ITISService
     """
     DATA_NAMESPACE = "{http://data.itis_service.itis.usgs.gov/xsd}"
     NAMESPACE = "{http://itis_service.itis.usgs.gov}"
@@ -497,7 +497,7 @@ class ITIS:
     # Solr Services
     SOLR_URL = "https://services.itis.gov"
     TAXONOMY_HIERARCHY_QUERY = "getFullHierarchyFromTSN"
-    VERNACULAR_QUERY = "getCommonNamesFromTSN"    
+    VERNACULAR_QUERY = "getCommonNamesFromTSN"
     NAMES_FROM_TSN_QUERY = "getAcceptedNamesFromTSN"
     RECORD_FORMAT = "https://www.itis.gov/solr_documentation.html"
     COUNT_KEY = "numFound"
@@ -523,8 +523,8 @@ class ITIS:
     FAMILY_KEY = "Family"
     GENUS_KEY = "Genus"
     SPECIES_KEY = "Species"
-    URL_ESCAPES = [ [" ", "\%20"] ]
-    
+    URL_ESCAPES = [ [" ", r"\%20"] ]
+
     @classmethod
     def get_taxon_view(cls, tsn):
         return "{}?search_topic=TSN&search_value={}".format(ITIS.VIEW_URL, tsn)
@@ -566,7 +566,7 @@ class Idigbio:
     COUNT_KEY = "itemCount"
     RECORDS_KEY = "items"
     RECORD_FORMAT = "https://github.com/idigbio/idigbio-search-api/wiki"
-    
+
     @classmethod
     def get_occurrence_view(cls, uuid):
         url = None
@@ -580,7 +580,7 @@ class Idigbio:
         if uuid:
             url = "{}/{}".format(Idigbio.REST_URL, uuid)
         return url
-    
+
 
 ISSUE_DEFINITIONS = {
     "common": {
@@ -607,7 +607,8 @@ ISSUE_DEFINITIONS = {
         "CONTINENT_INVALID": "Uninterpretable continent values found.",
         "COORDINATE_ACCURACY_INVALID": "Deprecated. ",
         "COORDINATE_INVALID":
-            "Coordinate value is given in some form but GBIF is unable to interpret it.",
+            "Coordinate value is given in some form but GBIF is unable to interpret "
+            "it.",
         "COORDINATE_OUT_OF_RANGE":
             "Coordinate has a latitude and/or longitude value beyond the maximum (or "
             "minimum) decimal value.",
@@ -925,7 +926,7 @@ ISSUE_DEFINITIONS = {
   }
 
 
-"""  
+"""
 http://preview.specifycloud.org/static/depository/export_feed/kui-dwca.zip
 http://preview.specifycloud.org/static/depository/export_feed/kuit-dwca.zip
 """

@@ -6,7 +6,7 @@ import requests
 
 SHP_EXT = 'shp'
 SHP_EXTENSIONS = [
-    '.shp', '.shx', '.dbf', '.prj', '.sbn', '.sbx', '.fbn', '.fbx', '.ain', 
+    '.shp', '.shx', '.dbf', '.prj', '.sbn', '.sbx', '.fbn', '.fbx', '.ain',
     '.aih', '.ixs', '.mxs', '.atx', '.shp.xml', '.cpg', '.qix'],
 
 
@@ -85,7 +85,7 @@ def delete_file(file_name, delete_dir=False):
 # .............................
 # def zip_files(fnames, zip_fname):
 #     """Returns a wrapper around a tar gzip file stream
-# 
+#
 #     Args:
 #         base_name: (optional) If provided, this will be the prefix for the
 #             names of the shape file's files in the zip file.
@@ -94,12 +94,12 @@ def delete_file(file_name, delete_dir=False):
 #     zipf = zipfile.ZipFile(
 #         tg_stream, mode='w', compression=zipfile.ZIP_DEFLATED,
 #         allowZip64=True)
-# 
+#
 #     for fname in fnames:
 #         ext = os.path.splitext(fname)[1]
 #         zipf.write(fname, '{}.{}'.format(zip_fname, ext))
 #     zipf.close()
-# 
+#
 #     tg_stream.seek(0)
 #     ret = ''.join(tg_stream.readlines())
 #     tg_stream.close()

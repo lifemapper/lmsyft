@@ -14,24 +14,24 @@ from sppy.tools.s2n.utils import get_traceback, add_errinfo
 # .............................................................................
 class ItisAPI(APIQuery):
     """Class to pull data from the ITIS Solr or Web service, documentation at:
-        https://www.itis.gov/solr_documentation.html and 
+        https://www.itis.gov/solr_documentation.html and
         https://www.itis.gov/web_service.html
     """
     PROVIDER = ServiceProvider.ITISSolr
     NAME_MAP = S2nSchema.get_itis_name_map()
-    
+
     # ...............................................
     def __init__(
-            self, base_url, service=None, q_filters={}, other_filters={}, 
+            self, base_url, service=None, q_filters={}, other_filters={},
             logger=None):
         """Constructor for ItisAPI class.
-        
+
         Args:
             base_url: Base URL for the ITIS Solr or Web service
             service: Indicator for which ITIS Web service to address
             q_filters:
             other_filters:
-            
+
         Note:
             ITIS Solr service does not have nested services
         """
@@ -69,12 +69,12 @@ class ItisAPI(APIQuery):
                         val = str(val).lower()
                 # urlencode for ITIS web services
                 filter_string = urllib.parse.urlencode(all_filters)
-            
+
         # Escape filter string
         else:
             for oldstr, newstr in URL_ESCAPES:
                 filter_string = filter_string.replace(oldstr, newstr)
-        return filter_string  
+        return filter_string
 
     # ...............................................
     def _processRecordInfo(self, rec, header, reformat_keys=[]):
@@ -83,26 +83,26 @@ class ItisAPI(APIQuery):
             for key in header:
                 try:
                     val = rec[key]
-                    
+
                     if type(val) is list:
                         if len(val) > 0:
                             val = val[0]
                         else:
                             val = ''
-                            
+
                     if key in reformat_keys:
                         val = self._saveNLDelCR(val)
-                        
+
                     elif key == 'citation':
                         if type(val) is dict:
                             try:
                                 val = val['text']
                             except:
                                 pass
-                        
+
                     elif key in ('created', 'modified'):
                         val = self._clipDate(val)
-                            
+
                 except KeyError:
                     val = ''
                 row.append(val)
@@ -171,7 +171,7 @@ class ItisAPI(APIQuery):
 #         if errmsgs:
 #             std_output[S2nKey.ERRORS] = errmsgs
 #         return std_output
-            
+
     # ...............................................
     @classmethod
     def _parse_hierarchy_to_dicts(cls, val):
@@ -227,7 +227,7 @@ class ItisAPI(APIQuery):
         hierarchy_prov_fld = 'hierarchySoFarWRanks'
         synonym_prov_fld = 'synonyms'
         good_statii = ('accepted', 'valid')
-        
+
         status = rec['usage'].lower()
         if (not is_accepted or (is_accepted and status in good_statii)):
             for stdfld, provfld in cls.NAME_MAP.items():
@@ -242,17 +242,17 @@ class ItisAPI(APIQuery):
                     newrec[data_std_fld] = ITIS.get_taxon_data(val)
 
                 elif provfld == hierarchy_prov_fld:
-                    hierarchy_lst = cls._parse_hierarchy_to_dicts(val)                   
+                    hierarchy_lst = cls._parse_hierarchy_to_dicts(val)
                     newrec[stdfld] =  hierarchy_lst
-                
+
                 elif provfld == synonym_prov_fld:
                     synonym_lst = cls._parse_synonyms_to_lists(val)
-                    newrec[stdfld] =  synonym_lst                    
-                
+                    newrec[stdfld] =  synonym_lst
+
                 else:
                     newrec[stdfld] =  val
         return newrec
-    
+
     # ...............................................
     @classmethod
     def _standardize_output(
@@ -277,28 +277,28 @@ class ItisAPI(APIQuery):
         prov_meta = cls._get_provider_response_elt(query_status=query_status, query_urls=query_urls)
         std_output = S2nOutput(
             total, service, provider=prov_meta, records=stdrecs, errors=errinfo)
-        
+
         return std_output
-    
+
 # ...............................................
     @classmethod
     def match_name(cls, sciname, is_accepted=False, kingdom=None, logger=None):
-        """Return an ITIS record for a scientific name using the 
+        r"""Return an ITIS record for a scientific name using the
         ITIS Solr service.
-        
+
         Args:
             sciname: a scientific name designating a taxon
-            status: optional designation for taxon status, 
-                kingdom Plantae are valid/invalid, others are accepted 
+            status: optional designation for taxon status,
+                kingdom Plantae are valid/invalid, others are accepted
             kingdom: optional designation for kingdom
-            logger: optional logger for info and error messages.  If None, 
-                prints to stdout    
+            logger: optional logger for info and error messages.  If None,
+                prints to stdout
 
-        Return: 
-            a dictionary containing one or more keys: 
+        Return:
+            a dictionary containing one or more keys:
                 count, records, error, warning
-            
-        Example URL: 
+
+        Example URL:
             http://services.itis.gov/?q=nameWOInd:Spinus\%20tristis&wt=json
         """
         errinfo = {}
@@ -330,8 +330,8 @@ class ItisAPI(APIQuery):
                 errinfo = add_errinfo(errinfo, 'error', api.error)
                 # Standardize output from provider response
                 std_output = cls._standardize_output(
-                    output, ITIS.COUNT_KEY, ITIS.RECORDS_KEY, S2nEndpoint.Name, 
-                    query_status=api.status_code, query_urls=[api.url], is_accepted=is_accepted, 
+                    output, ITIS.COUNT_KEY, ITIS.RECORDS_KEY, S2nEndpoint.Name,
+                    query_status=api.status_code, query_urls=[api.url], is_accepted=is_accepted,
                     errinfo=errinfo)
         return std_output
 
@@ -339,12 +339,12 @@ class ItisAPI(APIQuery):
     @classmethod
     def get_name_by_tsn(cls, tsn, logger=None):
         """Return a name and kingdom for an ITIS TSN using the ITIS Solr service.
-        
+
         Args:
             tsn: a unique integer identifier for a taxonomic record in ITIS
-            
+
         Note: not used or tested yet
-        
+
         Ex: https://services.itis.gov/?q=tsn:566578&wt=json
         """
         output = {}
@@ -363,7 +363,7 @@ class ItisAPI(APIQuery):
             errinfo = add_errinfo(errinfo, 'error', apiq.error)
             # Standardize output from provider response
             std_output = cls._standardize_output(
-                output, ITIS.COUNT_KEY, ITIS.RECORDS_KEY, S2nEndpoint.Name, 
+                output, ITIS.COUNT_KEY, ITIS.RECORDS_KEY, S2nEndpoint.Name,
                 apiq.status_code, query_urls=[apiq.url], is_accepted=True, errinfo=errinfo)
 
         return std_output
@@ -378,7 +378,7 @@ class ItisAPI(APIQuery):
 #     @classmethod
 #     def get_vernacular_by_tsn(cls, tsn, logger=None):
 #         """Return vernacular names for an ITIS TSN.
-#         
+#
 #         Args:
 #             tsn: an ITIS code designating a taxonomic name
 #         """
@@ -387,7 +387,7 @@ class ItisAPI(APIQuery):
 #             url = '{}/{}?{}={}'.format(
 #                 ITIS.WEBSVC_URL, ITIS.VERNACULAR_QUERY, ITIS.TSN_KEY, str(tsn))
 #             root = self._getDataFromUrl(url, resp_type='xml')
-#         
+#
 #             retElt = root.find('{}return'.format(ITIS.NAMESPACE))
 #             if retElt is not None:
 #                 cnEltLst = retElt.findall('{}commonNames'.format(ITIS.DATA_NAMESPACE))
@@ -396,14 +396,14 @@ class ItisAPI(APIQuery):
 #                     if nelt is not None and nelt.text is not None:
 #                         common_names.append(nelt.text)
 #         return common_names
-# 
+#
 #     # ...............................................
 #     @classmethod
 #     def get_tsn_hierarchy(cls, tsn, logger=None):
 #         """Retrieve taxon hierarchy"""
 #         url = '{}/{}'.format(ITIS.WEBSVC_URL, ITIS.TAXONOMY_HIERARCHY_QUERY)
 #         apiq = APIQuery(
-#             url, other_filters={ITIS.TSN_KEY: tsn}, 
+#             url, other_filters={ITIS.TSN_KEY: tsn},
 #             headers={'Content-Type': 'text/xml'}, logger=logger)
 #         apiq.query_by_get(output_type='xml')
 #         tax_path = apiq._return_hierarchy()
@@ -419,10 +419,10 @@ class ItisAPI(APIQuery):
 #     @classmethod
 #     def match_name_nonsolr(cls, sciname, count_only=False, outformat='json', logger=None):
 #         """Return matching names for scienfific name using the ITIS Web service.
-#         
+#
 #         Args:
 #             sciname: a scientific name
-#             
+#
 #         Ex: https://services.itis.gov/?q=tsn:566578&wt=json
 #         """
 #         output = {}
@@ -433,12 +433,12 @@ class ItisAPI(APIQuery):
 #             url = ITIS.WEBSVC_URL
 #             outformat = 'xml'
 #         apiq = ItisAPI(
-#             url, service=ITIS.ITISTERMS_FROM_SCINAME_QUERY, 
+#             url, service=ITIS.ITISTERMS_FROM_SCINAME_QUERY,
 #             other_filters={ITIS.SEARCH_KEY: sciname}, logger=logger)
 #         apiq.query_by_get(output_type=outformat)
-#         
+#
 #         recs = []
-#         if outformat == 'json':    
+#         if outformat == 'json':
 #             outjson = apiq.output
 #             try:
 #                 recs = outjson['itisTerms']
@@ -446,7 +446,7 @@ class ItisAPI(APIQuery):
 #                 errmsgs.append(cls._get_error_message(
 #                     msg='Missing `itisTerms` element'))
 #         else:
-#             root = apiq.output    
+#             root = apiq.output
 #             retElt = root.find('{}return'.format(ITIS.NAMESPACE))
 #             if retElt is not None:
 #                 termEltLst = retElt.findall('{}itisTerms'.format(ITIS.DATA_NAMESPACE))
@@ -457,7 +457,7 @@ class ItisAPI(APIQuery):
 #                         rec[e.tag] = e.text
 #                     if rec:
 #                         recs.append(rec)
-#                         
+#
 #         output[S2nKey.COUNT] = len(recs)
 #         if not count_only:
 #             output[S2nKey.RECORDS] = recs
@@ -469,10 +469,10 @@ class ItisAPI(APIQuery):
 if __name__ == '__main__':
     # test
     from sppy.tools.provider.gbif import GbifAPI
-    
+
     names = TST_VALUES.NAMES[:5]
     canonicals = GbifAPI.parse_names(names=names)
-    
+
     for name in names:
         itis_names = ItisAPI.match_name(name)
         log_info ('Matched {} with {} ITIS names using Solr'.format(
@@ -481,7 +481,7 @@ if __name__ == '__main__':
             log_info('{}: {}, {}, {}'.format(
                 n['nameWOInd'], n['kingdom'], n['usage'], n['rank']))
         log_info ('')
- 
-"""
+
+r"""
 https://services.itis.gov/?wt=json&q=nameWInd:Plagioecia\%20patina
 """

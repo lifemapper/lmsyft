@@ -23,7 +23,7 @@ class APIQuery:
     PROVIDER = None
 
     def __init__(self, base_url, q_key='q', q_filters=None,
-                 other_filters=None, filter_string=None, headers=None, 
+                 other_filters=None, filter_string=None, headers=None,
                  logger=None):
         """
         @summary Constructor for the APIQuery class
@@ -45,9 +45,9 @@ class APIQuery:
     @classmethod
     def _standardize_record(cls, rec):
         """
-        Standardize record to common schema. 
-        
-        Note: 
+        Standardize record to common schema.
+
+        Note:
             implemented in subclasses
         """
         raise Exception('Not implemented in base class')
@@ -55,7 +55,7 @@ class APIQuery:
     # ...............................................
     @classmethod
     def _standardize_output(
-            cls, output, count_key, records_key, record_format, service, query_status=None, 
+            cls, output, count_key, records_key, record_format, service, query_status=None,
             query_urls=[], count_only=False, errinfo={}):
         stdrecs = []
         total = 0
@@ -82,10 +82,10 @@ class APIQuery:
                     except Exception as e:
                         msg = cls._get_error_message(err=e)
                         errinfo = add_errinfo(errinfo, 'error', msg)
-                            
+
         prov_meta = cls._get_provider_response_elt(query_status=query_status, query_urls=query_urls)
         std_output = S2nOutput(
-            total, service, provider=prov_meta, record_format=record_format, 
+            total, service, provider=prov_meta, record_format=record_format,
             records=stdrecs, errors=errinfo)
 
         return std_output
@@ -127,7 +127,7 @@ class APIQuery:
         # Optional http status_code
         try:
             stat = int(query_status)
-        except: 
+        except:
             try:
                 stat = max(query_status)
             except:
@@ -139,7 +139,7 @@ class APIQuery:
             provider_element[S2nKey.PROVIDER_QUERY_URL] = query_urls
         return provider_element
 
-    
+
     # .....................................
     @classmethod
     def init_from_url(cls, url, headers=None, logger=None):
@@ -300,12 +300,12 @@ class APIQuery:
     def get_api_failure(
             cls, service, provider_response_status, errinfo={}):
         """Output format for all (soon) API queries
-        
+
         Args:
             provider_response_status: HTTPStatus of provider query
             errors: list of info messages, warnings, errors (dictionaries)
             service: type of S^n services
-            
+
         Return:
             lmtrex.services.api.v1.S2nOutput object
         """
@@ -316,9 +316,9 @@ class APIQuery:
     # ...............................................
     def query_by_get(self, output_type='json', verify=True):
         """
-        Queries the API and sets 'output' attribute to a JSON or ElementTree 
+        Queries the API and sets 'output' attribute to a JSON or ElementTree
         object and S2nKey.ERRORS attribute to a string if appropriate.
-        
+
         Note:
             Sets a single error message, not a list, to error attribute
         """
@@ -352,7 +352,7 @@ class APIQuery:
                         if output.find(b'<html') != -1:
                             self.status_code = HTTPStatus.INTERNAL_SERVER_ERROR
                             errmsg = self._get_error_message(
-                                msg='Provider error', 
+                                msg='Provider error',
                                 err='Invalid JSON response ({})'.format(output))
                         else:
                             try:
@@ -420,7 +420,7 @@ class APIQuery:
                     ret_code = HTTPStatus.INTERNAL_SERVER_ERROR
                     reason = 'Unknown Error'
                 errmsg = self._get_error_message(
-                    msg='code = {}, reason = {}'.format(ret_code, reason), 
+                    msg='code = {}, reason = {}'.format(ret_code, reason),
                     err=e)
         # Save server status
         try:
@@ -452,6 +452,6 @@ class APIQuery:
             errmsg = self._get_error_message(
                 msg='URL {}, code = {}, reason = {}'.format(
                     self.base_url, self.status_code, self.reason))
-            
+
         if errmsg is not None:
             self.error = errmsg

@@ -14,21 +14,21 @@ from sppy.tools.s2n.utils  import get_traceback
 # .............................................................................
 class IpniAPI(APIQuery):
     """Class to query WoRMS API for a name match
-    
+
     Todo:
         Extend for other services
     """
     PROVIDER = ServiceProvider.IPNI
     # NAME_MAP = S2nSchema.get_ipni_name_map()
-    
+
     # ...............................................
     def __init__(self, name, other_filters={}, logger=None):
         """
         Constructor for WormsAPI class
-        
+
         Args:
             other_filters: optional filters
-            logger: optional logger for info and error messages.  If None, 
+            logger: optional logger for info and error messages.  If None,
                 prints to stdout
         """
         url = '{}/{}'.format(WORMS.REST_URL, WORMS.NAME_MATCH_SERVICE)
@@ -64,27 +64,27 @@ class IpniAPI(APIQuery):
         except Exception:
             return None
         return val
-    
+
     # ...............................................
     @classmethod
     def _standardize_record(cls, rec, is_accepted=False):
         """
-        dict_items([('name', 'Poa annua'), 
-        ('authors', 'L.'), 
-        ('publishingAuthor', 'L.'), 
-        ('authorTeam', [{'name': 'L.', 'id': '12653-1', 'order': 0, 'type': 'aut', 'summary': None, 'url': '/a/12653-1'}]), 
-        ('rank', 'spec.'), 
-        ('url', '/n/320035-2'), 
+        dict_items([('name', 'Poa annua'),
+        ('authors', 'L.'),
+        ('publishingAuthor', 'L.'),
+        ('authorTeam', [{'name': 'L.', 'id': '12653-1', 'order': 0, 'type': 'aut', 'summary': None, 'url': '/a/12653-1'}]),
+        ('rank', 'spec.'),
+        ('url', '/n/320035-2'),
         ('family', 'Poaceae'), ('genus', 'Poa'), ('species', 'annua'),
-        ('citationType', 'tax. nov.'), ('hybrid', False), ('hybridGenus', False), 
-        ('inPowo', True), 
+        ('citationType', 'tax. nov.'), ('hybrid', False), ('hybridGenus', False),
+        ('inPowo', True),
         ('linkedPublication', {'abbreviation': 'Sp. Pl. [Linnaeus]', 'date': '1 May 1753', 'fqId': 'urn:lsid:ipni.org:publications:1071-2', 'id': '1071-2', 'lcNumber': 'QK91.S6', 'recordType': 'publication', 'remarks': 'For 2 volumes, the date of publication established as 1 May, 1753', 'suppressed': False, 'title': 'Species Plantarum', 'tl2Author': 'Linnaeus, Carl', 'tl2Number': '4.769', 'url': '/p/1071-2', 'version': '1.4', 'hasBhlLinks': True, 'hasBhlTitleLink': True, 'hasBhlPageLink': True, 'bhlPageLink': 'http://www.biodiversitylibrary.org/openurl?ctx_ver=Z39.88-2004&rft_id=http://www.biodiversitylibrary.org/page/33355180&rft_val_fmt=info:ofi/fmt:kev:mtx:book&url_ver=z39.88-2004', 'bhlTitleLink': 'http://www.biodiversitylibrary.org/openurl?ctx_ver=Z39.88-2004&rft_id=http://www.biodiversitylibrary.org/bibliography/669&rft_val_fmt=info:ofi/fmt:kev:mtx:book&url_ver=z39.88-2004'}), ('publication', 'Sp. Pl.'), ('publicationYear', 1753), ('publicationYearNote', '1 May 1753'), ('referenceCollation', '1: 68'), ('publicationId', '1071-2'), ('recordType', 'citation'), ('reference', 'Sp. Pl. 1: 68. 1753 [1 May 1753] '), ('remarks', '[Gandhi 30 Jun 2000]'), ('suppressed', False), ('topCopy', True), ('typeLocations', 'lectotype LINN (NO. 87.17, RIGHT-HAND PLANT) (NO. 87.17, RIGHT-HAND PLANT)'), ('version', '1.5'), ('id', '320035-2'), ('fqId', 'urn:lsid:ipni.org:names:320035-2'), ('hasNomenclaturalNotes', False), ('hasTypeData', True), ('hasOriginalData', False), ('hasLinks', False), ('bhlLink', 'http://www.biodiversitylibrary.org/openurl?ctx_ver=Z39.88-2004&rft.date=1753&rft.spage=68&rft.volume=1&rft_id=http://www.biodiversitylibrary.org/bibliography/669&rft_val_fmt=info:ofi/fmt:kev:mtx:book&url_ver=z39.88-2004')])
 
         """
         newrec = {}
         data_std_fld = S2nSchema.get_data_url_fld()
         hierarchy_fld = 'hierarchy'
-        
+
         try:
             canonical_str = rec['name']
         except:
@@ -94,7 +94,7 @@ class IpniAPI(APIQuery):
             auth_str = ' {}'.format(rec['authors'])
         except:
             auth_str = ''
-        
+
         sciname_str = '{}{}'.format(canonical_str, auth_str)
 
         hierarchy = OrderedDict()
@@ -105,26 +105,26 @@ class IpniAPI(APIQuery):
                 pass
             else:
                 hierarchy[rnk] = val
-            
+
         for stdfld, provfld in cls.NAME_MAP.items():
             try:
                 val = rec[provfld]
             except:
                 val = None
-                
+
             # Use ID field to construct data_url
             if provfld == hierarchy_fld:
                 newrec[stdfld] = [hierarchy]
-                
+
             elif provfld == WORMS.ID_FLDNAME:
                 newrec[stdfld] = val
                 newrec[data_std_fld] = WORMS.get_species_data(val)
-                
+
             # all others, including view_url
             else:
                 newrec[stdfld] = val
         return newrec
-    
+
     # ...............................................
     @classmethod
     def _test_record(cls, status, rec):
@@ -160,9 +160,9 @@ class IpniAPI(APIQuery):
         prov_meta = cls._get_provider_response_elt(query_status=query_status, query_urls=query_urls)
         std_output = S2nOutput(
             total, service, provider=prov_meta, records=stdrecs, errors=errinfo)
-        
+
         return std_output
-    
+
     # ...............................................
     @classmethod
     def _parse_name(cls, namestr):
@@ -188,22 +188,22 @@ class IpniAPI(APIQuery):
                         infrasp = parts.pop(0)
                     auth = ' '.join(parts)
         return genus, species, infrasp, auth
-                        
-        
+
+
     # ...............................................
     @classmethod
     def match_name(cls, namestr, is_accepted=False, logger=None):
         """Return closest accepted species in IPNI taxonomy,
-        
+
         Args:
-            namestr: A scientific namestring possibly including author, year, 
+            namestr: A scientific namestring possibly including author, year,
                 rank marker or other name information.
-            is_accepted: match the ACCEPTED TaxonomicStatus 
-                
+            is_accepted: match the ACCEPTED TaxonomicStatus
+
         Returns:
-            Either a dictionary containing a matching record with status 
-                'accepted' or 'synonym' without 'alternatives'.  
-            Or, if there is no matching record, return the first/best 
+            Either a dictionary containing a matching record with status
+                'accepted' or 'synonym' without 'alternatives'.
+            Or, if there is no matching record, return the first/best
                 'alternative' record with status 'accepted' or 'synonym'.
         """
         status = None
@@ -211,11 +211,11 @@ class IpniAPI(APIQuery):
         if is_accepted:
             status = 'accepted'
         genus, species, _, _ = cls._parse_name(namestr)
-        
+
         query = { Name.genus: genus, Name.species: species }
         try:
             output = ipni.search(query)
-        
+
         except Exception as e:
             tb = get_traceback()
             errinfo['error'] =  [cls._get_error_message(err=tb)]
@@ -223,14 +223,14 @@ class IpniAPI(APIQuery):
                 S2nEndpoint.Name, HTTPStatus.INTERNAL_SERVER_ERROR, errinfo=errinfo)
         else:
             qry = ''.join([
-                'pykew.ipni.search(', '{', 
-                ' Name.genus: {}, Name.species: {} '.format(genus, species), 
+                'pykew.ipni.search(', '{',
+                ' Name.genus: {}, Name.species: {} '.format(genus, species),
                 '}', ')'])
             # Standardize output from provider response
             std_output = cls._standardize_output(
-                output, S2nEndpoint.Name, query_status=200, query_urls=[qry], 
+                output, S2nEndpoint.Name, query_status=200, query_urls=[qry],
                 is_accepted=is_accepted, errinfo=errinfo)
-            
+
         return std_output
 
 

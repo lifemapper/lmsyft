@@ -1,18 +1,18 @@
 # Welcome to the Specify Network!
 
-The Specify Network consists of tools and services to serve the Specify Collections 
-Consortium.  There are currently several elements in production, and some still in 
+The Specify Network consists of tools and services to serve the Specify Collections
+Consortium.  There are currently several elements in production, and some still in
 development.
 
 This work has been supported by NSF Awards NSF BIO-1458422, OCI-1234983.
 
 ## Specify Broker
-The Specify Broker searches for information related to an occurrence object  
-information from other data services, such as GBIF, iDigBio, OpenTreeOfLife, ITIS, 
-WoRMS, and more.  It presents the related digital object elements in a frontend, 
+The Specify Broker searches for information related to an occurrence object
+information from other data services, such as GBIF, iDigBio, OpenTreeOfLife, ITIS,
+WoRMS, and more.  It presents the related digital object elements in a frontend,
 primarily accessed through the Specify application.
 
-The Specify Broker houses objects and common tools used within a Broker installation 
+The Specify Broker houses objects and common tools used within a Broker installation
 that may also be useful for outside contributors and the community as a whole.
 
 Any community contributed tool through the
@@ -21,15 +21,15 @@ use these objects to ensure that new contributions are compatible with the
 Lifemapper backend.
 
 ## Specify Cache
-The Specify Cache stores records submitted by Specify Collections for public access via 
+The Specify Cache stores records submitted by Specify Collections for public access via
 the Specify-assigned GUID, held in the DarwinCore occurrenceID field.  It holds records
 for Specify collections without a public endpoint for each record.
 
 ## Specify Resolver
-The Specify Resolver retrieves the URL of a Specify record given the Specify-assigned 
-GUID, held in the DarwinCore occurrenceID field.  Specify 6 records are 
-served from the Specify cache, if they have been exported to the Specify Network.  
-Specify 7 records can be accessed directly from the Specify 7 webserver if the server  
+The Specify Resolver retrieves the URL of a Specify record given the Specify-assigned
+GUID, held in the DarwinCore occurrenceID field.  Specify 6 records are
+served from the Specify cache, if they have been exported to the Specify Network.
+Specify 7 records can be accessed directly from the Specify 7 webserver if the server
 has been made public.
 
 ### Specify Cache and Resolver API documentation
@@ -42,17 +42,17 @@ be found at https://specifysystems.github.io/specify_cache/.
 ## Syftorium (in development)
 ![Logo](static/syftorium.png)
 
-The Syftorium is in development, and will be a collection of specimen-based analytics 
-assessing the composition of collection holdings and available species information. 
+The Syftorium is in development, and will be a collection of specimen-based analytics
+assessing the composition of collection holdings and available species information.
 
-These data are used to compare and assess collections against and among the collective 
-holdings globally distributed data.  The analytics are then returned to the 
+These data are used to compare and assess collections against and among the collective
+holdings globally distributed data.  The analytics are then returned to the
 contributing institutions and others to assist those collections in prioritizing
-collecting and digitization efforts, institutional loans, mergers, deaccessions, and 
-more, to improve, the overall quality of the collection.  This information can also be 
-used by the community as a whole to identify gaps in species knowlege or redundancies.  
+collecting and digitization efforts, institutional loans, mergers, deaccessions, and
+more, to improve, the overall quality of the collection.  This information can also be
+used by the community as a whole to identify gaps in species knowlege or redundancies.
 
-The Syftorium presents this information in multivariate-, but subsettable, space 
+The Syftorium presents this information in multivariate-, but subsettable, space
 to provide as much value and feedback to the community as possible.
 
 
@@ -62,7 +62,7 @@ To run the containers, generate `fullchain.pem` and `privkey.pem` (certificate
 and the private key) using Let's Encrypt and link these files in the (currently
 separate config directories) `./specify_cache/lmtrex/config/` and `./specify_cache/config/`.
 
-While in development, you can generate self-signed certificates then link them in 
+While in development, you can generate self-signed certificates then link them in
 ./specify_cache/lmtrex/config/ directory for this project:
 
 ```zsh
@@ -72,7 +72,7 @@ openssl req \
   -x509 -sha256 -nodes -newkey rsa:2048 -days 365 \
   -keyout ~/self-signed-certificates/privkey.pem \
   -out ~/self-signed-certificates/fullchain.pem
-  
+
 cd ./specify_cache/config
 ln -s ~/self-signed-certificates/privkey.pem
 ln -s ~/self-signed-certificates/fullchain.pem
@@ -112,20 +112,20 @@ On a development server, check the following URL endpoints:
 * Index page: https://localhost
 * Solr http://localhost:8983/solr/#/
 
-* Specify Cache: 
+* Specify Cache:
   * https://localhost/sp_cache/api/v1/
-  * 
+  *
   * https://localhost/sp_cache/api/v1/collection/
   * https://syftorium.org/api/v1/sp_cache/collection/052ab79f-416c-4d5e-bc1d-afbde6744589
   * https://syftorium.org/api/v1/sp_cache/collection/052ab79f-416c-4d5e-bc1d-afbde6744589/occurrences/2facc7a2-dd88-44af-b95a-733cc27527d4
 
-* Resolver: 
+* Resolver:
   * https://localhost/resolve/
-  * 
+  *
   * https://syftorium.org/api/v1/resolve/
   * https://syftorium.org/api/v1/resolve/2facc7a2-dd88-44af-b95a-733cc27527d4
 
-* Broker: 
+* Broker:
   * https://localhost/broker/api/v1/
     * https://localhost/broker/api/v1/address/
     * https://localhost/broker/api/v1/badge/
@@ -133,13 +133,13 @@ On a development server, check the following URL endpoints:
     * https://localhost/broker/api/v1/occ/
     * https://localhost/broker/api/v1/resolve/
     * https://localhost/broker/api/v1/frontend/
-    * 
-  * https://localhost/broker/api/v1/occ/?occid=a7156437-55ec-4c6f-89de-938f9361753d 
+    *
+  * https://localhost/broker/api/v1/occ/?occid=a7156437-55ec-4c6f-89de-938f9361753d
 
-For local testing in a development environment, tests in the tests directory 
+For local testing in a development environment, tests in the tests directory
 require the lmtest module available at https://github.com/lifemapper/lmtest.
 
-Environment variables set in the Docker containers from the .env.conf file are 
+Environment variables set in the Docker containers from the .env.conf file are
 necessary to test containers from the host machine.
 
 **Temp solution:** Export these variables to the local environment in the python
@@ -154,8 +154,8 @@ export WORKING_DIRECTORY="scratch-path"
 
 **Specify Network** homepage is now available at https://localhost/ and http://localhost.
 
-**Specify Cache**, a summary of records in the Specify Cache, is at 
-https://localhost/sp_cache/ 
+**Specify Cache**, a summary of records in the Specify Cache, is at
+https://localhost/sp_cache/
 
 **Solr** is available through http://localhost:8983/solr/#/
 
@@ -196,7 +196,7 @@ docker compose up -d
 
 ### Examine container
 
-To examine containers at a shell prompt: 
+To examine containers at a shell prompt:
 
 ```zsh
 docker exec -it specify_cache-nginx-1 /bin/sh
@@ -205,7 +205,7 @@ docker exec -it specify_cache-nginx-1 /bin/sh
 Error port in use:
 "Error starting userland proxy: listen tcp4 0.0.0.0:443: bind: address already in use"
 
-See what else is using the port.  In my case apache was started on reboot.  Bring down 
+See what else is using the port.  In my case apache was started on reboot.  Bring down
 all docker containers, shut down httpd, bring up docker.
 
 ```zsh
@@ -219,7 +219,7 @@ docker compose  up -d
 
 ### Debug mode
 
-To run flask in debug mode, first setup virtual environment for python at the 
+To run flask in debug mode, first setup virtual environment for python at the
 top level of the repo, activate, then add dependencies from requirements.txt:
 
 ```zsh
@@ -253,7 +253,7 @@ port `5002`, `broker` on port `5003`.
 
 ### SSL certificates
 
-SSL certificates are served from the base VM, and need apache to be renewed.  
+SSL certificates are served from the base VM, and need apache to be renewed.
 These are administered by Letsencrypt using Certbot and are only valid for 90 days at
 a time. When it is time for a renewal (approx every 60 days), bring the docker
 containers down, and start apache. Renew the certificates, then stop apache,
@@ -280,14 +280,32 @@ Note, you many need to modify `sp_cache-1` to reflect your container name.
 # Local development setup
 
 ## Installing dependencies
-* 
+
 * Create a virtual environment and install python libs there
 
-## Troubleshooting 
-* pip errors with SSL
+## Troubleshooting
 
+## pip errors with SSL
+
+  * add trusted-host option at command line
 ```commandline
 pip install --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org ~/git/lmpy
+```
+  * for processes that call pip, create a pip configuration file , then export as
+    PIP_CONFIG_FILE environment variable in .bashrc
+
+```commandline
+# ~/pip.conf
+[install]
+trusted-host = pypi.python.org
+               pypi.org
+               files.pythonhosted.org
+
+# ~/.bashrc
+export PIP_CONFIG_FILE ~/pip.conf
+
+# at terminal
+$ source ~/.bashrc
 ```
 
 * pre-commit errors with self-signed certificate
@@ -298,9 +316,22 @@ git config --global http.sslVerify false
 
 ```
 
-  * turn on again with 
+  * turn on again with
 
 ```commandline
 git config --global http.sslVerify true
 
 ```
+
+## pre-commit build errors
+
+* remove cache, then re-install pre-commit
+
+```commandline
+$ rm -rf ~/.cache/pre-commit
+$ pre-commit run
+```
+
+* still errors installing toml, Poetry, dependencies of isort.
+  * Updated .pre-commit-config.yaml isort version to latest,
+     https://github.com/PyCQA/isort, fixed build

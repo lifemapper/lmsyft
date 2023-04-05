@@ -32,7 +32,7 @@ def _post_remote(collection, fname, solr_location, headers={}):
     params = {'commit' : 'true'}
     with open(fname, 'r', encoding=ENCODING) as in_file:
         data = in_file.read()
-        
+
     try:
         response = requests.post(url, data=data, params=params, headers=headers)
     except Exception as e:
@@ -55,7 +55,7 @@ def _post_remote(collection, fname, solr_location, headers={}):
                         .format(url, str(e)))
         else:
             try:
-                retcode = response.status_code        
+                retcode = response.status_code
                 reason = response.reason
             except:
                 print('Failed to find failure reason for URL {} ({})'
@@ -71,10 +71,10 @@ def _post_remote(collection, fname, solr_location, headers={}):
 # .............................................................................
 def _post_local(fname, collection):
     """Post a document to a Solr index.
-    
+
     Args:
         fname: Full path the file containing data to be indexed in Solr
-        collection: name of the Solr collection to be posted to 
+        collection: name of the Solr collection to be posted to
     """
     cmd = '{} -c {} {} '.format(SOLR_POST_COMMAND, collection, fname)
     output, _ = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
@@ -83,10 +83,10 @@ def _post_local(fname, collection):
 # .............................................................................
 def post(fname, collection, solr_location, headers=None):
     """Post a document to a Solr index.
-    
+
     Args:
         fname: Full path the file containing data to be indexed in Solr
-        collection: name of the Solr collection to be posted to 
+        collection: name of the Solr collection to be posted to
         solr_location: URL to solr instance (i.e. http://localhost:8983/solr)
         headers: optional keyword/values to send server
     """
@@ -100,34 +100,34 @@ def post(fname, collection, solr_location, headers=None):
 # .............................................................................
 def query_guid(guid, collection, solr_location):
     """
-    Query a Specify resolver index and return results for an occurrence in 
+    Query a Specify resolver index and return results for an occurrence in
     JSON format.
-    
+
     Args:
         guid: Unique identifier for record of interest
         collection: name of the Solr index
         solr_location: IP or FQDN for solr index
 
-    Return: 
+    Return:
         a dictionary containing one or more keys: count, docs, error
     """
     return query(collection, solr_location, filters={'id': guid}, query_term=guid)
-    
+
 # .............................................................................
 def query(collection, solr_location, filters={'*': '*'}, query_term='*'):
     """Query a solr index and return results in JSON format
-    
+
     Args:
         collection: solr index for query
         solr_location: IP or FQDN for solr index
         filters: q filters for solr query
 
-    Return: 
+    Return:
         a dictionary containing one or more keys: count, docs, error
     """
     output = {S2nKey.COUNT: 0}
     errmsgs = []
-    
+
     solr_endpt = 'http://{}:8983/solr/{}/select'.format(solr_location, collection)
     api = APIQuery(solr_endpt, q_filters=filters)
     api.query_by_get(output_type='json')
@@ -144,13 +144,13 @@ def query(collection, solr_location, filters={'*': '*'}, query_term='*'):
             recs = response['docs']
         except:
             errmsgs.append('Failed to return docs from solr')
-    
+
     service = provider = ''
-    record_format = _get_record_format(collection)    
+    record_format = _get_record_format(collection)
     std_output = S2nOutput(
-        count, service, provider, provider_query=[api.url], 
+        count, service, provider, provider_query=[api.url],
             record_format=record_format, records=recs, errors=errmsgs)
-    
+
     return std_output
 
 # .............................................................................

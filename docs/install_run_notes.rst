@@ -9,11 +9,11 @@ Contains
     * API classes for providers, to query providers for S^n output
     * automated tests
 
-* Specify resolver 
+* Specify resolver
 
   * query IPT and specify colllection endpoints
   * read a DWCA into a CSV file for Solr input
-  * 
+  *
 
 
 Dependencies:

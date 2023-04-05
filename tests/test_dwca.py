@@ -25,10 +25,10 @@ def prep_dwca_data(do_download=False, do_extract=False):
                 raise Exception('Failed to download {}'.format(url))
     elif os.path.exists(zip_dwca_fullfname):
         _clear_data(TEST_PATH)
-        
+
     # extract to location we are downloading to
     archive = DwCArchive(zip_dwca_fullfname)
-        
+
     # Extract DWCA file or clear dwca data
     if do_extract:
         if not os.path.exists(archive.meta_fname):
@@ -36,7 +36,7 @@ def prep_dwca_data(do_download=False, do_extract=False):
 #     elif os.path.exists(archive.meta_fname):
 #         extract_path, _  = os.path.split(zip_dwca_fullfname)
 #         _clear_data(extract_path)
-    
+
     return archive
 
 # ............................
@@ -60,25 +60,25 @@ def test_extract_dwca():
     archive = prep_dwca_data(do_download=True, do_extract=True)
 
     assert(os.path.exists(archive.meta_fname))
-    assert(os.path.exists(archive.ds_meta_fname))    
-    
+    assert(os.path.exists(archive.ds_meta_fname))
+
 # ............................
 def test_read_dwca_meta():
     archive = prep_dwca_data(do_download=True, do_extract=True)
-    
-    # Read dataset metadata        
+
+    # Read dataset metadata
     ds_uuid = archive.read_dataset_uuid()
     assert(is_valid_uuid(ds_uuid))
-    
+
     # Read DWCA metadata
     fileinfo = archive.read_core_fileinfo()
     for key in (
-        DWCA.DELIMITER_KEY, DWCA.LINE_DELIMITER_KEY, DWCA.QUOTE_CHAR_KEY, 
+        DWCA.DELIMITER_KEY, DWCA.LINE_DELIMITER_KEY, DWCA.QUOTE_CHAR_KEY,
         DWCA.LOCATION_KEY, DWCA.UUID_KEY, DWCA.FLDMAP_KEY, DWCA.FLDS_KEY):
         # Key exists and is not empty
         assert(key in fileinfo.keys())
         assert(fileinfo[key])
-        
+
 # ............................
 def test_rewrite_for_solr():
     archive = prep_dwca_data(do_download=True, do_extract=True)
@@ -88,7 +88,7 @@ def test_rewrite_for_solr():
     solr_fname = archive.read_recs_for_solr(fileinfo, ds_uuid)
     print(solr_fname)
 
-        
+
 # ...............................................
 def _clear_data(path_to_delete):
     """Deletes a file or recursively deletes a directory. """
@@ -97,17 +97,17 @@ def _clear_data(path_to_delete):
             shutil.rmtree(path_to_delete)
         except Exception as e:
             print('Failed to remove directory {}'.format(path_to_delete))
-                            
+
     elif os.path.isfile(path_to_delete):
         try:
             os.remove(path_to_delete)
         except Exception as e:
             print('Failed to remove file {}'.format(path_to_delete))
-            
+
     else:
         print('Path {} does not exist to delete'.format(path_to_delete))
-    
-    
+
+
     # Read record metadata
     """
     fileinfo[DWCA.LOCATION_KEY] = core_loc_elt.text
@@ -117,11 +117,10 @@ def _clear_data(path_to_delete):
     fileinfo['fieldname_index_map'] = field_idxs
     fileinfo['fieldnames'] = ordered_fldnames
     """
-    
+
 # .............................................................................
 if __name__ == '__main__':
     test_find_links()
     test_download_link()
     test_extract_dwca()
     test_read_dwca_meta()
-    

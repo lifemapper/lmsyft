@@ -35,8 +35,8 @@ def get_header(filename):
 # .............................................................................
 def get_csv_reader(datafile, delimiter, encoding):
     try:
-        f = open(datafile, 'r', encoding=encoding) 
-        reader = csv.reader(f, delimiter=delimiter, escapechar='\\', 
+        f = open(datafile, 'r', encoding=encoding)
+        reader = csv.reader(f, delimiter=delimiter, escapechar='\\',
                             quoting=csv.QUOTE_NONE)
     except Exception as e:
         raise Exception('Failed to read or open {}, ({})'
@@ -48,7 +48,7 @@ def get_csv_reader(datafile, delimiter, encoding):
 # .............................................................................
 def get_csv_writer(datafile, delimiter, encoding, fmode='w'):
     ''' Get a CSV writer that can handle encoding
-    
+
     Args:
         datafile:
         delimiter:
@@ -57,10 +57,10 @@ def get_csv_writer(datafile, delimiter, encoding, fmode='w'):
     '''
     if fmode not in ('w', 'a'):
         raise Exception('File mode must be "w" (write) or "a" (append)')
-    
+
     csv.field_size_limit(maxsize)
     try:
-        f = open(datafile, fmode, encoding=encoding) 
+        f = open(datafile, fmode, encoding=encoding)
         writer = csv.writer(
             f, escapechar='\\', delimiter=delimiter, quoting=csv.QUOTE_NONE)
     except Exception as e:
@@ -71,7 +71,7 @@ def get_csv_writer(datafile, delimiter, encoding, fmode='w'):
     return writer, f
 
 # .............................................................................
-def get_csv_dict_reader(datafile, delimiter, encoding, fieldnames=None, 
+def get_csv_dict_reader(datafile, delimiter, encoding, fieldnames=None,
                         ignore_quotes=True):
     '''
     ignore_quotes: no special processing of quote characters
@@ -88,9 +88,9 @@ def get_csv_dict_reader(datafile, delimiter, encoding, fieldnames=None,
                 escapechar='\\', restkey=EXTRA_VALS_KEY, delimiter=delimiter)
         else:
             dreader = csv.DictReader(
-                f, fieldnames=fieldnames, restkey=EXTRA_VALS_KEY, 
+                f, fieldnames=fieldnames, restkey=EXTRA_VALS_KEY,
                 escapechar='\\', delimiter=delimiter)
-            
+
     except Exception as e:
         raise Exception('Failed to read or open {}, ({})'
                         .format(datafile, str(e)))
@@ -105,10 +105,10 @@ def get_csv_dict_writer(datafile, delimiter, encoding, fldnames, fmode='w'):
     '''
     if fmode not in ('w', 'a'):
         raise Exception('File mode must be "w" (write) or "a" (append)')
-    
+
     csv.field_size_limit(maxsize)
     try:
-        f = open(datafile, fmode, encoding=encoding) 
+        f = open(datafile, fmode, encoding=encoding)
         writer = csv.DictWriter(f, fieldnames=fldnames, delimiter=delimiter,
                                 escapechar='\\', quoting=csv.QUOTE_NONE)
     except Exception as e:
@@ -134,11 +134,11 @@ def makerow(rec, outfields):
         except:
             row.append('')
     return row
-        
+
 # ...............................................
 def getLine(csvreader, recno):
     ''' Return a line while keeping track of the line number and errors
-    
+
     Args:
         csvreader: a csv.reader object opened with a file
         recno: the current record number

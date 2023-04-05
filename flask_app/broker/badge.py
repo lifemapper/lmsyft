@@ -42,11 +42,11 @@ class BadgeSvc(_S2nService):
             # WoRMS
             elif provider == ServiceProvider.WoRMS[S2nKey.PARAM]:
                 icon_fname = ServiceProvider.WoRMS["icon"][icon_status]
-                
+
         except Exception:
             error_description = get_traceback()
             raise InternalServerError(error_description)
-        
+
         return icon_fname
 
 
@@ -63,7 +63,7 @@ class BadgeSvc(_S2nService):
     def get_icon(
             cls, provider=None, icon_status=None, stream=True, app_path="", **kwargs):
         """Get one icon to indicate a provider in a GUI
-        
+
         Args:
             provider: comma-delimited list of requested provider codes.  Codes are
                 delimited for each in lmtrex.common.lmconstants ServiceProvider
@@ -87,11 +87,11 @@ class BadgeSvc(_S2nService):
                 provider=provider, icon_status=icon_status)
             # Bad parameters
             try:
-                error_description = "; ".join(errinfo["error"])                            
+                error_description = "; ".join(errinfo["error"])
                 raise BadRequest(error_description)
             except:
                 pass
-                
+
         except Exception as e:
             # Unknown error
             error_description = get_traceback()
@@ -100,7 +100,7 @@ class BadgeSvc(_S2nService):
         icon_basename = cls._get_icon_filename(
             good_params["provider"], good_params["icon_status"])
         icon_fname = os.path.join(app_path, ICON_DIR, icon_basename)
-        
+
         if icon_fname is not None:
             ifile = open(icon_fname, mode="rb")
             image_binary = ifile.read()
@@ -110,7 +110,7 @@ class BadgeSvc(_S2nService):
                     as_attachment=False)
             else:
                 return send_file(
-                    io.BytesIO(image_binary), mimetype=ICON_CONTENT, as_attachment=True, 
+                    io.BytesIO(image_binary), mimetype=ICON_CONTENT, as_attachment=True,
                     attachment_filename=icon_fname)
             # # Return image data or file
             # try:
@@ -131,7 +131,7 @@ class BadgeSvc(_S2nService):
             #             as_attachment=True, attachment_filename=icon_fname)
             # finally:
             #     ifile.close()
-            
+
         else:
             raise NotImplemented(
                 f"Badge {icon_status} not implemented for provider {provider}")
@@ -148,4 +148,3 @@ if __name__ == "__main__":
                 provider=pr, icon_status=stat,
                 app_path="/home/astewart/git/specify_cache/sppy/frontend")
             print(retval)
-    

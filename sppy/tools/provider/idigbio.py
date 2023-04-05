@@ -14,7 +14,7 @@ from sppy.tools.s2n.utils import add_errinfo
 # .............................................................................
 class IdigbioAPI(APIQuery):
     """Class to query iDigBio APIs and return results"""
-    
+
     PROVIDER = ServiceProvider.iDigBio
     OCCURRENCE_MAP = S2nSchema.get_idb_occurrence_map()
 
@@ -100,33 +100,33 @@ class IdigbioAPI(APIQuery):
                 except Exception:
                     ctry_code = None
 
-                    
+
             # Iterate over desired output fields
             for stdfld, provfld in cls.OCCURRENCE_MAP.items():
                 # Include ID fields and issues even if empty
                 if provfld == Idigbio.ID_FIELD:
-                    newrec[stdfld] = uuid                    
+                    newrec[stdfld] = uuid
                     newrec[view_std_fld] = Idigbio.get_occurrence_view(uuid)
                     newrec[data_std_fld] = Idigbio.get_occurrence_data(uuid)
-                    
+
                 elif provfld == issue_fld:
                     newrec[stdfld] = cls._get_code2description_dict(
                         issue_codes, ISSUE_DEFINITIONS[ServiceProvider.iDigBio[S2nKey.PARAM]])
-                
+
                 elif stdfld == cc_std_fld:
                     newrec[stdfld] = ctry_code
-                    
+
                 else:
                     # all other fields are pulled from data element
                     try:
                         val = data_elt[provfld]
                     except:
                         val = None
-                    
+
                     if val and provfld in to_list_fields:
                         lst = val.split('|')
                         elts = [l.strip() for l in lst]
-                        newrec[stdfld] = elts                            
+                        newrec[stdfld] = elts
                     else:
                         newrec[stdfld] =  val
         return newrec
@@ -156,28 +156,28 @@ class IdigbioAPI(APIQuery):
     def get_occurrences_by_occid(cls, occid, count_only=False, logger=None):
         """Return iDigBio occurrences for this occurrenceId.  This will
         retrieve a one or more records with the given occurrenceId.
-        
+
         Todo: enable paging
         """
         errinfo = {}
-        qf = {Idigbio.QKEY: 
+        qf = {Idigbio.QKEY:
               '{"' + Idigbio.OCCURRENCEID_FIELD + '":"' + occid + '"}'}
         api = IdigbioAPI(other_filters=qf, logger=logger)
 
         try:
             api.query()
         except Exception as e:
-            errinfo = add_errinfo(errinfo, 'error', cls._get_error_message(err=e)) 
+            errinfo = add_errinfo(errinfo, 'error', cls._get_error_message(err=e))
             std_out = cls.get_api_failure(
                 S2nEndpoint.Occurrence, HTTPStatus.INTERNAL_SERVER_ERROR,
                 errinfo=errinfo)
         else:
             errinfo = add_errinfo(errinfo, 'error', api.error)
             std_out = cls._standardize_output(
-                api.output, Idigbio.COUNT_KEY, Idigbio.RECORDS_KEY, Idigbio.RECORD_FORMAT, 
-                S2nEndpoint.Occurrence, query_status=api.status_code, 
+                api.output, Idigbio.COUNT_KEY, Idigbio.RECORDS_KEY, Idigbio.RECORD_FORMAT,
+                S2nEndpoint.Occurrence, query_status=api.status_code,
                 query_urls=[api.url], count_only=count_only, errinfo=errinfo)
-        
+
         return std_out
 
     # ...............................................
@@ -204,7 +204,7 @@ class IdigbioAPI(APIQuery):
 #         api = idigbio.json()
 #         record_query = {
 #             'taxonid': str(gbif_taxon_id), 'geopoint': {'type': 'exists'}}
-# 
+#
 #         try:
 #             output = api.search_records(rq=record_query, limit=1, offset=0)
 #         except Exception:
@@ -213,7 +213,7 @@ class IdigbioAPI(APIQuery):
 #         else:
 #             total = output['itemCount']
 #         return total
-# 
+#
 #     # ...............................................
 #     def _get_idigbio_records(self, gbif_taxon_id, fields, writer,
 #                              meta_output_file):
@@ -235,7 +235,7 @@ class IdigbioAPI(APIQuery):
 #                 total = 0
 #             else:
 #                 total = output['itemCount']
-# 
+#
 #                 # First gbifTaxonId where this data retrieval is successful,
 #                 # get and write header and metadata
 #                 if total > 0 and fields is None:
@@ -246,7 +246,7 @@ class IdigbioAPI(APIQuery):
 #                     # Write metadata file with column indices
 #                     _meta = self._write_idigbio_metadata(
 #                         fields, meta_output_file)
-# 
+#
 #                 # Write these records
 #                 recs = output['items']
 #                 curr_count += len(recs)
@@ -273,7 +273,7 @@ class IdigbioAPI(APIQuery):
 #                                 vals.append(rec_data[fld_name])
 #                             except KeyError:
 #                                 vals.append('')
-# 
+#
 #                     writer.writerow(vals)
 #                 offset += limit
 #         log_info(('Retrieved {} of {} reported records for {}'.format(
@@ -282,7 +282,7 @@ class IdigbioAPI(APIQuery):
 
     # ...............................................
     def assemble_idigbio_data(
-            self, taxon_ids, point_output_file, meta_output_file, 
+            self, taxon_ids, point_output_file, meta_output_file,
             missing_id_file=None, logger=None):
         """Assemble iDigBio data dictionary"""
         if not isinstance(taxon_ids, list):
@@ -336,4 +336,3 @@ class IdigbioAPI(APIQuery):
             summary[gid] = pt_count
 
         return summary
-

@@ -12,16 +12,16 @@ class MorphoSourceAPI(APIQuery):
     """Class to query Specify portal APIs and return results"""
     PROVIDER = ServiceProvider.MorphoSource
     OCCURRENCE_MAP = S2nSchema.get_mopho_occurrence_map()
-    
+
     # ...............................................
     def __init__(
-            self, resource=MorphoSource.OCC_RESOURCE, q_filters={}, 
+            self, resource=MorphoSource.OCC_RESOURCE, q_filters={},
             other_filters={}, logger=None):
         """Constructor for MorphoSourceAPI class"""
         url = '{}/{}/{}'.format(
             MorphoSource.REST_URL, MorphoSource.COMMAND, resource)
         APIQuery.__init__(
-            self, url, q_filters=q_filters, 
+            self, url, q_filters=q_filters,
             other_filters=other_filters, logger=logger)
 
     # ...............................................
@@ -40,23 +40,23 @@ class MorphoSourceAPI(APIQuery):
             if provfld == MorphoSource.DWC_ID_FIELD:
                 newrec[stdfld] =  val
                 newrec[data_std_fld] = MorphoSource.get_occurrence_data(val)
-                
+
             # Use local ID field to also construct webpage url
             elif provfld == MorphoSource.LOCAL_ID_FIELD:
                 newrec[view_std_fld] = MorphoSource.get_occurrence_view(val)
-                
+
             # all others
             else:
                 newrec[stdfld] =  val
         return newrec
-    
+
     # ...............................................
     @classmethod
     def get_occurrences_by_occid_page1(cls, occid, count_only=False, logger=None):
         start = 0
         errinfo = {}
         api = MorphoSourceAPI(
-            resource=MorphoSource.OCC_RESOURCE, 
+            resource=MorphoSource.OCC_RESOURCE,
             q_filters={MorphoSource.OCCURRENCEID_KEY: occid},
             other_filters={'start': start, 'limit': MorphoSource.LIMIT})
         # Handle bad SSL certificate on old MorphoSource API until v2 is working
@@ -76,17 +76,17 @@ class MorphoSourceAPI(APIQuery):
                 errinfo['error'] =  [api.error]
 
             std_out = cls._standardize_output(
-                api.output, MorphoSource.TOTAL_KEY, MorphoSource.RECORDS_KEY, 
-                MorphoSource.RECORD_FORMAT, S2nEndpoint.Occurrence, 
-                query_status=api.status_code, query_urls=[api.url], count_only=count_only, 
+                api.output, MorphoSource.TOTAL_KEY, MorphoSource.RECORDS_KEY,
+                MorphoSource.RECORD_FORMAT, S2nEndpoint.Occurrence,
+                query_status=api.status_code, query_urls=[api.url], count_only=count_only,
                 errinfo=errinfo)
-        
+
         return std_out
 
 # .............................................................................
 if __name__ == '__main__':
     # test
-    
+
     for guid in TST_VALUES.GUIDS_WO_SPECIFY_ACCESS:
         moutput = MorphoSourceAPI.get_occurrences_by_occid_page1(guid)
         for r in moutput.response[S2nKey.RECORDS]:

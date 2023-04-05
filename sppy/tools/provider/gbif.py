@@ -18,18 +18,18 @@ class GbifAPI(APIQuery):
     PROVIDER = ServiceProvider.GBIF
     OCCURRENCE_MAP = S2nSchema.get_gbif_occurrence_map()
     NAME_MAP = S2nSchema.get_gbif_name_map()
-    
+
     # ...............................................
     def __init__(self, service=GBIF.SPECIES_SERVICE, key=None,
                  other_filters=None, logger=None):
         """
         Constructor for GbifAPI class
-        
+
         Args:
             service: GBIF service to query
             key: unique identifier for an object of this service
             other_filters: optional filters
-            logger: optional logger for info and error messages.  If None, 
+            logger: optional logger for info and error messages.  If None,
                 prints to stdout
         """
         url = '/'.join((GBIF.REST_URL, service))
@@ -86,11 +86,11 @@ class GbifAPI(APIQuery):
     #     else:
     #         output = tax_api.output
     #         elements_of_interest = [
-    #             'scientificName', 'kingdom', 'phylum', 'class', 'order', 
-    #             'family', 'genus', 'species', 'rank', 'genusKey', 'speciesKey', 
-    #             'taxonomicStatus', 'canonicalName', 'scientificName', 'kingdom', 
-    #             'phylum', 'class', 'order', 'family', 'genus', 'species', 
-    #             'rank', 'genusKey', 'speciesKey', 'taxonomicStatus', 
+    #             'scientificName', 'kingdom', 'phylum', 'class', 'order',
+    #             'family', 'genus', 'species', 'rank', 'genusKey', 'speciesKey',
+    #             'taxonomicStatus', 'canonicalName', 'scientificName', 'kingdom',
+    #             'phylum', 'class', 'order', 'family', 'genus', 'species',
+    #             'rank', 'genusKey', 'speciesKey', 'taxonomicStatus',
     #             'canonicalName', 'acceptedKey', 'accepted', 'nubKey']
     #         for fld in elements_of_interest:
     #             rec[fld] = tax_api._get_output_val(output, fld)
@@ -103,19 +103,19 @@ class GbifAPI(APIQuery):
     # ...............................................
     @classmethod
     def get_occurrences_by_occid(cls, occid, count_only=False, logger=None):
-        """Return GBIF occurrences for this occurrenceId.  This should retrieve 
+        """Return GBIF occurrences for this occurrenceId.  This should retrieve
         a single record if the occurrenceId is unique.
-        
+
         Args:
             occid: occurrenceID for query
             count_only: boolean flag signaling to return records or only count
-            logger: optional logger for info and error messages.  If None, 
-                prints to stdout    
+            logger: optional logger for info and error messages.  If None,
+                prints to stdout
 
-        Return: 
-            a dictionary containing one or more keys: 
+        Return:
+            a dictionary containing one or more keys:
                 count, records, error, warning
-                
+
         Todo: enable paging
         """
         errinfo = {}
@@ -132,12 +132,12 @@ class GbifAPI(APIQuery):
         else:
             if api.error:
                 errinfo['error'] =  [api.error]
-                
+
             # Standardize output from provider response
             std_output = cls._standardize_occurrence_output(
-                api.output, api.status_code, query_urls=[api.url], 
+                api.output, api.status_code, query_urls=[api.url],
                 count_only=count_only, errinfo=errinfo)
-        
+
         return std_output
 
     # ...............................................
@@ -159,8 +159,8 @@ class GbifAPI(APIQuery):
         to_str_prov_fields = ['year', 'month', 'day', 'decimalLongitude', 'decimalLatitude']
         view_std_fld = S2nSchema.get_view_url_fld()
         data_std_fld = S2nSchema.get_data_url_fld()
-        issue_prov_fld = 'issues'        
-        
+        issue_prov_fld = 'issues'
+
         for stdfld, provfld in cls.OCCURRENCE_MAP.items():
             try:
                 val = rec[provfld]
@@ -172,27 +172,27 @@ class GbifAPI(APIQuery):
                 newrec[stdfld] =  val
                 newrec[view_std_fld] = GBIF.get_occurrence_view(val)
                 newrec[data_std_fld] = GBIF.get_occurrence_data(val)
-                
+
             # expand fields to dictionary, with code and definition
             elif provfld == issue_prov_fld:
                 newrec[stdfld] = cls._get_code2description_dict(
                     val, ISSUE_DEFINITIONS[ServiceProvider.GBIF[S2nKey.PARAM]])
-                
+
             # Modify/parse into list
             elif val and provfld in parse_prov_fields:
                 lst = val.split('|')
                 elts = [l.strip() for l in lst]
                 newrec[stdfld] = elts
-                
+
             # Modify int date elements to string (to match iDigBio)
             elif val and provfld in to_str_prov_fields:
                 newrec[stdfld] = str(val)
-                
+
             # all others
             else:
                 newrec[stdfld] =  val
         return newrec
-    
+
     # ...............................................
     @classmethod
     def _standardize_name_record(cls, rec):
@@ -200,7 +200,7 @@ class GbifAPI(APIQuery):
         view_std_fld = S2nSchema.get_view_url_fld()
         data_std_fld = S2nSchema.get_data_url_fld()
         hierarchy_fld = 'hierarchy'
-        
+
         for stdfld, provfld in cls.NAME_MAP.items():
             try:
                 val = rec[provfld]
@@ -211,7 +211,7 @@ class GbifAPI(APIQuery):
                 newrec[stdfld] =  val
                 newrec[view_std_fld] = GBIF.get_species_view(val)
                 newrec[data_std_fld] = GBIF.get_species_data(val)
-                
+
             # Assemble from other fields
             elif provfld == hierarchy_fld:
                 hierarchy = OrderedDict()
@@ -223,12 +223,12 @@ class GbifAPI(APIQuery):
                     else:
                         hierarchy[rnk] = val
                 newrec[stdfld] = [hierarchy]
-                
+
             # all others
             else:
                 newrec[stdfld] = val
         return newrec
-    
+
     # ...............................................
     @classmethod
     def _test_record(cls, status, rec):
@@ -246,7 +246,7 @@ class GbifAPI(APIQuery):
                 if outstatus == status:
                     is_good = True
         return is_good
-        
+
     # ...............................................
     @classmethod
     def _standardize_match_output(
@@ -256,7 +256,7 @@ class GbifAPI(APIQuery):
             alternatives = output.pop('alternatives')
         except:
             alternatives = []
-            
+
         is_match = True
         try:
             if output['matchType'].lower() == 'none':
@@ -282,7 +282,7 @@ class GbifAPI(APIQuery):
         std_output = S2nOutput(
             total, S2nEndpoint.Name, provider=prov_meta, records=stdrecs, errors=errinfo)
         return std_output
-        
+
     # ...............................................
     @classmethod
     def _standardize_record(cls, rec, record_format):
@@ -292,12 +292,12 @@ class GbifAPI(APIQuery):
         else:
             stdrec = cls._standardize_name_record(rec)
         return stdrec
-    
+
     # ...............................................
     @classmethod
     def _standardize_occurrence_output(
             cls, output, query_status, query_urls=[], count_only=False, errinfo={}):
-        # GBIF.COUNT_KEY, GBIF.RECORDS_KEY, GBIF.RECORD_FORMAT_OCCURRENCE, 
+        # GBIF.COUNT_KEY, GBIF.RECORDS_KEY, GBIF.RECORD_FORMAT_OCCURRENCE,
         stdrecs = []
         total = 0
         # Count
@@ -327,38 +327,38 @@ class GbifAPI(APIQuery):
             total, S2nEndpoint.Occurrence, provider=prov_meta, records=stdrecs, errors=errinfo)
 
         return std_output
-    
+
     # ...............................................
     @classmethod
     def get_occurrences_by_dataset(
             cls, gbif_dataset_key, count_only, logger=None):
         """
-        Count and optionally return (a limited number of) records with the given 
+        Count and optionally return (a limited number of) records with the given
         gbif_dataset_key.  This currently only returns the first page (0-limit) of records.
-        
+
         Args:
             gbif_dataset_key: unique identifier for the dataset, assigned by GBIF
                 and retained by Specify
             count_only: boolean flag signaling to return records or only count
-            logger: optional logger for info and error messages.  If None, 
-                prints to stdout    
+            logger: optional logger for info and error messages.  If None,
+                prints to stdout
 
-        Return: 
-            a dictionary containing one or more keys: 
+        Return:
+            a dictionary containing one or more keys:
                 count, records, error, warning
-        
-        Todo: 
+
+        Todo:
             handle large queries asynchronously
         """
         errinfo = {}
         if count_only is True:
             limit = 1
         else:
-            limit = GBIF.LIMIT   
+            limit = GBIF.LIMIT
         api = GbifAPI(
             service=GBIF.OCCURRENCE_SERVICE, key=GBIF.SEARCH_COMMAND,
             other_filters={
-                GBIF.REQUEST_DATASET_KEY: gbif_dataset_key, 'offset': 0, 
+                GBIF.REQUEST_DATASET_KEY: gbif_dataset_key, 'offset': 0,
                 'limit': limit}, logger=logger)
         try:
             api.query()
@@ -371,10 +371,10 @@ class GbifAPI(APIQuery):
             # Standardize output from provider response
             if api.error:
                 errinfo['error'] =  [api.error]
-                
+
             std_out = cls._standardize_occurrence_output(
                 api.output, api.status_code, query_urls=[api.url], count_only=count_only, errinfo=errinfo)
-            
+
         return std_out
 
 
@@ -382,20 +382,20 @@ class GbifAPI(APIQuery):
     @classmethod
     def match_name(cls, namestr, is_accepted=False, logger=None):
         """Return closest accepted species in GBIF backbone taxonomy,
-        
+
         Args:
-            namestr: A scientific namestring possibly including author, year, 
+            namestr: A scientific namestring possibly including author, year,
                 rank marker or other name information.
             is_accepted: match the ACCEPTED TaxonomicStatus in the GBIF record
-                
+
         Returns:
-            Either a dictionary containing a matching record with status 
-                'accepted' or 'synonym' without 'alternatives'.  
-            Or, if there is no matching record, return the first/best 
+            Either a dictionary containing a matching record with status
+                'accepted' or 'synonym' without 'alternatives'.
+            Or, if there is no matching record, return the first/best
                 'alternative' record with status 'accepted' or 'synonym'.
 
         Note:
-            This function uses the name search API, 
+            This function uses the name search API,
         Note:
             GBIF TaxonomicStatus enum at:
             https://gbif.github.io/gbif-api/apidocs/org/gbif/api/vocabulary/TaxonomicStatus.html
@@ -414,7 +414,7 @@ class GbifAPI(APIQuery):
         api = GbifAPI(
             service=GBIF.SPECIES_SERVICE, key='match',
             other_filters=other_filters, logger=logger)
-        
+
         try:
             api.query()
         except Exception as e:
@@ -428,20 +428,20 @@ class GbifAPI(APIQuery):
             # Standardize output from provider response
             std_output = cls._standardize_match_output(
                 api.output, status, api.status_code, query_urls=[api.url], errinfo=errinfo)
-            
+
         return std_output
 
     # ...............................................
     @classmethod
     def count_occurrences_for_taxon(cls, taxon_key, logger=None):
         """Return a count of occurrence records in GBIF with the indicated taxon.
-                
+
         Args:
             taxon_key: A GBIF unique identifier indicating a taxon object.
-               out 
+               out
         Returns:
             A record as a dictionary containing the record count of occurrences
-            with this accepted taxon, and a URL to retrieve these records.            
+            with this accepted taxon, and a URL to retrieve these records.
         """
         simple_output = {}
         errinfo = {}
@@ -450,7 +450,7 @@ class GbifAPI(APIQuery):
         api = GbifAPI(
             service=GBIF.OCCURRENCE_SERVICE, key=GBIF.SEARCH_COMMAND,
             other_filters={'taxonKey': taxon_key}, logger=logger)
-        
+
         try:
             api.query_by_get()
         except Exception as e:
@@ -484,7 +484,7 @@ class GbifAPI(APIQuery):
             if response is not None:
                 ret_code = response.status_code
             else:
-                log_error('Failed on URL {} ({})'.format(url, str(e)), 
+                log_error('Failed on URL {} ({})'.format(url, str(e)),
                           logger=logger)
         else:
             if response.ok:
@@ -509,11 +509,11 @@ class GbifAPI(APIQuery):
                             url, str(e)), logger=logger)
                 else:
                     log_error(
-                        'Failed on URL {} ({}: {})'.format(url, ret_code, reason), 
+                        'Failed on URL {} ({}: {})'.format(url, ret_code, reason),
                         logger=logger)
         return output
-    
-    
+
+
 # ...............................................
     @classmethod
     def _trim_parsed_output(cls, output, logger=None):
@@ -534,22 +534,22 @@ class GbifAPI(APIQuery):
     def parse_name(cls, namestr, logger=None):
         """
         Send a scientific name to the GBIF Parser returning a canonical name.
-        
+
         Args:
-            namestr: A scientific namestring possibly including author, year, 
+            namestr: A scientific namestring possibly including author, year,
                 rank marker or other name information.
-                
+
         Returns:
             A dictionary containing a single record for a parsed scientific name
             and any optional error messages.
-            
+
         sent (bad) http://api.gbif.org/v1/parser/name?name=Acer%5C%2520caesium%5C%2520Wall.%5C%2520ex%5C%2520Brandis
         send good http://api.gbif.org/v1/parser/name?name=Acer%20heldreichii%20Orph.%20ex%20Boiss.
         """
         output = {}
         # Query GBIF
         name_api = GbifAPI(
-            service=GBIF.PARSER_SERVICE, 
+            service=GBIF.PARSER_SERVICE,
             other_filters={GBIF.REQUEST_NAME_QUERY_KEY: namestr},
             logger=logger)
         name_api.query_by_get()
@@ -570,16 +570,16 @@ class GbifAPI(APIQuery):
     def parse_names(cls, names=[], filename=None, logger=None):
         """
         Send a list or file (or both) of scientific names to the GBIF Parser,
-        returning a dictionary of results.  Each scientific name can possibly 
+        returning a dictionary of results.  Each scientific name can possibly
         include author, year, rank marker or other name information.
-        
+
         Args:
             names: a list of names to be parsed
             filename: a file of names to be parsed
-            
+
         Returns:
-            A list of resolved records, each is a dictionary with keys of 
-            GBIF fieldnames and values with field values. 
+            A list of resolved records, each is a dictionary with keys of
+            GBIF fieldnames and values with field values.
         """
         if filename and os.path.exists(filename):
             with open(filename, 'r', encoding=ENCODING) as in_file:

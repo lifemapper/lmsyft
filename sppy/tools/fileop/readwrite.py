@@ -20,10 +20,10 @@ LOG_FORMAT = ' '.join(["%(asctime)s",
                        "%(levelname)-8s",
                        "%(message)s"])
 LOG_DATE_FORMAT = '%d %b %Y %H:%M'
-LOGFILE_MAX_BYTES = 52000000 
+LOGFILE_MAX_BYTES = 52000000
 LOGFILE_BACKUP_COUNT = 5
 
-REQUIRED_FIELDS = ['STATE_NAME', 'NAME', 'STATE_FIPS', 'CNTY_FIPS', 'PRNAME', 
+REQUIRED_FIELDS = ['STATE_NAME', 'NAME', 'STATE_FIPS', 'CNTY_FIPS', 'PRNAME',
      'CDNAME', 'CDUID']
 CENTROID_FIELD = 'B_CENTROID'
 
@@ -42,8 +42,8 @@ def get_process_count():
 
 # .............................................................................
 def _find_chunk_files(big_csv_filename, out_csv_filename):
-    """ Finds multiple smaller input csv files from a large input csv file, 
-    if they exist, and return these filenames, paired with output filenames 
+    """ Finds multiple smaller input csv files from a large input csv file,
+    if they exist, and return these filenames, paired with output filenames
     for the results of processing these files. """
     cpus2use = get_process_count()
     in_base_filename, _ = os.path.splitext(big_csv_filename)
@@ -51,10 +51,10 @@ def _find_chunk_files(big_csv_filename, out_csv_filename):
     out_fname_noext, ext = os.path.splitext(out_csv_filename)
     outpth, basename = os.path.split(out_fname_noext)
     out_base_filename = os.path.join(outpth, basename)
-        
+
     total_lines = get_line_count(big_csv_filename) - 1
     chunk_size = int(total_lines / cpus2use)
-    
+
     csv_filename_pairs = []
     start = 1
     stop = chunk_size
@@ -74,8 +74,8 @@ def _find_chunk_files(big_csv_filename, out_csv_filename):
 
 # .............................................................................
 def get_chunk_files(big_csv_filename, out_csv_filename):
-    """ Creates multiple smaller input csv files from a large input csv file, and 
-    return these filenames, paired with output filenames for the results of 
+    """ Creates multiple smaller input csv files from a large input csv file, and
+    return these filenames, paired with output filenames for the results of
     processing these files. """
     csv_filename_pairs, chunk_size = _find_chunk_files(
         big_csv_filename, out_csv_filename)
@@ -86,7 +86,7 @@ def get_chunk_files(big_csv_filename, out_csv_filename):
     else:
         in_base_filename = csv_filename_pairs[0][0]
         out_base_filename = csv_filename_pairs[0][1]
-    
+
     csv_filename_pairs = []
     try:
         bigf = open(big_csv_filename, 'r', encoding='utf-8')
@@ -121,7 +121,7 @@ def get_chunk_files(big_csv_filename, out_csv_filename):
         raise
     finally:
         bigf.close()
-    
+
     return csv_filename_pairs, header
 
 # .............................................................................
@@ -140,8 +140,8 @@ def get_header(filename):
 # .............................................................................
 def get_csv_reader(datafile, delimiter, encoding, quote_char=csv.QUOTE_NONE):
     try:
-        f = open(datafile, 'r', encoding=encoding) 
-        reader = csv.reader(f, delimiter=delimiter, escapechar='\\', 
+        f = open(datafile, 'r', encoding=encoding)
+        reader = csv.reader(f, delimiter=delimiter, escapechar='\\',
                             quoting=csv.QUOTE_NONE)
     except Exception as e:
         raise Exception('Failed to read or open {}, ({})'
@@ -153,7 +153,7 @@ def get_csv_reader(datafile, delimiter, encoding, quote_char=csv.QUOTE_NONE):
 # .............................................................................
 def get_csv_writer(datafile, delimiter, encoding, fmode='w'):
     ''' Get a CSV writer that can handle encoding
-    
+
     Args:
         datafile:
         delimiter:
@@ -162,10 +162,10 @@ def get_csv_writer(datafile, delimiter, encoding, fmode='w'):
     '''
     if fmode not in ('w', 'a'):
         raise Exception('File mode must be "w" (write) or "a" (append)')
-    
+
     csv.field_size_limit(maxsize)
     try:
-        f = open(datafile, fmode, encoding=encoding) 
+        f = open(datafile, fmode, encoding=encoding)
         writer = csv.writer(
             f, escapechar='\\', delimiter=delimiter, quoting=csv.QUOTE_NONE)
     except Exception as e:
@@ -176,7 +176,7 @@ def get_csv_writer(datafile, delimiter, encoding, fmode='w'):
     return writer, f
 
 # .............................................................................
-def get_csv_dict_reader(datafile, delimiter, encoding, fieldnames=None, 
+def get_csv_dict_reader(datafile, delimiter, encoding, fieldnames=None,
                         quote_char=None):
     '''
     ignore_quotes: no special processing of quote characters
@@ -195,7 +195,7 @@ def get_csv_dict_reader(datafile, delimiter, encoding, fieldnames=None,
             dreader = csv.DictReader(
                 f, fieldnames=fieldnames, quoting=csv.QUOTE_NONE,
                 escapechar='\\', restkey=EXTRA_VALS_KEY, delimiter=delimiter)
-            
+
     except Exception as e:
         raise Exception('Failed to read or open {}, ({})'
                         .format(datafile, str(e)))
@@ -210,10 +210,10 @@ def get_csv_dict_writer(datafile, delimiter, encoding, fldnames, fmode='w'):
     '''
     if fmode not in ('w', 'a'):
         raise Exception('File mode must be "w" (write) or "a" (append)')
-    
+
     csv.field_size_limit(maxsize)
     try:
-        f = open(datafile, fmode, encoding=encoding) 
+        f = open(datafile, fmode, encoding=encoding)
         writer = csv.DictWriter(f, fieldnames=fldnames, delimiter=delimiter,
                                 escapechar='\\', quoting=csv.QUOTE_NONE)
     except Exception as e:
@@ -243,29 +243,29 @@ def makerow(rec, outfields):
 
 
 # ...............................................
-def open_csv_files(infname, delimiter, encoding, ignore_quotes=True, 
-                   infields=None, outfname=None, outfields=None, 
+def open_csv_files(infname, delimiter, encoding, ignore_quotes=True,
+                   infields=None, outfname=None, outfields=None,
                    outdelimiter=None):
-    ''' Open CSV data for reading as a dictionary (assumes a header), 
+    ''' Open CSV data for reading as a dictionary (assumes a header),
     new output file for writing (rows as a list, not dictionary)
-    
-    Args: 
-        infname: Input CSV filename.  Either a sequence of filenames must 
+
+    Args:
+        infname: Input CSV filename.  Either a sequence of filenames must
             be provided as infields or the file must begin with a header
-            to set dictionary keys. 
-        delimiter: CSV delimiter for input and optionally output 
-        encoding: Encoding for input and optionally output 
+            to set dictionary keys.
+        delimiter: CSV delimiter for input and optionally output
+        encoding: Encoding for input and optionally output
         ignore_quotes: if True, QUOTE_NONE
         infields: Optional ordered list of fieldnames, used when input file
             does not contain a header.
-        outfname: Optional output CSV file 
-        outdelimiter: Optional CSV delimiter for output if it differs from 
+        outfname: Optional output CSV file
+        outdelimiter: Optional CSV delimiter for output if it differs from
             input delimiter
-        outfields: Optional ordered list of fieldnames for output header 
+        outfields: Optional ordered list of fieldnames for output header
     '''
     # Open incomplete BISON CSV file as input
     csv_dict_reader, inf = get_csv_dict_reader(
-        infname, delimiter, encoding, fieldnames=infields, 
+        infname, delimiter, encoding, fieldnames=infields,
         ignore_quotes=ignore_quotes)
     # Optional new BISON CSV output file
     csv_writer = outf = None
@@ -277,12 +277,12 @@ def open_csv_files(infname, delimiter, encoding, ignore_quotes=True,
         if outfields:
             csv_writer.writerow(outfields)
     return (csv_dict_reader, inf, csv_writer, outf)
-        
+
 
 # ...............................................
 def get_line(csvreader, recno):
     ''' Return a line while keeping track of the line number and errors
-    
+
     Args:
         csvreader: a csv.reader object opened with a file
         recno: the current record number
@@ -314,4 +314,3 @@ def get_line(csvreader, recno):
 # ...............................................
 if __name__ == '__main__':
     pth = '/tank/data/bison/2019/ancillary'
-    

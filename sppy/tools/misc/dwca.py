@@ -22,8 +22,8 @@ Pull dataset/record guids from specify RSS
 """
 
 rurl = '{}/{}/{}/{}'.format(
-    TEST_SPECIFY7_SERVER, SPECIFY7_RECORD_ENDPOINT, 
-    TST_VALUES.DS_GUIDS_W_SPECIFY_ACCESS_RECS[0], 
+    TEST_SPECIFY7_SERVER, SPECIFY7_RECORD_ENDPOINT,
+    TST_VALUES.DS_GUIDS_W_SPECIFY_ACCESS_RECS[0],
     TST_VALUES.GUIDS_W_SPECIFY_ACCESS[0])
 
 # Read RSS feed for download link
@@ -58,20 +58,20 @@ def get_dwca_urls(rss_url, isIPT=False):
                 ds_key_val = ds_id_elt.text
             datasets[ds_key_val] = {'url': url_elt.text, 'name': ds_key_val}
     return datasets
-    
+
 # ......................................................
 def assemble_download_filename(url, baseoutpath):
-    """Construct the full filename to download a DWCA into, based on the 
+    """Construct the full filename to download a DWCA into, based on the
     filename to be downloaded or the IPT endpoint containing the DWCA.
-    
+
     Args:
         url: location of the DWCA file to be downloaded.
         baseoutpath: destination directory for subdirectory and DWCA file
-        
+
     Returns: full destination filename for the file to be downloaded
-    
-    Note: DWCA files must be downloaded into different directories, as the 
-    contents unzip into the top level directory, and standard files for 
+
+    Note: DWCA files must be downloaded into different directories, as the
+    contents unzip into the top level directory, and standard files for
     different datasets would be overwritten.
     """
     if url.endswith('.zip'):
@@ -90,17 +90,17 @@ def assemble_download_filename(url, baseoutpath):
             name = '.'.join(parts)
         outfilename = os.path.join(baseoutpath, name, '{}.zip'.format(name))
     return outfilename
-        
+
 # ......................................................
 def download_dwca(url, baseoutpath, overwrite=False, logger=None):
     """Download a DarwinCore Archive file from a URL.
-    
+
     Args:
         url: location of DWCA data file
         baseoutpath: destination directory for DWCA file
         overwrite: True if an existing file should be replaced
         logger: optional logger for saving output messages to file.
-    
+
     Results:
         Saves the DWCA file under a subdirectory of the output path.
     """
@@ -118,7 +118,7 @@ def download_dwca(url, baseoutpath, overwrite=False, logger=None):
                 reason = 'Unknown Error'
             log_error('Failed on URL {}, code = {}, reason = {} ({})'.format(
                 url, ret_code, reason, str(e)), logger)
-    
+
         output = response.content
         with open(outfilename, 'wb') as outf:
             outf.write(output)
@@ -132,19 +132,19 @@ class DwCArchive:
     def __init__(self, zipfile_or_directory, outpath=None, logger=None):
         """
         Args:
-            zipfile_or_directory: Full path to zipfile or directory containing 
+            zipfile_or_directory: Full path to zipfile or directory containing
                 Darwin Core Archive
             outpath: file location for output data and log files
             logger: LMLog object for logging processing information
-            
-        Note: 
-            Produces data requiring http post to contain 
+
+        Note:
+            Produces data requiring http post to contain
             headers={'Content-Type': 'text/csv'}
         """
         if os.path.exists(zipfile_or_directory):
             self.logger = logger
             # DWCA is zipped
-            if (os.path.isfile(zipfile_or_directory) and 
+            if (os.path.isfile(zipfile_or_directory) and
                 zipfile_or_directory.endswith('.zip')):
                 self.zipfile = zipfile_or_directory
                 if outpath is not None:
@@ -161,17 +161,17 @@ class DwCArchive:
             raise Exception('File or directory {} does not exist'.format(
                 zipfile_or_directory))
 
-    
+
     # ......................................................
     def _get_date(self, dwc_rec):
-        coll_date = ''        
+        coll_date = ''
         try:
             yr = dwc_rec['year']
             int(yr)
         except:
             pass
         else:
-            coll_date = yr             
+            coll_date = yr
             try:
                 mo = dwc_rec['month']
                 int(mo)
@@ -187,13 +187,13 @@ class DwCArchive:
                 else:
                     coll_date = '{}-{}'.format(coll_date, dy)
         return coll_date
-    
+
 
     # ......................................................
     def rewrite_recs_for_solr(self, fileinfo, ds_uuid, overwrite=True):
         """
-        Note: 
-            Produces data requiring http post to contain 
+        Note:
+            Produces data requiring http post to contain
             headers={'Content-Type': 'text/csv'}
         """
         count = 0
@@ -205,13 +205,13 @@ class DwCArchive:
         solr_outfname = core_fname_noext + '.solr.csv'
         specify_record_server = '{}/{}'.format(
             fileinfo[SPECIFY7_SERVER_KEY], SPECIFY7_RECORD_ENDPOINT)
-        
+
         if os.path.exists(solr_outfname) and overwrite is True:
             _, _ = delete_file(solr_outfname)
         if not os.path.exists(solr_outfname):
             in_delimiter = fileinfo[DWCA.DELIMITER_KEY]
             rdr, inf = get_csv_dict_reader(
-                core_fname, in_delimiter, ENCODING, 
+                core_fname, in_delimiter, ENCODING,
                 fieldnames=fileinfo['fieldnames'])
             # Tabs ok?
             wtr, outf = get_csv_dict_writer(
@@ -232,11 +232,11 @@ class DwCArchive:
                                 if bad_guid_count < 10:
                                     log_warn(
                                         'Line {} contains {}, non-GUID in id field'
-                                        .format(count, occ_uuid), 
+                                        .format(count, occ_uuid),
                                         logger=self.logger)
                                 elif bad_guid_count == 10:
                                     log_warn('...', logger=self.logger)
-                                
+
                             coll_date = self._get_date(dwc_rec)
                             who_val = dwc_rec['datasetName']
                             for fld in SPCOCO_FIELDS:
@@ -254,13 +254,13 @@ class DwCArchive:
                                     solr_rec[fld] =  '{}{}'.format(SPECIFY_ARK_PREFIX, occ_uuid)
                                 elif fld == 'url':
                                     solr_rec[fld] = '{}/{}/{}'.format(
-                                        specify_record_server, ds_uuid, occ_uuid)                        
+                                        specify_record_server, ds_uuid, occ_uuid)
                             wtr.writerow(solr_rec)
                     except Exception as e:
                         log_error('Rec {}: failed {}'.format(count, e))
             except Exception as e:
                 log_warn(
-                    'Failed to read/write file {}: {}'.format(core_fname, e), 
+                    'Failed to read/write file {}: {}'.format(core_fname, e),
                     logger=self.logger)
             finally:
                 inf.close()
@@ -270,7 +270,7 @@ class DwCArchive:
                     'Wrote {} recs, with {} non-guid-ids to file {}'.format(
                         count, bad_guid_count, solr_outfname), logger=self.logger)
         return solr_outfname, content_type, is_new
-        
+
     # ......................................................
     def extract_from_zip(self, extract_path=None):
         zfile = zipfile.ZipFile(self.zipfile, mode='r', allowZip64=True)
@@ -286,14 +286,14 @@ class DwCArchive:
                 log_warn('Unexpected filename {} in zipfile {}'.format(
                     zinfo.filename, self.zipfile), logger=self.logger)
 
-    
+
     # ......................................................
     def read_dataset_uuid(self):
         idstr = None
         if os.path.split(self.ds_meta_fname)[1] != DWCA.DATASET_META_FNAME:
             log_error(
                 'Expected filename {} at {}'.format(
-                    DWCA.DATASET_META_FNAME, self.ds_meta_fname), 
+                    DWCA.DATASET_META_FNAME, self.ds_meta_fname),
                 logger=self.logger)
             return ''
         tree = ET.parse(self.ds_meta_fname)
@@ -305,7 +305,7 @@ class DwCArchive:
             if self._is_guid(idstr):
                 break
         return idstr
-    
+
     # ......................................................
     def _fix_char(self, ch):
         if not ch:
@@ -317,18 +317,18 @@ class DwCArchive:
         elif ch == '':
             ch = None
         return ch
-        
+
     # ......................................................
     def read_core_fileinfo(self):
         """Reads meta.xml file for information about the core occurrence file
-        
+
         Returns:
-            Dictionary of core occurrence file information, with keys matching the 
+            Dictionary of core occurrence file information, with keys matching the
             names/tags in the meta.xml file:
-                location (for filename), id (for fieldname of record UUID) 
-                fieldsTerminatedBy, linesTerminatedBy, fieldsEnclosedBy, 
-            plus: 
-                fieldnames: ordered fieldnames 
+                location (for filename), id (for fieldname of record UUID)
+                fieldsTerminatedBy, linesTerminatedBy, fieldsEnclosedBy,
+            plus:
+                fieldnames: ordered fieldnames
                 fieldname_index_map: dict of fields and corresponding column indices
         """
         if os.path.split(self.meta_fname)[1] != DWCA.META_FNAME:
@@ -359,12 +359,12 @@ class DwCArchive:
             # UUID key and index
             uuid_idx = core_elt.find('{}{}'.format(
                 DWCA.NS, DWCA.UUID_KEY)).attrib['index']
-            # The uuid_idx index --> fieldname 
-            #     plus fieldname --> uuid_idx 
+            # The uuid_idx index --> fieldname
+            #     plus fieldname --> uuid_idx
             field_idxs[DWCA.UUID_KEY] = uuid_idx
             field_idxs[uuid_idx] = DWCA.UUID_KEY
-            all_idxs = set([int(uuid_idx)])
-            # Rest of fields and indices        
+            all_idxs = {int(uuid_idx)}
+            # Rest of fields and indices
             field_elts = core_elt.findall('{}field'.format(DWCA.NS))
             startidx = len(DWCA.NS)-1
             # Default UUID fieldname
@@ -391,7 +391,7 @@ class DwCArchive:
             for i in all_idxs:
                 ordered_fldnames.append(field_idxs[str(i)])
             fileinfo[DWCA.FLDS_KEY] = ordered_fldnames
-                
+
         return fileinfo
 
 
@@ -416,19 +416,19 @@ def index_specify7_dataset(
     if dwca_url is not None and not isIPT:
         # Assumes the base RSS/DWCA url is the Specify server
         specify_url = TEST_SPECIFY7_SERVER
-        
+
     # Existing Zipfile
     if zname is not None:
         datasets = {'unknown_guid': {'filename': zname}}
     # Download Zipfiles and save info on each
-    else:        
+    else:
         datasets = get_dwca_urls(dwca_url, isIPT=isIPT)
         for guid, meta in datasets.items():
             try:
                 url = meta['url']
             except:
                 log_warn(
-                    'Failed to get URL for IPT dataset {}'.format(guid), 
+                    'Failed to get URL for IPT dataset {}'.format(guid),
                     logger=logger)
             else:
                 zipfname = download_dwca(url, outpath, overwrite=False)
@@ -445,19 +445,19 @@ def index_specify7_dataset(
                 logger=logger)
         else:
             dwca = DwCArchive(zipfname, logger=logger)
-            
+
             extract_path, _ = os.path.split(zipfname)
             meta_fname = os.path.join(extract_path, DWCA.META_FNAME)
             ds_meta_fname = os.path.join(extract_path, DWCA.DATASET_META_FNAME)
             # Extract if needed
             if not os.path.exists(meta_fname):
                 dwca.extract_from_zip(zipfname, extract_path=extract_path)
-          
+
         # Read DWCA and dataset metadata
         core_fileinfo = dwca.read_core_fileinfo(meta_fname)
         core_fileinfo[SPECIFY7_SERVER_KEY] = specify_url
         dwca_guid = dwca.read_dataset_uuid(ds_meta_fname)
-        # Save new guid for update of datasets dict 
+        # Save new guid for update of datasets dict
         # if zname argument is provided, we have dataset without guid from download site
         if is_valid_uuid(tmp_guid) and dwca_guid != tmp_guid:
             log_info(
@@ -465,18 +465,18 @@ def index_specify7_dataset(
                     dwca_guid, tmp_guid), logger=logger)
             # new/obsolete guid pair
             fixme.append((dwca_guid, tmp_guid))
-                   
+
         # Read record metadata, dwca_guid takes precedence
         solr_fname, content_type, is_new = dwca.rewrite_recs_for_solr(
-            core_fileinfo, dwca_guid, extract_path, overwrite=False)         
- 
+            core_fileinfo, dwca_guid, extract_path, overwrite=False)
+
         # Post
         if is_new:
             start_count = SpSolr.count_docs(collection, solr_location=solr_location)
             retcode, output = SpSolr.post(
-                collection, solr_fname, solr_location=solr_location, 
+                collection, solr_fname, solr_location=solr_location,
                 headers={'Content-Type': content_type})
-     
+
             # Report old/new solr index count
             end_count = SpSolr.count_docs(collection, solr_location=solr_location)
             log_info(
@@ -493,10 +493,10 @@ def index_specify7_dataset(
 # .............................................................................
 if __name__ == '__main__':
     import argparse
-    
+
     test_rss = TST_VALUES.KU_IPT_RSS_URL
 #     test_rss = TST_VALUES.ICH_RSS_URL
-    
+
     parser = argparse.ArgumentParser(
         description=('Read a zipped DWCA file and index records into Solr.'))
     parser.add_argument(
@@ -505,17 +505,17 @@ if __name__ == '__main__':
     parser.add_argument(
         '--rss', type=str, default=TST_VALUES.KU_IPT_RSS_URL,
 #         '--rss', type=str, default=TST_VALUES.ICH_RSS_URL,
-        help='URL for RSS feed with download links')    
+        help='URL for RSS feed with download links')
     parser.add_argument(
         '--outpath', type=str, default='/tmp',
         help='Optional path for DWCA extraction')
     args = parser.parse_args()
-    
+
     zname = args.dwca_file
     dwca_url = args.rss
     outpath = args.outpath
     occguids = [
-        '2c1becd5-e641-4e83-b3f5-76a55206539a', 
+        '2c1becd5-e641-4e83-b3f5-76a55206539a',
         'a413b456-0bff-47da-ab26-f074d9be5219',
         'fa7dd78f-8c91-49f5-b01c-f61b3d30caee',
         'db1af4fe-1ed3-11e3-bfac-90b11c41863e',
@@ -523,7 +523,7 @@ if __name__ == '__main__':
         'dcbdb494-1ed3-11e3-bfac-90b11c41863e',
         'dc92869c-1ed3-11e3-bfac-90b11c41863e',
         '21ac6644-5c55-44fd-b258-67eb66ea231d']
-    
+
     # index_specify7_dataset(
-    #     zname, dwca_url, outpath, TST_VALUES.SPECIFY_SOLR_LOCATION, 
+    #     zname, dwca_url, outpath, TST_VALUES.SPECIFY_SOLR_LOCATION,
     #     TST_VALUES.SPECIFY_SOLR_COLLECTION, testguids=occguids)

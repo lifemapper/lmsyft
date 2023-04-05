@@ -7,7 +7,7 @@ RecordsList = typing.List[typing.Dict]
 class S2nEndpoint:
     Root = "/api/v1"
     Address = "address"
-    Badge = "badge" 
+    Badge = "badge"
     Heartbeat = "heartbeat"
     Map = "map"
     Name = "name"
@@ -46,17 +46,17 @@ class S2nKey:
     PARAM = "param"
     OCCURRENCE_COUNT = "gbif_occurrence_count"
     OCCURRENCE_URL = "gbif_occurrence_url"
-    
+
     @classmethod
     def response_keys(cls):
-        return  set([
-            cls.COUNT, cls.RECORD_FORMAT, cls.RECORDS, cls.ERRORS,  
-            cls.SERVICE, cls.PROVIDER])
+        return  {
+            cls.COUNT, cls.RECORD_FORMAT, cls.RECORDS, cls.ERRORS,
+            cls.SERVICE, cls.PROVIDER}
 
     @classmethod
     def response_provider_keys(cls):
-        return  set([cls.PROVIDER_CODE, cls.PROVIDER_LABEL, cls.PROVIDER_STATUS_CODE, 
-                     cls.PROVIDER_QUERY_URL])
+        return  {cls.PROVIDER_CODE, cls.PROVIDER_LABEL, cls.PROVIDER_STATUS_CODE,
+                     cls.PROVIDER_QUERY_URL}
 
 # .............................................................................
 class COMMUNITY_SCHEMA:
@@ -75,13 +75,13 @@ class COMMUNITY_SCHEMA:
 # .............................................................................
 class S2nSchema:
     """
-    Note: 
+    Note:
         All field values are strings unless otherwise indicated
     """
     NAME = OrderedDict({
         # Link to provider record webpage
         "view_url": COMMUNITY_SCHEMA.S2N,
-        # API link to provider record data 
+        # API link to provider record data
         "api_url": COMMUNITY_SCHEMA.S2N,
         # S2n standardization of common elements
         "status": COMMUNITY_SCHEMA.S2N,
@@ -98,15 +98,15 @@ class S2nSchema:
         # Occurrence data for this name
         S2nKey.OCCURRENCE_COUNT: COMMUNITY_SCHEMA.S2N,
         S2nKey.OCCURRENCE_URL: COMMUNITY_SCHEMA.S2N,
-        
+
         # GBIF-specific fields
         "gbif_confidence": COMMUNITY_SCHEMA.S2N,
         "gbif_taxon_key": COMMUNITY_SCHEMA.S2N,
-        
+
         # ITIS-specific fields
         "itis_tsn": COMMUNITY_SCHEMA.S2N,
         "itis_credibility": COMMUNITY_SCHEMA.S2N,
-        
+
         # WoRMS-specific fields
         "worms_valid_AphiaID":  COMMUNITY_SCHEMA.S2N,
         "worms_lsid":  COMMUNITY_SCHEMA.S2N,
@@ -132,7 +132,7 @@ class S2nSchema:
         # list of 4 float values: minX, minY, maxX, maxY
         "point_bbox": COMMUNITY_SCHEMA.S2N,
         "species_name": COMMUNITY_SCHEMA.S2N,
-        
+
         # Lifemapper SDM predicted distribution input
         "sdm_projection_scenario_code": COMMUNITY_SCHEMA.S2N,
         "sdm_projection_scenario_link": COMMUNITY_SCHEMA.S2N,
@@ -151,7 +151,7 @@ class S2nSchema:
         # "provider_links": COMMUNITY_SCHEMA.S2N,
         "view_url": COMMUNITY_SCHEMA.S2N,
         "api_url": COMMUNITY_SCHEMA.S2N,
-        
+
         "scientificName": COMMUNITY_SCHEMA.DWC,
         "taxonRank": COMMUNITY_SCHEMA.DWC,
         "kingdom": COMMUNITY_SCHEMA.DWC,
@@ -160,9 +160,9 @@ class S2nSchema:
         "order": COMMUNITY_SCHEMA.DWC,
         "family": COMMUNITY_SCHEMA.DWC,
         "genus": COMMUNITY_SCHEMA.DWC,
-        "specificEpithet": COMMUNITY_SCHEMA.DWC, 
+        "specificEpithet": COMMUNITY_SCHEMA.DWC,
         "scientificNameAuthorship": COMMUNITY_SCHEMA.DWC,
-    
+
         "catalogNumber": COMMUNITY_SCHEMA.DWC,
         "collectionCode": COMMUNITY_SCHEMA.DWC,
         "institutionCode": COMMUNITY_SCHEMA.DWC,
@@ -187,15 +187,15 @@ class S2nSchema:
 
         "basisOfRecord": COMMUNITY_SCHEMA.DWC,
         "preparations": COMMUNITY_SCHEMA.DWC,
-    
-        "associatedReferences": COMMUNITY_SCHEMA.DWC,       # list of strings 
+
+        "associatedReferences": COMMUNITY_SCHEMA.DWC,       # list of strings
         "associatedSequences": COMMUNITY_SCHEMA.DWC,        # list of strings
-        
-        
+
+
         # S2n resolution of non-standard contents
         # dictionary of codes: descriptions
         "issues": COMMUNITY_SCHEMA.S2N,
-        
+
         "accessRights": COMMUNITY_SCHEMA.DCT,
         "language": COMMUNITY_SCHEMA.DCT,
         "license": COMMUNITY_SCHEMA.DCT,
@@ -210,7 +210,7 @@ class S2nSchema:
 
         # iDigBio-specific field
         "uuid": COMMUNITY_SCHEMA.IDB,
-        
+
         # MorphoSource-specific field
         "specimen.specimen_id": COMMUNITY_SCHEMA.MS,
 
@@ -226,9 +226,9 @@ class S2nSchema:
     #     "ark": COMMUNITY_SCHEMA.S2N,
     #     "api_url": COMMUNITY_SCHEMA.S2N
     # })
-    
+
     RANKS = ("kingdom", "phylum", "class", "order", "family", "genus", "species")
-    
+
     @classmethod
     def get_view_url_fld(cls):
         return "s2n:view_url"
@@ -248,7 +248,7 @@ class S2nSchema:
         # elif svc == S2nEndpoint.Resolve:
         #     schema = S2nSchema.RESOLVED
         else:
-            raise Exception("Service {} does not exist".format(svc))            
+            raise Exception("Service {} does not exist".format(svc))
         ordered_flds = []
         for fname, ns in schema.items():
             ordered_flds.append("{}:{}".format(ns["code"], fname))
@@ -273,23 +273,23 @@ class S2nSchema:
         #     schema = cls.RESOLVED
         else:
             raise Exception("Service {} does not exist".format(svc))
-        
+
         # Standardize names
         list_fields = [
             "{}:{}".format(schema[fname]["code"], fname) for fname in list_fields]
         dict_fields = [
             "{}:{}".format(schema[fname]["code"], fname) for fname in dict_fields]
-            
+
         return list_fields, dict_fields
 
     @classmethod
     def get_gbif_taxonkey_fld(cls):
         return "{}:gbif_taxon_key".format(COMMUNITY_SCHEMA.S2N["code"])
-    
+
     @classmethod
     def get_gbif_occcount_fld(cls):
         return "{}:{}".format(COMMUNITY_SCHEMA.S2N["code"], S2nKey.OCCURRENCE_COUNT)
-    
+
     @classmethod
     def get_gbif_occurl_fld(cls):
         return "{}:{}".format(COMMUNITY_SCHEMA.S2N["code"], S2nKey.OCCURRENCE_URL)
@@ -325,14 +325,14 @@ class S2nSchema:
             stdname = "{}:{}".format(comschem["code"], fn)
             stdfld_provfld[stdname] = spfldname
         return stdfld_provfld
-    
+
     @classmethod
     def get_specifycache_occurrence_map(cls):
         """Map broker response fields to Specify Cache response fields"""
         stdfld_provfld = OrderedDict()
-        old_id = "identifier" 
+        old_id = "identifier"
         new_id = "specify_identifier"
-        
+
         for fn, comschem in S2nSchema.OCCURRENCE.items():
             # if fn in names_in_spcache:
             stdname = "{}:{}".format(comschem["code"], fn)
@@ -340,7 +340,7 @@ class S2nSchema:
                 stdfld_provfld[stdname] = old_id
             else:
                 stdfld_provfld[stdname] = fn
-                
+
         return stdfld_provfld
 
     @classmethod
@@ -355,13 +355,13 @@ class S2nSchema:
             elif fn == "institutionCode":
                 stdfld_provfld[std_name] = "specimen.institution_code"
             elif fn == "occurrenceID":
-                stdfld_provfld[std_name] = "specimen.occurrence_id" 
+                stdfld_provfld[std_name] = "specimen.occurrence_id"
             elif fn == "uuid":
                 stdfld_provfld[std_name] = "specimen.uuid"
             elif fn in ["specimen.specimen_id", "view_url", "api_url"]:
                 stdfld_provfld[std_name] = fn
         return stdfld_provfld
-    
+
     @classmethod
     def get_gbif_name_map(cls):
         """Map broker response fields to GBIF name response fields"""
@@ -405,7 +405,7 @@ class S2nSchema:
             if oldname:
                 stdfld_provfld[std_name] = oldname
         return stdfld_provfld
-    
+
     @classmethod
     def get_worms_name_map(cls):
         """Map broker response fields to WoRMS response fields"""
@@ -439,15 +439,15 @@ class S2nSchema:
             if oldname:
                 stdfld_provfld[std_name] = oldname
         return stdfld_provfld
-        
-    
+
+
     @classmethod
     def get_lifemapper_map_map(cls):
         """Map broker response fields to Lifemapper response"""
         stdfld_provfld = OrderedDict()
         for fn, comschem in S2nSchema.MAP.items():
             std_name = "{}:{}".format(comschem["code"], fn)
-            # Handle species name in standardize_record - 
+            # Handle species name in standardize_record -
             # there are 2 different spellings in LM response
             # if fn == "species_name":
             #     stdfld_provfld[std_name] = "speciesName"
@@ -498,9 +498,9 @@ class S2nSchema:
 #     missing = 0
 #     print("*** S^n output ***")
 #     elements = {
-#         "count": out_obj.count, "provider": out_obj.provider, 
-#         "errors": out_obj.errors, 
-#         "query_term": out_obj.query_term, "records": out_obj.records }    
+#         "count": out_obj.count, "provider": out_obj.provider,
+#         "errors": out_obj.errors,
+#         "query_term": out_obj.query_term, "records": out_obj.records }
 #     for name, attelt in elements.items():
 #         try:
 #             if name == "records" and count_only is True:
@@ -512,7 +512,7 @@ class S2nSchema:
 #             print("Missing {} element".format(name))
 #     print("Missing {} elements".format(missing))
 #     print("")
-     
+
 
 # # .............................................................................
 # class S2nOutput(dict):
@@ -523,14 +523,14 @@ class S2nSchema:
 #     "provider": dict = {}
 #     "records": typing.List[dict] = []
 #     "errors": typing.List[str] = []
-#      
+#
 #     # ...............................................
 #     def __init__(
-#             self, count, query_term, service, provider, provider_query=[], 
+#             self, count, query_term, service, provider, provider_query=[],
 #             record_format="", records=[], errors=[]):
 #         so = {
-#             "count": count, "query_term": query_term, "service": service, 
-#             "provider": provider,  
+#             "count": count, "query_term": query_term, "service": service,
+#             "provider": provider,
 #             "record_format": record_format, "records": records, "errors": errors
 #             }
 #         return so
@@ -538,7 +538,7 @@ class S2nSchema:
 # # .............................................................................
 # class S2n:
 #     RECORD_FORMAT = "Lifemapper service broker schema TBD"
-    
+
 # provider element"s query_url replaces query_term
 class S2nOutput(object):
     count: int
@@ -547,28 +547,28 @@ class S2nOutput(object):
     record_format: str = ""
     records: typing.List[dict] = []
     errors: dict = {}
-     
+
     def __init__(
             self, count, service, provider={}, record_format="", records=[], errors={}):
         # Dictionary is json-serializable
         self._response = {
-            S2nKey.COUNT: count, 
-            S2nKey.SERVICE: service, 
-            S2nKey.PROVIDER: provider, 
-            S2nKey.RECORD_FORMAT: record_format, 
-            S2nKey.RECORDS: records, 
+            S2nKey.COUNT: count,
+            S2nKey.SERVICE: service,
+            S2nKey.PROVIDER: provider,
+            S2nKey.RECORD_FORMAT: record_format,
+            S2nKey.RECORDS: records,
             S2nKey.ERRORS: errors}
-     
+
     def set_value(self, prop, value):
         if prop in S2nKey.response_keys():
             self._response[prop] = value
-            
+
         elif prop in S2nKey.response_provider_keys():
             self._response[S2nKey.PROVIDER][prop] = value
-            
+
         else:
             raise Exception("Unrecognized property {}".format(prop))
-        
+
     def append_value(self, prop, value):
         # Do not add null value to list
         if value:
@@ -592,46 +592,46 @@ class S2nOutput(object):
     @property
     def response(self):
         return self._response
-    
+
     @property
     def count(self):
         return self._response[S2nKey.COUNT]
-  
+
     @property
     def service(self):
         return self._response[S2nKey.SERVICE]
-  
+
     @property
     def provider(self):
         return self._response[S2nKey.PROVIDER]
- 
+
     @property
     def provider_code(self):
         return self._response[S2nKey.PROVIDER][S2nKey.PROVIDER_CODE]
-  
+
     @property
     def provider_label(self):
         return self._response[S2nKey.PROVIDER][S2nKey.PROVIDER_LABEL]
-  
+
     @property
     def provider_status_code(self):
         return self._response[S2nKey.PROVIDER][S2nKey.PROVIDER_STATUS_CODE]
-  
+
     @property
     def provider_query(self):
         try:
             return self._response[S2nKey.PROVIDER][S2nKey.PROVIDER_QUERY_URL]
         except:
             return None
-  
+
     @property
     def record_format(self):
         return self._response[S2nKey.RECORD_FORMAT]
-  
+
     @property
     def records(self):
         return self._response[S2nKey.RECORDS]
-  
+
     @property
     def errors(self):
         return self._response[S2nKey.ERRORS]
@@ -639,7 +639,7 @@ class S2nOutput(object):
     def format_records(self, ordered_fieldnames):
         """
         Order output fields of all records according to the provided schema
-        
+
         Args:
             ordered_fieldnames: list of fieldnames defined in
                 lmtrex.common.s2n_type.S2nSchema
@@ -655,7 +655,7 @@ class S2nOutput(object):
                     val = rec[fn]
                 except:
                     val = None
-                
+
                 if val is not None:
                     ordrec[fn] = val
                 else:
@@ -714,5 +714,3 @@ def print_s2n_output(response_dict, do_print_rec=False):
     if extras:
         print(f"Extra elements: {extras}")
     print("")
-
-

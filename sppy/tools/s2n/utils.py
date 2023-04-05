@@ -9,20 +9,20 @@ from flask_app.broker.s2n_type import S2nEndpoint
 # ......................................................
 def is_valid_uuid(uuid_to_test, version=4):
     """Check if uuid_to_test is a valid UUID.
-    
+
     Args:
         uuid_to_test : str
         version : {1, 2, 3, 4}
-    
+
     Returns: `True` if uuid_to_test is a valid UUID, otherwise `False`.
-    
+
     Examples:
         >>> is_valid_uuid("c9bf9e57-1685-4c89-bafb-ff5af830be8a")
         True
         >>> is_valid_uuid("c9bf9e58")
         False
     """
-    
+
     try:
         uuid_obj = UUID(uuid_to_test, version=version)
     except ValueError:
@@ -54,7 +54,7 @@ def get_icon_url(provider_code, icon_status=None):
         # base_url = cherrypy.request.headers["Origin"]
     except:
         base_url = "https://localhost"
-        
+
     if ServiceProvider.is_valid_service(provider_code, S2nEndpoint.Badge):
         url = "{}{}?provider={}".format(
             base_url,
@@ -64,7 +64,7 @@ def get_icon_url(provider_code, icon_status=None):
         if icon_status:
             url = "{}&icon_status={}".format(url, icon_status)
     return url
-    
+
 
 # ...............................................
 def combine_errinfo(errinfo1, errinfo2):
@@ -79,7 +79,7 @@ def combine_errinfo(errinfo1, errinfo2):
             lst2 = errinfo2[key]
         except:
             lst2 = []
-        
+
         if lst or lst2:
             lst.extend(lst2)
             errinfo[key] = lst
@@ -94,7 +94,7 @@ def add_errinfo(errinfo, key, val):
         except:
             errinfo[key] = [val]
     return errinfo
-    
+
 
 if __name__ == "__main__":
     import doctest

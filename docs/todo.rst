@@ -14,10 +14,10 @@ pip install aiohttp[speedups]
 
 Testing
 ----------
-Check out Occurrence UUIDs sent by Theresa, not returning data from Specify (specify_cache) 
+Check out Occurrence UUIDs sent by Theresa, not returning data from Specify (specify_cache)
 in Syftorium solr indexes spcoco, some are in specimen_records
 ::
-	
+
 	0102a5c9-9312-4b76-a821-1c72a24c958d
 	bffe655b-ea32-4838-8e80-a80e391d5b11
 	c41f63d0-fbd2-4305-8aa1-3d2d6b54763f

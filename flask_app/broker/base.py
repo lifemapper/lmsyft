@@ -50,38 +50,18 @@ class _S2nService:
         provnames = list(provnames)
         provnames.sort()
         return provnames
-    
+
     # ...............................................
     @classmethod
     def get_providers(cls, filter_params=None):
-        """ Return a list of strings indicating all providers valid for this service. 
-        
-        Note:
-            This returns a list of provider values in alphabetical order.  The values
-            are used as URL query parameters.
-        Note: 
-            The order of these providers determines the order of records returned for 
-            multi-provider responses. 
-        """
-        provnames = set()
-        # Ignore as-yet undefined filter_params
-        for p in ServiceProvider.all():
-            if cls.SERVICE_TYPE['endpoint'] in p[S2nKey.SERVICES]:
-                provnames.add(p[S2nKey.PARAM])        
-        provnames = cls._order_providers(provnames)
-        return provnames
-
-    # ...............................................
-    @classmethod
-    def _get_valid_providers(cls, filter_params=None):
-        """ Return a list of strings indicating all providers valid for this service. 
+        """ Return a list of strings indicating all providers valid for this service.
 
         Note:
             This returns a list of provider values in alphabetical order.  The values
             are used as URL query parameters.
-        Note: 
-            The order of these providers determines the order of records returned for 
-            multi-provider responses. 
+        Note:
+            The order of these providers determines the order of records returned for
+            multi-provider responses.
         """
         provnames = set()
         # Ignore as-yet undefined filter_params
@@ -90,28 +70,48 @@ class _S2nService:
                 provnames.add(p[S2nKey.PARAM])
         provnames = cls._order_providers(provnames)
         return provnames
-    
+
+    # ...............................................
+    @classmethod
+    def _get_valid_providers(cls, filter_params=None):
+        """ Return a list of strings indicating all providers valid for this service.
+
+        Note:
+            This returns a list of provider values in alphabetical order.  The values
+            are used as URL query parameters.
+        Note:
+            The order of these providers determines the order of records returned for
+            multi-provider responses.
+        """
+        provnames = set()
+        # Ignore as-yet undefined filter_params
+        for p in ServiceProvider.all():
+            if cls.SERVICE_TYPE['endpoint'] in p[S2nKey.SERVICES]:
+                provnames.add(p[S2nKey.PARAM])
+        provnames = cls._order_providers(provnames)
+        return provnames
+
     # .............................................................................
     @classmethod
     def _get_valid_requested_params(cls, user_params_string, valid_params):
         """
         Return valid requested and invalid options for parameters that accept multiple values,
         including provider and scenariocode parameters.
-        
-        Note: 
-            provider: 
-                For the badge service, exactly one provider is required.  For all other services, 
+
+        Note:
+            provider:
+                For the badge service, exactly one provider is required.  For all other services,
                 multiple providers are accepted, and None indicates to query all valid providers.
-            scenariocode: 
-                For the map service, multiple scenariocode are accepted, and None indicates to 
+            scenariocode:
+                For the map service, multiple scenariocode are accepted, and None indicates to
                 return map layers computed with all valid scenariocodes.
         """
         valid_requested_params = invalid_params = []
-        
+
         if user_params_string:
             tmplst = user_params_string.split(',')
-            user_params = set([tp.lower().strip() for tp in tmplst])
-            
+            user_params = {tp.lower().strip() for tp in tmplst}
+
             valid_requested_params = set()
             invalid_params = set()
             # valid_requested_providers, invalid_providers = cls.get_multivalue_options(user_provs, valid_providers)
@@ -120,30 +120,30 @@ class _S2nService:
                     valid_requested_params.add(param)
                 else:
                     invalid_params.add(param)
-                    
+
             invalid_params = list(invalid_params)
             if valid_requested_params:
                 valid_requested_params = list(valid_requested_params)
             else:
                 valid_requested_params = []
-                        
+
         return valid_requested_params, invalid_params
 
     # .............................................................................
     @classmethod
     def get_failure(cls, service=None, query_term=None, errors={}):
         """Output format for all (soon) S^n services
-        
+
         Args:
             service: type of S^n services
             query_term: query term provided by the user, ex: name or id
             provider: original data provider metadata
             errors: list of info messages, warnings and errors (dictionaries)
-            
+
         Return:
             lmtrex.services.api.v1.S2nOutput object
         """
-        if not service: 
+        if not service:
             service = cls.SERVICE_TYPE['endpoint']
         prov_meta = cls._get_s2n_provider_response_elt(query_term=query_term)
         all_output = S2nOutput(
@@ -181,9 +181,9 @@ class _S2nService:
                 pinfo['options'] = list(providers)
             param_lst.append({p: pinfo})
         info['parameters'] = param_lst
-        
+
         prov_meta = cls._get_s2n_provider_response_elt()
-        
+
         output = S2nOutput(0, svc, provider=prov_meta, errors=info)
         return output
 
@@ -199,7 +199,7 @@ class _S2nService:
         else:
             success = rec['parsed']
             namestr = rec['canonicalName']
-            
+
             if success:
                 if namestr.startswith('? '):
                     namestr = rec['scientificName']
@@ -218,8 +218,8 @@ class _S2nService:
     # ...............................................
     @classmethod
     def _fix_type_new(cls, key, provided_val):
-        """Correct parameter by 
-            * casting to correct type 
+        """Correct parameter by
+            * casting to correct type
             * if there are limited options, make sure it valid.
            If the parameter is invalid (type or value), return the default.
         """
@@ -231,7 +231,7 @@ class _S2nService:
             provided_val = provided_val.lower()
         except:
             pass
-        
+
         default_val = BrokerParameters[key]['default']
         type_val = BrokerParameters[key]['type']
         # If restricted options, check
@@ -246,7 +246,7 @@ class _S2nService:
             else:
                 valid_options = options
                 usr_val = default_val
-            
+
         # Cast values to correct type. Failed conversions return default value
         if isinstance(type_val, str) and not options:
             usr_val = str(provided_val)
@@ -256,66 +256,66 @@ class _S2nService:
                 usr_val = float(provided_val)
             except:
                 usr_val = default_val
-                
+
         # Boolean also tests as int, so try boolean first
-        elif isinstance(type_val, bool):                
+        elif isinstance(type_val, bool):
             if provided_val in (0, '0', 'n', 'no', 'f', 'false'):
                 usr_val = False
             elif provided_val in (1, '1', 'y', 'yes', 't', 'true'):
                 usr_val = True
             else:
                 valid_options = (True, False)
-                usr_val = default_val                    
+                usr_val = default_val
 
         elif isinstance(type_val, int):
             try:
                 usr_val = int(provided_val)
             except:
                 usr_val = default_val
-                
+
         else:
             usr_val = provided_val
-                
+
         return usr_val, valid_options
-    
+
     # ...............................................
     @classmethod
     def _process_params(cls, user_kwargs={}):
         """
-        Modify all user provided key/value pairs to change keys to lower case, 
+        Modify all user provided key/value pairs to change keys to lower case,
         and change values to the expected type (string, int, float, boolean).
-        
+
         Args:
-            user_kwargs: dictionary of keywords and values sent by the user for 
+            user_kwargs: dictionary of keywords and values sent by the user for
                 the current service.
-                
+
         Note:
-            A list of valid values for a keyword can include None as a default 
+            A list of valid values for a keyword can include None as a default
                 if user-provided value is invalid
-                
+
         Todo:
             Do we need not_in_valid_options for error message?
         """
         good_params = {}
         errinfo = {}
-        
+
         # Correct all parameter keys/values present
         for key in cls.SERVICE_TYPE['params']:
             val = user_kwargs[key]
             # Done in calling function
             if key == 'provider':
                 pass
-                    
+
             # Do not edit namestr, maintain capitalization
             elif key == 'namestr':
                 good_params['namestr'] = val
-                
+
             # Require one valid icon_status
             elif key == 'icon_status':
                 valid_stat = BrokerParameters[key]['options']
                 if val is None:
                     errinfo = lmutil.add_errinfo(
-                        errinfo, 'error', 
+                        errinfo, 'error',
                         'Parameter {} containing one of {} options is required'.format(
                             key, valid_stat))
                 elif val not in valid_stat:
@@ -325,7 +325,7 @@ class _S2nService:
                              val, key, valid_stat))
                 else:
                     good_params[key] = val
-                    
+
             elif val is not None:
                 # Allows None or comma-delimited list
                 if key == 'scenariocode':
@@ -336,7 +336,7 @@ class _S2nService:
                     for badscen in invalid_scens:
                         # Add warning, not fatal, some valid providers may requested
                         errinfo = lmutil.add_errinfo(
-                            errinfo, 'warning', 
+                            errinfo, 'warning',
                             'Ignoring invalid value {} for parameter scenariocode (valid options: {})'.format(
                                 badscen, valid_scens))
                 # All other parameters have single value
@@ -350,7 +350,7 @@ class _S2nService:
                         good_params[key] = None
                     else:
                         good_params[key] = usr_val
-                
+
         # Fill in defaults for missing parameters
         for key in cls.SERVICE_TYPE['params']:
             param_meta = BrokerParameters[key]
@@ -358,7 +358,7 @@ class _S2nService:
                 val = good_params[key]
             except:
                 good_params[key] = param_meta['default']
-            
+
         return good_params, errinfo
 
     # ...............................................
@@ -366,7 +366,7 @@ class _S2nService:
     def _get_providers_from_string(cls, usr_req_providers, filter_params=None):
         providers = []
         errinfo = {}
-        
+
         valid_providers = cls._get_valid_providers(filter_params=filter_params)
         # Allows None or comma-delimited list
         valid_requested_providers, invalid_providers = cls._get_valid_requested_params(
@@ -390,58 +390,58 @@ class _S2nService:
                     errinfo, 'error',
                     'Parameter provider containing exactly one of {} options is required'.format(
                         valid_providers))
-                
+
         if invalid_providers:
             for ip in invalid_providers:
                 errinfo = lmutil.add_errinfo(
                     errinfo, 'warning',
                     'Value {} for parameter provider not in valid options {}'.format(
                         ip, valid_providers))
-        
+
         return providers, errinfo
 
     # ...............................................
     @classmethod
     def _standardize_params(
-            cls, provider=None, namestr=None, is_accepted=False, gbif_parse=False,  
-            gbif_count=False, itis_match=False, kingdom=None, 
+            cls, provider=None, namestr=None, is_accepted=False, gbif_parse=False,
+            gbif_count=False, itis_match=False, kingdom=None,
             occid=None, gbif_dataset_key=None, count_only=False, url=None,
-            scenariocode=None, bbox=None, color=None, exceptions=None, height=None, 
-            layers=None, request=None, frmat=None, srs=None, transparent=None, 
+            scenariocode=None, bbox=None, color=None, exceptions=None, height=None,
+            layers=None, request=None, frmat=None, srs=None, transparent=None,
             width=None, do_match=True, icon_status=None, filter_params=None):
         """
         Return:
             a dictionary containing keys and properly formated values for the
                 user specified parameters.
-        Note: 
-            filter_params is present to distinguish between providers for occ service by 
+        Note:
+            filter_params is present to distinguish between providers for occ service by
             occurrence_id or by dataset_id.
         """
         user_kwargs = {
             'provider': provider,
             'namestr': namestr,
-            'is_accepted': is_accepted, 
-            'gbif_parse': gbif_parse, 
-            'gbif_count': gbif_count, 
-            'itis_match': itis_match, 
-            'kingdom': kingdom, 
-            'occid': occid, 
-            'gbif_dataset_key': gbif_dataset_key, 
-            'count_only': count_only, 
+            'is_accepted': is_accepted,
+            'gbif_parse': gbif_parse,
+            'gbif_count': gbif_count,
+            'itis_match': itis_match,
+            'kingdom': kingdom,
+            'occid': occid,
+            'gbif_dataset_key': gbif_dataset_key,
+            'count_only': count_only,
             'url': url,
             'scenariocode': scenariocode,
-            'bbox': bbox, 
-            'color': color, 
-            'exceptions': exceptions, 
-            'height': height, 
-            'layers': layers, 
-            'request': request, 
-            'format': frmat, 
-            'srs': srs, 
-            'transparent': transparent, 
-            'width': width, 
+            'bbox': bbox,
+            'color': color,
+            'exceptions': exceptions,
+            'height': height,
+            'layers': layers,
+            'request': request,
+            'format': frmat,
+            'srs': srs,
+            'transparent': transparent,
+            'width': width,
             'icon_status': icon_status}
-        
+
         providers, prov_errinfo = cls._get_providers_from_string(provider, filter_params=filter_params)
         usr_params, errinfo = cls._process_params(user_kwargs)
         # consolidate parameters and errors
@@ -461,7 +461,7 @@ class _S2nService:
         # Replace namestr with GBIF-parsed namestr
         if namestr and (gbif_parse or itis_match):
             usr_params['namestr'] = cls.parse_name_with_gbif(namestr)
-            
+
         return usr_params, errinfo
 
     # ..........................

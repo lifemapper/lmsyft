@@ -12,21 +12,21 @@ from sppy.tools.s2n.utils  import get_traceback, add_errinfo
 # .............................................................................
 class WormsAPI(APIQuery):
     """Class to query WoRMS API for a name match
-    
+
     Todo:
         Extend for other services
     """
     PROVIDER = ServiceProvider.WoRMS
     NAME_MAP = S2nSchema.get_worms_name_map()
-    
+
     # ...............................................
     def __init__(self, name, other_filters={}, logger=None):
         """
         Constructor for WormsAPI class
-        
+
         Args:
             other_filters: optional filters
-            logger: optional logger for info and error messages.  If None, 
+            logger: optional logger for info and error messages.  If None,
                 prints to stdout
         """
         url = '{}/{}'.format(WORMS.REST_URL, WORMS.NAME_MATCH_SERVICE)
@@ -62,7 +62,7 @@ class WormsAPI(APIQuery):
         except Exception:
             return None
         return val
-    
+
     # ...............................................
     @classmethod
     def _standardize_record(cls, rec, is_accepted=False):
@@ -71,7 +71,7 @@ class WormsAPI(APIQuery):
         prov_sciname_fn = 'valid_authority'
         prov_canname_fn = 'valid_name'
         hierarchy_fld = 'hierarchy'
-        
+
         # Assemble scientific name
         try:
             canonical_str = rec['valid_name']
@@ -85,20 +85,20 @@ class WormsAPI(APIQuery):
         except:
             auth_str = ''
         sciname_str = '{}{}'.format(canonical_str, auth_str)
-            
+
         for stdfld, provfld in cls.NAME_MAP.items():
             try:
                 val = rec[provfld]
             except:
                 val = None
-                
+
             # Special cases
             if provfld == prov_sciname_fn:
                 newrec[stdfld] = sciname_str
-                
+
             elif provfld == prov_canname_fn:
                 newrec[stdfld] = canonical_str
-                
+
             # Use ID field to construct data_url
             elif provfld == WORMS.ID_FLDNAME:
                 newrec[stdfld] = val
@@ -115,12 +115,12 @@ class WormsAPI(APIQuery):
                     else:
                         hierarchy[rnk] = val
                 newrec[stdfld] = [hierarchy]
-                
+
             # all others, including view_url
             else:
                 newrec[stdfld] = val
         return newrec
-    
+
     # ...............................................
     @classmethod
     def _test_record(cls, status, rec):
@@ -158,22 +158,22 @@ class WormsAPI(APIQuery):
         prov_meta = cls._get_provider_response_elt(query_status=query_status, query_urls=query_urls)
         std_output = S2nOutput(
             total, service, provider=prov_meta, records=stdrecs, errors=errinfo)
-        
+
         return std_output
-    
+
 
     # ...............................................
     @classmethod
     def match_name(cls, namestr, is_accepted=False, logger=None):
         """Return closest accepted species in WoRMS taxonomy,
-        
+
         Args:
-            namestr: A scientific namestring possibly including author, year, 
+            namestr: A scientific namestring possibly including author, year,
                 rank marker or other name information.
             is_accepted: if True, return the validName in the WoRMS record, otherwise return the Name
-                
+
         Returns:
-            Either a dictionary containing a matching record .  
+            Either a dictionary containing a matching record .
         """
         status = None
         errinfo = {}
@@ -181,7 +181,7 @@ class WormsAPI(APIQuery):
             status = 'accepted'
         name_clean = namestr.strip()
         api = WormsAPI(name_clean, other_filters={'marine_only': 'true'}, logger=logger)
-        
+
         try:
             api.query()
         except Exception as e:
@@ -194,9 +194,9 @@ class WormsAPI(APIQuery):
                 errinfo['error'] =  [api.error]
             # Standardize output from provider response
             std_output = cls._standardize_output(
-                api.output, S2nEndpoint.Name, query_status=api.status_code, query_urls=[api.url], 
+                api.output, S2nEndpoint.Name, query_status=api.status_code, query_urls=[api.url],
                 is_accepted=is_accepted, errinfo=errinfo)
-            
+
         return std_output
 
 
