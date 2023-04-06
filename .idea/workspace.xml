@@ -6,21 +6,10 @@
   <component name="ChangeListManager">
     <list default="true" id="7da7499e-1ec6-4bd7-974b-80f0bb5c6fdd" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/flask_app/broker/badge.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/broker/badge.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/flask_app/broker/base.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/broker/base.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/flask_app/broker/constants.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/broker/constants.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/flask_app/broker/frontend.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/broker/frontend.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/flask_app/broker/manage.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/broker/manage.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/flask_app/broker/name.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/broker/name.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/flask_app/broker/occ.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/broker/occ.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/flask_app/broker/routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/broker/routes.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/flask_app/broker/s2n_type.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/broker/s2n_type.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/flask_app/broker/stats.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/broker/stats.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sppy/tools/misc/lm_xml.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/misc/lm_xml.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sppy/tools/misc/solr.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/misc/solr.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sppy/tools/provider/api.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/provider/api.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sppy/tools/provider/gbif.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/provider/gbif.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sppy/tools/provider/itis.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/provider/itis.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sppy/frontend/templates.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/templates.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sppy/tools/fileop/csvtools.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/fileop/csvtools.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sppy/tools/fileop/geotools.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/fileop/geotools.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

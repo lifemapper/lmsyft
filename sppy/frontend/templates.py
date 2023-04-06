@@ -1,3 +1,4 @@
+"""Functions for retrieving Specify Network webpages."""
 # -*- coding: utf-8 -*-
 import json
 import os
@@ -7,11 +8,20 @@ base_dir = os.path.dirname(os.path.realpath(__file__))
 templates_dir = os.path.join(base_dir, "templates/")
 
 templates = dict()
-
 is_development = True
 
 
+# .............................................................................
 def template(name, arguments):
+    """Fill and return the HTML template with the given name and arguments.
+
+    Args:
+        name: template name
+        arguments: dictionary of key/values to fill the template
+
+    Returns:
+        html webpage for the given template and data
+    """
     if name not in templates or is_development:
         with open(os.path.join(templates_dir, f"{name}.html")) as file:
             templates[name] = Template(file.read()).substitute
@@ -23,7 +33,16 @@ def template(name, arguments):
     )
 
 
+# .............................................................................
 def inline_static(file_path):
+    """Return the contents of a static file.
+
+    Args:
+        file_path: path to a file
+
+    Returns:
+        contents of a file
+    """
     signature = (
         f"/* {file_path} */\n\n"
         if file_path.endswith("css") or file_path.endswith("js")
@@ -35,13 +54,28 @@ def inline_static(file_path):
         return f"{signature}{file.read()}"
 
 
+# .............................................................................
 def get_bundle_location(name):
+    """Return the relative path to the location of a static js file.
+
+    Args:
+        name: name key of a filename value
+
+    Returns:
+        relative path to a file
+    """
     manifest = json.loads(inline_static("/volumes/webpack-output/manifest.json"))
     file_name = os.path.basename(manifest[name])
     return f"/static/js/{file_name}"
 
 
+# .............................................................................
 def frontend_template():
+    """Return the frontend index webpage.
+
+    Returns:
+        html webpage for the frontend index webpage.
+    """
     return template(
         "index",
         {
@@ -57,7 +91,13 @@ def frontend_template():
     )
 
 
+# .............................................................................
 def stats_template():
+    """Return the stats webpage.
+
+    Returns:
+        html webpage for the stats webpage.
+    """
     return template(
         "index",
         {

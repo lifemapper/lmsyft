@@ -175,7 +175,7 @@ class NameSvc(_S2nService):
                 scientific name into canonical name
             gbif_count: flag to indicate whether to count GBIF occurrences of this taxon
             kingdom: not yet implemented
-            kwargs: any additional keyword arguments are ignored
+            **kwargs: additional keyword arguments are accepted and ignored
 
         Returns:
             A flask_app.broker.s2n_type.S2nOutput object containing records for each
