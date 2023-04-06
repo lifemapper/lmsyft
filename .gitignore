@@ -2,7 +2,8 @@
 venv/
 
 # pycharm project
-.idea/
+.idea/*
+
 
 # pydev-eclipse project
 .pydevproject

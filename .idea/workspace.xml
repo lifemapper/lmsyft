@@ -6,9 +6,6 @@
   <component name="ChangeListManager">
     <list default="true" id="7da7499e-1ec6-4bd7-974b-80f0bb5c6fdd" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/flask_app/broker/name.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/broker/name.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sppy/frontend/templates.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/frontend/templates.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sppy/tools/fileop/csvtools.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/fileop/csvtools.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/sppy/tools/fileop/geotools.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/fileop/geotools.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />

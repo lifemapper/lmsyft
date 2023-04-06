@@ -27,6 +27,9 @@ def delete_shapefile(shp_filename):
 
     Args:
         shp_filename: full path to shapefile with .shp extension.
+
+    Returns:
+        boolean indicating success or failure.
     """
     success = True
     shape_extensions = [
@@ -49,10 +52,11 @@ def delete_shapefile(shp_filename):
             print(f"Failed to remove {simfname}, {err}")
     return success
 
+
 # .............................................................................
 def _create_empty_dataset(
         out_shp_filename, feature_attributes, ogr_type, epsg_code, overwrite=True):
-    """ Create an empty ogr dataset given a set of feature attributes
+    """Create an empty ogr dataset given a set of feature attributes.
 
     Args:
         out_shp_filename: filename for output data
@@ -104,6 +108,7 @@ def _create_empty_dataset(
 
     return dataset, lyr
 
+
 # .............................................................................
 def get_clustered_spatial_index(shp_filename):
     """Get an RTree spatial index.
@@ -140,6 +145,7 @@ def get_clustered_spatial_index(shp_filename):
     else:
         spindex = rtree.index.Index(idx_filename, interleaved=False)
     return spindex
+
 
 # .............................................................................
 def _refine_intersect(gc_wkt, poly, new_layer, feat_vals):
@@ -186,6 +192,7 @@ def _refine_intersect(gc_wkt, poly, new_layer, feat_vals):
                 newfeat_count += 1
     return newfeat_count
 
+
 # .............................................................................
 def intersect_write_shapefile(new_dataset, new_layer, feats, grid_index):
     """Intersect a features in a layer with the spatial index.
@@ -198,24 +205,24 @@ def intersect_write_shapefile(new_dataset, new_layer, feats, grid_index):
     """
     feat_count = 0
     # for each feature
-    print ("Loop through {} poly features for intersection".format(len(feats)))
-    for fid, feat_vals in feats.items():
+    print(f"Loop through {len(feats)} poly features for intersection")
+    for _fid, feat_vals in feats.items():
         curr_count = 0
         # create new feature for every simple geometry
         simple_wkts = feat_vals["geometries"]
-        print (f"  Loop through {len(simple_wkts)} simple features in poly")
+        print(f"  Loop through {len(simple_wkts)} simple features in poly")
         for wkt in simple_wkts:
             # create a new feature
             simple_geom = ogr.CreateGeometryFromWkt(wkt)
             gname = simple_geom.GetGeometryName()
             if gname != "POLYGON":
-                print (f"    Discard invalid {gname} subgeometry")
+                print(f"    Discard invalid {gname} subgeometry")
             else:
                 # xmin, xmax, ymin, ymax
                 xmin, xmax, ymin, ymax = simple_geom.GetEnvelope()
-                hits = list(grid_index.intersection((xmin, xmax, ymin, ymax),
-                                                    objects=True))
-                print ("    Loop through {} roughly intersected gridcells".format(len(hits)))
+                hits = list(grid_index.intersection(
+                    (xmin, xmax, ymin, ymax), objects=True))
+                print(f"    Loop through {len(hits)} roughly intersected gridcells")
                 for item in hits:
                     gc_wkt = item.object
                     newfeat_count = _refine_intersect(
@@ -223,27 +230,29 @@ def intersect_write_shapefile(new_dataset, new_layer, feats, grid_index):
                     curr_count += newfeat_count
 #                     print ("  Created {} new features for simplified poly".format(
 #                         newfeat_count))
-        print ("  Created {} new features for primary poly".format(curr_count))
+        print(f"  Created {curr_count} new features for primary poly")
         feat_count += curr_count
-    print ("Created {} new features from intersection".format(feat_count))
+    print(f"Created {feat_count} new features from intersection")
     # Close and flush to disk
     new_dataset.Destroy()
 
+
 # .............................................................................
-def write_shapefile(new_dataset, new_layer, feature_sets):
-    """ Write a shapefile given a set of features, attribute
+def write_shapefile(new_dataset, new_layer, feature_sets, calc_nongeo_fields):
+    """Write a shapefile given a set of features, attribute.
 
     Args:
         new_dataset: an OGR dataset object for the new shapefile
         new_layer: an OGR layer object for writing features
         feature_sets: sets of features for writing
+        calc_nongeo_fields: TBD
     """
     feat_count = 0
     new_layer_def = new_layer.GetLayerDefn()
     # for each set of features
     for feats in feature_sets:
         # for each feature
-        for oldfid, feat_vals in feats.items():
+        for _oldfid, feat_vals in feats.items():
             # create new feature for every simple geometry
             simple_geoms = feat_vals["geometries"]
             for wkt in simple_geoms:
@@ -315,7 +324,7 @@ def _read_complex_shapefile(in_shp_filename):
             for (fldname, _) in feat_attrs:
                 try:
                     val = feat.GetFieldAsString(fldname)
-                except:
+                except Exception:
                     val = ""
                     if fldname in REQUIRED_FIELDS:
                         print("Failed to read value in {}, FID {}".format(
@@ -361,6 +370,7 @@ def _read_complex_shapefile(in_shp_filename):
 
     return feats, feat_attrs, bbox
 
+
 # .............................................................................
 def simplify_merge_polygon_shapefiles(in_shp_filenames, calc_fields, out_shp_filename):
     """Merge one or more shapefiles, simplifying multipolygons into simple polygons.
@@ -387,19 +397,19 @@ def simplify_merge_polygon_shapefiles(in_shp_filenames, calc_fields, out_shp_fil
     new_fldnames = []
     for i in range(len(feat_attrs_lst)):
         feat_attrs = feat_attrs_lst[i]
-        for (fname,ftype) in feat_attrs:
+        for (fname, ftype) in feat_attrs:
             if fname in new_fldnames:
                 fname = fname + str(i)
             new_fldnames.append(fname)
-            out_feat_attrs.append((fname,ftype))
+            out_feat_attrs.append((fname, ftype))
     # Add new attributes including B_CENTROID
     for calc_fldname, calc_fldtype in calc_fields.items():
         out_feat_attrs.append((calc_fldname, calc_fldtype))
         new_fldnames.append(calc_fldname)
 
-    # ......................... ? bbox .........................
-    new_bbox = (min(b[0] for b in bboxes), min(b[1] for b in bboxes),
-                max(b[2] for b in bboxes), max(b[3] for b in bboxes))
+    # # ......................... ? bbox .........................
+    # new_bbox = (min(b[0] for b in bboxes), min(b[1] for b in bboxes),
+    #             max(b[2] for b in bboxes), max(b[3] for b in bboxes))
 
     # ......................... Create structure .........................
     out_dataset, out_layer = _create_empty_dataset(
@@ -423,8 +433,10 @@ def intersect_polygon_with_grid(
     reduce polygon size and complexity.
 
     Args:
-        in_shp_filenames: list of one or more input shapefiles
-        grid_shp_filename: dictionary of new fields, fieldtypes
+        primary_shp_filename: input shapefile
+        grid_shp_filename: 2nd input shapefile, simple for intersecting.
+        calc_fields: dictionary of calculated fields and their type to add to the output
+            shapefile.
         out_shp_filename: output filename
     """
     epsg_code = 4326
