@@ -1,4 +1,4 @@
-"""Entrypoint for Resolver Flask App."""
+"""Entrypoint for Specify Network Flask App."""
 
 from flask.cli import FlaskGroup
 

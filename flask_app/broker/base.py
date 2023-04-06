@@ -1,3 +1,4 @@
+"""Parent Class for the Specify Network API services."""
 from flask import Flask
 
 import sppy.tools.s2n.utils as lmutil
@@ -11,9 +12,9 @@ app = Flask(__name__)
 
 # .............................................................................
 class _S2nService:
-    """Base S-to-the-N service, handles parameter names and acceptable values"""
+    """Base S-to-the-N service, handles parameter names and acceptable values."""
     # overridden by subclasses
-    SERVICE_TYPE = None
+    SERVICE_TYPE = APIService.Root
 
     # ...............................................
     @classmethod
@@ -55,34 +56,19 @@ class _S2nService:
     # ...............................................
     @classmethod
     def get_providers(cls, filter_params=None):
-        """ Return a list of strings indicating all providers valid for this service.
+        """Return a list of strings indicating all providers valid for this service.
+
+        Args:
+            filter_params: todo - provider filter parameters.
+
+        Returns:
+            provnames: list of provider values, suitable for a URL query parameter.
 
         Note:
-            This returns a list of provider values in alphabetical order.  The values
-            are used as URL query parameters.
-        Note:
-            The order of these providers determines the order of records returned for
-            multi-provider responses.
-        """
-        provnames = set()
-        # Ignore as-yet undefined filter_params
-        for p in ServiceProvider.all():
-            if cls.SERVICE_TYPE["endpoint"] in p[S2nKey.SERVICES]:
-                provnames.add(p[S2nKey.PARAM])
-        provnames = cls._order_providers(provnames)
-        return provnames
-
-    # ...............................................
-    @classmethod
-    def _get_valid_providers(cls, filter_params=None):
-        """ Return a list of strings indicating all providers valid for this service.
-
-        Note:
-            This returns a list of provider values in alphabetical order.  The values
-            are used as URL query parameters.
-        Note:
-            The order of these providers determines the order of records returned for
-            multi-provider responses.
+            * This returns a list of provider values in alphabetical order.  The values
+                are used as URL query parameters.
+            * The order of these providers determines the order of records returned for
+                multi-provider responses.
         """
         provnames = set()
         # Ignore as-yet undefined filter_params
@@ -100,6 +86,10 @@ class _S2nService:
         Args:
             user_params_string: user-requested parameters as a string.
             valid_params: valid parameter values
+
+        Returns:
+            valid_requested_params: list of valid params from the provided query string
+            invalid_params: list of invalid params from the provided query string
 
         Note:
             For the badge service, exactly one provider is required.  For all other
@@ -138,11 +128,10 @@ class _S2nService:
         Args:
             service: type of S^n services
             query_term: query term provided by the user, ex: name or id
-            provider: original data provider metadata
             errors: list of info messages, warnings and errors (dictionaries)
 
-        Return:
-            lmtrex.services.api.v1.S2nOutput object
+        Returns:
+            flask_app.broker.s2n_type.S2nOutput object
         """
         if not service:
             service = cls.SERVICE_TYPE["endpoint"]
@@ -154,18 +143,32 @@ class _S2nService:
     # .............................................................................
     @classmethod
     def endpoint(cls):
-        """Return the URL endpoint for this class."""
-        endpoint =  f"{S2nEndpoint.Root}/{cls.SERVICE_TYPE['endpoint']}"
+        """Return the URL endpoint for this class.
+
+        Returns:
+            URL endpoint for the service
+        """
+        endpoint = f"{S2nEndpoint.Root}/{cls.SERVICE_TYPE['endpoint']}"
         return endpoint
 
     # ...............................................
     @classmethod
     def get_endpoint(cls, **kwargs):
-        """Return the http response for this class endpoint."""
+        """Return the http response for this class endpoint.
+
+        Args:
+            **kwargs: keyword arguments are accepted but ignored
+
+        Returns:
+            flask_app.broker.s2n_type.S2nOutput object
+
+        Raises:
+            Exception: on unknown error.
+        """
         try:
-            valid_providers = cls._get_valid_providers()
+            valid_providers = cls.get_providers()
             output = cls._show_online(valid_providers)
-        except Exception as e:
+        except Exception:
             raise
         return output.response
 
@@ -204,7 +207,7 @@ class _S2nService:
         output = GbifAPI.parse_name(namestr)
         try:
             rec = output["record"]
-        except:
+        except KeyError:
             # Default to original namestring if parsing fails
             pass
         else:
@@ -229,7 +232,7 @@ class _S2nService:
         output = ItisAPI.match_name(namestr, status="valid")
         try:
             namestr = output["records"][0]["nameWOInd"]
-        except:
+        except KeyError:
             # Default to original namestring if match fails
             pass
         return namestr
@@ -277,19 +280,19 @@ class _S2nService:
             else:
                 valid_options = options
                 usr_val = default_val
-                
+
         # If not restricted to options
         if options is None:
             # Cast values to correct type. Failed conversions return default value
             if isinstance(type_val, str) and not options:
                 usr_val = str(provided_val)
-    
+
             elif isinstance(type_val, float):
                 try:
                     usr_val = float(provided_val)
                 except ValueError:
                     usr_val = default_val
-    
+
             # Boolean also tests as int, so try boolean first
             elif isinstance(type_val, bool):
                 if provided_val in (0, "0", "n", "no", "f", "false"):
@@ -299,13 +302,13 @@ class _S2nService:
                 else:
                     valid_options = (True, False)
                     usr_val = default_val
-    
+
             elif isinstance(type_val, int):
                 try:
                     usr_val = int(provided_val)
                 except ValueError:
                     usr_val = default_val
-    
+
             else:
                 usr_val = provided_val
 
@@ -313,12 +316,16 @@ class _S2nService:
 
     # ...............................................
     @classmethod
-    def _process_params(cls, user_kwargs={}):
+    def _process_params(cls, user_kwargs=None):
         """Modify all user provided keys to lowercase and values to correct types.
 
         Args:
             user_kwargs: dictionary of keywords and values sent by the user for
                 the current service.
+
+        Returns:
+            good_params: dictionary of valid parameters and values
+            errinfo: dictionary of errors for different error levels.
 
         Note:
             A list of valid values for a keyword can include None as a default
@@ -371,8 +378,8 @@ class _S2nService:
         for key in cls.SERVICE_TYPE["params"]:
             param_meta = BrokerParameters[key]
             try:
-                val = good_params[key]
-            except:
+                _ = good_params[key]
+            except KeyError:
                 good_params[key] = param_meta["default"]
 
         return good_params, errinfo
@@ -382,7 +389,7 @@ class _S2nService:
     def _get_providers_from_string(cls, usr_req_providers, filter_params=None):
         errinfo = {}
 
-        valid_providers = cls._get_valid_providers(filter_params=filter_params)
+        valid_providers = cls.get_providers(filter_params=filter_params)
         # Allows None or comma-delimited list
         valid_requested_providers, invalid_providers = cls._get_valid_requested_params(
             usr_req_providers, valid_providers)
@@ -417,13 +424,31 @@ class _S2nService:
             cls, provider=None, namestr=None, is_accepted=False, gbif_parse=False,
             gbif_count=False, itis_match=False, kingdom=None,
             occid=None, gbif_dataset_key=None, count_only=False, url=None,
-            scenariocode=None, bbox=None, color=None, exceptions=None, height=None,
-            layers=None, request=None, frmat=None, srs=None, transparent=None,
-            width=None, do_match=True, icon_status=None, filter_params=None):
-        """
-        Return:
-            a dictionary containing keys and properly formated values for the
+            icon_status=None, filter_params=None):
+        """Standardize query parameters to send to appropriate service.
+
+        Args:
+            provider: provider keyword value for requested query.
+            namestr: taxonomic name.
+            is_accepted: flag indicating to restrict the results to accepted taxa.
+            gbif_parse: True to parse a Scientific Name first using the GBIF parsing
+                service.
+            gbif_count: True to return a count from GBIF for a species name.
+            itis_match: True to match with ITIS
+            kingdom: Query taxon name in a specific kingdom (for names that appear in
+                more than one kingdom).
+            occid: Identifier for an occurrence record.
+            gbif_dataset_key: Identifier for a GBIF dataset.
+            count_only: True to return a count, not records.
+            url: URL
+            icon_status: keyword for returning a version of an icon.  Options are
+                hover, active, inactive.
+            filter_params: todo - provider filter parameters.
+
+        Returns:
+            a dictionary containing keys and properly formatted values for the
                 user specified parameters.
+
         Note:
             filter_params is present to distinguish between providers for occ service by
             occurrence_id or by dataset_id.
@@ -440,17 +465,14 @@ class _S2nService:
             "gbif_dataset_key": gbif_dataset_key,
             "count_only": count_only,
             "url": url,
-            "scenariocode": scenariocode,
-            "bbox": bbox,
-            "color": color,
-            "exceptions": exceptions,
-            "height": height,
-            "layers": layers,
-            "request": request,
-            "format": frmat,
-            "srs": srs,
-            "transparent": transparent,
-            "width": width,
+            # "bbox": bbox,
+            # "exceptions": exceptions,
+            # "height": height,
+            # "layers": layers,
+            # "request": request,
+            # "format": frmat,
+            # "srs": srs,
+            # "width": width,
             "icon_status": icon_status}
 
         providers, prov_errinfo = cls._get_providers_from_string(
@@ -464,11 +486,11 @@ class _S2nService:
         gbif_parse = itis_match = False
         try:
             gbif_parse = usr_params.pop("gbif_parse")
-        except:
+        except Exception:
             pass
         try:
             itis_match = usr_params.pop("itis_match")
-        except:
+        except Exception:
             pass
         # Replace namestr with GBIF-parsed namestr
         if namestr and (gbif_parse or itis_match):
@@ -479,7 +501,7 @@ class _S2nService:
     # ..........................
     @staticmethod
     def OPTIONS():
-        """Common options request for all services (needed for CORS)"""
+        """Common options request for all services (needed for CORS)."""
         return
 
 

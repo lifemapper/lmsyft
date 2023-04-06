@@ -1,4 +1,5 @@
-from flask import Flask, Blueprint, request, render_template
+"""URL Routes for the Specify Network API services."""
+from flask import Blueprint, request, render_template
 import os
 
 from flask_app.broker.constants import (
@@ -36,7 +37,11 @@ def broker_status():
 # ..........................
 @bp.route("/schema")
 def display_raw_schema():
-    """Show the schema XML."""
+    """Show the schema XML.
+
+    Returns:
+        schema: the schema for the Specify Network.
+    """
     fname = os.path.join(SCHEMA_DIR, SCHEMA_FNAME)
     with open(fname, "r") as f:
         schema = f.read()
@@ -46,14 +51,23 @@ def display_raw_schema():
 # ..........................
 @bp.route("/swaggerui")
 def swagger_ui():
-    """Show the swagger UI to the schema."""
+    """Show the swagger UI to the schema.
+
+    Returns:
+        a webpage UI of the Specify Network schema.
+    """
     return render_template("swagger_ui.html")
 
 
 # .....................................................................................
 @bp.route("/badge/")
 def badge_endpoint():
-    """Show the providers/icons available for the badge service."""
+    """Show the providers/icons available for the badge service.
+
+    Returns:
+        response: A flask_app.broker.s2n_type.S2nOutput object containing the Specify
+            Network badge API response containing available providers.
+    """
     response = BadgeSvc.get_endpoint()
     return response
 
@@ -82,13 +96,18 @@ def badge_get(provider):
 # .....................................................................................
 @bp.route("/name/")
 def name_endpoint():
-    """Show the providers available for the name service."""
+    """Show the providers available for the name service.
+
+    Returns:
+        response: A flask_app.broker.s2n_type.S2nOutput object containing the Specify
+            Network name API response containing available providers.
+    """
     name_arg = request.args.get("namestr", default=None, type=str)
     provider = request.args.get("provider", default=None, type=str)
     is_accepted = request.args.get("is_accepted", default="True", type=str)
     gbif_parse = request.args.get("gbif_parse", default="True", type=str)
     gbif_count = request.args.get("gbif_count", default="True", type=str)
-    kingdom = request.args.get("kingdom", default=None, type=str)
+    # kingdom = request.args.get("kingdom", default=None, type=str)
     if name_arg is None:
         response = NameSvc.get_endpoint()
     else:
@@ -108,14 +127,15 @@ def name_get(namestr):
         namestr (str): A scientific name to search for among taxonomic providers.
 
     Returns:
-        dict: A dictionary of metadata for the requested record.
+        response: A flask_app.broker.s2n_type.S2nOutput object containing the Specify
+            Network name API response.
     """
     # response = OccurrenceSvc.get_occurrence_records(occid="identifier")
     provider = request.args.get("provider", default=None, type=str)
     is_accepted = request.args.get("is_accepted", default="True", type=str)
     gbif_parse = request.args.get("gbif_parse", default="True", type=str)
     gbif_count = request.args.get("gbif_count", default="True", type=str)
-    kingdom = request.args.get("kingdom", default=None, type=str)
+    # kingdom = request.args.get("kingdom", default=None, type=str)
     response = NameSvc.get_name_records(
         namestr=namestr, provider=provider, is_accepted=is_accepted,
         gbif_parse=gbif_parse, gbif_count=gbif_count)
@@ -125,11 +145,16 @@ def name_get(namestr):
 # .....................................................................................
 @bp.route("/occ/")
 def occ_endpoint():
-    """Show the providers available for the occurrence service."""
+    """Show the providers available for the occurrence service.
+
+    Returns:
+        response: A flask_app.broker.s2n_type.S2nOutput object containing the Specify
+            Network occurrence API response containing available providers.
+    """
     occ_arg = request.args.get("occid", default=None, type=str)
     provider = request.args.get("provider", default=None, type=str)
     gbif_dataset_key = request.args.get("gbif_dataset_key", default=None, type=str)
-    count_only = request.args.get("count_only", default = "False", type=str)
+    count_only = request.args.get("count_only", default="False", type=str)
     if occ_arg is None and gbif_dataset_key is None:
         response = OccurrenceSvc.get_endpoint()
     else:
@@ -148,11 +173,12 @@ def occ_get(identifier):
         identifier (str): An occurrence identifier to search from occurrence providers.
 
     Returns:
-        dict: A dictionary of metadata for the requested record.
+        response: A flask_app.broker.s2n_type.S2nOutput object containing the Specify
+            Network occurrence API response.
     """
     provider = request.args.get("provider", default=None, type=str)
     gbif_dataset_key = request.args.get("gbif_dataset_key", default=None, type=str)
-    count_only = request.args.get("count_only", default = "False", type=str)
+    count_only = request.args.get("count_only", default="False", type=str)
     response = OccurrenceSvc.get_occurrence_records(
         occid=identifier, provider=provider, gbif_dataset_key=gbif_dataset_key,
         count_only=count_only)
@@ -162,6 +188,12 @@ def occ_get(identifier):
 # .....................................................................................
 @bp.route("/stats/")
 def stats_get():
+    """Get the available statistics.
+
+    Returns:
+        response: A flask_app.broker.s2n_type.S2nOutput object containing the Specify
+            Network statistics API response.
+    """
     response = StatsSvc.get_stats()
     return response
 
@@ -169,6 +201,11 @@ def stats_get():
 # .....................................................................................
 @bp.route("/frontend/")
 def frontend_get():
+    """Return the UI for the Specify Network.
+
+    Returns:
+        response: UI response formatted as an HTML page
+    """
     occid = request.args.get("occid", default=None, type=str)
     namestr = request.args.get("namestr", default=None, type=str)
     response = FrontendSvc.get_frontend(occid=occid, namestr=namestr)

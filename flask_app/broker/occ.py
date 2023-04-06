@@ -1,20 +1,19 @@
+"""Class for the Specify Network Occurrence API service."""
 from http import HTTPStatus
 from werkzeug.exceptions import (BadRequest, InternalServerError)
 
+from flask_app.broker.base import _S2nService
 from flask_app.broker.constants import (APIService, ServiceProvider)
 from flask_app.broker.s2n_type import (S2nKey, S2nOutput, S2nSchema, print_s2n_output)
 
 from sppy.tools.provider.gbif import GbifAPI
 from sppy.tools.provider.idigbio import IdigbioAPI
 from sppy.tools.provider.mopho import MorphoSourceAPI
-# from sppy.tools.provider.specify import SpecifyPortalAPI
-# from sppy.tools.provider.specify_resolver import SpecifyResolverAPI
-
 from sppy.tools.s2n.utils import get_traceback
 
-from flask_app.broker.base import _S2nService
 
 class OccurrenceSvc(_S2nService):
+    """Specify Network API service for retrieving occurrence record information."""
     SERVICE_TYPE = APIService.Occurrence
     ORDERED_FIELDNAMES = S2nSchema.get_s2n_fields(APIService.Occurrence["endpoint"])
 
@@ -22,11 +21,14 @@ class OccurrenceSvc(_S2nService):
     @classmethod
     def get_providers(cls, filter_params=None):
         """Get a list of provider values valid for this service.
-        
+
         Args:
-            filter_params (dict): dictionary of URL parameter keys provided by the user. 
-        
-        Note: 
+            filter_params (dict): dictionary of URL parameter keys provided by the user.
+
+        Returns:
+            provider parameter values acceptable to the Specify Network service.
+
+        Note:
             Overrides _S2nService.get_providers
         """
         provnames = set()
@@ -45,7 +47,7 @@ class OccurrenceSvc(_S2nService):
         try:
             output = MorphoSourceAPI.get_occurrences_by_occid_page1(
                 occid, count_only=count_only)
-        except Exception as e:
+        except Exception:
             traceback = get_traceback()
             output = MorphoSourceAPI.get_api_failure(
                 cls.SERVICE_TYPE["endpoint"], HTTPStatus.INTERNAL_SERVER_ERROR,
@@ -61,7 +63,7 @@ class OccurrenceSvc(_S2nService):
     def _get_idb_records(cls, occid, count_only):
         try:
             output = IdigbioAPI.get_occurrences_by_occid(occid, count_only=count_only)
-        except Exception as e:
+        except Exception:
             traceback = get_traceback()
             output = IdigbioAPI.get_api_failure(
                 cls.SERVICE_TYPE["endpoint"], HTTPStatus.INTERNAL_SERVER_ERROR,
@@ -71,7 +73,6 @@ class OccurrenceSvc(_S2nService):
                 S2nKey.RECORD_FORMAT, cls.SERVICE_TYPE[S2nKey.RECORD_FORMAT])
             output.format_records(cls.ORDERED_FIELDNAMES)
         return output.response
-
 
     # ...............................................
     @classmethod
@@ -83,7 +84,7 @@ class OccurrenceSvc(_S2nService):
             elif gbif_dataset_key is not None:
                 output = GbifAPI.get_occurrences_by_dataset(
                     gbif_dataset_key, count_only)
-        except Exception as e:
+        except Exception:
             traceback = get_traceback()
             output = GbifAPI.get_api_failure(
                 cls.SERVICE_TYPE["endpoint"], HTTPStatus.INTERNAL_SERVER_ERROR,
@@ -104,12 +105,9 @@ class OccurrenceSvc(_S2nService):
         if occid is not None:
             query_term = f"occid={occid}&provider={provstr}&count_only={count_only}"
         elif gbif_dataset_key:
-            try:
-                query_term = \
-                    f"gbif_dataset_key={gbif_dataset_key}&provider={provstr}" \
-                    f"&count_only={count_only}"
-            except:
-                pass
+            query_term = \
+                f"gbif_dataset_key={gbif_dataset_key}&provider={provstr}" \
+                f"&count_only={count_only}"
 
         for pr in req_providers:
             # Address single record
@@ -162,7 +160,12 @@ class OccurrenceSvc(_S2nService):
                 a count and records
             kwargs: any additional keyword arguments are ignored
 
-        Return:
+        Raises:
+            BadRequest: on invalid query parameters.
+            BadRequest: on unknown exception parsing parameters.
+            InternalServerError: on unknown exception when executing request
+
+        Returns:
             a flask_app.broker.s2n_type.S2nOutput object with optional records as a
             list of dictionaries of records corresponding to specimen occurrences in
             the provider database.
@@ -179,12 +182,12 @@ class OccurrenceSvc(_S2nService):
                 try:
                     error_description = "; ".join(errinfo["error"])
                     raise BadRequest(error_description)
-                except:
+                except KeyError:
                     pass
 
-            except Exception as e:
+            except Exception:
                 error_description = get_traceback()
-                raise InternalServerError(error_description)
+                raise BadRequest(error_description)
 
             # Do Query!
             try:
@@ -197,14 +200,15 @@ class OccurrenceSvc(_S2nService):
                 try:
                     for err in errinfo["warning"]:
                         output.append_error("warning", err)
-                except:
+                except KeyError:
                     pass
 
-            except Exception as e:
+            except Exception:
                 error_description = get_traceback()
                 raise InternalServerError(error_description)
 
         return output.response
+
 
 # .............................................................................
 if __name__ == "__main__":

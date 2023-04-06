@@ -112,7 +112,7 @@ class GbifAPI(APIQuery):
             logger: optional logger for info and error messages.  If None,
                 prints to stdout
 
-        Return:
+        Returns:
             a dictionary containing one or more keys:
                 count, records, error, warning
 
@@ -343,7 +343,7 @@ class GbifAPI(APIQuery):
             logger: optional logger for info and error messages.  If None,
                 prints to stdout
 
-        Return:
+        Returns:
             a dictionary containing one or more keys:
                 count, records, error, warning
 

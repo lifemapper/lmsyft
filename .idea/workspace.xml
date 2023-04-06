@@ -5,35 +5,22 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7da7499e-1ec6-4bd7-974b-80f0bb5c6fdd" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/lmtrex.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/lmtrex.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/flask_app/application.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/application.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/flask_app/broker/address.py.saveme" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/flask_app/broker/badge.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/broker/badge.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/flask_app/broker/base.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/broker/base.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/flask_app/broker/constants.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/broker/constants.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/flask_app/broker/map.py.saveme" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/flask_app/broker/frontend.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/broker/frontend.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flask_app/broker/manage.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/broker/manage.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/flask_app/broker/name.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/broker/name.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/flask_app/broker/occ.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/broker/occ.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/flask_app/broker/resolve.py.saveme" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/flask_app/broker/routes.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/broker/routes.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/flask_app/broker/s2n_type.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/broker/s2n_type.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/flask_app/resolver.saveme/__init__.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/flask_app/resolver.saveme/config.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/flask_app/resolver.saveme/manage.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/flask_app/resolver.saveme/models.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/flask_app/resolver.saveme/routes.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/flask_app/resolver.saveme/solr_controller.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/flask_app/sp_cache.saveme/__init__.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/flask_app/sp_cache.saveme/config.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/flask_app/sp_cache.saveme/manage.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/flask_app/sp_cache.saveme/models.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/flask_app/sp_cache.saveme/process_dwca.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/flask_app/sp_cache.saveme/routes.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/flask_app/sp_cache.saveme/solr_controller.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/requirements-test.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements-test.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flask_app/broker/stats.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/broker/stats.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sppy/tools/misc/lm_xml.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/misc/lm_xml.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sppy/tools/misc/solr.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/misc/solr.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sppy/tools/provider/api.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/provider/api.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sppy/tools/provider/gbif.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/provider/gbif.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sppy/tools/provider/itis.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/provider/itis.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -240,12 +227,12 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/flask_app/broker/occ.py</url>
-          <line>232</line>
+          <line>236</line>
           <option name="timeStamp" value="80" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/flask_app/broker/occ.py</url>
-          <line>235</line>
+          <line>239</line>
           <option name="timeStamp" value="81" />
         </line-breakpoint>
       </breakpoints>

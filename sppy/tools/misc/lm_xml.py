@@ -334,7 +334,7 @@ def _attribute_filter(attribute):
     Args:
         attribute (str): The name of an object attribute.
 
-    Return:
+    Returns:
         bool - Indicator if the attribute should be processed.
     """
     return attribute.startswith('_') and attribute not in ['attrib', 'value']

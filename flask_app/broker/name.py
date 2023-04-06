@@ -1,3 +1,4 @@
+"""Class for the Specify Network Name API service."""
 from http import HTTPStatus
 from werkzeug.exceptions import (BadRequest, InternalServerError)
 
@@ -11,9 +12,10 @@ from sppy.tools.provider.itis import ItisAPI
 from sppy.tools.provider.worms import WormsAPI
 from sppy.tools.s2n.utils import get_traceback
 
+
 # .............................................................................
 class NameSvc(_S2nService):
-    """Service for retrieving taxonomic information."""
+    """Specify Network API service for retrieving taxonomic information."""
     SERVICE_TYPE = APIService.Name
     ORDERED_FIELDNAMES = S2nSchema.get_s2n_fields(APIService.Name["endpoint"])
 
@@ -175,11 +177,16 @@ class NameSvc(_S2nService):
             kingdom: not yet implemented
             kwargs: any additional keyword arguments are ignored
 
-        Return:
+        Returns:
             A flask_app.broker.s2n_type.S2nOutput object containing records for each
             provider.  Each provider element is a S2nOutput object with records as a
             list of dictionaries following the flask_app.broker.s2n_type.S2nSchema.NAME
             corresponding to names in the provider taxonomy.
+
+        Raises:
+            BadRequest: on invalid query parameters.
+            BadRequest: on unknown exception parsing parameters.
+            InternalServerError: on unknown exception when executing request
         """
         if namestr is None:
             return cls.get_endpoint()
@@ -193,7 +200,7 @@ class NameSvc(_S2nService):
                 try:
                     error_description = "; ".join(errinfo["error"])
                     raise BadRequest(error_description)
-                except:
+                except KeyError:
                     pass
             except Exception:
                 error_description = get_traceback()
@@ -210,7 +217,7 @@ class NameSvc(_S2nService):
                 try:
                     for err in errinfo["warning"]:
                         output.append_error("warning", err)
-                except:
+                except KeyError:
                     pass
 
             except Exception:

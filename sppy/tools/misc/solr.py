@@ -108,7 +108,7 @@ def query_guid(guid, collection, solr_location):
         collection: name of the Solr index
         solr_location: IP or FQDN for solr index
 
-    Return:
+    Returns:
         a dictionary containing one or more keys: count, docs, error
     """
     return query(collection, solr_location, filters={'id': guid}, query_term=guid)
@@ -122,7 +122,7 @@ def query(collection, solr_location, filters={'*': '*'}, query_term='*'):
         solr_location: IP or FQDN for solr index
         filters: q filters for solr query
 
-    Return:
+    Returns:
         a dictionary containing one or more keys: count, docs, error
     """
     output = {S2nKey.COUNT: 0}

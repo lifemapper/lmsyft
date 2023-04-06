@@ -1,3 +1,4 @@
+"""Constants for the Specify Network API services."""
 from flask_app.broker.s2n_type import S2nEndpoint, S2nKey
 
 # .............................................................................
@@ -63,8 +64,10 @@ ICON_API = '/api/v1/badge'
 #     CORE_TYPE = "{}/terms/Occurrence".format(DWC.URL)
 #
 
+
 # .............................................................................
 class TST_VALUES:
+    """Test values for checking project responses."""
     SPECIFY_SOLR_COLLECTION = "spcoco"
     KU_IPT_RSS_URL = "http://ipt.nhm.ku.edu:8080/ipt/rss.do"
     ICH_RSS_URL = "https://ichthyology.specify.ku.edu/export/rss"
@@ -110,10 +113,13 @@ class TST_VALUES:
         "Acer saccharum Marshall"]
     ITIS_TSNS = [526853, 183671, 182662, 566578]
 
+
 # .............................................................................
 class APIService:
+    """Endpoint, parameters, output record format for all Specify Network APIs."""
     Root = {
-        "endpoint": S2nEndpoint.Root, "params": None,
+        "endpoint": S2nEndpoint.Root,
+        "params": None,
         S2nKey.RECORD_FORMAT: None
     }
     # Icons for service providers
@@ -185,8 +191,8 @@ class ServiceProvider:
         S2nKey.SERVICES: [S2nEndpoint.Occurrence, S2nEndpoint.Badge],
         "icon": {
             "active": "idigbio_colors_active-01.png",
-             "inactive": "idigbio_colors_inactive-01.png",
-             "hover": "idigbio_colors_hover-01.png"
+            "inactive": "idigbio_colors_inactive-01.png",
+            "hover": "idigbio_colors_hover-01.png"
         }
     }
     IPNI = {
@@ -200,8 +206,8 @@ class ServiceProvider:
         S2nKey.SERVICES: [S2nEndpoint.Badge, S2nEndpoint.Name],
         "icon": {
             "active": "itis_active.png",
-             "inactive": "itis_inactive.png",
-             "hover": "itis_hover.png"
+            "inactive": "itis_inactive.png",
+            "hover": "itis_hover.png"
         }
     }
     MorphoSource = {
@@ -211,8 +217,8 @@ class ServiceProvider:
             S2nEndpoint.Badge, S2nEndpoint.Occurrence, S2nEndpoint.SpecimenExtension],
         "icon": {
             "active": "morpho_active-01.png",
-             "inactive": "morpho_inactive-01.png",
-             "hover": "morpho_hover-01.png"
+            "inactive": "morpho_inactive-01.png",
+            "hover": "morpho_hover-01.png"
         }
     }
     # TODO: need an WoRMS badge
@@ -362,8 +368,10 @@ BrokerParameters = {
         "default": None}
     }
 
+
 # ......................................................
 class MorphoSource:
+    """MorphoSource constants enumeration."""
     REST_URL = "https://ms1.morphosource.org/api/v1"
     VIEW_URL = "https://www.morphosource.org/concern/biological_specimens"
     NEW_VIEW_URL = "https://www.morphosource.org/catalog/objects"
@@ -400,7 +408,7 @@ class MorphoSource:
             idtail = "S{}".format(local_id)
             leading_zero_count = (9 - len(idtail))
             prefix = "0" * leading_zero_count
-            url ="{}/{}{}".format(MorphoSource.VIEW_URL, prefix, idtail)
+            url = f"{MorphoSource.VIEW_URL}/{prefix}{idtail}"
         return url
 
     @classmethod
@@ -419,6 +427,7 @@ class MorphoSource:
                 MorphoSource.REST_URL, occurrence_id)
         return url
 
+
 # ......................................................
 class SPECIFY:
     """Specify constants enumeration."""
@@ -429,7 +438,7 @@ class SPECIFY:
 
 # ......................................................
 class GBIF:
-    """GBIF constants enumeration"""
+    """GBIF constants enumeration."""
     DATA_DUMP_DELIMITER = "\t"
     TAXON_KEY = "specieskey"
     TAXON_NAME = "sciname"
@@ -595,6 +604,7 @@ class IPNI:
     """IPNI constants enumeration."""
     base_url = "http://beta.ipni.org/api/1"
 
+
 # .............................................................................
 class ITIS:
     """ITIS constants enumeration.
@@ -638,14 +648,14 @@ class ITIS:
     FAMILY_KEY = "Family"
     GENUS_KEY = "Genus"
     SPECIES_KEY = "Species"
-    URL_ESCAPES = [ [" ", r"\%20"] ]
+    URL_ESCAPES = [[" ", r"\%20"]]
 
     @classmethod
     def get_taxon_view(cls, tsn):
         """Get the URL for viewing a ITIS taxon record.
 
         Args:
-            key: identifier for the taxon record to view
+            tsn: identifier for the taxon record to view
 
         Returns:
             url: for webpage displaying a ITIS taxon record.
@@ -669,7 +679,7 @@ class ITIS:
 # .                           iDigBio constants                               .
 # .............................................................................
 class Idigbio:
-    """iDigBio constants enumeration"""
+    """iDigBio constants enumeration."""
     NAMESPACE_URL = ""
     NAMESPACE_ABBR = "gbif"
     VIEW_URL = "https://www.idigbio.org/portal/records"
@@ -1070,8 +1080,8 @@ ISSUE_DEFINITIONS = {
         "taxon_match_failed":
             "Unable to match a taxon in GBIF Backbone Taxonomy. Inverse of "
             "gbif_taxon_corrected flag."
-  }
-  }
+    }
+}
 
 
 """

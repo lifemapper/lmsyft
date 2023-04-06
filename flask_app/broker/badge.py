@@ -1,7 +1,8 @@
+"""Class for the Specify Network badge (icon) API service."""
 from flask import json, send_file
 import io
 import os
-from werkzeug.exceptions import (BadRequest, InternalServerError, NotImplemented)
+from werkzeug.exceptions import (BadRequest, InternalServerError)
 
 from flask_app.broker.constants import (
     APIService, ICON_CONTENT, ICON_DIR, ServiceProvider, VALID_ICON_OPTIONS)
@@ -14,6 +15,7 @@ from flask_app.broker.base import _S2nService
 
 # .............................................................................
 class BadgeSvc(_S2nService):
+    """Specify Network API service for retrieving icon images."""
     SERVICE_TYPE = APIService.Badge
 
     # ...............................................
@@ -55,7 +57,7 @@ class BadgeSvc(_S2nService):
     @classmethod
     def get_icon(
             cls, provider=None, icon_status=None, stream=True, app_path="", **kwargs):
-        """Get one icon to indicate a provider in a GUI
+        """Get one icon to indicate a provider in a GUI.
 
         Args:
             provider: comma-delimited list of requested provider codes.  Codes are
@@ -66,10 +68,16 @@ class BadgeSvc(_S2nService):
                     (active, inactive, hover)
             stream: If true, return a generator for streaming output, else return file
                 contents.
-            kwargs: any additional keyword arguments are ignored
+            app_path: Base application path used for locating the icon files.
+            **kwargs: any additional keyword arguments are ignored
 
-        Return:
+        Returns:
             a file containing the requested icon
+
+        Raises:
+            BadRequest: on invalid query parameters.
+            BadRequest: on unknown exception when parsing request
+            NotImplementedError: on request for a non-supported provider icon.
         """
         # return info for empty request
         if provider is None and icon_status is None:
@@ -88,7 +96,7 @@ class BadgeSvc(_S2nService):
         except Exception:
             # Unknown error
             error_description = get_traceback()
-            raise InternalServerError(error_description)
+            raise BadRequest(error_description)
 
         icon_basename = cls._get_icon_filename(
             good_params["provider"], good_params["icon_status"])
@@ -134,10 +142,10 @@ class BadgeSvc(_S2nService):
 if __name__ == "__main__":
     svc = BadgeSvc()
     # Get all providers
-    valid_providers = svc._get_valid_providers()
+    valid_providers = svc.get_providers()
     for pr in valid_providers:
         for stat in VALID_ICON_OPTIONS:
             retval = svc.get_icon(
                 provider=pr, icon_status=stat,
-                app_path="/home/astewart/git/specify_cache/sppy/frontend")
+                app_path="/home/astewart/git/sp_network/sppy/frontend")
             print(retval)

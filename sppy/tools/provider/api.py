@@ -306,7 +306,7 @@ class APIQuery:
             errors: list of info messages, warnings, errors (dictionaries)
             service: type of S^n services
 
-        Return:
+        Returns:
             lmtrex.services.api.v1.S2nOutput object
         """
         prov_meta = cls._get_provider_response_elt(query_status=provider_response_status)
