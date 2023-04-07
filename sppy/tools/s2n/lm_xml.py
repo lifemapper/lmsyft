@@ -2,7 +2,7 @@
 
 Note: Mainly wraps elementTree functionality to fit Lifemapper needs
 """
-from sppy.tools.misc.attribute_object import LmAttList, LmAttObj
+from sppy.tools.util.attribute_object import LmAttList, LmAttObj
 
 from types import (BuiltinFunctionType, BuiltinMethodType, FunctionType,
                    LambdaType, MethodType)

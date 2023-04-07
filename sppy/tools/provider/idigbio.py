@@ -6,8 +6,8 @@ from flask_app.broker.constants import (
     GBIF_MISSING_KEY, Idigbio, ISSUE_DEFINITIONS, ServiceProvider, ENCODING, DATA_DUMP_DELIMITER)
 from flask_app.broker.s2n_type import S2nEndpoint, S2nKey, S2nSchema
 
-from sppy.tools.fileop.logtools import (log_info)
-from sppy.tools.fileop.ready_file import ready_filename
+from sppy.tools.util.logtools import Logger
+from sppy.tools.util.fileop import ready_filename
 from sppy.tools.provider.api import APIQuery
 from sppy.tools.s2n.utils import add_errinfo
 

@@ -4,19 +4,6 @@ import os
 from osgeo import ogr, osr
 import rtree
 
-
-EXTRA_VALS_KEY = "rest"
-# Rough log of processing progress
-LOGINTERVAL = 1000000
-LOG_FORMAT = " ".join(["%(asctime)s",
-                       "%(funcName)s",
-                       "line",
-                       "%(lineno)d",
-                       "%(levelname)-8s",
-                       "%(message)s"])
-LOG_DATE_FORMAT = "%d %b %Y %H:%M"
-LOGFILE_MAX_BYTES = 52000000
-LOGFILE_BACKUP_COUNT = 5
 REQUIRED_FIELDS = []
 CENTROID_FIELD = "CENTROID"
 
@@ -473,7 +460,3 @@ if __name__ == "__main__":
     calc_eez_fields = {CENTROID_FIELD: ogr.OFTString}
     intersect_polygon_with_grid(orig_eez_filename, grid_shp_filename,
                                 calc_eez_fields, intersect_filename)
-
-"""
-
-"""

@@ -6,7 +6,7 @@ from flask_app.broker.constants import (
     ITIS, ServiceProvider, URL_ESCAPES, TST_VALUES)
 from flask_app.broker.s2n_type import S2nEndpoint, S2nOutput, S2nSchema
 
-from sppy.tools.fileop.logtools import log_info
+from sppy.tools.util.logtools import log_info
 from sppy.tools.provider.api import APIQuery
 from sppy.tools.s2n.utils import get_traceback, add_errinfo
 

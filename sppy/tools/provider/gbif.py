@@ -5,10 +5,10 @@ import requests
 import urllib
 
 from flask_app.broker.constants import (
-    APIService, GBIF, ISSUE_DEFINITIONS, ServiceProvider, URL_ESCAPES, ENCODING)
+    GBIF, ISSUE_DEFINITIONS, ServiceProvider, URL_ESCAPES, ENCODING)
 from flask_app.broker.s2n_type import S2nEndpoint, S2nKey, S2nOutput, S2nSchema
 
-from sppy.tools.fileop.logtools import (log_info, log_error)
+from sppy.tools.util.logtools import (log_info, log_error)
 from sppy.tools.provider.api import APIQuery
 from sppy.tools.s2n.utils  import get_traceback, add_errinfo
 

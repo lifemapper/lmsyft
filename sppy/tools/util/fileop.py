@@ -1,11 +1,15 @@
 """Miscellaneous tools for reading and writing CSV files."""
 import csv
+import glob
+import os
 import subprocess
 from sys import maxsize
 
 EXTRA_VALS_KEY = "rest"
-REQUIRED_FIELDS = []
-CENTROID_FIELD = "CENTROID"
+SHP_EXT = "shp"
+SHP_EXTENSIONS = [
+    ".shp", ".shx", ".dbf", ".prj", ".sbn", ".sbx", ".fbn", ".fbx", ".ain",
+    ".aih", ".ixs", ".mxs", ".atx", ".shp.xml", ".cpg", ".qix"],
 
 
 # .............................................................................
@@ -18,7 +22,7 @@ def get_line_count(filename):
     Returns:
         number of lines in the file.
     """
-    cmd = "wc -l {}".format(repr(filename))
+    cmd = f"wc -l {filename}"
     info, _ = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
     temp = info.split(b"\n")[0]
     line_count = int(temp.split()[0])
@@ -40,7 +44,7 @@ def get_header(filename):
         f = open(filename, "r", encoding="utf-8")
         header = f.readline()
     except Exception as e:
-        print("Failed to read first line of {}: {}".format(filename, e))
+        print(f"Failed to read first line of {filename}: {e}")
     finally:
         f.close()
     return header
@@ -240,3 +244,90 @@ def getLine(csvreader, recno):
             print(f"Bad record on record {recno}, line {csvreader.line_num} ({e})")
 
     return line, recno
+
+
+# ...............................................
+def ready_filename(full_filename, overwrite=False):
+    """Prepare the specified file location for writing.
+
+    Args:
+        full_filename: full path to file to check for writing
+        overwrite: boolean flag, True indicates delete if exists
+
+    Returns:
+        boolean flag, True indicates the file can be written.
+
+    Raises:
+        Exception: on path is not ready for file creation.
+    """
+    if full_filename is None:
+        raise Exception("Full filename is None")
+
+    if os.path.exists(full_filename):
+        if overwrite:
+            success, msg = delete_file(full_filename)
+            if not success:
+                raise Exception(f"Unable to delete {full_filename}: {msg}")
+            return True
+        return False
+
+    pth, _ = os.path.split(full_filename)
+    try:
+        os.makedirs(pth, 0o775)
+    except OSError:
+        pass
+
+    if os.path.isdir(pth):
+        return True
+
+    raise Exception(
+        f"Failed to create dirs {pth}, checking for ready_filename {full_filename}")
+
+
+# ...............................................
+def delete_file(file_name, delete_dir=False):
+    """Delete file if it exists, delete directory if it becomes empty.
+
+    Args:
+        file_name: file to delete
+        delete_dir: boolean flag indicating whether to delete the parent directory if
+            it is empty after file deletion.
+
+    Returns:
+        success: boolean flag indicating successful deletion
+        msg: any error messages.
+
+    Note:
+        If file is shapefile, delete all related files
+    """
+    success = True
+    msg = ''
+    if file_name is None:
+        msg = "Cannot delete file 'None'"
+    else:
+        pth, _ = os.path.split(file_name)
+        if file_name is not None and os.path.exists(file_name):
+            base, ext = os.path.splitext(file_name)
+            if ext == SHP_EXT:
+                similar_file_names = glob.glob(base + '.*')
+                try:
+                    for sim_file_name in similar_file_names:
+                        _, sim_ext = os.path.splitext(sim_file_name)
+                        if sim_ext in SHP_EXTENSIONS:
+                            os.remove(sim_file_name)
+                except Exception as e:
+                    success = False
+                    msg = f"Failed to remove {sim_file_name}, {e}"
+            else:
+                try:
+                    os.remove(file_name)
+                except Exception as e:
+                    success = False
+                    msg = 'Failed to remove {}, {}'.format(file_name, str(e))
+            if delete_dir and len(os.listdir(pth)) == 0:
+                try:
+                    os.removedirs(pth)
+                except Exception as e:
+                    success = False
+                    msg = f"Failed to remove {pth}, {e}"
+    return success, msg

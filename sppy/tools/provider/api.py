@@ -1,15 +1,14 @@
 """Module containing functions for API Queries"""
 from http import HTTPStatus
 import requests
-import typing
 import urllib
 
 from flask_app.broker.constants import (URL_ESCAPES, ENCODING)
 from flask_app.broker.s2n_type import S2nKey, S2nOutput
 
-from sppy.tools.fileop.logtools import (log_warn)
-from sppy.tools.misc.lm_xml import fromstring, deserialize
-from sppy.tools.s2n.utils import add_errinfo, combine_errinfo, get_traceback, get_icon_url
+from sppy.tools.util.logtools import (log_warn)
+from sppy.tools.s2n.lm_xml import fromstring, deserialize
+from sppy.tools.s2n.utils import add_errinfo, get_icon_url
 
 
 # .............................................................................

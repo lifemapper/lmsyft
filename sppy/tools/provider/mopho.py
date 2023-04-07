@@ -3,7 +3,7 @@ from http import HTTPStatus
 from flask_app.broker.constants import (MorphoSource, ServiceProvider, TST_VALUES)
 from flask_app.broker.s2n_type import S2nEndpoint, S2nKey, S2nSchema
 
-from sppy.tools.fileop.logtools import (log_info)
+from sppy.tools.util.logtools import (log_info)
 from sppy.tools.provider.api import APIQuery
 from sppy.tools.s2n.utils import add_errinfo, get_traceback
 

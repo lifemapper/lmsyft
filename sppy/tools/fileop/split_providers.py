@@ -1,7 +1,7 @@
 import os
 
-from fileop.logtools import get_logger
-from fileop.csvtools import get_csv_reader, get_csv_writer
+from sppy.tools.util.fileop import get_logger
+from sppy.tools.util.fileop import get_csv_reader, get_csv_writer
 
 ENCODING = 'utf-8'
 
