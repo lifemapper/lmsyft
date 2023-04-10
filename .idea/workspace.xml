@@ -5,27 +5,11 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7da7499e-1ec6-4bd7-974b-80f0bb5c6fdd" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/sppy/tools/util/logtools.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/flask_app/broker/constants.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/broker/constants.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sppy/tools/fileop/csvtools.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/util/fileop.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sppy/tools/fileop/geotools.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/util/geotools.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sppy/tools/fileop/logtools.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/sppy/tools/fileop/readwrite.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/sppy/tools/fileop/split_providers.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/fileop/split_providers.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sppy/tools/misc/attribute_object.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/util/attribute_object.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sppy/tools/misc/dwca.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/util/dwca.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sppy/tools/misc/gdalcompare.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/sppy/tools/misc/lm_solr.sh.in" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/s2n/lm_solr.sh.in" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sppy/tools/misc/lm_xml.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/s2n/lm_xml.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sppy/tools/misc/solr.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/s2n/solr.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/sppy/tools/provider/api.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/provider/api.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sppy/tools/provider/gbif.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/provider/gbif.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sppy/tools/provider/idigbio.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/provider/idigbio.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sppy/tools/provider/itis.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/provider/itis.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sppy/tools/provider/mopho.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/provider/mopho.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sppy/tools/s2n/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/s2n/utils.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/tests/test_dwca.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_dwca.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sppy/tools/util/attribute_object.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/util/attribute_object.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sppy/tools/util/dwca.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/util/dwca.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sppy/tools/util/logtools.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/util/logtools.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

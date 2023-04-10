@@ -1,12 +1,13 @@
 """Module containing functions for API Queries"""
 from http import HTTPStatus
+from logging import WARN
 import requests
 import urllib
 
 from flask_app.broker.constants import (URL_ESCAPES, ENCODING)
 from flask_app.broker.s2n_type import S2nKey, S2nOutput
 
-from sppy.tools.util.logtools import (log_warn)
+from sppy.tools.util.logtools import logit
 from sppy.tools.s2n.lm_xml import fromstring, deserialize
 from sppy.tools.s2n.utils import add_errinfo, get_icon_url
 
@@ -259,9 +260,13 @@ class APIQuery:
                     val[0], (float, int)) and isinstance(val[1], (float, int)):
                 clause = '{}:[{} TO {}]'.format(key, str(val[0]), str(val[1]))
             else:
-                log_warn('Unexpected value type {}'.format(val), logger=logger)
+                logit(
+                    logger, f"Unexpected value type {val}",
+                    refname=cls.__class__.__name, log_level=WARN)
         else:
-            log_warn('Unexpected value type {}'.format(val), logger=logger)
+            logit(
+                logger, f"Unexpected value type {val}", refname=cls.__class__.__name__,
+                log_level=WARN)
         return clause
 
     # ...............................................

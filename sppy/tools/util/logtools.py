@@ -85,6 +85,8 @@ def logit(logger, msg, refname="", log_level=logging.INFO):
         logger.log(msg, refname=refname, log_level=log_level)
     else:
         print(f"{refname}:log_level {log_level}: {msg}")
+
+
 """
 {'Date': 'Mon, 30 Nov 2020 17:12:14 GMT',
 'Content-Type': 'application/json',

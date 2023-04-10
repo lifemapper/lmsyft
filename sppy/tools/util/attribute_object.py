@@ -1,5 +1,4 @@
-"""Module containing some base Lifemapper objects
-"""
+"""Module containing base attribute objects for XML parsing."""
 
 
 # .............................................................................
@@ -23,7 +22,7 @@ class LmAttObj:
 
     # ......................................
     def __init__(self, attrib=None, name='LmObj'):
-        """Constructor
+        """Constructor.
 
         Args:
             attrib (dict, optional): Dictionary of attributes to attach to the
@@ -68,7 +67,10 @@ class LmAttObj:
 
     # ......................................
     def __dir__(self):
-        """Override dir() method to pick up attributes in _attrib
+        """Override dir() method to pick up attributes in _attrib.
+
+        Returns:
+            list of attribute dictionaries.
         """
 
         def get_attrs(obj):
