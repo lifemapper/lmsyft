@@ -1,7 +1,4 @@
-"""Module containing Lifemapper XML utilities
-
-Note: Mainly wraps elementTree functionality to fit Lifemapper needs
-"""
+"""Module containing Lifemapper XML utilities."""
 from sppy.tools.util.attribute_object import LmAttList, LmAttObj
 
 from types import (BuiltinFunctionType, BuiltinMethodType, FunctionType,
@@ -24,7 +21,7 @@ VERSION = ET.VERSION
 XML = ET.XML
 XMLID = ET.XMLID
 XMLParser = ET.XMLParser
-#XMLTreeBuilder = ET.XMLTreeBuilder
+# XMLTreeBuilder = ET.XMLTreeBuilder
 dump = ET.dump
 fromstring = ET.fromstring
 fromstringlist = ET.fromstringlist
@@ -46,7 +43,7 @@ def set_default_namespace(def_namespace):
     """Set the default namespace.
 
     Args:
-        defNamespace: The default namespace to use.
+        def_namespace: The default namespace to use.
     """
     # Need to specify that we are setting the global variable
     global __DEFAULT_NAMESPACE__
@@ -55,8 +52,7 @@ def set_default_namespace(def_namespace):
 
 # .............................................................................
 class Element(ET.Element):
-    """Wrapper around ElementTree Element class.
-    """
+    """Wrapper around ElementTree Element class."""
 
     # .............................
     def __init__(self, tag, attrib=None, value=None, namespace=-1, **extra):
@@ -67,7 +63,7 @@ class Element(ET.Element):
             attrib (dict): A dictionary of element attributes.
             value: The value for this element.
             namespace: The namespace of this element.
-            extra: Extra named parameters that will be added to the element's
+            extra: Extra named parameters that will be added to the element"s
                 attributes.
 
         Note:
@@ -90,15 +86,21 @@ class Element(ET.Element):
 # .............................................................................
 def CDATA(text=None):
     """Adds the capability to add CDATA elements to the XML.
+
+    Args:
+        text: string for CDATA element
+
+    Returns:
+        Element
     """
-    element = Element('![CDATA[', namespace=None)
+    element = Element("![CDATA[", namespace=None)
     element.text = text
     return element
 
 
 # .............................................................................
 def SubElement(parent, tag, attrib=None, value=None, namespace=-1, **extra):
-    """SubElement constructor.
+    """Constructor.
 
     Args:
         parent (Element): The parent of this new subelement.
@@ -106,8 +108,11 @@ def SubElement(parent, tag, attrib=None, value=None, namespace=-1, **extra):
         attrib (dict): A dictionary of element attributes.
         value: The value for this element.
         namespace: The namespace of this element.
-        extra: Extra named parameters that will be added to the element's
+        extra: Extra named parameters that will be added to the element"s
             attributes.
+
+    Returns:
+        new sub_element of the provided parent
 
     Note:
         * Providing None for the namespace will result in a QName without a
@@ -127,7 +132,15 @@ def SubElement(parent, tag, attrib=None, value=None, namespace=-1, **extra):
 
 # .............................................................................
 def tostring(element, encoding=None, method=None):
-    """ElementTree.tostring wrapper that pretty prints the tree
+    """ElementTree.tostring wrapper that pretty prints the tree.
+
+    Args:
+        element: element with a list of strings
+        encoding: character encoding for the element
+        method: either "xml" (default), "html, "text", or "c14n"
+
+    Returns:
+        formatted string representation of the element.
     """
     _pretty_format(element, level=0)
     return ET.tostring(element, encoding=encoding, method=method)
@@ -135,45 +148,52 @@ def tostring(element, encoding=None, method=None):
 
 # .............................................................................
 def tostringlist(element, encoding=None, method=None):
-    """ElementTree.tostringlist wrapper that pretty prints a list of strings
+    """ElementTree.tostringlist wrapper that pretty prints a list of strings.
+
+    Args:
+        element: element with a list of strings
+        encoding: character encoding for the element
+        method: either "xml" (default), "html, "text", or "c14n"
+
+    Returns:
+        formatted string representing element.
     """
     _pretty_format(element, level=0)
     return ET.tostringlist(element, encoding=encoding, method=method)
+
 
 # =============================================================================
 # =                          Helper Functions                                 =
 # =============================================================================
 
-
 # .............................................................................
 # # Monkey patch to add support for CDATA
 # ET._original_serialize_xml = ET._serialize_xml
-
-
 # .............................................................................
-def _serialize_xml(write, elem, qnames, namespaces,
-                   short_empty_elements, **kwargs):
-    """Monkey patch to add support for CDATA in serialization
-    """
-    if elem.tag == '![CDATA[':
-        write('<{}{}]]>{}'.format(elem.tag, elem.txt, elem.tail))
+def _serialize_xml(
+        write, elem, qnames, namespaces, short_empty_elements, **kwargs):
+    # Monkey patch to add support for CDATA in serialization.
+    if elem.tag == "![CDATA[":
+        write(f"<{elem.tag}{elem.txt}]]>{elem.tail}")
         return None
-#     return ET._original_serialize_xml(
     return ET._serialize_xml(
         write, elem, qnames, namespaces, short_empty_elements, **kwargs)
 
 
 # .............................................................................
-ET._serialize_xml = ET._serialize['xml'] = _serialize_xml
+ET._serialize_xml = ET._serialize["xml"] = _serialize_xml
 
 
 # .............................................................................
 def _get_element_qname(namespace, tag):
-    """Assembles a QName object from a namespace and tag
+    """Assembles a QName object from a namespace and tag.
 
     Args:
         namespace: The namespace to use for the QName.
         tag: The tag of the QName.
+
+    Returns:
+        elem_name: QName of the element
 
     Note:
         * If namespace is -1, the default namespace (specified by
@@ -197,7 +217,7 @@ def _get_element_qname(namespace, tag):
 
 # .............................................................................
 def _pretty_format(elem, level=0):
-    """Formats ElementTree element so that it prints pretty (recursive)
+    """Formats ElementTree element so that it prints pretty (recursive).
 
     Args:
         elem: ElementTree element to be pretty formatted
@@ -225,26 +245,16 @@ def _pretty_format(elem, level=0):
 
 # .............................................................................
 def _remove_namespace_func(tag):
-    """Remove the namespace from an element.
-
-    Args:
-        tag (str or QName): The tag to remove the namespace from.
-    """
     if isinstance(tag, QName):
         tag = tag.text
 
-    if tag.find('}') > 0:
-        return tag.split('}')[1]
+    if tag.find("}") > 0:
+        return tag.split("}")[1]
     return tag
 
 
 # .............................................................................
 def _dont_remove_namespace_func(tag):
-    """Do not remove namespace from an element.
-
-    Args:
-        tag (str or QName): The tag to return text for.
-    """
     if isinstance(tag, QName):
         return tag.text
     return tag
@@ -255,7 +265,7 @@ def _dont_remove_namespace_func(tag):
 # =============================================================================
 # .............................................................................
 def deserialize(element, remove_namespace=True):
-    """Deserializes an Element into an object
+    """Deserializes an Element into an object.
 
     Args:
         element (Element): The element to deserialize.
@@ -263,10 +273,10 @@ def deserialize(element, remove_namespace=True):
             from the element tags.
 
     Returns:
-        LmAttObj - An object representing the deserialized version of the xml.
+        sppy.tools.util.attribute_object.LmAttObj - An object representing the
+            deserialized version of the xml.
     """
-    # If remove_namespace is set to true, look for namespaces in the tag and
-    #    remove them
+    # If remove_namespace is set to true, look for namespaces in the tag and remove
     if remove_namespace:
         process_tag = _remove_namespace_func
     else:
@@ -294,7 +304,7 @@ def deserialize(element, remove_namespace=True):
         except AttributeError:
             pass
 
-        # Get a list of all of the element's children's tags
+        # Get a list of all of the element"s children"s tags
         # If they are all the same type and match the parent, make one list
         tags = [child.tag for child in list(element)]
         reduced_tags = list(set(tags))
@@ -318,7 +328,7 @@ def deserialize(element, remove_namespace=True):
                     else:
                         tmp = LmAttList(
                             [tmp, deserialize(child, remove_namespace)],
-                            name=process_tag(child.tag) + 's')
+                            name=process_tag(child.tag) + "s")
                     setattr(obj, process_tag(child.tag), tmp)
                 else:
                     setattr(
@@ -329,7 +339,7 @@ def deserialize(element, remove_namespace=True):
 
 # .............................................................................
 def _attribute_filter(attribute):
-    """Attribute filter function.
+    """Determine whether the attribute should be filtered out or processed.
 
     Args:
         attribute (str): The name of an object attribute.
@@ -337,7 +347,7 @@ def _attribute_filter(attribute):
     Returns:
         bool - Indicator if the attribute should be processed.
     """
-    return attribute.startswith('_') and attribute not in ['attrib', 'value']
+    return attribute.startswith("_") and attribute not in ["attrib", "value"]
 
 
 # .............................................................................
@@ -356,21 +366,21 @@ def serialize(obj, parent=None):
     """
     value = None
     attrib = {}
-    if hasattr(obj, 'value'):
+    if hasattr(obj, "value"):
         value = obj.value
     elif isinstance(obj, str):
         value = obj
 
     obj_attribs = [att for att in dir(obj) if _attribute_filter(att)]
 
-    if hasattr(obj, 'attrib'):
+    if hasattr(obj, "attrib"):
         for k, val in [
                 (key, obj.attrib[key]) for key in list(obj.attrib.keys())]:
             attrib[k] = val
     try:
         atts = obj.get_attributes()
         # Filter these out of the dir determined attributes (duplicated and
-        # these shouldn't be tags)
+        # these shouldn"t be tags)
         obj_attribs = [a for a in obj_attribs if a not in atts]
         for key in list(atts.keys()):
             if isinstance(atts[key], (float, int, str)):

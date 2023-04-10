@@ -7,7 +7,7 @@ from flask_app.broker.s2n_type import (S2nKey, S2nOutput, S2nSchema, print_s2n_o
 from flask_app.broker.base import _S2nService
 
 from sppy.tools.provider.gbif import GbifAPI
-from sppy.tools.provider.ipni import IpniAPI
+# from sppy.tools.provider.ipni import IpniAPI
 from sppy.tools.provider.itis import ItisAPI
 from sppy.tools.provider.worms import WormsAPI
 from sppy.tools.s2n.utils import get_traceback
@@ -136,10 +136,10 @@ class NameSvc(_S2nService):
                 if pr == ServiceProvider.GBIF[S2nKey.PARAM]:
                     goutput = cls._get_gbif_records(namestr, is_accepted, gbif_count)
                     allrecs.append(goutput)
-                # IPNI
-                elif pr == ServiceProvider.IPNI[S2nKey.PARAM]:
-                    isoutput = cls._get_ipni_records(namestr, is_accepted)
-                    allrecs.append(isoutput)
+                # # IPNI
+                # elif pr == ServiceProvider.IPNI[S2nKey.PARAM]:
+                #     isoutput = cls._get_ipni_records(namestr, is_accepted)
+                #     allrecs.append(isoutput)
                 #  ITIS
                 elif pr == ServiceProvider.ITISSolr[S2nKey.PARAM]:
                     isoutput = cls._get_itis_records(namestr, is_accepted, kingdom)

@@ -6,10 +6,17 @@
   <component name="ChangeListManager">
     <list default="true" id="7da7499e-1ec6-4bd7-974b-80f0bb5c6fdd" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flask_app/broker/name.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/broker/name.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/sppy/tools/provider/api.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/provider/api.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sppy/tools/util/attribute_object.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/util/attribute_object.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sppy/tools/util/dwca.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/util/dwca.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sppy/tools/util/logtools.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/util/logtools.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sppy/tools/provider/gbif.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/provider/gbif.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sppy/tools/provider/idigbio.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/provider/idigbio.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sppy/tools/provider/ipni.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/sppy/tools/provider/itis.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/provider/itis.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sppy/tools/provider/mopho.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/provider/mopho.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sppy/tools/provider/worms.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/provider/worms.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sppy/tools/s2n/lm_xml.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/s2n/lm_xml.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sppy/tools/s2n/solr.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/s2n/solr.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sppy/tools/s2n/utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/s2n/utils.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -224,6 +231,11 @@
           <url>file://$PROJECT_DIR$/flask_app/broker/occ.py</url>
           <line>239</line>
           <option name="timeStamp" value="81" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/sppy/tools/s2n/solr.py</url>
+          <line>1</line>
+          <option name="timeStamp" value="82" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>

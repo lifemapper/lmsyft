@@ -1,17 +1,18 @@
+"""Module containing functions for WoRMS API Queries."""
 from collections import OrderedDict
 from http import HTTPStatus
 import urllib
 
-from flask_app.broker.constants import (
-    ENCODING, GBIF, ServiceProvider, URL_ESCAPES, WORMS)
+from flask_app.broker.constants import (ENCODING, ServiceProvider, URL_ESCAPES, WORMS)
 from flask_app.broker.s2n_type import S2nEndpoint, S2nOutput, S2nSchema
 
 from sppy.tools.provider.api import APIQuery
-from sppy.tools.s2n.utils  import get_traceback, add_errinfo
+from sppy.tools.s2n.utils import add_errinfo, get_traceback
+
 
 # .............................................................................
 class WormsAPI(APIQuery):
-    """Class to query WoRMS API for a name match
+    """Class to query WoRMS API for a name match.
 
     Todo:
         Extend for other services
@@ -20,16 +21,15 @@ class WormsAPI(APIQuery):
     NAME_MAP = S2nSchema.get_worms_name_map()
 
     # ...............................................
-    def __init__(self, name, other_filters={}, logger=None):
-        """
-        Constructor for WormsAPI class
+    def __init__(self, name, other_filters=None, logger=None):
+        """Constructor.
 
         Args:
-            other_filters: optional filters
-            logger: optional logger for info and error messages.  If None,
-                prints to stdout
+            name: scientific name for searching
+            other_filters: dictionary of other filters.
+            logger: object for logging messages and errors.
         """
-        url = '{}/{}'.format(WORMS.REST_URL, WORMS.NAME_MATCH_SERVICE)
+        url = f"{WORMS.REST_URL}/{WORMS.NAME_MATCH_SERVICE}"
         other_filters[WORMS.MATCH_PARAM] = name
         APIQuery.__init__(self, url, other_filters=other_filters, logger=logger)
 
@@ -68,28 +68,28 @@ class WormsAPI(APIQuery):
     def _standardize_record(cls, rec, is_accepted=False):
         newrec = {}
         data_std_fld = S2nSchema.get_data_url_fld()
-        prov_sciname_fn = 'valid_authority'
-        prov_canname_fn = 'valid_name'
-        hierarchy_fld = 'hierarchy'
+        prov_sciname_fn = "valid_authority"
+        prov_canname_fn = "valid_name"
+        hierarchy_fld = "hierarchy"
 
         # Assemble scientific name
         try:
-            canonical_str = rec['valid_name']
-        except:
+            canonical_str = rec["valid_name"]
+        except KeyError:
             if is_accepted is False:
-                canonical_str = rec['name']
+                canonical_str = rec["name"]
             else:
-                canonical_str = ''
+                canonical_str = ""
         try:
-            auth_str = ' {}'.format(rec['authority'])
-        except:
-            auth_str = ''
-        sciname_str = '{}{}'.format(canonical_str, auth_str)
+            auth_str = f"{rec['authority']}"
+        except KeyError:
+            auth_str = ""
+        sciname_str = f"{canonical_str} {auth_str}"
 
         for stdfld, provfld in cls.NAME_MAP.items():
             try:
                 val = rec[provfld]
-            except:
+            except KeyError:
                 val = None
 
             # Special cases
@@ -110,7 +110,7 @@ class WormsAPI(APIQuery):
                 for rnk in S2nSchema.RANKS:
                     try:
                         val = rec[rnk]
-                    except:
+                    except KeyError:
                         pass
                     else:
                         hierarchy[rnk] = val
@@ -129,11 +129,10 @@ class WormsAPI(APIQuery):
         if status is None:
             is_good = True
         else:
-            outstatus = None
             try:
-                outstatus = rec['status'].lower()
+                outstatus = rec["status"].lower()
             except AttributeError:
-                print(cls._get_error_message(msg='No status in record'))
+                print(cls._get_error_message(msg="No status in record"))
             else:
                 if outstatus == status:
                     is_good = True
@@ -142,16 +141,14 @@ class WormsAPI(APIQuery):
     # ...............................................
     @classmethod
     def _standardize_output(
-            cls, output, service, query_status=None, query_urls=[], is_accepted=False, errinfo={}):
-        """
-        list of lists of dictionaries
-        """
+            cls, output, service, query_status=None, query_urls=None, is_accepted=False,
+            errinfo=None):
         total = 0
         stdrecs = []
         # output is a list of lists of dictionaries
         for taxconcept_lst in output:
             for rec in taxconcept_lst:
-                total +=1
+                total += 1
                 newrec = cls._standardize_record(rec, is_accepted=is_accepted)
                 if newrec:
                     stdrecs.append(newrec)
@@ -161,37 +158,34 @@ class WormsAPI(APIQuery):
 
         return std_output
 
-
     # ...............................................
     @classmethod
     def match_name(cls, namestr, is_accepted=False, logger=None):
-        """Return closest accepted species in WoRMS taxonomy,
+        """Return closest accepted species in WoRMS taxonomy.
 
         Args:
             namestr: A scientific namestring possibly including author, year,
                 rank marker or other name information.
-            is_accepted: if True, return the validName in the WoRMS record, otherwise return the Name
+            is_accepted: if True, return the validName, otherwise Name
+            logger: object for logging messages and errors.
 
         Returns:
-            Either a dictionary containing a matching record .
+            flask_app.broker.s2n_type.S2nOutput object
         """
-        status = None
         errinfo = {}
-        if is_accepted:
-            status = 'accepted'
         name_clean = namestr.strip()
-        api = WormsAPI(name_clean, other_filters={'marine_only': 'true'}, logger=logger)
+        api = WormsAPI(name_clean, other_filters={"marine_only": "true"}, logger=logger)
 
         try:
             api.query()
-        except Exception as e:
+        except Exception:
             tb = get_traceback()
-            errinfo['error'] =  [cls._get_error_message(err=tb)]
+            errinfo = add_errinfo(errinfo, "error", cls._get_error_message(err=tb))
             std_output = cls.get_api_failure(
                 S2nEndpoint.Name, HTTPStatus.INTERNAL_SERVER_ERROR, errinfo=errinfo)
         else:
             if api.error:
-                errinfo['error'] =  [api.error]
+                errinfo = add_errinfo(errinfo, "error", api.error)
             # Standardize output from provider response
             std_output = cls._standardize_output(
                 api.output, S2nEndpoint.Name, query_status=api.status_code, query_urls=[api.url],
@@ -199,19 +193,13 @@ class WormsAPI(APIQuery):
 
         return std_output
 
-
-
     # ...............................................
     def query(self):
-        """ Queries the API and sets 'output' attribute to a ElementTree object
-        """
-        APIQuery.query_by_get(self, output_type='json')
-
-
-
+        """Query the API and sets "output" attribute to a ElementTree object."""
+        APIQuery.query_by_get(self, output_type="json")
 
 
 # .............................................................................
-if __name__ == '__main__':
+if __name__ == "__main__":
     # test
     pass

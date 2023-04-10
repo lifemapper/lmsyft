@@ -1,25 +1,32 @@
+"""Module containing functions for MorphoSource API Queries."""
 from http import HTTPStatus
 
 from flask_app.broker.constants import (MorphoSource, ServiceProvider, TST_VALUES)
 from flask_app.broker.s2n_type import S2nEndpoint, S2nKey, S2nSchema
 
-from sppy.tools.util.logtools import (log_info)
 from sppy.tools.provider.api import APIQuery
 from sppy.tools.s2n.utils import add_errinfo, get_traceback
 
+
 # .............................................................................
 class MorphoSourceAPI(APIQuery):
-    """Class to query Specify portal APIs and return results"""
+    """Class to query Specify portal APIs and return results."""
     PROVIDER = ServiceProvider.MorphoSource
     OCCURRENCE_MAP = S2nSchema.get_mopho_occurrence_map()
 
     # ...............................................
     def __init__(
-            self, resource=MorphoSource.OCC_RESOURCE, q_filters={},
-            other_filters={}, logger=None):
-        """Constructor for MorphoSourceAPI class"""
-        url = '{}/{}/{}'.format(
-            MorphoSource.REST_URL, MorphoSource.COMMAND, resource)
+            self, resource=MorphoSource.OCC_RESOURCE, q_filters=None,
+            other_filters=None, logger=None):
+        """Constructor.
+
+        Args:
+            resource: MorphoSource service for API query
+            q_filters: dictionary of filters for the q element of a solr query.
+            other_filters: dictionary of other filters.
+            logger: object for logging messages and errors.
+        """
+        url = f"{MorphoSource.REST_URL}/{MorphoSource.COMMAND}/{resource}"
         APIQuery.__init__(
             self, url, q_filters=q_filters,
             other_filters=other_filters, logger=logger)
@@ -33,12 +40,12 @@ class MorphoSourceAPI(APIQuery):
         for stdfld, provfld in cls.OCCURRENCE_MAP.items():
             try:
                 val = rec[provfld]
-            except:
+            except KeyError:
                 val = None
 
             # Save ID field, plus use to construct URLs
             if provfld == MorphoSource.DWC_ID_FIELD:
-                newrec[stdfld] =  val
+                newrec[stdfld] = val
                 newrec[data_std_fld] = MorphoSource.get_occurrence_data(val)
 
             # Use local ID field to also construct webpage url
@@ -47,44 +54,56 @@ class MorphoSourceAPI(APIQuery):
 
             # all others
             else:
-                newrec[stdfld] =  val
+                newrec[stdfld] = val
         return newrec
 
     # ...............................................
     @classmethod
     def get_occurrences_by_occid_page1(cls, occid, count_only=False, logger=None):
+        """Class method to return the first page of occurrence records.
+
+        Args:
+            occid: OccurrenceID for searching API
+            count_only: True to return only a count, no records.
+            logger: object for logging messages and errors.
+
+        Returns:
+            flask_app.broker.s2n_type.S2nOutput object
+        """
         start = 0
         errinfo = {}
         api = MorphoSourceAPI(
             resource=MorphoSource.OCC_RESOURCE,
             q_filters={MorphoSource.OCCURRENCEID_KEY: occid},
-            other_filters={'start': start, 'limit': MorphoSource.LIMIT})
+            other_filters={"start": start, "limit": MorphoSource.LIMIT})
         # Handle bad SSL certificate on old MorphoSource API until v2 is working
-        verify=True
+        verify = True
         if api.url.index(MorphoSource.REST_URL) >= 0:
-            verify=False
+            verify = False
         try:
             api.query_by_get(verify=verify)
-        except Exception as e:
+        except Exception:
             tb = get_traceback()
-            errinfo = add_errinfo(errinfo, 'error', cls._get_error_message(err=tb))
+            errinfo = add_errinfo(errinfo, "error", cls._get_error_message(err=tb))
             std_out = cls.get_api_failure(
-                S2nEndpoint.Occurrence, HTTPStatus.INTERNAL_SERVER_ERROR, errinfo=errinfo)
+                S2nEndpoint.Occurrence, HTTPStatus.INTERNAL_SERVER_ERROR,
+                errinfo=errinfo)
         else:
             # Standardize output from provider response
             if api.error:
-                errinfo['error'] =  [api.error]
+                errinfo = add_errinfo(errinfo, "error", api.error)
 
             std_out = cls._standardize_output(
                 api.output, MorphoSource.TOTAL_KEY, MorphoSource.RECORDS_KEY,
                 MorphoSource.RECORD_FORMAT, S2nEndpoint.Occurrence,
-                query_status=api.status_code, query_urls=[api.url], count_only=count_only,
-                errinfo=errinfo)
+                query_status=api.status_code, query_urls=[api.url],
+                count_only=count_only, errinfo=errinfo)
 
         return std_out
 
+
 # .............................................................................
-if __name__ == '__main__':
+if __name__ == "__main__":
     # test
 
     for guid in TST_VALUES.GUIDS_WO_SPECIFY_ACCESS:
@@ -92,15 +111,15 @@ if __name__ == '__main__':
         for r in moutput.response[S2nKey.RECORDS]:
             occid = notes = None
             try:
-                occid = r['specimen.occurrence_id']
-                notes = r['specimen.notes']
+                occid = r["specimen.occurrence_id"]
+                notes = r["specimen.notes"]
             except Exception as e:
-                msg = 'Morpho source record exception {}'.format(e)
+                msg = f"Morpho source record exception {e}"
             else:
-                msg = '{}: {}'.format(occid, notes)
-            log_info(msg)
+                msg = f"{occid}: {notes}"
+            print(msg)
 
 """
-https://ms1.morphosource.org/api/v1/find/specimens?start=0&limit=1000&q=occurrence_id%3Aed8cfa5a-7b47-11e4-8ef3-782bcb9cd5b5'
-url = 'https://ea-boyerlab-morphosource-01.oit.duke.edu/api/v1/find/specimens?start=0&limit=1000&q=occurrence_id%3Aed8cfa5a-7b47-11e4-8ef3-782bcb9cd5b5'
+https://ms1.morphosource.org/api/v1/find/specimens?start=0&limit=1000&q=occurrence_id%3Aed8cfa5a-7b47-11e4-8ef3-782bcb9cd5b5"
+url = "https://ea-boyerlab-morphosource-01.oit.duke.edu/api/v1/find/specimens?start=0&limit=1000&q=occurrence_id%3Aed8cfa5a-7b47-11e4-8ef3-782bcb9cd5b5"
 """

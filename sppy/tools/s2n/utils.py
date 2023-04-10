@@ -1,3 +1,4 @@
+"""Random tools used frequently in Specify Network."""
 import sys
 import traceback
 from uuid import UUID
@@ -32,7 +33,11 @@ def is_valid_uuid(uuid_to_test, version=4):
 
 # ..........................
 def get_traceback():
-    """Get the traceback for this exception."""
+    """Get the traceback for this exception.
+
+    Returns:
+        trcbk: traceback of steps executed before an exception
+    """
     exc_type, exc_val, this_traceback = sys.exc_info()
     tb = traceback.format_exception(exc_type, exc_val, this_traceback)
     tblines = []
@@ -43,6 +48,7 @@ def get_traceback():
         tblines.extend(parts)
     trcbk = cr.join(tblines)
     return trcbk
+
 
 # ...............................................
 def get_icon_url(provider_code, icon_status=None):
@@ -61,7 +67,7 @@ def get_icon_url(provider_code, icon_status=None):
         # TODO: get the URL from headers
         base_url = "https://broker.spcoco.org"
         # base_url = cherrypy.request.headers["Origin"]
-    except:
+    except Exception:
         base_url = "https://localhost"
 
     if ServiceProvider.is_valid_service(provider_code, S2nEndpoint.Badge):
@@ -86,17 +92,18 @@ def combine_errinfo(errinfo1, errinfo2):
     for key in ("error", "warning", "info"):
         try:
             lst = errinfo1[key]
-        except:
+        except KeyError:
             lst = []
         try:
             lst2 = errinfo2[key]
-        except:
+        except KeyError:
             lst2 = []
 
         if lst or lst2:
             lst.extend(lst2)
             errinfo[key] = lst
     return errinfo
+
 
 # ...............................................
 def add_errinfo(errinfo, key, val):
@@ -110,9 +117,11 @@ def add_errinfo(errinfo, key, val):
     Returns:
         updated dictionary of errors
     """
+    if errinfo is None:
+        errinfo = {}
     if val and key in ("error", "warning", "info"):
         try:
             errinfo[key].append(val)
-        except:
+        except KeyError:
             errinfo[key] = [val]
     return errinfo

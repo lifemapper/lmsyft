@@ -1,5 +1,7 @@
+"""Module containing functions for GBIF API Queries."""
 from collections import OrderedDict
 from http import HTTPStatus
+from logging import ERROR
 import os
 import requests
 import urllib
@@ -8,33 +10,33 @@ from flask_app.broker.constants import (
     GBIF, ISSUE_DEFINITIONS, ServiceProvider, URL_ESCAPES, ENCODING)
 from flask_app.broker.s2n_type import S2nEndpoint, S2nKey, S2nOutput, S2nSchema
 
-from sppy.tools.util.logtools import (log_info, log_error)
+from sppy.tools.util.logtools import logit
 from sppy.tools.provider.api import APIQuery
-from sppy.tools.s2n.utils  import get_traceback, add_errinfo
+from sppy.tools.s2n.utils import get_traceback, add_errinfo
+
 
 # .............................................................................
 class GbifAPI(APIQuery):
-    """Class to query GBIF APIs and return results"""
+    """Class to query GBIF APIs and return results."""
     PROVIDER = ServiceProvider.GBIF
     OCCURRENCE_MAP = S2nSchema.get_gbif_occurrence_map()
     NAME_MAP = S2nSchema.get_gbif_name_map()
 
     # ...............................................
-    def __init__(self, service=GBIF.SPECIES_SERVICE, key=None,
-                 other_filters=None, logger=None):
-        """
-        Constructor for GbifAPI class
+    def __init__(
+            self, service=GBIF.SPECIES_SERVICE, key=None, other_filters=None,
+            logger=None):
+        """Constructor.
 
         Args:
             service: GBIF service to query
             key: unique identifier for an object of this service
             other_filters: optional filters
-            logger: optional logger for info and error messages.  If None,
-                prints to stdout
+            logger: object for logging messages and errors.
         """
-        url = '/'.join((GBIF.REST_URL, service))
+        url = "/".join((GBIF.REST_URL, service))
         if key is not None:
-            url = '/'.join((url, str(key)))
+            url = "/".join((url, str(key)))
         APIQuery.__init__(self, url, other_filters=other_filters, logger=logger)
 
     # ...............................................
@@ -80,18 +82,18 @@ class GbifAPI(APIQuery):
     #         service=GBIF.SPECIES_SERVICE, key=taxon_key, logger=logger)
     #     try:
     #         tax_api.query()
-    #     except Exception as e:
+    #     except Exception:
     #         traceback = lmutil.get_traceback()
-    #         errmsgs.append({'error': traceback})
+    #         errmsgs.append({"error": traceback})
     #     else:
     #         output = tax_api.output
     #         elements_of_interest = [
-    #             'scientificName', 'kingdom', 'phylum', 'class', 'order',
-    #             'family', 'genus', 'species', 'rank', 'genusKey', 'speciesKey',
-    #             'taxonomicStatus', 'canonicalName', 'scientificName', 'kingdom',
-    #             'phylum', 'class', 'order', 'family', 'genus', 'species',
-    #             'rank', 'genusKey', 'speciesKey', 'taxonomicStatus',
-    #             'canonicalName', 'acceptedKey', 'accepted', 'nubKey']
+    #             "scientificName", "kingdom", "phylum", "class", "order",
+    #             "family", "genus", "species", "rank", "genusKey", "speciesKey",
+    #             "taxonomicStatus", "canonicalName", "scientificName", "kingdom",
+    #             "phylum", "class", "order", "family", "genus", "species",
+    #             "rank", "genusKey", "speciesKey", "taxonomicStatus",
+    #             "canonicalName", "acceptedKey", "accepted", "nubKey"]
     #         for fld in elements_of_interest:
     #             rec[fld] = tax_api._get_output_val(output, fld)
     #         std_recs.append(rec)
@@ -103,35 +105,37 @@ class GbifAPI(APIQuery):
     # ...............................................
     @classmethod
     def get_occurrences_by_occid(cls, occid, count_only=False, logger=None):
-        """Return GBIF occurrences for this occurrenceId.  This should retrieve
-        a single record if the occurrenceId is unique.
+        """Return GBIF occurrences for this occurrenceId.
 
         Args:
             occid: occurrenceID for query
             count_only: boolean flag signaling to return records or only count
-            logger: optional logger for info and error messages.  If None,
-                prints to stdout
+            logger: object for logging messages and errors.
 
         Returns:
             a dictionary containing one or more keys:
                 count, records, error, warning
+
+        Note:
+            This should retrieve a single record if the occurrenceId is unique.
 
         Todo: enable paging
         """
         errinfo = {}
         api = GbifAPI(
             service=GBIF.OCCURRENCE_SERVICE, key=GBIF.SEARCH_COMMAND,
-            other_filters={'occurrenceID': occid}, logger=logger)
+            other_filters={"occurrenceID": occid}, logger=logger)
         try:
             api.query()
-        except Exception as e:
+        except Exception:
             tb = get_traceback()
-            errinfo['error'] = [cls._get_error_message(err=tb)]
+            add_errinfo(errinfo, "error", cls._get_error_message(err=tb))
             std_output = cls.get_api_failure(
-                S2nEndpoint.Occurrence, HTTPStatus.INTERNAL_SERVER_ERROR, errinfo=errinfo)
+                S2nEndpoint.Occurrence, HTTPStatus.INTERNAL_SERVER_ERROR,
+                errinfo=errinfo)
         else:
             if api.error:
-                errinfo['error'] =  [api.error]
+                add_errinfo(errinfo, "error", api.error)
 
             # Standardize output from provider response
             std_output = cls._standardize_occurrence_output(
@@ -155,21 +159,22 @@ class GbifAPI(APIQuery):
     @classmethod
     def _standardize_occurrence_record(cls, rec):
         newrec = {}
-        parse_prov_fields = ['associatedSequences', 'associatedReferences']
-        to_str_prov_fields = ['year', 'month', 'day', 'decimalLongitude', 'decimalLatitude']
+        parse_prov_fields = ["associatedSequences", "associatedReferences"]
+        to_str_prov_fields = [
+            "year", "month", "day", "decimalLongitude", "decimalLatitude"]
         view_std_fld = S2nSchema.get_view_url_fld()
         data_std_fld = S2nSchema.get_data_url_fld()
-        issue_prov_fld = 'issues'
+        issue_prov_fld = "issues"
 
         for stdfld, provfld in cls.OCCURRENCE_MAP.items():
             try:
                 val = rec[provfld]
-            except:
+            except KeyError:
                 val = None
 
             # Save ID field, plus use to construct URLs
             if provfld == GBIF.OCC_ID_FIELD:
-                newrec[stdfld] =  val
+                newrec[stdfld] = val
                 newrec[view_std_fld] = GBIF.get_occurrence_view(val)
                 newrec[data_std_fld] = GBIF.get_occurrence_data(val)
 
@@ -180,8 +185,8 @@ class GbifAPI(APIQuery):
 
             # Modify/parse into list
             elif val and provfld in parse_prov_fields:
-                lst = val.split('|')
-                elts = [l.strip() for l in lst]
+                lst = val.split("|")
+                elts = [item.strip() for item in lst]
                 newrec[stdfld] = elts
 
             # Modify int date elements to string (to match iDigBio)
@@ -190,7 +195,7 @@ class GbifAPI(APIQuery):
 
             # all others
             else:
-                newrec[stdfld] =  val
+                newrec[stdfld] = val
         return newrec
 
     # ...............................................
@@ -199,16 +204,16 @@ class GbifAPI(APIQuery):
         newrec = {}
         view_std_fld = S2nSchema.get_view_url_fld()
         data_std_fld = S2nSchema.get_data_url_fld()
-        hierarchy_fld = 'hierarchy'
+        hierarchy_fld = "hierarchy"
 
         for stdfld, provfld in cls.NAME_MAP.items():
             try:
                 val = rec[provfld]
-            except:
+            except KeyError:
                 val = None
             # Also use ID field to construct URLs
             if provfld == GBIF.SPECIES_ID_FIELD:
-                newrec[stdfld] =  val
+                newrec[stdfld] = val
                 newrec[view_std_fld] = GBIF.get_species_view(val)
                 newrec[data_std_fld] = GBIF.get_species_data(val)
 
@@ -218,7 +223,7 @@ class GbifAPI(APIQuery):
                 for rnk in S2nSchema.RANKS:
                     try:
                         val = rec[rnk]
-                    except:
+                    except KeyError:
                         pass
                     else:
                         hierarchy[rnk] = val
@@ -239,9 +244,9 @@ class GbifAPI(APIQuery):
         else:
             outstatus = None
             try:
-                outstatus = rec['status'].lower()
+                outstatus = rec["status"].lower()
             except AttributeError:
-                print(cls._get_error_message(msg='No status in record'))
+                print(cls._get_error_message(msg="No status in record"))
             else:
                 if outstatus == status:
                     is_good = True
@@ -250,20 +255,20 @@ class GbifAPI(APIQuery):
     # ...............................................
     @classmethod
     def _standardize_match_output(
-            cls, output, record_status, query_status, query_urls=[], errinfo={}):
+            cls, output, record_status, query_status, query_urls=None, errinfo=None):
         stdrecs = []
         try:
-            alternatives = output.pop('alternatives')
-        except:
+            alternatives = output.pop("alternatives")
+        except KeyError:
             alternatives = []
 
         is_match = True
         try:
-            if output['matchType'].lower() == 'none':
+            if output["matchType"].lower() == "none":
                 is_match = False
         except AttributeError:
-            msg = cls._get_error_message(msg='No matchType')
-            errinfo['error'].append(msg)
+            msg = cls._get_error_message(msg="No matchType")
+            errinfo = add_errinfo(errinfo, "error", msg)
         else:
             goodrecs = []
             # take primary output if matched
@@ -277,10 +282,12 @@ class GbifAPI(APIQuery):
             for r in goodrecs:
                 stdrecs.append(cls._standardize_name_record(r))
         total = len(stdrecs)
-        prov_meta = cls._get_provider_response_elt(query_status=query_status, query_urls=query_urls)
+        prov_meta = cls._get_provider_response_elt(
+            query_status=query_status, query_urls=query_urls)
         # TODO: standardize_record and provide schema link
         std_output = S2nOutput(
-            total, S2nEndpoint.Name, provider=prov_meta, records=stdrecs, errors=errinfo)
+            total, S2nEndpoint.Name, provider=prov_meta, records=stdrecs,
+            errors=errinfo)
         return std_output
 
     # ...............................................
@@ -296,23 +303,24 @@ class GbifAPI(APIQuery):
     # ...............................................
     @classmethod
     def _standardize_occurrence_output(
-            cls, output, query_status, query_urls=[], count_only=False, errinfo={}):
+            cls, output, query_status, query_urls=None, count_only=False, errinfo=None):
         # GBIF.COUNT_KEY, GBIF.RECORDS_KEY, GBIF.RECORD_FORMAT_OCCURRENCE,
         stdrecs = []
         total = 0
         # Count
         try:
             total = output[GBIF.COUNT_KEY]
-        except:
-            msg = cls._get_error_message(msg='Missing `{}` element'.format(GBIF.COUNT_KEY))
-            errinfo['error'].append(msg)
+        except KeyError:
+            msg = cls._get_error_message(msg=f"Missing `{GBIF.COUNT_KEY}` element")
+            errinfo = add_errinfo(errinfo, "error", msg)
         # Records
         if not count_only:
             try:
                 recs = output[GBIF.RECORDS_KEY]
-            except:
-                msg = cls._get_error_message(msg='Missing `{}` element'.format(GBIF.RECORDS_KEY))
-                errinfo['error'].append(msg)
+            except KeyError:
+                msg = cls._get_error_message(
+                    msg=f"Missing `{GBIF.RECORDS_KEY}` element")
+                errinfo = add_errinfo(errinfo, "error", msg)
             else:
                 stdrecs = []
                 for r in recs:
@@ -321,10 +329,12 @@ class GbifAPI(APIQuery):
                             cls._standardize_record(r, GBIF.RECORD_FORMAT_OCCURRENCE))
                     except Exception as e:
                         msg = cls._get_error_message(err=e)
-                        errinfo['error'].append(msg)
-        prov_meta = cls._get_provider_response_elt(query_status=query_status, query_urls=query_urls)
+                        errinfo = add_errinfo(errinfo, "error", msg)
+        prov_meta = cls._get_provider_response_elt(
+            query_status=query_status, query_urls=query_urls)
         std_output = S2nOutput(
-            total, S2nEndpoint.Occurrence, provider=prov_meta, records=stdrecs, errors=errinfo)
+            total, S2nEndpoint.Occurrence, provider=prov_meta, records=stdrecs,
+            errors=errinfo)
 
         return std_output
 
@@ -332,23 +342,24 @@ class GbifAPI(APIQuery):
     @classmethod
     def get_occurrences_by_dataset(
             cls, gbif_dataset_key, count_only, logger=None):
-        """
-        Count and optionally return (a limited number of) records with the given
-        gbif_dataset_key.  This currently only returns the first page (0-limit) of records.
+        """Count and optionally return records with the given gbif_dataset_key.
 
         Args:
             gbif_dataset_key: unique identifier for the dataset, assigned by GBIF
                 and retained by Specify
             count_only: boolean flag signaling to return records or only count
-            logger: optional logger for info and error messages.  If None,
-                prints to stdout
+            logger: object for logging messages and errors.
 
         Returns:
             a dictionary containing one or more keys:
                 count, records, error, warning
 
+        Note:
+            This currently only returns the first page (0-limit) of records.
+
         Todo:
-            handle large queries asynchronously
+            * handle large queries asynchronously
+            * page results
         """
         errinfo = {}
         if count_only is True:
@@ -358,76 +369,76 @@ class GbifAPI(APIQuery):
         api = GbifAPI(
             service=GBIF.OCCURRENCE_SERVICE, key=GBIF.SEARCH_COMMAND,
             other_filters={
-                GBIF.REQUEST_DATASET_KEY: gbif_dataset_key, 'offset': 0,
-                'limit': limit}, logger=logger)
+                GBIF.REQUEST_DATASET_KEY: gbif_dataset_key, "offset": 0,
+                "limit": limit}, logger=logger)
         try:
             api.query()
-        except Exception as e:
+        except Exception:
             tb = get_traceback()
             std_out = cls.get_api_failure(
                 S2nEndpoint.Occurrence, HTTPStatus.INTERNAL_SERVER_ERROR,
-                errinfo={'error': [cls._get_error_message(err=tb)]})
+                errinfo={"error": [cls._get_error_message(err=tb)]})
         else:
             # Standardize output from provider response
             if api.error:
-                errinfo['error'] =  [api.error]
+                add_errinfo(errinfo, "error", api.error)
 
             std_out = cls._standardize_occurrence_output(
-                api.output, api.status_code, query_urls=[api.url], count_only=count_only, errinfo=errinfo)
+                api.output, api.status_code, query_urls=[api.url],
+                count_only=count_only, errinfo=errinfo)
 
         return std_out
-
 
     # ...............................................
     @classmethod
     def match_name(cls, namestr, is_accepted=False, logger=None):
-        """Return closest accepted species in GBIF backbone taxonomy,
+        """Return closest accepted species in GBIF backbone taxonomy.
 
         Args:
             namestr: A scientific namestring possibly including author, year,
                 rank marker or other name information.
             is_accepted: match the ACCEPTED TaxonomicStatus in the GBIF record
+            logger: object for logging messages and errors.
 
         Returns:
             Either a dictionary containing a matching record with status
-                'accepted' or 'synonym' without 'alternatives'.
+                "accepted" or "synonym" without "alternatives".
             Or, if there is no matching record, return the first/best
-                'alternative' record with status 'accepted' or 'synonym'.
+                "alternative" record with status "accepted" or "synonym".
 
         Note:
-            This function uses the name search API,
-        Note:
-            GBIF TaxonomicStatus enum at:
+            * This function uses the name search API
+            * GBIF TaxonomicStatus enum at:
             https://gbif.github.io/gbif-api/apidocs/org/gbif/api/vocabulary/TaxonomicStatus.html
-
         """
         status = None
         errinfo = {}
         if is_accepted:
-            status = 'accepted'
+            status = "accepted"
         name_clean = namestr.strip()
-        other_filters = {'name': name_clean, 'verbose': 'true'}
+        other_filters = {"name": name_clean, "verbose": "true"}
 #         if rank:
-#             other_filters['rank'] = rank
+#             other_filters["rank"] = rank
 #         if kingdom:
-#             other_filters['kingdom'] = kingdom
+#             other_filters["kingdom"] = kingdom
         api = GbifAPI(
-            service=GBIF.SPECIES_SERVICE, key='match',
+            service=GBIF.SPECIES_SERVICE, key="match",
             other_filters=other_filters, logger=logger)
 
         try:
             api.query()
-        except Exception as e:
+        except Exception:
             tb = get_traceback()
-            errinfo['error'] =  [cls._get_error_message(err=tb)]
+            add_errinfo(errinfo, "error", cls._get_error_message(err=tb))
             std_output = cls.get_api_failure(
                 S2nEndpoint.Name, HTTPStatus.INTERNAL_SERVER_ERROR, errinfo=errinfo)
         else:
             if api.error:
-                errinfo['error'] =  [api.error]
+                add_errinfo(errinfo, "error", api.error)
             # Standardize output from provider response
             std_output = cls._standardize_match_output(
-                api.output, status, api.status_code, query_urls=[api.url], errinfo=errinfo)
+                api.output, status, api.status_code, query_urls=[api.url],
+                errinfo=errinfo)
 
         return std_output
 
@@ -438,7 +449,8 @@ class GbifAPI(APIQuery):
 
         Args:
             taxon_key: A GBIF unique identifier indicating a taxon object.
-               out
+            logger: object for logging messages and errors.
+
         Returns:
             A record as a dictionary containing the record count of occurrences
             with this accepted taxon, and a URL to retrieve these records.
@@ -449,27 +461,28 @@ class GbifAPI(APIQuery):
         # Query GBIF
         api = GbifAPI(
             service=GBIF.OCCURRENCE_SERVICE, key=GBIF.SEARCH_COMMAND,
-            other_filters={'taxonKey': taxon_key}, logger=logger)
+            other_filters={"taxonKey": taxon_key}, logger=logger)
 
         try:
             api.query_by_get()
         except Exception as e:
             msg = cls._get_error_message(err=e)
-            errinfo = add_errinfo(errinfo, 'error', msg)
+            errinfo = add_errinfo(errinfo, "error", msg)
         else:
             try:
-                total = api.output['count']
-            except Exception as e:
-                msg = cls._get_error_message(msg='Missing `count` element')
-                errinfo = add_errinfo(errinfo, 'error', msg)
+                total = api.output["count"]
+            except Exception:
+                msg = cls._get_error_message(msg="Missing `count` element")
+                errinfo = add_errinfo(errinfo, "error", msg)
             else:
                 if total < 1:
-                    msg = cls._get_error_message(msg='No match')
-                    errinfo = add_errinfo(errinfo, 'info', msg)
+                    msg = cls._get_error_message(msg="No match")
+                    errinfo = add_errinfo(errinfo, "info", msg)
                     simple_output[S2nKey.OCCURRENCE_URL] = None
                 else:
                     simple_output[S2nKey.OCCURRENCE_URL] = api.url
-        prov_meta = cls._get_provider_response_elt(query_status=api.status_code, query_urls=[api.url])
+        prov_meta = cls._get_provider_response_elt(
+            query_status=api.status_code, query_urls=[api.url])
         std_output = S2nOutput(
             total, S2nEndpoint.Occurrence, provider=prov_meta, errors=errinfo)
         return std_output
@@ -481,38 +494,35 @@ class GbifAPI(APIQuery):
         try:
             response = requests.post(url, json=data)
         except Exception as e:
-            if response is not None:
-                ret_code = response.status_code
-            else:
-                log_error('Failed on URL {} ({})'.format(url, str(e)),
-                          logger=logger)
+            logit(
+                logger, f"Failed on URL {url} ({e})", refname=cls.__name__,
+                log_level=ERROR)
         else:
             if response.ok:
                 try:
                     output = response.json()
-                except Exception as e:
+                except Exception:
                     try:
                         output = response.content
                     except Exception:
                         output = response.text
                     else:
-                        log_error(
-                            'Failed to interpret output of URL {} ({})'.format(
-                                url, str(e)), logger=logger)
+                        logit(
+                            logger, f"Failed to interpret output of {url}",
+                            refname=cls.__name__, log_level=ERROR)
             else:
                 try:
                     ret_code = response.status_code
                     reason = response.reason
                 except AttributeError:
-                    log_error(
-                        'Failed to find failure reason for URL {} ({})'.format(
-                            url, str(e)), logger=logger)
+                    logit(
+                        f"Failed to find failure reason for URL {url}",
+                        refname=cls.__name__, log_level=ERROR)
                 else:
-                    log_error(
-                        'Failed on URL {} ({}: {})'.format(url, ret_code, reason),
-                        logger=logger)
+                    logit(
+                        logger, f"Failed on URL {url} ({ret_code}: {reason})",
+                        refname=cls.__name__, log_level=ERROR)
         return output
-
 
 # ...............................................
     @classmethod
@@ -521,9 +531,11 @@ class GbifAPI(APIQuery):
         for rec in output:
             # Only return parsed records
             try:
-                success = rec['parsed']
-            except:
-                log_error('Missing `parsed` field in record', logger=logger)
+                success = rec["parsed"]
+            except KeyError:
+                logit(
+                    logger, "Missing `parsed` field in record", refname=cls.__name__,
+                    log_level=ERROR)
             else:
                 if success:
                     recs.append(rec)
@@ -532,12 +544,12 @@ class GbifAPI(APIQuery):
 # ...............................................
     @classmethod
     def parse_name(cls, namestr, logger=None):
-        """
-        Send a scientific name to the GBIF Parser returning a canonical name.
+        """Send a scientific name to the GBIF Parser returning a canonical name.
 
         Args:
             namestr: A scientific namestring possibly including author, year,
                 rank marker or other name information.
+            logger: object for logging messages and errors.
 
         Returns:
             A dictionary containing a single record for a parsed scientific name
@@ -557,86 +569,95 @@ class GbifAPI(APIQuery):
         if name_api.output is not None:
             recs = name_api._trim_parsed_output(name_api.output)
             try:
-                output['record'] = recs[0]
-            except:
-                msg = 'Failed to return results from {}, ({})'.format(
-                    name_api.url, cls.__class__.__name__)
-                log_error(msg, logger=logger)
+                output["record"] = recs[0]
+            except KeyError:
+                msg = f"Failed to return results from {name_api.url}"
+                logit(logger, msg, refname=cls.__name__, log_level=ERROR)
                 output[S2nKey.ERRORS] = msg
         return output, name_api.url
 
     # ...............................................
     @classmethod
-    def parse_names(cls, names=[], filename=None, logger=None):
-        """
-        Send a list or file (or both) of scientific names to the GBIF Parser,
-        returning a dictionary of results.  Each scientific name can possibly
-        include author, year, rank marker or other name information.
+    def parse_names(cls, names=None, filename=None, logger=None):
+        """Parse a list or file of scientific names with the GBIF Parser.
 
         Args:
             names: a list of names to be parsed
             filename: a file of names to be parsed
+            logger: object for logging messages and errors.
 
         Returns:
             A list of resolved records, each is a dictionary with keys of
             GBIF fieldnames and values with field values.
+
+        Raises:
+            Exception: on query failure.
+            Exception: on no names or file.
         """
         if filename and os.path.exists(filename):
-            with open(filename, 'r', encoding=ENCODING) as in_file:
+            with open(filename, "r", encoding=ENCODING) as in_file:
                 for line in in_file:
                     names.append(line.strip())
 
-        url = '{}/{}'.format(GBIF.REST_URL, GBIF.PARSER_SERVICE)
+        if not names:
+            raise Exception("Must provide a list or filename of scientific names.")
+
+        url = f"{GBIF.REST_URL}/{GBIF.PARSER_SERVICE}"
         try:
             output = GbifAPI._post_json_to_parser(url, names, logger=logger)
         except Exception as e:
-            log_error(
-                'Failed to get response from GBIF for data {}, {}'.format(
-                    filename, e), logger=logger)
-            raise e
+            logit(
+                logger, f"Failed to get response from GBIF for data {filename}, {e}",
+                refname=cls.__name__, log_level=ERROR)
+            raise
 
         if output:
             recs = GbifAPI._trim_parsed_output(output, logger=logger)
             if filename is not None:
-                log_info(
-                    'Wrote {} parsed records from GBIF to file {}'.format(
-                        len(recs), filename), logger=logger)
+                logit(
+                    logger,
+                    f"Wrote {len(recs)} parsed records from GBIF to file {filename}",
+                    refname=cls.__name__)
             else:
-                log_info(
-                    'Found {} parsed records from GBIF for {} names'.format(
-                        len(recs), len(names)), logger=logger)
+                logit(
+                    logger,
+                    f"Found {len(recs)} records from GBIF for {len(names)} names",
+                    refname=cls.__name__)
 
         return recs
 
     # ...............................................
     @classmethod
     def get_publishing_org(cls, pub_org_key, logger=None):
-        """Return title from one organization record with this key
+        """Return title from one organization record with this key.
 
         Args:
             pub_org_key: GBIF identifier for this publishing organization
+            logger: object for logging messages and errors.
+
+        Returns:
+            pub_org_name: the name of the organization.
+
+        Raises:
+            Exception: on query failure.
         """
         org_api = GbifAPI(
             service=GBIF.ORGANIZATION_SERVICE, key=pub_org_key, logger=logger)
         try:
             org_api.query()
-            pub_org_name = org_api._get_output_val(org_api.output, 'title')
+            pub_org_name = org_api._get_output_val(org_api.output, "title")
         except Exception as e:
-            log_error(str(e), logger=logger)
+            logit(logger, str(e), refname=cls.__name__)
             raise
         return pub_org_name
 
     # ...............................................
     def query(self):
-        """ Queries the API and sets 'output' attribute to a ElementTree object
-        """
-        APIQuery.query_by_get(self, output_type='json')
-
-
-
+        """Query the API and set "output" attribute to a ElementTree object."""
+        APIQuery.query_by_get(self, output_type="json")
 
 
 # .............................................................................
-if __name__ == '__main__':
+if __name__ == "__main__":
     # test
     pass

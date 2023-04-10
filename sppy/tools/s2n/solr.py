@@ -1,3 +1,4 @@
+"""Tools for local or remote Solr collections."""
 import requests
 import subprocess
 
@@ -6,31 +7,44 @@ from flask_app.broker.s2n_type import S2nKey, S2nOutput
 
 from sppy.tools.provider.api import APIQuery
 
-SOLR_POST_COMMAND = '/opt/solr/bin/post'
-SOLR_COMMAND = '/opt/solr/bin/solr'
-CURL_COMMAND = '/usr/bin/curl'
-ENCODING='utf-8'
-
+SOLR_POST_COMMAND = "/opt/solr/bin/post"
+SOLR_COMMAND = "/opt/solr/bin/solr"
+CURL_COMMAND = "/usr/bin/curl"
+ENCODING = "utf-8"
 """
 Defined solrcores in /var/solr/data/cores/
 """
 
+
+# ......................................................
 def _get_record_format(collection):
-    return 'Solr schema {} TBD'.format(collection)
+    return "Solr schema {} TBD".format(collection)
+
 
 # ......................................................
 def count_docs(collection, solr_location):
-    output = query(collection, solr_location, query_term='*')
+    """Count the number of documents in a Solr collection.
+
+    Args:
+        collection: collection for counting
+        solr_location: URL to solr instance (i.e. http://localhost:8983/solr)
+
+    Returns:
+        Number of documents found.
+    """
+    output = query(collection, solr_location, query_term="*")
     output.pop(S2nKey.RECORDS)
     return output
 
+
 # ...............................................
-def _post_remote(collection, fname, solr_location, headers={}):
+def _post_remote(collection, fname, solr_location, headers=None):
     response = output = retcode = None
-    solr_endpt = 'http://{}:8983/solr'.format(solr_location)
-    url = '{}/{}/update'.format(solr_endpt, collection)
-    params = {'commit' : 'true'}
-    with open(fname, 'r', encoding=ENCODING) as in_file:
+
+    solr_endpt = f"http://{solr_location}:8983/solr"
+    url = f"{solr_endpt}/{collection}/update"
+    params = {"commit" : "true"}
+    with open(fname, "r", encoding=ENCODING) as in_file:
         data = in_file.read()
 
     try:
@@ -39,7 +53,7 @@ def _post_remote(collection, fname, solr_location, headers={}):
         if response is not None:
             retcode = response.status_code
         else:
-            print('Failed on URL {} ({})'.format(url, str(e)))
+            print(f"Failed on URL {url} ({e})")
     else:
         if response.ok:
             retcode = response.status_code
@@ -51,34 +65,27 @@ def _post_remote(collection, fname, solr_location, headers={}):
                 except Exception:
                     output = response.text
                 else:
-                    print('Failed to interpret output of URL {} ({})'
-                        .format(url, str(e)))
+                    print(f"Failed to interpret output of URL {url} ({e})")
         else:
             try:
                 retcode = response.status_code
                 reason = response.reason
-            except:
-                print('Failed to find failure reason for URL {} ({})'
-                    .format(url, str(e)))
+            except Exception:
+                print(f"Failed to get status_code from {url}")
             else:
-                print('Failed on URL {} ({}: {})'
-                        .format(url, retcode, reason))
-                print('Full response:')
+                print(f"Failed on URL {url} ({retcode}: {reason}")
+                print("Full response:")
                 print(response.text)
     return retcode, output
 
 
 # .............................................................................
 def _post_local(fname, collection):
-    """Post a document to a Solr index.
-
-    Args:
-        fname: Full path the file containing data to be indexed in Solr
-        collection: name of the Solr collection to be posted to
-    """
-    cmd = '{} -c {} {} '.format(SOLR_POST_COMMAND, collection, fname)
-    output, _ = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
+    cmd = f"{SOLR_POST_COMMAND} -c {collection} {fname} "
+    output, _ = subprocess.Popen(
+        cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
     return output
+
 
 # .............................................................................
 def post(fname, collection, solr_location, headers=None):
@@ -89,6 +96,10 @@ def post(fname, collection, solr_location, headers=None):
         collection: name of the Solr collection to be posted to
         solr_location: URL to solr instance (i.e. http://localhost:8983/solr)
         headers: optional keyword/values to send server
+
+    Returns:
+        retcode: HTTP code from the server.
+        output: response from the server.
     """
     retcode = 0
     if solr_location is not None:
@@ -97,84 +108,99 @@ def post(fname, collection, solr_location, headers=None):
         output = _post_local(fname, collection)
     return retcode, output
 
+
 # .............................................................................
 def query_guid(guid, collection, solr_location):
-    """
-    Query a Specify resolver index and return results for an occurrence in
-    JSON format.
+    """Query a Solr index and return results for a guid.
 
     Args:
         guid: Unique identifier for record of interest
         collection: name of the Solr index
-        solr_location: IP or FQDN for solr index
+        solr_location: URL to solr instance (i.e. http://localhost:8983/solr)
 
     Returns:
         a dictionary containing one or more keys: count, docs, error
     """
-    return query(collection, solr_location, filters={'id': guid}, query_term=guid)
+    return query(collection, solr_location, filters={"id": guid}, query_term=guid)
+
 
 # .............................................................................
-def query(collection, solr_location, filters={'*': '*'}, query_term='*'):
-    """Query a solr index and return results in JSON format
+def query(collection, solr_location, filters=None, query_term="*"):
+    """Query a solr index and return results in JSON format.
 
     Args:
         collection: solr index for query
-        solr_location: IP or FQDN for solr index
+        solr_location: URL to solr instance (i.e. http://localhost:8983/solr)
         filters: q filters for solr query
+        query_term: string for querying the index.
 
     Returns:
         a dictionary containing one or more keys: count, docs, error
     """
-    output = {S2nKey.COUNT: 0}
     errmsgs = []
+    if filters is None:
+        filters = {"*": "*"}
 
-    solr_endpt = 'http://{}:8983/solr/{}/select'.format(solr_location, collection)
+    solr_endpt = f"http://{solr_location}:8983/solr/{collection}/select"
     api = APIQuery(solr_endpt, q_filters=filters)
-    api.query_by_get(output_type='json')
+    api.query_by_get(output_type="json")
     try:
-        response = api.output['response']
-    except:
-        errmsgs.append('Missing `response` element')
+        response = api.output["response"]
+    except KeyError:
+        errmsgs.append("Missing `response` element")
     else:
         try:
-            count = response['numFound']
-        except:
-            errmsgs.append('Failed to return numFound from solr')
+            count = response["numFound"]
+        except KeyError:
+            errmsgs.append("Failed to return numFound from solr")
         try:
-            recs = response['docs']
-        except:
-            errmsgs.append('Failed to return docs from solr')
+            recs = response["docs"]
+        except KeyError:
+            errmsgs.append("Failed to return docs from solr")
 
-    service = provider = ''
+    service = provider = ""
     record_format = _get_record_format(collection)
     std_output = S2nOutput(
-        count, service, provider, provider_query=[api.url],
-            record_format=record_format, records=recs, errors=errmsgs)
+        count, service, provider, provider_query=[api.url], record_format=record_format,
+        records=recs, errors=errmsgs)
 
     return std_output
 
-# .............................................................................
-def update(collection, solr_location):
-    url = '{}/{}/update'.format(solr_location, collection)
-    cmd = '{} {}'.format(CURL_COMMAND, url)
-    output, _ = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
-    return output
 
 # .............................................................................
-if __name__ == '__main__':
+def update(collection, solr_location):
+    """Update a solr index and return results in JSON format.
+
+    Args:
+        collection: solr index for query
+        solr_location: URL to solr instance (i.e. http://localhost:8983/solr)
+
+    Returns:
+        the Solr response.
+    """
+    url = f"{solr_location}/{collection}/update"
+    cmd = f"{CURL_COMMAND} {url}"
+    output, _ = subprocess.Popen(
+        cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
+    return output
+
+
+# .............................................................................
+if __name__ == "__main__":
     # test
-    doc = count_docs(SPECIFY.RESOLVER_COLLECTION, SPECIFY.RESOLVER_LOCATION)
-    print('Found {} records in {}'.format(doc, SPECIFY.RESOLVER_COLLECTION))
+    ct = count_docs(SPECIFY.RESOLVER_COLLECTION, SPECIFY.RESOLVER_LOCATION)
+    print(f"Found {ct} records in {SPECIFY.RESOLVER_COLLECTION}")
     for guid in TST_VALUES.GUIDS_W_SPECIFY_ACCESS:
         doc = query_guid(
             guid, SPECIFY.RESOLVER_COLLECTION, SPECIFY.RESOLVER_LOCATION)
-        print('Found {} record for guid {}'.format(doc, guid))
+        print(f"Found {ct} record for guid {guid}")
 
 """
 Post:
 /opt/solr/bin/post -c spcoco /state/partition1/git/t-rex/data/solrtest/occurrence.solr.csv
 
 Query:
-curl http://notyeti-192.lifemapper.org:8983/solr/spcoco/select?q=occurrence_guid:47d04f7e-73fa-4cc7-b50a-89eeefdcd162
+curl http://notyeti-192.lifemapper.org:8983/solr/spcoco/select
+ ?q=occurrence_guid:47d04f7e-73fa-4cc7-b50a-89eeefdcd162
 curl http://notyeti-192.lifemapper.org:8983/solr/spcoco/select?q=*:*
 """
