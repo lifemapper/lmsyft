@@ -3,7 +3,7 @@ venv/
 
 # pycharm project
 .idea/*
-
+.idea/workspace.xml
 
 # pydev-eclipse project
 .pydevproject
