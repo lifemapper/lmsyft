@@ -33,7 +33,8 @@ def count_docs(collection, solr_location):
         Number of documents found.
     """
     output = query(collection, solr_location, query_term="*")
-    output.pop(S2nKey.RECORDS)
+    # Remove records from output
+    output.set_value(S2nKey.RECORDS, [])
     return output
 
 
@@ -135,7 +136,7 @@ def query(collection, solr_location, filters=None, query_term="*"):
         query_term: string for querying the index.
 
     Returns:
-        a dictionary containing one or more keys: count, docs, error
+        a flask_app.broker.s2n_type.S2nOutput object
     """
     errmsgs = []
     if filters is None:
@@ -161,8 +162,9 @@ def query(collection, solr_location, filters=None, query_term="*"):
     service = provider = ""
     record_format = _get_record_format(collection)
     std_output = S2nOutput(
-        count, service, provider, provider_query=[api.url], record_format=record_format,
-        records=recs, errors=errmsgs)
+        count, service, provider, record_format=record_format, records=recs,
+        errors=errmsgs
+    )
 
     return std_output
 

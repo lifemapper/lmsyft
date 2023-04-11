@@ -6,8 +6,26 @@
   <component name="ChangeListManager">
     <list default="true" id="7da7499e-1ec6-4bd7-974b-80f0bb5c6fdd" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sppy/tools/fileop/ready_file.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/fileop/ready_file.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/sppy/tools/fileop/split_providers.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/fileop/split_records.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/example_export.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/example_export.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/todo.rst" beforeDir="false" afterPath="$PROJECT_DIR$/docs/todo.rst" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flask_app/broker/base.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/broker/base.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flask_app/broker/constants.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/broker/constants.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flask_app/broker/name.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/broker/name.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flask_app/broker/s2n_type.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/broker/s2n_type.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sppy/tools/provider/gbif.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/provider/gbif.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sppy/tools/provider/idigbio.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/provider/idigbio.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sppy/tools/provider/itis.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/provider/itis.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sppy/tools/provider/worms.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/provider/worms.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sppy/tools/s2n/solr.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/s2n/solr.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_cache/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_cache/sp_cache_tests.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_cache/spcache_collection_lmtest.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_cache/spcache_collection_occurrences_lmtest.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_config.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_dwca.py" beforeDir="false" afterPath="$PROJECT_DIR$/tests/test_dwca.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_post_data.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/tests/test_solr_controller.py" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -28,17 +46,17 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;last_opened_file_path&quot;: &quot;/home/astewart/git/sp_network&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "last_opened_file_path": "/home/astewart/git/lmtrex",
+    "settings.editor.selected.configurable": "preferences.sourceCode.Markdown"
   },
-  &quot;keyToStringList&quot;: {
-    &quot;com.intellij.ide.scratch.ScratchImplUtil$2/New Scratch File&quot;: [
-      &quot;HTML&quot;
+  "keyToStringList": {
+    "com.intellij.ide.scratch.ScratchImplUtil$2/New Scratch File": [
+      "HTML"
     ]
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$" />
@@ -90,32 +108,32 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/tests/test_dwca.py</url>
-          <line>122</line>
+          <line>133</line>
           <option name="timeStamp" value="11" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/tests/test_dwca.py</url>
-          <line>123</line>
+          <line>134</line>
           <option name="timeStamp" value="12" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/tests/test_dwca.py</url>
-          <line>124</line>
+          <line>135</line>
           <option name="timeStamp" value="13" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/tests/test_dwca.py</url>
-          <line>125</line>
+          <line>136</line>
           <option name="timeStamp" value="14" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/tests/test_dwca.py</url>
-          <line>44</line>
+          <line>58</line>
           <option name="timeStamp" value="17" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/tests/test_dwca.py</url>
-          <line>55</line>
+          <line>71</line>
           <option name="timeStamp" value="18" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
@@ -124,49 +142,9 @@
           <option name="timeStamp" value="19" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/tests/test_post_data.py</url>
-          <line>128</line>
-          <option name="timeStamp" value="40" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/tests/test_post_data.py</url>
-          <line>134</line>
-          <option name="timeStamp" value="41" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/tests/test_post_data.py</url>
-          <line>192</line>
-          <option name="timeStamp" value="51" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/tests/test_post_data.py</url>
-          <line>193</line>
-          <option name="timeStamp" value="52" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/tests/test_post_data.py</url>
-          <line>189</line>
-          <option name="timeStamp" value="53" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/tests/test_post_data.py</url>
-          <line>190</line>
-          <option name="timeStamp" value="54" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/tests/test_post_data.py</url>
-          <line>38</line>
-          <option name="timeStamp" value="55" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/flask_app/sp_cache.saveme/routes.py</url>
           <line>103</line>
           <option name="timeStamp" value="56" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/tests/test_post_data.py</url>
-          <line>133</line>
-          <option name="timeStamp" value="58" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/flask_app/sp_cache.saveme/process_dwca.py</url>

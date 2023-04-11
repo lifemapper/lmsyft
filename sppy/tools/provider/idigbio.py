@@ -1,10 +1,9 @@
 """Module containing functions for GBIF API Queries."""
-import csv
 from http import HTTPStatus
 import os
 
 from flask_app.broker.constants import (
-    GBIF_MISSING_KEY, Idigbio, ISSUE_DEFINITIONS, ServiceProvider, ENCODING, DATA_DUMP_DELIMITER)
+    ENCODING, GBIF_MISSING_KEY, Idigbio, ISSUE_DEFINITIONS, ServiceProvider)
 from flask_app.broker.s2n_type import S2nEndpoint, S2nKey, S2nSchema
 
 from sppy.tools.util.logtools import logit
@@ -45,7 +44,7 @@ class IdigbioAPI(APIQuery):
             all_other_filters.update(other_filters)
 
         APIQuery.__init__(
-            self, idig_search_url, q_key=Idigbio.QKEY, q_filters=all_q_filters,
+            self, idig_search_url, q_filters=all_q_filters,
             other_filters=all_other_filters, filter_string=filter_string,
             headers=headers, logger=logger)
 
@@ -149,7 +148,8 @@ class IdigbioAPI(APIQuery):
         return newrec
 
     # ...............................................
-    def query_by_gbif_taxon_id(self, taxon_key):
+    # def query_by_gbif_taxon_id(self, taxon_key):
+    def get_occurrences_by_gbif_taxon_id(self, taxon_key):
         """Return a list of occurrence record dictionaries.
 
         Args:
@@ -176,6 +176,23 @@ class IdigbioAPI(APIQuery):
         return specimen_list
 
     # ...............................................
+    # def query_by_gbif_taxon_id(self, taxon_key):
+    def count_occurrences_by_gbif_taxon_id(self, taxon_key):
+        """Return a count of occurrence records with the GBIF taxonKey.
+
+        Args:
+            taxon_key: GBIF assigned taxonKey
+
+        Returns:
+            specimen_list: list of specimen records
+        """
+        self._q_filters[Idigbio.GBIFID_FIELD] = taxon_key
+        self.query()
+        if self.output is not None:
+            full_count = self.output["itemCount"]
+        return full_count
+
+    # ...............................................
     @classmethod
     def get_occurrences_by_occid(cls, occid, count_only=False, logger=None):
         """Return iDigBio occurrences for this occurrenceId.
@@ -191,8 +208,8 @@ class IdigbioAPI(APIQuery):
         Todo: enable paging
         """
         errinfo = {}
-        qf = {Idigbio.QKEY:
-              "{"" + Idigbio.OCCURRENCEID_FIELD + "":"" + occid + ""}"}
+        qf = {Idigbio.QKEY: f"{ {Idigbio.OCCURRENCEID_FIELD}:{occid} }"}
+        # "{"" + Idigbio.OCCURRENCEID_FIELD + "":"" + occid + ""}"}
         api = IdigbioAPI(other_filters=qf, logger=logger)
 
         try:
@@ -341,17 +358,20 @@ class IdigbioAPI(APIQuery):
         report = {GBIF_MISSING_KEY: []}
 
         ready_filename(point_output_file, overwrite=True)
-        with open(point_output_file, "w", encoding=ENCODING, newline="") as csv_f:
-            writer = csv.writer(csv_f, delimiter=DATA_DUMP_DELIMITER)
-            fld_names = None
+        with open(point_output_file, "w", encoding=ENCODING, newline=""):
+            # writer = csv.writer(csv_f, delimiter=DATA_DUMP_DELIMITER)
+            # fld_names = None
             for gid in taxon_ids:
                 # Pull / write field names first time
-                pt_count, fld_names = self._get_idigbio_records(
-                    gid, fld_names, writer, meta_output_file)
+                # pt_count, fld_names = self._get_idigbio_records(
+                #     gid, fld_names, writer, meta_output_file)
+                recs = self.get_occurrences_by_gbif_taxon_id(gid)
+                pt_count = len(recs)
 
                 report[gid] = pt_count
                 if pt_count == 0:
                     report[GBIF_MISSING_KEY].append(gid)
+                report[gid] = len(recs)
 
         # get/write missing data
         if missing_id_file is not None and len(
@@ -367,7 +387,7 @@ class IdigbioAPI(APIQuery):
         """Query iDigBio for data.
 
         Args:
-            taxon_ids: list of taxonIDs for querying
+            taxon_ids: list of GBIF taxonIDs for querying
 
         Returns:
             report: dictionary of processing metadata.
@@ -379,7 +399,7 @@ class IdigbioAPI(APIQuery):
 
         for gid in taxon_ids:
             # Pull/write fieldnames first time
-            pt_count = self._count_idigbio_records(gid)
+            pt_count = self.count_occurrences_by_gbif_taxon_id(gid)
             if pt_count == 0:
                 summary[GBIF_MISSING_KEY].append(gid)
             summary[gid] = pt_count

@@ -31,8 +31,10 @@ SCHEMA_FNAME = "open_api.yaml"
 ICON_CONTENT = "image/png"
 ICON_API = '/api/v1/badge'
 
+
 # .............................................................................
 class DWC:
+    """Constants for the Darwin Core occurrence record standard."""
     QUALIFIER = "dwc:"
     URL = "http://rs.tdwg.org/dwc"
     SCHEMA = "http://rs.tdwg.org/dwc.json"
@@ -41,6 +43,7 @@ class DWC:
 
 # .............................................................................
 class DWCA:
+    """Constants for the Darwin Core Archive file standard."""
     NS = "{http://rs.tdwg.org/dwc/text/}"
     META_FNAME = "meta.xml"
     DATASET_META_FNAME = "eml.xml"
@@ -119,7 +122,7 @@ class APIService:
     """Endpoint, parameters, output record format for all Specify Network APIs."""
     Root = {
         "endpoint": S2nEndpoint.Root,
-        "params": None,
+        "params": [],
         S2nKey.RECORD_FORMAT: None
     }
     # Icons for service providers
@@ -195,11 +198,11 @@ class ServiceProvider:
             "hover": "idigbio_colors_hover-01.png"
         }
     }
-    IPNI = {
-        S2nKey.NAME: "IPNI",
-        S2nKey.PARAM: "ipni",
-        S2nKey.SERVICES: []
-    }
+    # IPNI = {
+    #     S2nKey.NAME: "IPNI",
+    #     S2nKey.PARAM: "ipni",
+    #     S2nKey.SERVICES: []
+    # }
     ITISSolr = {
         S2nKey.NAME: "ITIS",
         S2nKey.PARAM: "itis",
@@ -251,10 +254,10 @@ class ServiceProvider:
                 ServiceProvider.iDigBio[S2nKey.PARAM]
         ):
             return ServiceProvider.iDigBio
-        elif param_or_name in (
-                ServiceProvider.IPNI[S2nKey.NAME], ServiceProvider.IPNI[S2nKey.PARAM]
-        ):
-            return ServiceProvider.IPNI
+        # elif param_or_name in (
+        #         ServiceProvider.IPNI[S2nKey.NAME], ServiceProvider.IPNI[S2nKey.PARAM]
+        # ):
+        #     return ServiceProvider.IPNI
         elif param_or_name in (
                 ServiceProvider.ITISSolr[S2nKey.NAME],
                 ServiceProvider.ITISSolr[S2nKey.PARAM]
@@ -337,7 +340,8 @@ class ServiceProvider:
             list of ServiceProviders
         """
         return [
-            ServiceProvider.GBIF, ServiceProvider.iDigBio, ServiceProvider.IPNI,
+            ServiceProvider.GBIF, ServiceProvider.iDigBio,
+            # ServiceProvider.IPNI,
             ServiceProvider.ITISSolr, ServiceProvider.MorphoSource,
             ServiceProvider.WoRMS, ServiceProvider.Broker]
 
@@ -600,9 +604,10 @@ class WORMS:
         return url
 
 
-class IPNI:
-    """IPNI constants enumeration."""
-    base_url = "http://beta.ipni.org/api/1"
+#
+# class IPNI:
+#     """IPNI constants enumeration."""
+#     base_url = "http://beta.ipni.org/api/1"
 
 
 # .............................................................................

@@ -80,40 +80,40 @@ class ItisAPI(APIQuery):
                 filter_string = filter_string.replace(oldstr, newstr)
         return filter_string
 
-    # ...............................................
-    def _processRecordInfo(self, rec, header, reformat_keys=None):
-        row = []
-        if reformat_keys is None:
-            reformat_keys = []
-
-        if rec is not None:
-            for key in header:
-                try:
-                    val = rec[key]
-
-                    if type(val) is list:
-                        if len(val) > 0:
-                            val = val[0]
-                        else:
-                            val = ""
-
-                    if key in reformat_keys:
-                        val = self._saveNLDelCR(val)
-
-                    elif key == "citation":
-                        if type(val) is dict:
-                            try:
-                                val = val["text"]
-                            except KeyError:
-                                pass
-
-                    elif key in ("created", "modified"):
-                        val = self._clipDate(val)
-
-                except KeyError:
-                    val = ""
-                row.append(val)
-        return row
+    # # ...............................................
+    # def _processRecordInfo(self, rec, header, reformat_keys=None):
+    #     row = []
+    #     if reformat_keys is None:
+    #         reformat_keys = []
+    #
+    #     if rec is not None:
+    #         for key in header:
+    #             try:
+    #                 val = rec[key]
+    #
+    #                 if type(val) is list:
+    #                     if len(val) > 0:
+    #                         val = val[0]
+    #                     else:
+    #                         val = ""
+    #
+    #                 if key in reformat_keys:
+    #                     val = self._saveNLDelCR(val)
+    #
+    #                 elif key == "citation":
+    #                     if type(val) is dict:
+    #                         try:
+    #                             val = val["text"]
+    #                         except KeyError:
+    #                             pass
+    #
+    #                 elif key in ("created", "modified"):
+    #                     val = self._clipDate(val)
+    #
+    #             except KeyError:
+    #                 val = ""
+    #             row.append(val)
+    #     return row
 
 # ...............................................
     @classmethod
@@ -308,7 +308,7 @@ class ItisAPI(APIQuery):
             tb = get_traceback()
             std_output = cls.get_api_failure(
                 S2nEndpoint.Name, HTTPStatus.INTERNAL_SERVER_ERROR,
-                errors=[{"error": cls._get_error_message(err=tb)}])
+                errinfo=[{"error": cls._get_error_message(err=tb)}])
         else:
             try:
                 output = api.output["response"]
@@ -480,8 +480,8 @@ if __name__ == "__main__":
     canonicals = GbifAPI.parse_names(names=names)
 
     for name in names:
-        itis_names = ItisAPI.match_name(name)
-        print(f"Matched {name} with {len(itis_names)} ITIS names using Solr")
-        for n in itis_names:
+        s2nout = ItisAPI.match_name(name)
+        print(f"Matched {name} with {len(s2nout.record_count)} ITIS names using Solr")
+        for n in s2nout.records:
             print(f"{n['nameWOInd']}, {n['kingdom']}, {n['usage']}, {n['rank']}")
         print("")

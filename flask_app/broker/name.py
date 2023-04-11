@@ -68,21 +68,21 @@ class NameSvc(_S2nService):
                 output.format_records(cls.ORDERED_FIELDNAMES)
         return output.response
 
-    # ...............................................
-    @classmethod
-    def _get_ipni_records(cls, namestr, is_accepted):
-        try:
-            output = IpniAPI.match_name(namestr, is_accepted=is_accepted)
-        except Exception:
-            traceback = get_traceback()
-            output = IpniAPI.get_api_failure(
-                cls.SERVICE_TYPE["endpoint"], HTTPStatus.INTERNAL_SERVER_ERROR,
-                errinfo={"error": [traceback]})
-        else:
-            output.set_value(
-                S2nKey.RECORD_FORMAT, cls.SERVICE_TYPE[S2nKey.RECORD_FORMAT])
-            output.format_records(cls.ORDERED_FIELDNAMES)
-        return output.response
+    # # ...............................................
+    # @classmethod
+    # def _get_ipni_records(cls, namestr, is_accepted):
+    #     try:
+    #         output = IpniAPI.match_name(namestr, is_accepted=is_accepted)
+    #     except Exception:
+    #         traceback = get_traceback()
+    #         output = IpniAPI.get_api_failure(
+    #             cls.SERVICE_TYPE["endpoint"], HTTPStatus.INTERNAL_SERVER_ERROR,
+    #             errinfo={"error": [traceback]})
+    #     else:
+    #         output.set_value(
+    #             S2nKey.RECORD_FORMAT, cls.SERVICE_TYPE[S2nKey.RECORD_FORMAT])
+    #         output.format_records(cls.ORDERED_FIELDNAMES)
+    #     return output.response
 
     # ...............................................
     @classmethod

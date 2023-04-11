@@ -204,7 +204,8 @@ class _S2nService:
         Returns:
             namestr: a canonical name
         """
-        output = GbifAPI.parse_name(namestr)
+        # output is a dictionary containing a single taxonomic record
+        output, _url = GbifAPI.parse_name(namestr)
         try:
             rec = output["record"]
         except KeyError:
@@ -229,12 +230,14 @@ class _S2nService:
         Returns:
             namestr: a canonical name
         """
-        output = ItisAPI.match_name(namestr, status="valid")
-        try:
-            namestr = output["records"][0]["nameWOInd"]
-        except KeyError:
-            # Default to original namestring if match fails
-            pass
+        # output is a flask_app.broker.s2n_type.S2nOutput object
+        output = ItisAPI.match_name(namestr, is_accepted=True)
+        if output.record_count > 0:
+            try:
+                namestr = output.records[0]["nameWOInd"]
+            except KeyError:
+                # Default to original namestring if match fails
+                pass
         return namestr
 
     # ...............................................

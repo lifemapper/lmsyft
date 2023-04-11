@@ -704,6 +704,16 @@ class S2nOutput(object):
 
     # ...............................................
     @property
+    def record_count(self):
+        """Return the number of records in a S2nOutput query response.
+
+        Returns:
+            The value of the record count.
+        """
+        return len(self._response[S2nKey.RECORDS])
+
+    # ...............................................
+    @property
     def service(self):
         """Return the service element from a S2nOutput query response.
 

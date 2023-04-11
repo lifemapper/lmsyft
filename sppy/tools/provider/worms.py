@@ -40,7 +40,7 @@ class WormsAPI(APIQuery):
             all_filters = self._other_filters.copy()
             if self._q_filters:
                 q_val = self._assemble_q_val(self._q_filters)
-                all_filters[self._q_key] = q_val
+                all_filters[self.Q_KEY] = q_val
             for k, val in all_filters.items():
                 if isinstance(val, bool):
                     val = str(val).lower()
