@@ -85,20 +85,6 @@ services:
       - "./config/privkey.pem:/etc/letsencrypt/privkey.pem:ro"
 
 
-#  back-end:
-#    build:
-#      context: ./.
-#      target: back-end
-#    networks:
-#      - nginx
-#    environment:
-#      - FLASK_APP=lmtrex.flask_app.broker.routes:app
-#    restart: unless-stopped
-#    volumes:
-#      - "scratch-path:/scratch-path"
-#      - "webpack-output:/volumes/webpack-output"
-#      - "static-files:/home/specify/lmtrex/frontend/static"
-
   front-end:
     build:
       context: ./.
