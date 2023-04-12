@@ -1,4 +1,4 @@
-# Welcome to the Specify Network!
+# Welcome to the Specify Network Broker and Analyst services!
 
 The Specify Network consists of tools and services to serve the Specify Collections
 Consortium.  There are currently several elements in production, and some still in
@@ -6,7 +6,7 @@ development.
 
 This work has been supported by NSF Awards NSF BIO-1458422, OCI-1234983.
 
-## Specify Broker
+## Specify Network Broker
 The Specify Broker searches for information related to an occurrence object
 information from other data services, such as GBIF, iDigBio, OpenTreeOfLife, ITIS,
 WoRMS, and more.  It presents the related digital object elements in a frontend,
@@ -20,29 +20,9 @@ Any community contributed tool through the
 use these objects to ensure that new contributions are compatible with the
 Lifemapper backend.
 
-## Specify Cache
-The Specify Cache stores records submitted by Specify Collections for public access via
-the Specify-assigned GUID, held in the DarwinCore occurrenceID field.  It holds records
-for Specify collections without a public endpoint for each record.
+## Specify Network Analyst (in development)
 
-## Specify Resolver
-The Specify Resolver retrieves the URL of a Specify record given the Specify-assigned
-GUID, held in the DarwinCore occurrenceID field.  Specify 6 records are
-served from the Specify cache, if they have been exported to the Specify Network.
-Specify 7 records can be accessed directly from the Specify 7 webserver if the server
-has been made public.
-
-### Specify Cache and Resolver API documentation
-The Specify Cache and Resolver web services are documented using the
-[Open API 3 spec](https://swagger.io/specification/).  The raw documentation can be
-found at [/docs/openapi.yml](/docs/openapi.yml) and a version rendered with Swagger can
-be found at https://specifysystems.github.io/specify_cache/.
-
-
-## Syftorium (in development)
-![Logo](static/syftorium.png)
-
-The Syftorium is in development, and will be a collection of specimen-based analytics
+The Specify Network Analyst is in development, and will be a collection of specimen-based analytics
 assessing the composition of collection holdings and available species information.
 
 These data are used to compare and assess collections against and among the collective
