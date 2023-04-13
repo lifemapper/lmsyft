@@ -296,6 +296,7 @@ class S2nSchema:
         if svc == S2nEndpoint.Name:
             schema = cls.NAME
             list_fields = ["hierarchy", "synonyms"]
+            dict_fields = []
         elif svc == S2nEndpoint.Occurrence:
             schema = cls.OCCURRENCE
             list_fields = ["associatedSequences", "associatedReferences"]
