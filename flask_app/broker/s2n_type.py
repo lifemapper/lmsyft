@@ -9,13 +9,13 @@ RecordsList = typing.List[typing.Dict]
 class S2nEndpoint:
     """URL elements for a valid Specify Network API request."""
     Root = "/api/v1"
-    Address = "address"
+    # Address = "address"
     Badge = "badge"
     Heartbeat = "heartbeat"
     Map = "map"
     Name = "name"
     Occurrence = "occ"
-    Resolve = "resolve"
+    # Resolve = "resolve"
     SpecimenExtension = "occext"
     Frontend = "frontend"
     Stats = "stats"
@@ -27,10 +27,7 @@ class S2nEndpoint:
         Returns:
             list of all S2nEndpoints
         """
-        return [
-            cls.Address, cls.Badge, cls.Name, cls.Occurrence, cls.Resolve,
-            cls.Frontend
-        ]
+        return [cls.Badge, cls.Name, cls.Occurrence, cls.Frontend]
 
 
 # .............................................................................
@@ -299,6 +296,7 @@ class S2nSchema:
         if svc == S2nEndpoint.Name:
             schema = cls.NAME
             list_fields = ["hierarchy", "synonyms"]
+            dict_fields = []
         elif svc == S2nEndpoint.Occurrence:
             schema = cls.OCCURRENCE
             list_fields = ["associatedSequences", "associatedReferences"]

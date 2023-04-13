@@ -1,38 +1,38 @@
 version: "3.9"
 services:
-  runner:
-    build:
-      context: ./.
-      target: dev-flask
-    ports:
-      - "5001:5001"
-    environment:
-      - FLASK_APP=flask_app.resolver:app
-      - FLASK_MANAGE=flask_app.resolver.manage
-      - DEBUG_PORT=5001
-    env_file:
-      ./.env.conf
-    volumes:
-      - "./flask_app/:/home/specify/flask_app/"
-
-  sp_cache:
-    build:
-      context: ./.
-      target: dev-flask
-    ports:
-      - "5002:5002"
-    environment:
-      - FLASK_APP=flask_app.sp_cache:app
-      - FLASK_MANAGE=flask_app.sp_cache.manage
-      - DEBUG_PORT=5002
-    env_file:
-      ./.env.conf
-    volumes:
-      - "./flask_app/:/home/specify/flask_app/"
-
-  solr:
-    ports:
-      - "8983:8983"
+#  runner:
+#    build:
+#      context: ./.
+#      target: dev-flask
+#    ports:
+#      - "5001:5001"
+#    environment:
+#      - FLASK_APP=flask_app.resolver:app
+#      - FLASK_MANAGE=flask_app.resolver.manage
+#      - DEBUG_PORT=5001
+#    env_file:
+#      ./.env.conf
+#    volumes:
+#      - "./flask_app/:/home/specify/flask_app/"
+#
+#  sp_cache:
+#    build:
+#      context: ./.
+#      target: dev-flask
+#    ports:
+#      - "5002:5002"
+#    environment:
+#      - FLASK_APP=flask_app.sp_cache:app
+#      - FLASK_MANAGE=flask_app.sp_cache.manage
+#      - DEBUG_PORT=5002
+#    env_file:
+#      ./.env.conf
+#    volumes:
+#      - "./flask_app/:/home/specify/flask_app/"
+#
+#  solr:
+#    ports:
+#      - "8983:8983"
 
   broker:
     build:

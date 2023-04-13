@@ -14,10 +14,10 @@ RUN mkdir -p /home/specify \
 
 RUN mkdir -p /scratch-path/log \
  && mkdir -p /scratch-path/sessions \
- && mkdir -p /scratch-path/collections \
- && mkdir -p /scratch-path/new_dwcas \
- && mkdir -p /scratch-path/processed_dwcas \
- && mkdir -p /scratch-path/error_dwcas \
+# && mkdir -p /scratch-path/collections \
+# && mkdir -p /scratch-path/new_dwcas \
+# && mkdir -p /scratch-path/processed_dwcas \
+# && mkdir -p /scratch-path/error_dwcas \
  && chown -R specify.specify /scratch-path
 
 WORKDIR /home/specify

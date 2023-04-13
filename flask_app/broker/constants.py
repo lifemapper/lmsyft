@@ -21,7 +21,7 @@ GBIF_MISSING_KEY = "unmatched_gbif_ids"
 # VALID broker parameter options, must be list
 VALID_ICON_OPTIONS = ["active", "inactive", "hover"]
 
-STATIC_DIR = "../frontend/static"
+STATIC_DIR = "../../sppy/frontend/static"
 ICON_DIR = "{}/icon".format(STATIC_DIR)
 
 TEMPLATE_DIR = "../templates"
