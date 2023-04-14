@@ -1,33 +1,5 @@
 version: "3.9"
 services:
-#
-#  resolver:
-#    build:
-#      context: ./.
-#      target: flask
-#    networks:
-#      - solr
-#      - nginx
-#    environment:
-#      - FLASK_APP=flask_app.resolver:app
-#    env_file:
-#      ./.env.conf
-#    restart: unless-stopped
-#
-#  sp_cache:
-#    build:
-#      context: ./.
-#      target: flask
-#    networks:
-#      - solr
-#      - nginx
-#    environment:
-#      - FLASK_APP=flask_app.sp_cache:app
-#    env_file:
-#      ./.env.conf
-#    restart: unless-stopped
-#    volumes:
-#      - "scratch-path:/scratch-path"
 
   broker:
     build:
@@ -45,28 +17,10 @@ services:
       - "webpack-output:/volumes/webpack-output"
       - "static-files:/home/specify/frontend/static"
 
-#  solr:
-#    image: solr:8.10.1-slim
-#    networks:
-#      - solr
-#    environment:
-#      # See https://github.com/docker-solr/docker-solr/issues/273
-#      - SOLR_OPTS=-XX:-UseLargePages
-#    entrypoint:
-#      # See https://github.com/docker-solr/docker-solr/issues/188
-#      - bash
-#      - "-c"
-#      - "precreate-core sp_collections /opt/solr/server/solr/sp_collections/conf; precreate-core spcoco /opt/solr/server/solr/spcoco/conf; precreate-core specimen_records /opt/solr/server/solr/specimen_records/conf; precreate-core occurrences  /opt/solr/server/solr/occurrences/conf; exec solr -f"
-#    volumes:
-#      - './solr_cores/:/opt/solr/server/solr'
-#      - 'solr:/var/solr'
-
   nginx:
     image: nginx:alpine
     restart: unless-stopped
     depends_on:
-#      - resolver
-#      - sp_cache
       - broker
       - front-end
 
@@ -94,10 +48,8 @@ services:
 
 volumes:
   scratch-path:
-#  solr:
   static-files:
   webpack-output:
 
 networks:
-#  solr:
   nginx:

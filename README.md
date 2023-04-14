@@ -35,8 +35,9 @@ used by the community as a whole to identify gaps in species knowlege or redunda
 The Syftorium presents this information in multivariate-, but subsettable, space
 to provide as much value and feedback to the community as possible.
 
+# Specify Network Deployment 
 
-# Specify Network Deployment
+## Local Deployment
 
 To run the containers, generate `fullchain.pem` and `privkey.pem` (certificate
 and the private key) using Let's Encrypt and link these files in the (currently
@@ -85,7 +86,7 @@ docker compose -f docker-compose.yml -f docker-compose.development.yml up
 
 Flask has hot-reload enabled.
 
-## Testing
+### Testing
 
 On a development server, check the following URL endpoints:
 
@@ -132,10 +133,51 @@ needed.
 **Flask** is watching for back-end file changes and restarts the server when
 needed.
 
+## AWS Deployment
+
+### Create and setup an EC2 instance
+* Create in AWS dashboard, including SSH keypari
+* update apt
+* install AWS client, awscli
+
+```commandline
+$ sudo apt update
+$ sudo apt install awscli
+```
+
+### Extend the SSH timeout
+
+* SSH Client: vim ~/.ssh/config
+
+```
+Host *
+    ServerAliveInterval 20
+```
+
+* SSH Server: sudo vim /etc/ssh/sshd_config
+
+```
+ClientAliveInterval 1200
+ClientAliveCountMax 3
+```
+
+* Then run `sudo systemctl reload sshd` 
+* Copy SSH private key to each machine used for AWS access
 
 
+### Setup SSL
+* Find IP address of EC2 instance
+* Request a public certificate through Certificate Manager (ACM)
+  * Choose DNS validation
+  * Add tags specify_network, dev or prod, others
+* Go to DNS hosting service (GoDaddy) and add FQDN with IP address 
+  * Takes ~30 min for DNS to propogate
+  * Takes several hours for Amazon to validate and issue certificate
 
-### Rebuild/restart
+
+# Docker manipulation
+
+## Rebuild/restart
 
 To delete all containers, images, networks and volumes, stop any running
 containers:
@@ -156,7 +198,7 @@ And rebuild/restart:
 docker compose up -d
 ```
 
-### Examine container
+## Examine container
 
 To examine containers at a shell prompt:
 
@@ -177,9 +219,25 @@ systemctl stop httpd
 docker compose  up -d
 ```
 
+# Dev Environment
 
+## Setup
+* Create a virtual environment and install python libs there
 
-### Debug mode
+```commandline
+python3 -m venv venv
+. venv/bin/activate
+pip install -r requirements.txt
+```
+
+## Configure Debugger
+
+Debugger configuration is IDE dependent. [Instructions for
+PyCharm](https://kartoza.com/en/blog/using-docker-compose-based-python-interpreter-in-pycharm/)
+
+`broker` container is running `debugpy` on port `5003`.
+
+## Debug
 
 To run flask in debug mode, first setup virtual environment for python at the
 top level of the repo, activate, then add dependencies from requirements.txt:
@@ -199,21 +257,13 @@ export FLASK_APP=flask_app.broker.routes
 flask run
 ```
 
-test through flask (no SSL):
-http://localhost:5003/api/v1/name?namestr=Notemigonus%20crysoleucas%20(Mitchill,%201814)
-http://localhost:5003/api/v1/occ?occid=01493b05-4310-4f28-9d81-ad20860311f3
+## Test through flask
 
-#### Configuring Debugger
+no SSL:
+http://localhost:5003/broker/api/v1/name?namestr=Notemigonus%20crysoleucas%20(Mitchill,%201814)
+http://localhost:5003/broker/api/v1/occ?occid=01493b05-4310-4f28-9d81-ad20860311f3
 
-Debugger configuration is IDE dependent. [Instructions for
-PyCharm](https://kartoza.com/en/blog/using-docker-compose-based-python-interpreter-in-pycharm/)
-
-`runner` container is running `debugpy` on port `5001` , `sp_cache` on
-port `5002`, `broker` on port `5003`.
-
-## Misc
-
-### SSL certificates
+## Local SSL certificates
 
 SSL certificates are served from the base VM, and need apache to be renewed.
 These are administered by Letsencrypt using Certbot and are only valid for 90 days at
@@ -230,7 +280,52 @@ systemctl stop httpd
 docker compose up -d
 ```
 
-### Process DWCAs
+## Troubleshooting
+
+### pip errors with SSL
+
+  * add trusted-host option at command line
+
+```commandline
+pip install --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org ~/git/lmpy
+```
+  * for processes that call pip, create a pip configuration file , then export as
+    PIP_CONFIG_FILE environment variable in .bashrc
+
+```commandline
+# ~/pip.conf
+[install]
+trusted-host = pypi.python.org
+               pypi.org
+               files.pythonhosted.org
+
+# ~/.bashrc
+export PIP_CONFIG_FILE ~/pip.conf
+```
+
+###  pre-commit errors with self-signed certificate
+  * turn off verification (but this leaves you open to man-in-the-middle attacks)
+
+```commandline
+git config --global http.sslVerify false
+```
+
+  * turn on again with
+
+```commandline
+git config --global http.sslVerify true
+
+```
+
+### pre-commit build errors
+
+* Errors installing toml, Poetry, dependencies of isort.
+  * Updated .pre-commit-config.yaml isort version to latest,
+     https://github.com/PyCQA/isort, fixed build
+
+# Misc
+
+## Process DWCAs
 
 You can setup a cron job to process pending DWCAs.
 
@@ -241,15 +336,6 @@ Note, you many need to modify `sp_cache-1` to reflect your container name.
 
 # Local development setup
 
-## Installing dependencies
-
-* Create a virtual environment and install python libs there
-
-```commandline
-python3 -m venv venv
-. venv/bin/activate
-pip install -r requirements.txt
-```
 
 ## Troubleshooting
 
