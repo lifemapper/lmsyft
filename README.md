@@ -16,7 +16,7 @@ The Specify Broker houses objects and common tools used within a Broker installa
 that may also be useful for outside contributors and the community as a whole.
 
 Any community contributed tool through the
-[lmtrex repository](https://github.com/lifemapper/lmtrex/) should
+[sp_network repository](https://github.com/specifysystems/sp_network/) should
 use these objects to ensure that new contributions are compatible with the
 Lifemapper backend.
 
@@ -32,61 +32,177 @@ collecting and digitization efforts, institutional loans, mergers, deaccessions,
 more, to improve, the overall quality of the collection.  This information can also be
 used by the community as a whole to identify gaps in species knowlege or redundancies.
 
-The Syftorium presents this information in multivariate-, but subsettable, space
+The Analyst presents this information in multivariate-, but subsettable, space
 to provide as much value and feedback to the community as possible.
 
 # Specify Network Deployment 
 
-## Local Deployment
+
+## SSL
+
+### Local self-signed certificates
 
 To run the containers, generate `fullchain.pem` and `privkey.pem` (certificate
-and the private key) using Let's Encrypt and link these files in the (currently
-separate config directories) `./specify_cache/lmtrex/config/` and `./specify_cache/config/`.
+and the private key) using Let's Encrypt and link these files in `./sp_network/config/`.
 
 While in development, you can generate self-signed certificates then link them in
-./specify_cache/lmtrex/config/ directory for this project:
+~/git/sp_network/config/ directory for this project:
 
 ```zsh
-mkdir ~/self-signed-certificates
+$ mkdir ~/certificates
 
 openssl req \
   -x509 -sha256 -nodes -newkey rsa:2048 -days 365 \
-  -keyout ~/self-signed-certificates/privkey.pem \
-  -out ~/self-signed-certificates/fullchain.pem
+  -keyout ~/certificates/privkey.pem \
+  -out ~/certificates/fullchain.pem
 
-cd ./specify_cache/config
-ln -s ~/self-signed-certificates/privkey.pem
-ln -s ~/self-signed-certificates/fullchain.pem
+$ cd ~/git/sp_network/config
+$ ln -s ~/certificates/privkey.pem
+$ ln -s ~/certificates/fullchain.pem
 ```
 
-To run the production container, or the development container with HTTPs
+To run either the production or the development containers with HTTPS
 support, generate `fullchain.pem` and `privkey.pem` (certificate and the private
-key) using Let's Encrypt and put these files into the `./config/`
-directory.
-
-### Production
+key) using Let's Encrypt, link these files in the `./config/` directory.
+Full instructions in the docs/aws-steps.rst page, under `Set up TLS/SSL` 
 
 Modify the `FQDN` environment variable in `.env.conf` as needed.
 
-Run the containers:
+###  TLS/SSL using Certificate Authority (CA)
+
+* Make sure that DNS has propogated for domain for SSL
+* Stop apache service 
+* request a certificate for the domain
+
+```commandline
+ubuntu@ip-172-31-22-32:~$ sudo systemctl stop apache2
+ubuntu@ip-172-31-22-32:~$ sudo certbot certonly
+Saving debug log to /var/log/letsencrypt/letsencrypt.log
+
+How would you like to authenticate with the ACME CA?
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+1: Spin up a temporary webserver (standalone)
+2: Place files in webroot directory (webroot)
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+Select the appropriate number [1-2] then [enter] (press 'c' to cancel): 1
+Enter email address (used for urgent renewal and security notices)
+ (Enter 'c' to cancel): aimee.stewart@ku.edu
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+Please read the Terms of Service at
+https://letsencrypt.org/documents/LE-SA-v1.3-September-21-2022.pdf. You must
+agree in order to register with the ACME server. Do you agree?
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+(Y)es/(N)o: Y
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+Would you be willing, once your first certificate is successfully issued, to
+share your email address with the Electronic Frontier Foundation, a founding
+partner of the Let's Encrypt project and the non-profit organization that
+develops Certbot? We'd like to send you email about our work encrypting the web,
+EFF news, campaigns, and ways to support digital freedom.
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+(Y)es/(N)o: N
+Account registered.
+Please enter the domain name(s) you would like on your certificate (comma and/or
+space separated) (Enter 'c' to cancel): broker-dev.spcoco.org
+Requesting a certificate for broker-dev.spcoco.org
+
+Successfully received certificate.
+Certificate is saved at: /etc/letsencrypt/live/broker-dev.spcoco.org/fullchain.pem
+Key is saved at:         /etc/letsencrypt/live/broker-dev.spcoco.org/privkey.pem
+This certificate expires on 2023-07-16.
+These files will be updated when the certificate renews.
+Certbot has set up a scheduled task to automatically renew this certificate in the background.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+If you like Certbot, please consider supporting our work by:
+ * Donating to ISRG / Let's Encrypt:   https://letsencrypt.org/donate
+ * Donating to EFF:                    https://eff.org/donate-le
+```
+
+* copy the newly created directory with certificates to the home directory
+* change the owner so that they can be used in Docker containers
+
+```commandline
+$ cd
+$ mkdir certificates
+$ sudo cp -rp /etc/letsencrypt/archive/broker-dev.spcoco.org/*  ~/certificates
+$ sudo chown ubuntu:ubuntu ~/certificates/*
+```
+
+### Renew Certbot SSL certificates
+
+SSL certificates are served from the base VM, and need apache to be renewed.
+These are administered by Letsencrypt using Certbot and are only valid for 90 days at
+a time. When it is time for a renewal (approx every 60 days), bring the docker
+containers down, and start apache. Renew the certificates, then stop apache,
+and bring the containers up again.
 
 ```zsh
+certbot certificates
+docker compose stop
+systemctl start httpd
+certbot renew
+systemctl stop httpd
 docker compose up -d
 ```
 
-lmsyft is now available at [https://localhost/](https://localhost:443)
+### SSL through Amazon?
 
-### Development
+* Create Elastic IP address for EC2 instance
+* Request a public certificate through Certificate Manager (ACM)
+  * Choose DNS validation
+  * Add tags sp_network, dev or prod, others
 
-Run the containers:
 
-```zsh
-docker compose -f docker-compose.yml -f docker-compose.development.yml up
+## Install 
+
+### Install dependencies
+
+Certbot: 
+
+```commandline
+$ sudo apt update
+$ sudo apt install certbot
 ```
 
-Flask has hot-reload enabled.
+Add docker repository, then use apt to install Docker: 
+https://docs.docker.com/engine/install/ubuntu/
 
-### Testing
+### Install repo from Github
+
+* generate an SSH key for communicating with Github
+* Add SSH key to agent on local machine
+
+```commandline
+$ ssh-keygen -t rsa -b 4096 -C "aimee.stewart@ku.edu"
+$ eval "$(ssh-agent -s)"
+$ ssh-add ~/.ssh/id_rsa
+$ cat .ssh/id_rsa.pub 
+```
+* Add the SSH to Github by printing to console, copying, adding in Github profile
+* clone the repository
+
+```commandline
+$ cat .ssh/id_rsa.pub 
+$ # <copy to profile in github website>
+$ cd ~/git
+$ git clone git@github.com:specifysystems/sp_network.git
+```
+
+### Install certificates into config directory
+
+* Link the certificates in the repo config directory 
+
+```commandline
+$ cd ~/git/sp_network
+$ cd config 
+$ ln -s ~/certificates/fullchain1.pem
+$ ln -s ~/certificates/privkey1.pem
+```
+
+## Testing
 
 On a development server, check the following URL endpoints:
 
@@ -114,8 +230,6 @@ necessary to test containers from the host machine.
 virtual environment activation script (bin/activate) script.
 
 ```zsh
-export SOLR_SERVER="https://localhost"
-export SOLR_PORT=8983
 export SECRET_KEY="dev"
 export WORKING_DIRECTORY="scratch-path"
 ```
@@ -133,49 +247,26 @@ needed.
 **Flask** is watching for back-end file changes and restarts the server when
 needed.
 
-## AWS Deployment
-
-### Create and setup an EC2 instance
-* Create in AWS dashboard, including SSH keypari
-* update apt
-* install AWS client, awscli
-
-```commandline
-$ sudo apt update
-$ sudo apt install awscli
-```
-
-### Extend the SSH timeout
-
-* SSH Client: vim ~/.ssh/config
-
-```
-Host *
-    ServerAliveInterval 20
-```
-
-* SSH Server: sudo vim /etc/ssh/sshd_config
-
-```
-ClientAliveInterval 1200
-ClientAliveCountMax 3
-```
-
-* Then run `sudo systemctl reload sshd` 
-* Copy SSH private key to each machine used for AWS access
-
-
-### Setup SSL
-* Find IP address of EC2 instance
-* Request a public certificate through Certificate Manager (ACM)
-  * Choose DNS validation
-  * Add tags specify_network, dev or prod, others
-* Go to DNS hosting service (GoDaddy) and add FQDN with IP address 
-  * Takes ~30 min for DNS to propogate
-  * Takes several hours for Amazon to validate and issue certificate
-
 
 # Docker manipulation
+
+## Run the containers (production)
+
+```zsh
+docker compose up -d
+```
+
+Specify Network is now available at [https://localhost/](https://localhost:443)
+
+
+## Run the containers (development)
+
+```zsh
+docker compose -f docker-compose.yml -f docker-compose.development.yml up
+```
+
+Flask has hot-reload enabled.
+
 
 ## Rebuild/restart
 
@@ -192,7 +283,7 @@ And run this command (which ignores running container):
 docker system prune --all --volumes
 ```
 
-And rebuild/restart:
+Then rebuild/restart:
 
 ```zsh
 docker compose up -d
@@ -203,7 +294,7 @@ docker compose up -d
 To examine containers at a shell prompt:
 
 ```zsh
-docker exec -it specify_cache-nginx-1 /bin/sh
+docker exec -it sp_network-nginx-1 /bin/sh
 ```
 
 Error port in use:
@@ -219,37 +310,27 @@ systemctl stop httpd
 docker compose  up -d
 ```
 
-# Dev Environment
+# Dev Environment 
 
-## Setup
 * Create a virtual environment and install python libs there
 
 ```commandline
-python3 -m venv venv
-. venv/bin/activate
-pip install -r requirements.txt
+$ cd ~/git/sp_network 
+$ python3 -m venv venv
+$ . venv/bin/activate
+$ pip install -r requirements.txt
 ```
 
-## Configure Debugger
 
-Debugger configuration is IDE dependent. [Instructions for
-PyCharm](https://kartoza.com/en/blog/using-docker-compose-based-python-interpreter-in-pycharm/)
+## Configure Debugger in local IDE
 
-`broker` container is running `debugpy` on port `5003`.
+[Instructions for PyCharm]
+(https://kartoza.com/en/blog/using-docker-compose-based-python-interpreter-in-pycharm/)
 
 ## Debug
 
-To run flask in debug mode, first setup virtual environment for python at the
-top level of the repo, activate, then add dependencies from requirements.txt:
-
-```zsh
-cd ~/git/specify_network
-python3 -m venv venv
-. venv/bin/activate
-pip3 install -r requirements.txt
-```
-
-then start the flask application
+To run flask in debug mode, first setup Flask environment, then start the flask 
+application.
 
 ```zsh
 export FLASK_ENV=development
@@ -257,28 +338,11 @@ export FLASK_APP=flask_app.broker.routes
 flask run
 ```
 
-## Test through flask
+`broker` container is running `debugpy` on port `5003`.
 
 no SSL:
 http://localhost:5003/broker/api/v1/name?namestr=Notemigonus%20crysoleucas%20(Mitchill,%201814)
 http://localhost:5003/broker/api/v1/occ?occid=01493b05-4310-4f28-9d81-ad20860311f3
-
-## Local SSL certificates
-
-SSL certificates are served from the base VM, and need apache to be renewed.
-These are administered by Letsencrypt using Certbot and are only valid for 90 days at
-a time. When it is time for a renewal (approx every 60 days), bring the docker
-containers down, and start apache. Renew the certificates, then stop apache,
-and bring the containers up again.
-
-```zsh
-certbot certificates
-docker compose stop
-systemctl start httpd
-certbot renew
-systemctl stop httpd
-docker compose up -d
-```
 
 ## Troubleshooting
 
@@ -332,60 +396,3 @@ You can setup a cron job to process pending DWCAs.
 See `./cron/process_dwcas_cron.in`.
 
 Note, you many need to modify `sp_cache-1` to reflect your container name.
-
-
-# Local development setup
-
-
-## Troubleshooting
-
-## pip errors with SSL
-
-  * add trusted-host option at command line
-```commandline
-pip install --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org ~/git/lmpy
-```
-  * for processes that call pip, create a pip configuration file , then export as
-    PIP_CONFIG_FILE environment variable in .bashrc
-
-```commandline
-# ~/pip.conf
-[install]
-trusted-host = pypi.python.org
-               pypi.org
-               files.pythonhosted.org
-
-# ~/.bashrc
-export PIP_CONFIG_FILE ~/pip.conf
-
-# at terminal
-$ source ~/.bashrc
-```
-
-* pre-commit errors with self-signed certificate
-  * turn off verification (but this leaves you open to man-in-the-middle attacks)
-
-```commandline
-git config --global http.sslVerify false
-
-```
-
-  * turn on again with
-
-```commandline
-git config --global http.sslVerify true
-
-```
-
-## pre-commit build errors
-
-* remove cache, then re-install pre-commit
-
-```commandline
-$ rm -rf ~/.cache/pre-commit
-$ pre-commit run
-```
-
-* still errors installing toml, Poetry, dependencies of isort.
-  * Updated .pre-commit-config.yaml isort version to latest,
-     https://github.com/PyCQA/isort, fixed build
