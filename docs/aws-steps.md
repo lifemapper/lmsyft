@@ -1,22 +1,4 @@
-# Create Amazon Machine Image (AMI) 
-
-* template of common software configuration
-
-## Setup default software installs
-
-* update apt
-* install AWS client, awscli
-* install apache for getting/managing certificates
-* install certbot for Let's Encrypt certificates
-
-```commandline
-$ sudo apt update
-$ sudo apt install awscli
-$ sudo apt install apache2
-$ sudo apt install certbot
-```
-
-# Security Group
+# Create a Security Group for the region
 
 * Create a security group for the instance (and all other instances in region)
   * Must be tied to the region of instance
@@ -28,21 +10,27 @@ $ sudo apt install certbot
 * Create from AMI (or not for new config)
 * Use the security group created for this region
 * Default user for ubuntu instance is `ubuntu`
+* (opt) Request an Elastic IP and assign DNS to it
+  * Register FQDN (GoDaddy) to IP for public access
 
-# SSH 
+# Enable SSH access to EC2 
 
 ## AWS access: keypair
 
-* Create a keypair for SSH access (tied to region)
+* Create a keypair for SSH access (tied to region) on EC2 launch
 * One chance only: Download the private key (.pem file for Linux and OSX) to local machine
-* Set file permissions to 600
+* Set file permissions to 400
 
-## SSH service
-
-* Extend the SSH timeout (in AMI or instance?) by editing config file:
+## Connect and set SSH service timeout
 
 ```commandline
-$ sudo vim /etc/ssh/sshd_config
+ssh -i ~/.ssh/aws_rsa.pem ubuntu@xxx.xxx.xx.xx
+```
+
+* Extend the SSH timeout (in AMI or instance?) in new config file under ssh config dir:
+
+```commandline
+$ sudo vim /etc/ssh/sshd_config.d/sp_network.conf
 ```
 
 ```text
@@ -56,14 +44,23 @@ ClientAliveCountMax 3
 $ sudo systemctl reload sshd
 ```
 
-# Set up static IP
+# Install base software
 
-* Elastic IP address (broker-dev.spcoco.org == 52.15.115.249)
-* Register FQDN (spcoco.org in GoDaddy) to IP for public access
+* update apt
+* install AWS client, awscli
+* install apache for getting/managing certificates
+* install certbot for Let's Encrypt certificates
 
-
+```commandline
+$ sudo apt update
+$ sudo apt install awscli
+$ sudo apt install apache2
+$ sudo apt install certbot
+```
 
 # Set up client machines 
+
+
 
 ## SSH
 
@@ -74,3 +71,8 @@ $ sudo systemctl reload sshd
 Host *
     ServerAliveInterval 20
 ```
+
+# Later: Create Amazon Machine Image (AMI) 
+
+* template of common software configuration
+

@@ -167,6 +167,8 @@ $ sudo apt update
 $ sudo apt install certbot
 ```
 
+### Install Docker
+
 Add docker repository, then use apt to install Docker: 
 https://docs.docker.com/engine/install/ubuntu/
 
@@ -189,6 +191,7 @@ $ cat .ssh/id_rsa.pub
 $ # <copy to profile in github website>
 $ cd ~/git
 $ git clone git@github.com:specifysystems/sp_network.git
+$ git checkout <branch>
 ```
 
 ### Install certificates into config directory
