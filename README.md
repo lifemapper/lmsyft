@@ -343,9 +343,9 @@ flask run
 
 `broker` container is running `debugpy` on port `5003`.
 
-no SSL:
-http://localhost:5003/broker/api/v1/name?namestr=Notemigonus%20crysoleucas%20(Mitchill,%201814)
-http://localhost:5003/broker/api/v1/occ?occid=01493b05-4310-4f28-9d81-ad20860311f3
+w/ SSL:
+https://localhost:5003/broker/api/v1/name?namestr=Notemigonus%20crysoleucas%20(Mitchill,%201814)
+https://localhost:5003/broker/api/v1/occ?occid=01493b05-4310-4f28-9d81-ad20860311f3
 
 ## Troubleshooting
 

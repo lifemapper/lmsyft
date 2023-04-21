@@ -59,6 +59,9 @@ class APIQuery:
     def _standardize_output(
             cls, output, count_key, records_key, record_format, service,
             query_status=None, query_urls=None, count_only=False, errinfo=None):
+        if output is None:
+            raise Exception(f"Failed to return output from {cls.url}")
+
         stdrecs = []
         total = 0
 

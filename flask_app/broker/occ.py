@@ -239,7 +239,7 @@ if __name__ == "__main__":
 
     print(out)
 
-    for occid in occids:
-        out = svc.get_occurrence_records(occid=occid, provider=None, count_only=False)
-        outputs = out["records"]
-        print_s2n_output(out, do_print_rec=True)
+    # for occid in occids:
+    #     out = svc.get_occurrence_records(occid=occid, provider=None, count_only=False)
+    #     outputs = out["records"]
+    #     print_s2n_output(out, do_print_rec=True)

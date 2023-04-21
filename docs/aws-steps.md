@@ -12,6 +12,7 @@
 * Default user for ubuntu instance is `ubuntu`
 * (opt) Request an Elastic IP and assign DNS to it
   * Register FQDN (GoDaddy) to IP for public access
+  * 54.221.46.214 (broker-dev)
 
 # Enable SSH access to EC2 
 
@@ -58,9 +59,7 @@ $ sudo apt install apache2
 $ sudo apt install certbot
 ```
 
-# Set up client machines 
-
-
+# Set up client machines
 
 ## SSH
 

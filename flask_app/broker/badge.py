@@ -103,35 +103,13 @@ class BadgeSvc(_S2nService):
         icon_fname = os.path.join(app_path, ICON_DIR, icon_basename)
 
         if icon_fname is not None:
-            ifile = open(icon_fname, mode="rb")
-            image_binary = ifile.read()
             if stream:
                 return send_file(
-                    io.BytesIO(image_binary), mimetype=ICON_CONTENT,
-                    as_attachment=False)
+                    icon_fname, mimetype=ICON_CONTENT, as_attachment=False)
             else:
                 return send_file(
-                    io.BytesIO(image_binary), mimetype=ICON_CONTENT, as_attachment=True,
+                    icon_fname, mimetype=ICON_CONTENT, as_attachment=True,
                     attachment_filename=icon_fname)
-            # # Return image data or file
-            # try:
-            #     ifile = open(icon_fname, mode="rb")
-            #     image_binary = io.BytesIO(ifile.read())
-            # except Exception as e:
-            #     # Unknown error
-            #     error_description = get_traceback()
-            #     raise InternalServerError(error_description)
-            # else:
-            #     if stream:
-            #         return send_file(
-            #             io.BytesIO(image_binary), mimetype=ICON_CONTENT,
-            #             as_attachment=False)
-            #     else:
-            #         return send_file(
-            #             io.BytesIO(image_binary), mimetype=ICON_CONTENT,
-            #             as_attachment=True, attachment_filename=icon_fname)
-            # finally:
-            #     ifile.close()
 
         else:
             raise NotImplementedError(

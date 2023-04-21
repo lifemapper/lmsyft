@@ -208,8 +208,8 @@ class IdigbioAPI(APIQuery):
         Todo: enable paging
         """
         errinfo = {}
-        qf = {Idigbio.QKEY: f"{ {Idigbio.OCCURRENCEID_FIELD}:{occid} }"}
-        # "{"" + Idigbio.OCCURRENCEID_FIELD + "":"" + occid + ""}"}
+        qf = {Idigbio.QKEY:
+              '{"' + Idigbio.OCCURRENCEID_FIELD + '":"' + occid + '"}'}
         api = IdigbioAPI(other_filters=qf, logger=logger)
 
         try:

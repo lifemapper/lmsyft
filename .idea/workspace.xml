@@ -5,9 +5,16 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7da7499e-1ec6-4bd7-974b-80f0bb5c6fdd" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/docs/aws_experiment.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/nginx.conf" beforeDir="false" afterPath="$PROJECT_DIR$/config/nginx.conf" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/docs/aws-steps.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/aws-steps.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flask_app/broker/badge.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/broker/badge.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/flask_app/broker/occ.py" beforeDir="false" afterPath="$PROJECT_DIR$/flask_app/broker/occ.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sppy/tools/provider/api.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/provider/api.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/sppy/tools/provider/idigbio.py" beforeDir="false" afterPath="$PROJECT_DIR$/sppy/tools/provider/idigbio.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -174,19 +181,49 @@
           <option name="timeStamp" value="79" />
         </line-breakpoint>
         <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/flask_app/broker/occ.py</url>
-          <line>236</line>
-          <option name="timeStamp" value="80" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
-          <url>file://$PROJECT_DIR$/flask_app/broker/occ.py</url>
-          <line>239</line>
-          <option name="timeStamp" value="81" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
           <url>file://$PROJECT_DIR$/sppy/tools/s2n/solr.py</url>
           <line>1</line>
           <option name="timeStamp" value="82" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/flask_app/broker/badge.py</url>
+          <line>122</line>
+          <option name="timeStamp" value="86" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/flask_app/broker/badge.py</url>
+          <line>105</line>
+          <option name="timeStamp" value="88" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/flask_app/broker/occ.py</url>
+          <line>237</line>
+          <option name="timeStamp" value="89" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/flask_app/broker/occ.py</url>
+          <line>121</line>
+          <option name="timeStamp" value="90" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/flask_app/broker/occ.py</url>
+          <line>64</line>
+          <option name="timeStamp" value="91" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/sppy/tools/provider/idigbio.py</url>
+          <line>223</line>
+          <option name="timeStamp" value="93" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/sppy/tools/provider/idigbio.py</url>
+          <line>215</line>
+          <option name="timeStamp" value="94" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/sppy/tools/provider/api.py</url>
+          <line>62</line>
+          <option name="timeStamp" value="95" />
         </line-breakpoint>
       </breakpoints>
       <default-breakpoints>
