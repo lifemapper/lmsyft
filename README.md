@@ -218,7 +218,7 @@ On a development server, check the following URL endpoints:
     * https://localhost/broker/api/v1/occ/
     * https://localhost/broker/api/v1/frontend/
   
-  * https://localhost/broker/api/v1/badge/gbif
+  * https://localhost/broker/api/v1/badge/gbif?icon_status=active
   * https://localhost/broker/api/v1/occ/?occid=a7156437-55ec-4c6f-89de-938f9361753d
   * https://localhost/broker/api/v1/name/Harengula%20jaguana
   * https://localhost/broker/api/v1/frontend/?occid=a7156437-55ec-4c6f-89de-938f9361753d
