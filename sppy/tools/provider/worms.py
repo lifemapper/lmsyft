@@ -3,8 +3,9 @@ from collections import OrderedDict
 from http import HTTPStatus
 import urllib
 
-from flask_app.broker.constants import (ENCODING, ServiceProvider, URL_ESCAPES, WORMS)
+from flask_app.broker.constants import ServiceProvider, WORMS
 from flask_app.broker.s2n_type import S2nEndpoint, S2nOutput, S2nSchema
+from flask_app.common.constants import URL_ESCAPES, ENCODING
 
 from sppy.tools.provider.api import APIQuery
 from sppy.tools.s2n.utils import add_errinfo, get_traceback

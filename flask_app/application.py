@@ -1,4 +1,4 @@
-"""Root Flask application for Syftorium."""
+"""Root Flask application for Specify Network."""
 import os
 
 from flask import Flask

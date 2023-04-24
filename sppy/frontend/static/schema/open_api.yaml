@@ -11,19 +11,19 @@ info:
     name: GPL-3.0 License
     url: 'https://www.gnu.org/licenses/gpl-3.0.en.html'
 servers:
-  - url: 'https://broker-dev.spcoco.org/api/v1'
+  - url: 'https://broker-dev.spcoco.org/broker/api/v1'
+    description: Internal testing broker server
+  - url: 'https://broker-dev.spcoco.org/analyst/api/v1'
     description: Internal testing broker server
   - url: 'https://spcoco.org/broker/api/v1'
     description: Production broker server
+  - url: 'https://spcoco.org/analyst/api/v1'
+    description: Production analyst server
 tags:
   - name: name
     description: Get taxonomy information for a scientific name
   - name: occ
     description: Get specimen occurrences
-  - name: resolve
-    description: Get resolution metadata for a digital specimen object in Specify
-  - name: map
-    description: Get URL for map of species points and predicted distributions
 paths:
   '/name/{namestr}':
     get:
@@ -77,42 +77,22 @@ paths:
                 KU Bird occurrence:
                   $ref: '#/components/examples/occ_tentacles'
 
-  '/map/{namestr}':
-    get:
-      tags:
-        - map
-      summary: 'Get map information for a species'
-      description: Get map metadata for species points and predicted distributions
-      operationId: map
-      parameters:
-        - $ref: '#/components/parameters/namestr'
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/map_tentacles'
-
-  '/resolve/{occid}':
-    get:
-      tags:
-        - resolve
-      summary: 'Get a metadata record with URL for a Specify GUID'
-      description: Get resolution metadata for a digital specimen object in Specify
-      operationId: resolve
-      parameters:
-        - $ref: '#/components/parameters/occid'
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/resolve_record'
-              examples:
-                KU Bird occurrence:
-                  $ref: '#/components/examples/resolve'
+#  '/map/{namestr}':
+#    get:
+#      tags:
+#        - map
+#      summary: 'Get map information for a species'
+#      description: Get map metadata for species points and predicted distributions
+#      operationId: map
+#      parameters:
+#        - $ref: '#/components/parameters/namestr'
+#      responses:
+#        '200':
+#          description: successful operation
+#          content:
+#            application/json:
+#              schema:
+#                $ref: '#/components/schemas/map_tentacles'
 
 components:
 
@@ -270,9 +250,7 @@ components:
           enum:
             - 'gbif'
             - 'idb'
-            - 'ipni'
             - 'itis'
-            - 'lm'
             - 'mopho'
             - 'specify'
             - 'worms'
@@ -721,102 +699,102 @@ components:
         's2n:specify_identifier':
           $ref: '#/components/schemas/nullable_guid'
 
-    map_tentacles:
-      allOf:
-        - $ref: '#/components/schemas/wrapper'
-        - type: object
-          properties:
-            service:
-              type: string
-              enum:
-                - 'map'
-            records:
-              type: array
-              items:
-                 $ref: '#/components/schemas/map_one_prov'
-              minItems: 1
-              maxItems: 1
-    map_one_prov:
-      allOf:
-        - $ref: '#/components/schemas/wrapper'
-        - type: object
-          properties:
-            service:
-              type: string
-              enum:
-                - 'map'
-            records:
-              type: array
-              items:
-                $ref: '#/components/schemas/map_record'
-    map_record:
-      type: object
-      properties:
-        's2n:view_url':
-          $ref: '#/components/schemas/view_url'
-        's2n:api_url':
-          $ref: '#/components/schemas/api_url'
-        's2n:endpoint':
-          type: string
-          example: 'https://data.lifemapper.org/api/v2/ogc'
-        's2n:data_link':
-          type: string
-          example: 'https://data.lifemapper.org/api/v2/sdmProject/119965'
-        's2n:layer_type':
-          type: string
-          enum:
-            - 'vector'
-            - 'raster'
-        's2n:layer_name':
-          type: string
-          example: 'prj_119965'
-        's2n:point_count':
-          type: integer
-          example: 456
-        's2n:point_bbox':
-          type: string
-          example: '-180,-90,180,90'
-        's2n:species_name':
-          type: string
-          example: 'Phlox longifolia Nutt.'
-        's2n:sdm_projection_scenario_code':
-          type: string
-          example: 'worldclim-curr'
-        's2n:sdm_projection_scenario_link':
-          type: string
-          example: 'https://data.lifemapper.org/api/v2/scenario/1'
-        's2n:status':
-          type: integer
-          example: 300
-        's2n:modtime':
-          type: string
-          example: '2021-09-05 10:23:09'
-        's2n:vendor_specific_parameters':
-          type: array
-          items:
-            $ref: '#/components/schemas/vsp'
-
-    resolve_record:
-      type: object
-      properties:
-        's2n:ident':
-          $ref: '#/components/schemas/guid'
-        's2n:dataset_guid':
-          $ref: '#/components/schemas/guid'
-        'dwc:institutionCode':
-          type: string
-          example: 'KUIT'
-        'dwc:basisOfRecord':
-          type: string
-          example: 'MaterialSample'
-        's2n:date':
-          type: string
-          example: '2021-09-27'
-        's2n:ark':
-          type: string
-          example: 'http://spcoco.org/ark:/2c1becd5-e641-4e83-b3f5-76a55206539a'
-        's2n:api_url':
-          $ref: '#/components/schemas/api_url'
+#    map_tentacles:
+#      allOf:
+#        - $ref: '#/components/schemas/wrapper'
+#        - type: object
+#          properties:
+#            service:
+#              type: string
+#              enum:
+#                - 'map'
+#            records:
+#              type: array
+#              items:
+#                 $ref: '#/components/schemas/map_one_prov'
+#              minItems: 1
+#              maxItems: 1
+#    map_one_prov:
+#      allOf:
+#        - $ref: '#/components/schemas/wrapper'
+#        - type: object
+#          properties:
+#            service:
+#              type: string
+#              enum:
+#                - 'map'
+#            records:
+#              type: array
+#              items:
+#                $ref: '#/components/schemas/map_record'
+#    map_record:
+#      type: object
+#      properties:
+#        's2n:view_url':
+#          $ref: '#/components/schemas/view_url'
+#        's2n:api_url':
+#          $ref: '#/components/schemas/api_url'
+#        's2n:endpoint':
+#          type: string
+#          example: 'https://data.lifemapper.org/api/v2/ogc'
+#        's2n:data_link':
+#          type: string
+#          example: 'https://data.lifemapper.org/api/v2/sdmProject/119965'
+#        's2n:layer_type':
+#          type: string
+#          enum:
+#            - 'vector'
+#            - 'raster'
+#        's2n:layer_name':
+#          type: string
+#          example: 'prj_119965'
+#        's2n:point_count':
+#          type: integer
+#          example: 456
+#        's2n:point_bbox':
+#          type: string
+#          example: '-180,-90,180,90'
+#        's2n:species_name':
+#          type: string
+#          example: 'Phlox longifolia Nutt.'
+#        's2n:sdm_projection_scenario_code':
+#          type: string
+#          example: 'worldclim-curr'
+#        's2n:sdm_projection_scenario_link':
+#          type: string
+#          example: 'https://data.lifemapper.org/api/v2/scenario/1'
+#        's2n:status':
+#          type: integer
+#          example: 300
+#        's2n:modtime':
+#          type: string
+#          example: '2021-09-05 10:23:09'
+#        's2n:vendor_specific_parameters':
+#          type: array
+#          items:
+#            $ref: '#/components/schemas/vsp'
+#
+#    resolve_record:
+#      type: object
+#      properties:
+#        's2n:ident':
+#          $ref: '#/components/schemas/guid'
+#        's2n:dataset_guid':
+#          $ref: '#/components/schemas/guid'
+#        'dwc:institutionCode':
+#          type: string
+#          example: 'KUIT'
+#        'dwc:basisOfRecord':
+#          type: string
+#          example: 'MaterialSample'
+#        's2n:date':
+#          type: string
+#          example: '2021-09-27'
+#        's2n:ark':
+#          type: string
+#          example: 'http://spcoco.org/ark:/2c1becd5-e641-4e83-b3f5-76a55206539a'
+#        's2n:api_url':
+#          $ref: '#/components/schemas/api_url'
 
     vsp:
       type: object

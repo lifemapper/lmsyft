@@ -11,7 +11,7 @@ info:
     name: GPL 3
     url: 'https://www.gnu.org/licenses/gpl-3.0.txt'
 servers:
-  - url: 'https://notyeti-195.lifemapper.org/api/v1'
+  - url: 'https://broker-dev.spcoco.org/broker/api/v1'
     description: Dev server
   - url: 'https://syftorium.org/api/v1'
     description: Base URL for Syftorium services

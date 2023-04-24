@@ -4,8 +4,9 @@ from logging import WARN
 import requests
 import urllib
 
-from flask_app.broker.constants import (ENCODING, ServiceProvider, URL_ESCAPES)
+from flask_app.broker.constants import ServiceProvider
 from flask_app.broker.s2n_type import S2nKey, S2nOutput
+from flask_app.common.constants import ENCODING, URL_ESCAPES
 
 from sppy.tools.util.logtools import logit
 from sppy.tools.s2n.lm_xml import fromstring, deserialize

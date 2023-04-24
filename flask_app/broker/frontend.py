@@ -21,6 +21,6 @@ class FrontendSvc(_S2nService):
             kwargs: keyword arguments sent by the service
 
         Returns:
-            Responses from all agregators formatted as an HTML page
+            Responses from all aggregators formatted as an HTML page
         """
         return frontend_template()

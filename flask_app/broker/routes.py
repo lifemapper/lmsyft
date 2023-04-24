@@ -2,8 +2,10 @@
 from flask import Blueprint, request, render_template
 import os
 
-from flask_app.broker.constants import (
-    TEMPLATE_DIR, STATIC_DIR, SCHEMA_DIR, SCHEMA_FNAME, S2nEndpoint)
+from flask_app.broker.constants import S2nEndpoint
+from flask_app.common.constants import (
+    TEMPLATE_DIR, STATIC_DIR, SCHEMA_DIR, SCHEMA_FNAME
+)
 from flask_app.broker.badge import BadgeSvc
 from flask_app.broker.frontend import FrontendSvc
 from flask_app.broker.name import NameSvc

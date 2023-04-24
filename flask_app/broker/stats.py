@@ -13,10 +13,8 @@ class StatsSvc(_S2nService):
     @classmethod
     def get_stats(self, **params):
         """Institution and collection level stats.
-
         Args:
             **params: TBD parameters
-
         Returns:
             HTML page that fetches and formats stats
         """

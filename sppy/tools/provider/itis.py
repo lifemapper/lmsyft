@@ -3,9 +3,9 @@ from collections import OrderedDict
 from http import HTTPStatus
 import urllib
 
-from flask_app.broker.constants import (
-    ITIS, ServiceProvider, URL_ESCAPES, TST_VALUES)
+from flask_app.broker.constants import ITIS, ServiceProvider, TST_VALUES
 from flask_app.broker.s2n_type import S2nEndpoint, S2nOutput, S2nSchema
+from flask_app.common.constants import URL_ESCAPES
 
 from sppy.tools.provider.api import APIQuery
 from sppy.tools.s2n.utils import get_traceback, add_errinfo

@@ -1,8 +1,8 @@
-"""Constants for the Specify Network API services."""
+"""Constants for the Specify Network Broker API services."""
 from flask_app.broker.s2n_type import S2nEndpoint, S2nKey
 
 # .............................................................................
-CONFIG_DIR = "config"
+# CONFIG_DIR = "config"
 TEST_SPECIFY7_SERVER = "http://preview.specifycloud.org"
 TEST_SPECIFY7_RSS_URL = "{}/export/rss".format(TEST_SPECIFY7_SERVER)
 JSON_HEADERS = {"Content-Type": "application/json"}
@@ -10,24 +10,13 @@ JSON_HEADERS = {"Content-Type": "application/json"}
 # For saving Specify7 server URL (used to download individual records)
 SPECIFY7_SERVER_KEY = "specify7-server"
 SPECIFY7_RECORD_ENDPOINT = "export/record"
-SPECIFY_ARK_PREFIX = "http://spcoco.org/ark:/"
 
-URL_ESCAPES = [[" ", r"\%20"], [",", r"\%2C"]]
-ENCODING = "utf-8"
 
 DATA_DUMP_DELIMITER = "\t"
 GBIF_MISSING_KEY = "unmatched_gbif_ids"
 
 # VALID broker parameter options, must be list
 VALID_ICON_OPTIONS = ["active", "inactive", "hover"]
-
-STATIC_DIR = "../../sppy/frontend/static"
-ICON_DIR = "{}/icon".format(STATIC_DIR)
-
-TEMPLATE_DIR = "../templates"
-SCHEMA_DIR = "{}/schema".format(STATIC_DIR)
-SCHEMA_FNAME = "open_api.yaml"
-
 ICON_CONTENT = "image/png"
 ICON_API = '/api/v1/badge'
 
@@ -119,7 +108,7 @@ class TST_VALUES:
 
 # .............................................................................
 class APIService:
-    """Endpoint, parameters, output record format for all Specify Network APIs."""
+    """Endpoint, parameters, output format for all Specify Network Broker APIs."""
     Root = {
         "endpoint": S2nEndpoint.Root,
         "params": [],
@@ -158,11 +147,6 @@ class APIService:
     Frontend = {
         "endpoint": S2nEndpoint.Frontend,
         "params": ["occid", "namestr"],
-        S2nKey.RECORD_FORMAT: ""
-    }
-    Stats = {
-        "endpoint": S2nEndpoint.Stats,
-        "params": [],
         S2nKey.RECORD_FORMAT: ""
     }
 

@@ -3,8 +3,9 @@ from http import HTTPStatus
 import os
 
 from flask_app.broker.constants import (
-    ENCODING, GBIF_MISSING_KEY, Idigbio, ISSUE_DEFINITIONS, ServiceProvider)
+    GBIF_MISSING_KEY, Idigbio, ISSUE_DEFINITIONS, ServiceProvider)
 from flask_app.broker.s2n_type import S2nEndpoint, S2nKey, S2nSchema
+from flask_app.common.constants import ENCODING
 
 from sppy.tools.util.logtools import logit
 from sppy.tools.util.fileop import ready_filename

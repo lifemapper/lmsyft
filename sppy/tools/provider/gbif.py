@@ -6,9 +6,9 @@ import os
 import requests
 import urllib
 
-from flask_app.broker.constants import (
-    GBIF, ISSUE_DEFINITIONS, ServiceProvider, URL_ESCAPES, ENCODING)
+from flask_app.broker.constants import GBIF, ISSUE_DEFINITIONS, ServiceProvider
 from flask_app.broker.s2n_type import S2nEndpoint, S2nKey, S2nOutput, S2nSchema
+from flask_app.common.constants import URL_ESCAPES, ENCODING
 
 from sppy.tools.util.logtools import logit
 from sppy.tools.provider.api import APIQuery
