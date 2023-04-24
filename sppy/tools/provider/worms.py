@@ -4,7 +4,7 @@ from http import HTTPStatus
 import urllib
 
 from flask_app.broker.constants import ServiceProvider, WORMS
-from flask_app.broker.s2n_type import S2nEndpoint, S2nOutput, S2nSchema
+from flask_app.common.s2n_type import APIEndpoint, BrokerOutput, BrokerSchema
 from flask_app.common.constants import URL_ESCAPES, ENCODING
 
 from sppy.tools.provider.api import APIQuery
@@ -19,7 +19,7 @@ class WormsAPI(APIQuery):
         Extend for other services
     """
     PROVIDER = ServiceProvider.WoRMS
-    NAME_MAP = S2nSchema.get_worms_name_map()
+    NAME_MAP = BrokerSchema.get_worms_name_map()
 
     # ...............................................
     def __init__(self, name, other_filters=None, logger=None):
@@ -68,7 +68,7 @@ class WormsAPI(APIQuery):
     @classmethod
     def _standardize_record(cls, rec, is_accepted=False):
         newrec = {}
-        data_std_fld = S2nSchema.get_data_url_fld()
+        data_std_fld = BrokerSchema.get_data_url_fld()
         prov_sciname_fn = "valid_authority"
         prov_canname_fn = "valid_name"
         hierarchy_fld = "hierarchy"
@@ -108,7 +108,7 @@ class WormsAPI(APIQuery):
             # Assemble from other fields
             elif provfld == hierarchy_fld:
                 hierarchy = OrderedDict()
-                for rnk in S2nSchema.RANKS:
+                for rnk in BrokerSchema.RANKS:
                     try:
                         val = rec[rnk]
                     except KeyError:
@@ -154,7 +154,7 @@ class WormsAPI(APIQuery):
                 if newrec:
                     stdrecs.append(newrec)
         prov_meta = cls._get_provider_response_elt(query_status=query_status, query_urls=query_urls)
-        std_output = S2nOutput(
+        std_output = BrokerOutput(
             total, service, provider=prov_meta, records=stdrecs, errors=errinfo)
 
         return std_output
@@ -171,7 +171,7 @@ class WormsAPI(APIQuery):
             logger: object for logging messages and errors.
 
         Returns:
-            flask_app.broker.s2n_type.S2nOutput object
+            flask_app.broker.s2n_type.BrokerOutput object
         """
         errinfo = {}
         name_clean = namestr.strip()
@@ -183,13 +183,13 @@ class WormsAPI(APIQuery):
             tb = get_traceback()
             errinfo = add_errinfo(errinfo, "error", cls._get_error_message(err=tb))
             std_output = cls.get_api_failure(
-                S2nEndpoint.Name, HTTPStatus.INTERNAL_SERVER_ERROR, errinfo=errinfo)
+                APIEndpoint.Name, HTTPStatus.INTERNAL_SERVER_ERROR, errinfo=errinfo)
         else:
             if api.error:
                 errinfo = add_errinfo(errinfo, "error", api.error)
             # Standardize output from provider response
             std_output = cls._standardize_output(
-                api.output, S2nEndpoint.Name, query_status=api.status_code, query_urls=[api.url],
+                api.output, APIEndpoint.Name, query_status=api.status_code, query_urls=[api.url],
                 is_accepted=is_accepted, errinfo=errinfo)
 
         return std_output

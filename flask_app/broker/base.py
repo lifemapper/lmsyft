@@ -2,8 +2,9 @@
 from flask import Flask
 
 import sppy.tools.s2n.utils as lmutil
-from flask_app.broker.constants import (APIService, BrokerParameters, ServiceProvider)
-from flask_app.broker.s2n_type import S2nEndpoint, S2nKey, S2nOutput
+from flask_app.broker.constants import BrokerParameters, ServiceProvider
+from flask_app.common.s2n_type import (
+    APIEndpoint, S2nKey, BrokerOutput, APIService)
 from sppy.tools.provider.gbif import GbifAPI
 from sppy.tools.provider.itis import ItisAPI
 
@@ -11,7 +12,7 @@ app = Flask(__name__)
 
 
 # .............................................................................
-class _S2nService:
+class _BrokerService:
     """Base S-to-the-N service, handles parameter names and acceptable values."""
     # overridden by subclasses
     SERVICE_TYPE = APIService.Root
@@ -31,14 +32,14 @@ class _S2nService:
         # Handle local debugging
         try:
             # TODO: get from headers
-            base_url = "https://broker.spcoco.org"
+            base_url = "https://spcoco.org"
             # base_url = cherrypy.request.headers["Origin"]
         except KeyError:
             base_url = "https://localhost"
         # Optional URL queries
         standardized_url = "{}{}/{}".format(
             base_url,
-            S2nEndpoint.Root,
+            APIEndpoint.broker_root(),
             cls.SERVICE_TYPE["endpoint"]
         )
         if query_term:
@@ -131,12 +132,12 @@ class _S2nService:
             errors: list of info messages, warnings and errors (dictionaries)
 
         Returns:
-            flask_app.broker.s2n_type.S2nOutput object
+            flask_app.broker.s2n_type.BrokerOutput object
         """
         if not service:
             service = cls.SERVICE_TYPE["endpoint"]
         prov_meta = cls._get_s2n_provider_response_elt(query_term=query_term)
-        all_output = S2nOutput(
+        all_output = BrokerOutput(
             0, service, provider=prov_meta, errors=errors)
         return all_output
 
@@ -148,7 +149,7 @@ class _S2nService:
         Returns:
             URL endpoint for the service
         """
-        endpoint = f"{S2nEndpoint.Root}/{cls.SERVICE_TYPE['endpoint']}"
+        endpoint = f"{APIEndpoint.broker_root()}/{cls.SERVICE_TYPE['endpoint']}"
         return endpoint
 
     # ...............................................
@@ -160,7 +161,7 @@ class _S2nService:
             **kwargs: keyword arguments are accepted but ignored
 
         Returns:
-            flask_app.broker.s2n_type.S2nOutput object
+            flask_app.broker.s2n_type.BrokerOutput object
 
         Raises:
             Exception: on unknown error.
@@ -177,7 +178,7 @@ class _S2nService:
     def _show_online(cls, providers):
         svc = cls.SERVICE_TYPE["endpoint"]
         info = {
-            "info": "S^n {} service is online.".format(svc)}
+            "info": "Specify Network {} service is online.".format(svc)}
 
         param_lst = []
         for p in cls.SERVICE_TYPE["params"]:
@@ -190,7 +191,7 @@ class _S2nService:
 
         prov_meta = cls._get_s2n_provider_response_elt()
 
-        output = S2nOutput(0, svc, provider=prov_meta, errors=info)
+        output = BrokerOutput(0, svc, provider=prov_meta, errors=info)
         return output
 
     # ...............................................
@@ -230,7 +231,7 @@ class _S2nService:
         Returns:
             namestr: a canonical name
         """
-        # output is a flask_app.broker.s2n_type.S2nOutput object
+        # output is a flask_app.broker.s2n_type.BrokerOutput object
         output = ItisAPI.match_name(namestr, is_accepted=True)
         if output.record_count > 0:
             try:
@@ -397,7 +398,7 @@ class _S2nService:
         valid_requested_providers, invalid_providers = cls._get_valid_requested_params(
             usr_req_providers, valid_providers)
 
-        if cls.SERVICE_TYPE != APIService.Badge:
+        if cls.SERVICE_TYPE != APIEndpoint.Badge:
             if valid_requested_providers:
                 providers = valid_requested_providers
             else:

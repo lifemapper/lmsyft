@@ -7,7 +7,7 @@ import requests
 import urllib
 
 from flask_app.broker.constants import GBIF, ISSUE_DEFINITIONS, ServiceProvider
-from flask_app.broker.s2n_type import S2nEndpoint, S2nKey, S2nOutput, S2nSchema
+from flask_app.common.s2n_type import APIEndpoint, S2nKey, BrokerOutput, BrokerSchema
 from flask_app.common.constants import URL_ESCAPES, ENCODING
 
 from sppy.tools.util.logtools import logit
@@ -19,8 +19,8 @@ from sppy.tools.s2n.utils import get_traceback, add_errinfo
 class GbifAPI(APIQuery):
     """Class to query GBIF APIs and return results."""
     PROVIDER = ServiceProvider.GBIF
-    OCCURRENCE_MAP = S2nSchema.get_gbif_occurrence_map()
-    NAME_MAP = S2nSchema.get_gbif_name_map()
+    OCCURRENCE_MAP = BrokerSchema.get_gbif_occurrence_map()
+    NAME_MAP = BrokerSchema.get_gbif_name_map()
 
     # ...............................................
     def __init__(
@@ -131,7 +131,7 @@ class GbifAPI(APIQuery):
             tb = get_traceback()
             add_errinfo(errinfo, "error", cls._get_error_message(err=tb))
             std_output = cls.get_api_failure(
-                S2nEndpoint.Occurrence, HTTPStatus.INTERNAL_SERVER_ERROR,
+                APIEndpoint.Occurrence, HTTPStatus.INTERNAL_SERVER_ERROR,
                 errinfo=errinfo)
         else:
             if api.error:
@@ -162,8 +162,8 @@ class GbifAPI(APIQuery):
         parse_prov_fields = ["associatedSequences", "associatedReferences"]
         to_str_prov_fields = [
             "year", "month", "day", "decimalLongitude", "decimalLatitude"]
-        view_std_fld = S2nSchema.get_view_url_fld()
-        data_std_fld = S2nSchema.get_data_url_fld()
+        view_std_fld = BrokerSchema.get_view_url_fld()
+        data_std_fld = BrokerSchema.get_data_url_fld()
         issue_prov_fld = "issues"
 
         for stdfld, provfld in cls.OCCURRENCE_MAP.items():
@@ -202,8 +202,8 @@ class GbifAPI(APIQuery):
     @classmethod
     def _standardize_name_record(cls, rec):
         newrec = {}
-        view_std_fld = S2nSchema.get_view_url_fld()
-        data_std_fld = S2nSchema.get_data_url_fld()
+        view_std_fld = BrokerSchema.get_view_url_fld()
+        data_std_fld = BrokerSchema.get_data_url_fld()
         hierarchy_fld = "hierarchy"
 
         for stdfld, provfld in cls.NAME_MAP.items():
@@ -220,7 +220,7 @@ class GbifAPI(APIQuery):
             # Assemble from other fields
             elif provfld == hierarchy_fld:
                 hierarchy = OrderedDict()
-                for rnk in S2nSchema.RANKS:
+                for rnk in BrokerSchema.RANKS:
                     try:
                         val = rec[rnk]
                     except KeyError:
@@ -285,8 +285,8 @@ class GbifAPI(APIQuery):
         prov_meta = cls._get_provider_response_elt(
             query_status=query_status, query_urls=query_urls)
         # TODO: standardize_record and provide schema link
-        std_output = S2nOutput(
-            total, S2nEndpoint.Name, provider=prov_meta, records=stdrecs,
+        std_output = BrokerOutput(
+            total, APIEndpoint.Name, provider=prov_meta, records=stdrecs,
             errors=errinfo)
         return std_output
 
@@ -332,8 +332,8 @@ class GbifAPI(APIQuery):
                         errinfo = add_errinfo(errinfo, "error", msg)
         prov_meta = cls._get_provider_response_elt(
             query_status=query_status, query_urls=query_urls)
-        std_output = S2nOutput(
-            total, S2nEndpoint.Occurrence, provider=prov_meta, records=stdrecs,
+        std_output = BrokerOutput(
+            total, APIEndpoint.Occurrence, provider=prov_meta, records=stdrecs,
             errors=errinfo)
 
         return std_output
@@ -376,7 +376,7 @@ class GbifAPI(APIQuery):
         except Exception:
             tb = get_traceback()
             std_out = cls.get_api_failure(
-                S2nEndpoint.Occurrence, HTTPStatus.INTERNAL_SERVER_ERROR,
+                APIEndpoint.Occurrence, HTTPStatus.INTERNAL_SERVER_ERROR,
                 errinfo={"error": [cls._get_error_message(err=tb)]})
         else:
             # Standardize output from provider response
@@ -431,7 +431,7 @@ class GbifAPI(APIQuery):
             tb = get_traceback()
             add_errinfo(errinfo, "error", cls._get_error_message(err=tb))
             std_output = cls.get_api_failure(
-                S2nEndpoint.Name, HTTPStatus.INTERNAL_SERVER_ERROR, errinfo=errinfo)
+                APIEndpoint.Name, HTTPStatus.INTERNAL_SERVER_ERROR, errinfo=errinfo)
         else:
             if api.error:
                 add_errinfo(errinfo, "error", api.error)
@@ -483,8 +483,8 @@ class GbifAPI(APIQuery):
                     simple_output[S2nKey.OCCURRENCE_URL] = api.url
         prov_meta = cls._get_provider_response_elt(
             query_status=api.status_code, query_urls=[api.url])
-        std_output = S2nOutput(
-            total, S2nEndpoint.Occurrence, provider=prov_meta, errors=errinfo)
+        std_output = BrokerOutput(
+            total, APIEndpoint.Occurrence, provider=prov_meta, errors=errinfo)
         return std_output
 
     # ......................................

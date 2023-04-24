@@ -6,35 +6,11 @@ RecordsList = typing.List[typing.Dict]
 
 
 # .............................................................................
-class S2nEndpoint:
-    """URL elements for a valid Specify Network API request."""
-    Root = "/api/v1"
-    # Address = "address"
-    Badge = "badge"
-    Heartbeat = "heartbeat"
-    Map = "map"
-    Name = "name"
-    Occurrence = "occ"
-    # Resolve = "resolve"
-    SpecimenExtension = "occext"
-    Frontend = "frontend"
-    Stats = "stats"
-
-    @classmethod
-    def get_endpoints(cls):
-        """Get the endpoints for all Specify Network API services.
-
-        Returns:
-            list of all S2nEndpoints
-        """
-        return [cls.Badge, cls.Name, cls.Occurrence, cls.Frontend]
-
-
-# .............................................................................
 class S2nKey:
     """Keywords in a valid Specify Network API response."""
     # standard service output keys
     COUNT = "count"
+    DESCRIPTION = "description"
     RECORD_FORMAT = "record_format"
     RECORDS = "records"
     ERRORS = "errors"
@@ -57,11 +33,11 @@ class S2nKey:
 
     # ...............................................
     @classmethod
-    def response_keys(cls):
+    def broker_response_keys(cls):
         """Top level keywords in valid Specify Network API response.
 
         Returns:
-            list of all top level keywords in a flask_app.broker.s2n_type.S2nOutput
+            list of all top level keywords in a flask_app.broker.s2n_type.BrokerOutput
         """
         return {
             cls.COUNT, cls.RECORD_FORMAT, cls.RECORDS, cls.ERRORS,
@@ -70,17 +46,113 @@ class S2nKey:
 
     # ...............................................
     @classmethod
-    def response_provider_keys(cls):
+    def broker_response_provider_keys(cls):
         """Keywords in the provider element of a Specify Network API response.
 
         Returns:
             list of all keywords in provider element of a
-                flask_app.broker.s2n_type.S2nOutput
+                flask_app.common.s2n_type.BrokerOutput
         """
         return {
             cls.PROVIDER_CODE, cls.PROVIDER_LABEL, cls.PROVIDER_STATUS_CODE,
             cls.PROVIDER_QUERY_URL
         }
+
+    # ...............................................
+    @classmethod
+    def analyst_response_keys(cls):
+        """Top level keywords in valid Specify Network Analyst API response.
+
+        Returns:
+            list of all top level keywords in a flask_app.analyst API response
+        """
+        return {cls.COUNT, cls.ERRORS}
+
+
+# .............................................................................
+class APIEndpoint:
+    """URL elements for a valid Specify Network API request."""
+    Root = "/api/v1"
+    AnalystPrefix = "analyst"
+    BrokerPrefix = "broker"
+    Badge = "badge"
+    Name = "name"
+    Occurrence = "occ"
+    Frontend = "frontend"
+    Count = "count"
+
+    @classmethod
+    def analyst_root(cls):
+        """Get the endpoints for all Specify Network API services.
+
+        Returns:
+            list of all BrokerEndpoints
+        """
+        return f"{cls.AnalystPrefix}/{cls.Root}"
+
+    @classmethod
+    def broker_root(cls):
+        """Get the endpoints for all Specify Network API services.
+
+        Returns:
+            list of all BrokerEndpoints
+        """
+        # return f"{cls.BrokerPrefix}}/{cls.Root}"
+        return cls.Root
+
+    @classmethod
+    def get_analyst_endpoints(cls):
+        """Get the endpoints for all Specify Network Analyst API services.
+
+        Returns:
+            list of all Endpoints
+        """
+        return [cls.Count]
+
+    @classmethod
+    def get_broker_endpoints(cls):
+        """Get the endpoints for all Specify Network API services.
+
+        Returns:
+            list of all BrokerEndpoints
+        """
+        return [cls.Badge, cls.Name, cls.Occurrence, cls.Frontend]
+
+
+# .............................................................................
+class APIService:
+    """Endpoint, parameters, output format for all Specify Network Broker APIs."""
+    Root = {
+        "endpoint": APIEndpoint.broker_root(),
+        "params": [],
+        S2nKey.RECORD_FORMAT: None
+    }
+    # Icons for service providers
+    Badge = {
+        "endpoint": APIEndpoint.Badge,
+        "params": ["provider", "icon_status"],
+        S2nKey.RECORD_FORMAT: "image/png"
+    }
+    # Taxonomic Resolution
+    Name = {
+        "endpoint": APIEndpoint.Name,
+        "params": [
+            "provider", "namestr", "is_accepted", "gbif_parse", "gbif_count", "kingdom"
+        ],
+        S2nKey.RECORD_FORMAT: ""
+    }
+    # Specimen occurrence records
+    Occurrence = {
+        "endpoint": APIEndpoint.Occurrence,
+        "params": ["provider", "occid", "gbif_dataset_key", "count_only"],
+        S2nKey.RECORD_FORMAT: ""
+    }
+    Frontend = {
+        "endpoint": APIEndpoint.Frontend,
+        "params": ["occid", "namestr"],
+        S2nKey.RECORD_FORMAT: ""
+    }
+
 
 
 # .............................................................................
@@ -99,7 +171,7 @@ class COMMUNITY_SCHEMA:
 
 
 # .............................................................................
-class S2nSchema:
+class BrokerSchema:
     """Record schema for each of the services provided by the Specify Network."""
     NAME = OrderedDict({
         # Link to provider record webpage
@@ -140,24 +212,6 @@ class S2nSchema:
         "worms_isExtinct":  COMMUNITY_SCHEMA.S2N,
         "worms_match_type":  COMMUNITY_SCHEMA.S2N,
         })
-    # MAP = OrderedDict({
-    #     # Provider"s URLs to this record in dictionary
-    #     # "provider_links": COMMUNITY_SCHEMA.S2N,
-    #     "view_url": COMMUNITY_SCHEMA.S2N,
-    #     "api_url": COMMUNITY_SCHEMA.S2N,
-    #
-    #     "endpoint": COMMUNITY_SCHEMA.S2N,
-    #     "data_link": COMMUNITY_SCHEMA.S2N,
-    #     "layer_type": COMMUNITY_SCHEMA.S2N,
-    #     "layer_name": COMMUNITY_SCHEMA.S2N,
-    #     # integer
-    #     "point_count": COMMUNITY_SCHEMA.S2N,
-    #     # list of 4 float values: minX, minY, maxX, maxY
-    #     "point_bbox": COMMUNITY_SCHEMA.S2N,
-    #     "species_name": COMMUNITY_SCHEMA.S2N,
-    #     # dictionary with queryparameter/value
-    #     "vendor_specific_parameters": COMMUNITY_SCHEMA.S2N,
-    #     })
     OCCURRENCE = OrderedDict({
         # Provider"s URLs to this record in dictionary
         # "provider_links": COMMUNITY_SCHEMA.S2N,
@@ -257,7 +311,7 @@ class S2nSchema:
         """Get the record fieldnames for a Specify Network API response.
 
         Args:
-            svc: S2nEndpoint of interest
+            svc: BrokerEndpoint of interest
 
         Returns:
             list of fieldnames in the records for a Specify Network service.
@@ -265,10 +319,10 @@ class S2nSchema:
         Raises:
             Exception: on invalid Service requested.
         """
-        if svc == S2nEndpoint.Name:
-            schema = S2nSchema.NAME
-        elif svc == S2nEndpoint.Occurrence:
-            schema = S2nSchema.OCCURRENCE
+        if svc == APIEndpoint.Name:
+            schema = BrokerSchema.NAME
+        elif svc == APIEndpoint.Occurrence:
+            schema = BrokerSchema.OCCURRENCE
         else:
             raise Exception(f"Service {svc} does not exist")
         ordered_flds = []
@@ -282,7 +336,7 @@ class S2nSchema:
         """Get fieldnames for list and dictionary elements in Specify Network response.
 
         Args:
-            svc: S2nEndpoint of interest
+            svc: BrokerEndpoint of interest
 
         Returns:
             list_fields: list of fieldnames for response elements containing a list
@@ -293,11 +347,11 @@ class S2nSchema:
         Raises:
             Exception: on invalid Service requested.
         """
-        if svc == S2nEndpoint.Name:
+        if svc == APIEndpoint.Name:
             schema = cls.NAME
             list_fields = ["hierarchy", "synonyms"]
             dict_fields = []
-        elif svc == S2nEndpoint.Occurrence:
+        elif svc == APIEndpoint.Occurrence:
             schema = cls.OCCURRENCE
             list_fields = ["associatedSequences", "associatedReferences"]
             dict_fields = ["issues"]
@@ -316,7 +370,7 @@ class S2nSchema:
         """Get the field in a Specify Network response containing the GBIF taxonKey.
 
         Returns:
-            the fieldname in the S2nSchema containing the GBIF taxonKey.
+            the fieldname in the BrokerSchema containing the GBIF taxonKey.
         """
         return f"{COMMUNITY_SCHEMA.S2N['code']}:gbif_taxon_key"
 
@@ -326,7 +380,7 @@ class S2nSchema:
         """Get the field in a Specify Network response containing the GBIF record count.
 
         Returns:
-            the fieldname in the S2nSchema containing the count of records in GBIF.
+            the fieldname in the BrokerSchema containing the count of records in GBIF.
         """
         return f"{COMMUNITY_SCHEMA.S2N['code']}:{S2nKey.OCCURRENCE_COUNT}"
 
@@ -336,7 +390,7 @@ class S2nSchema:
         """Get the field in a Specify Network response containing the GBIF API query.
 
         Returns:
-            the fieldname in the S2nSchema containing the GBIF API query.
+            the fieldname in the BrokerSchema containing the GBIF API query.
         """
         return f"{COMMUNITY_SCHEMA.S2N['code']}:{S2nKey.OCCURRENCE_URL}"
 
@@ -349,7 +403,7 @@ class S2nSchema:
             dictionary of the GBIF fieldname (with namespace) to the simple S2n name.
         """
         stdfld_provfld = OrderedDict()
-        for fn, comschem in S2nSchema.OCCURRENCE.items():
+        for fn, comschem in BrokerSchema.OCCURRENCE.items():
             std_name = f"{comschem['code']}:{fn}"
             stdfld_provfld[std_name] = fn
         return stdfld_provfld
@@ -363,7 +417,7 @@ class S2nSchema:
             dictionary of the iDigBio fieldname (with namespace) to the simple S2n name.
         """
         stdfld_provfld = OrderedDict()
-        for fn, comschem in S2nSchema.OCCURRENCE.items():
+        for fn, comschem in BrokerSchema.OCCURRENCE.items():
             stdname = f"{comschem['code']}:{fn}"
             if fn == "uuid":
                 stdfld_provfld[stdname] = fn
@@ -380,7 +434,7 @@ class S2nSchema:
     #     """
     #     # sname_stdname = {}
     #     stdfld_provfld = OrderedDict()
-    #     for fn, comschem in S2nSchema.OCCURRENCE.items():
+    #     for fn, comschem in BrokerSchema.OCCURRENCE.items():
     #         spfldname = f"{comschem['url']}/{fn}"
     #         stdname = f"{comschem['code']}:{fn}"
     #         stdfld_provfld[stdname] = spfldname
@@ -393,7 +447,7 @@ class S2nSchema:
     #     old_id = "identifier"
     #     new_id = "specify_identifier"
     #
-    #     for fn, comschem in S2nSchema.OCCURRENCE.items():
+    #     for fn, comschem in BrokerSchema.OCCURRENCE.items():
     #         # if fn in names_in_spcache:
     #         stdname = f"{comschem['code']}:{fn}"
     #         if fn == new_id:
@@ -412,7 +466,7 @@ class S2nSchema:
             dictionary of MorphoSource fieldname (with namespace) to the simple S2n name.
         """
         stdfld_provfld = OrderedDict()
-        for fn, comschem in S2nSchema.OCCURRENCE.items():
+        for fn, comschem in BrokerSchema.OCCURRENCE.items():
             std_name = f"{comschem['code']}:{fn}"
             if fn == "catalogNumber":
                 stdfld_provfld[std_name] = "specimen.catalog_number"
@@ -435,7 +489,7 @@ class S2nSchema:
             dictionary of the GBIF fieldname (with namespace) to the simple S2n name.
         """
         stdfld_provfld = OrderedDict()
-        for fn, comschem in S2nSchema.NAME.items():
+        for fn, comschem in BrokerSchema.NAME.items():
             std_name = "{}:{}".format(comschem["code"], fn)
             if fn == "scientific_name":
                 oldname = "scientificName"
@@ -460,7 +514,7 @@ class S2nSchema:
             dictionary of the ITIS fieldname (with namespace) to the simple S2n name.
         """
         stdfld_provfld = OrderedDict()
-        for fn, comschem in S2nSchema.NAME.items():
+        for fn, comschem in BrokerSchema.NAME.items():
             std_name = f"{comschem['code']}:{fn}"
             if fn == "scientific_name":
                 oldname = "nameWTaxonAuthor"
@@ -489,7 +543,7 @@ class S2nSchema:
             dictionary of the WoRMS fieldname (with namespace) to the simple S2n name.
         """
         stdfld_provfld = OrderedDict()
-        for fn, comschem in S2nSchema.NAME.items():
+        for fn, comschem in BrokerSchema.NAME.items():
             std_name = f"{comschem['code']}:{fn}"
             if fn == "view_url":
                 oldname = "url"
@@ -582,7 +636,7 @@ class S2nSchema:
 
 
 # .............................................................................
-class S2nOutput(object):
+class BrokerOutput(object):
     """Format for all Specify Network query responses."""
     count: int
     service: str
@@ -635,10 +689,10 @@ class S2nOutput(object):
         Raises:
             Exception: on an invalid prop/keyword.
         """
-        if prop in S2nKey.response_keys():
+        if prop in S2nKey.broker_response_keys():
             self._response[prop] = value
 
-        elif prop in S2nKey.response_provider_keys():
+        elif prop in S2nKey.broker_response_provider_keys():
             self._response[S2nKey.PROVIDER][prop] = value
 
         else:
@@ -809,10 +863,10 @@ class S2nOutput(object):
 
         Args:
             ordered_fieldnames: list of fieldnames defined in
-                flask_app.broker.s2n_type.S2nSchema
+                flask_app.broker.s2n_type.BrokerSchema
         """
         ordered_recs = []
-        list_fields, dict_fields = S2nSchema.get_s2n_collection_fields(
+        list_fields, dict_fields = BrokerSchema.get_s2n_collection_fields(
             self._response[S2nKey.SERVICE])
         recs = self._response[S2nKey.RECORDS]
         for rec in recs:
@@ -838,6 +892,40 @@ class S2nOutput(object):
 
 
 # .............................................................................
+class AnalystOutput:
+    """Response type for a Specify Network Analyst query."""
+    service: str
+    description: str = ""
+    records: typing.List[dict] = []
+    errors: dict = {}
+
+    # ...............................................
+    def __init__(self, service, description=None, records=None, errors=None):
+        """Constructor.
+
+        Args:
+            service: API Service this object is responding to.
+            description: Description of the computation in this response.
+            records: Records in this response.
+            errors: Errors encountered when generating this response.
+        """
+        if errors is None:
+            errors = {}
+        if description is None:
+            description = {}
+        if records is None:
+            records = []
+        # Dictionary is json-serializable
+        self._response = {
+            S2nKey.SERVICE: service,
+            S2nKey.DESCRIPTION: description,
+            S2nKey.RECORDS: records,
+            S2nKey.ERRORS: errors
+        }
+
+
+# .............................................................................
+# .............................................................................
 def _print_oneprov_output(oneprov, do_print_rec):
     print("* One provider S^n output *")
     for name, attelt in oneprov.items():
@@ -858,12 +946,14 @@ def _print_oneprov_output(oneprov, do_print_rec):
 
 
 # ....................................
-def print_s2n_output(response_dict, do_print_rec=False):
+def print_broker_output(response_dict, do_print_rec=False):
     """Print a formatted string of the elements in an S2nOutput query response.
 
     Args:
         response_dict: flask_app.broker.s2n_type.S2nOutput object
         do_print_rec: True to print each record in the response.
+
+    TODO: move to a class method
     """
     print("*** Dictionary of S^n dictionaries ***")
     for name, attelt in response_dict.items():
@@ -877,8 +967,8 @@ def print_s2n_output(response_dict, do_print_rec=False):
         except Exception:
             pass
     outelts = set(response_dict.keys())
-    missing = S2nKey.response_keys().difference(outelts)
-    extras = outelts.difference(S2nKey.response_keys())
+    missing = S2nKey.broker_response_keys().difference(outelts)
+    extras = outelts.difference(S2nKey.broker_response_keys())
     if missing:
         print(f"Missing elements: {missing}")
     if extras:

@@ -4,7 +4,7 @@ import traceback
 from uuid import UUID
 
 from flask_app.broker.constants import ICON_API, ServiceProvider
-from flask_app.broker.s2n_type import S2nEndpoint
+from flask_app.common.s2n_type import APIEndpoint
 
 
 # ......................................................
@@ -70,7 +70,7 @@ def get_icon_url(provider_code, icon_status=None):
     except Exception:
         base_url = "https://localhost"
 
-    if ServiceProvider.is_valid_service(provider_code, S2nEndpoint.Badge):
+    if ServiceProvider.is_valid_service(provider_code, APIEndpoint.Badge):
         url = f"{base_url}{ICON_API}?provider={provider_code}"
         if icon_status:
             url = f"{url}&icon_status={icon_status}"

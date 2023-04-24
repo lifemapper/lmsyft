@@ -1,5 +1,6 @@
 """Constants for the Specify Network Broker API services."""
-from flask_app.broker.s2n_type import S2nEndpoint, S2nKey
+from flask_app.common.s2n_type import APIEndpoint, S2nKey
+from flask_app.common.constants import STATIC_DIR
 
 # .............................................................................
 # CONFIG_DIR = "config"
@@ -19,6 +20,7 @@ GBIF_MISSING_KEY = "unmatched_gbif_ids"
 VALID_ICON_OPTIONS = ["active", "inactive", "hover"]
 ICON_CONTENT = "image/png"
 ICON_API = '/api/v1/badge'
+ICON_DIR = "{}/icon".format(STATIC_DIR)
 
 
 # .............................................................................
@@ -106,49 +108,49 @@ class TST_VALUES:
     ITIS_TSNS = [526853, 183671, 182662, 566578]
 
 
-# .............................................................................
-class APIService:
-    """Endpoint, parameters, output format for all Specify Network Broker APIs."""
-    Root = {
-        "endpoint": S2nEndpoint.Root,
-        "params": [],
-        S2nKey.RECORD_FORMAT: None
-    }
-    # Icons for service providers
-    Badge = {
-        "endpoint": S2nEndpoint.Badge,
-        "params": ["provider", "icon_status"],
-        S2nKey.RECORD_FORMAT: "image/png"
-    }
-    # Health for service providers
-    Heartbeat = {
-        "endpoint": S2nEndpoint.Heartbeat, "params": None,
-        S2nKey.RECORD_FORMAT: ""
-    }
-    # Taxonomic Resolution
-    Name = {
-        "endpoint": S2nEndpoint.Name,
-        "params": [
-            "provider", "namestr", "is_accepted", "gbif_parse", "gbif_count", "kingdom"
-        ],
-        S2nKey.RECORD_FORMAT: ""
-    }
-    # Specimen occurrence records
-    Occurrence = {
-        "endpoint": S2nEndpoint.Occurrence,
-        "params": ["provider", "occid", "gbif_dataset_key", "count_only"],
-        S2nKey.RECORD_FORMAT: ""
-    }
-    # TODO: Consider an Extension service for Digital Object Architecture
-    SpecimenExtension = {
-        "endpoint": S2nEndpoint.SpecimenExtension, "params": None,
-        S2nKey.RECORD_FORMAT: ""
-    }
-    Frontend = {
-        "endpoint": S2nEndpoint.Frontend,
-        "params": ["occid", "namestr"],
-        S2nKey.RECORD_FORMAT: ""
-    }
+# # .............................................................................
+# class APIService:
+#     """Endpoint, parameters, output format for all Specify Network Broker APIs."""
+#     Root = {
+#         "endpoint": APIEndpoint.Root,
+#         "params": [],
+#         S2nKey.RECORD_FORMAT: None
+#     }
+#     # Icons for service providers
+#     Badge = {
+#         "endpoint": APIEndpoint.Badge,
+#         "params": ["provider", "icon_status"],
+#         S2nKey.RECORD_FORMAT: "image/png"
+#     }
+#     # Health for service providers
+#     Heartbeat = {
+#         "endpoint": APIEndpoint.Heartbeat, "params": None,
+#         S2nKey.RECORD_FORMAT: ""
+#     }
+#     # Taxonomic Resolution
+#     Name = {
+#         "endpoint": APIEndpoint.Name,
+#         "params": [
+#             "provider", "namestr", "is_accepted", "gbif_parse", "gbif_count", "kingdom"
+#         ],
+#         S2nKey.RECORD_FORMAT: ""
+#     }
+#     # Specimen occurrence records
+#     Occurrence = {
+#         "endpoint": APIEndpoint.Occurrence,
+#         "params": ["provider", "occid", "gbif_dataset_key", "count_only"],
+#         S2nKey.RECORD_FORMAT: ""
+#     }
+#     # TODO: Consider an Extension service for Digital Object Architecture
+#     SpecimenExtension = {
+#         "endpoint": APIEndpoint.SpecimenExtension, "params": None,
+#         S2nKey.RECORD_FORMAT: ""
+#     }
+#     Frontend = {
+#         "endpoint": APIEndpoint.Frontend,
+#         "params": ["occid", "namestr"],
+#         S2nKey.RECORD_FORMAT: ""
+#     }
 
 
 # .............................................................................
@@ -157,7 +159,7 @@ class ServiceProvider:
     Broker = {
         S2nKey.NAME: "Specify Network",
         S2nKey.PARAM: "specifynetwork",
-        S2nKey.SERVICES: [S2nEndpoint.Badge],
+        S2nKey.SERVICES: [APIEndpoint.Badge],
         # "icon": {"active": "{}/SpNetwork_active.png",
         #          "inactive": "{}/SpNetwork_inactive.png",
         #          "hover": "{}/SpNetwork_hover.png"}
@@ -165,7 +167,7 @@ class ServiceProvider:
     GBIF = {
         S2nKey.NAME: "GBIF",
         S2nKey.PARAM: "gbif",
-        S2nKey.SERVICES: [S2nEndpoint.Occurrence, S2nEndpoint.Name, S2nEndpoint.Badge],
+        S2nKey.SERVICES: [APIEndpoint.Occurrence, APIEndpoint.Name, APIEndpoint.Badge],
         "icon": {
             "active": "gbif_active-01.png",
             "inactive": "gbif_inactive-01.png",
@@ -175,22 +177,17 @@ class ServiceProvider:
     iDigBio = {
         S2nKey.NAME: "iDigBio",
         S2nKey.PARAM: "idb",
-        S2nKey.SERVICES: [S2nEndpoint.Occurrence, S2nEndpoint.Badge],
+        S2nKey.SERVICES: [APIEndpoint.Occurrence, APIEndpoint.Badge],
         "icon": {
             "active": "idigbio_colors_active-01.png",
             "inactive": "idigbio_colors_inactive-01.png",
             "hover": "idigbio_colors_hover-01.png"
         }
     }
-    # IPNI = {
-    #     S2nKey.NAME: "IPNI",
-    #     S2nKey.PARAM: "ipni",
-    #     S2nKey.SERVICES: []
-    # }
     ITISSolr = {
         S2nKey.NAME: "ITIS",
         S2nKey.PARAM: "itis",
-        S2nKey.SERVICES: [S2nEndpoint.Badge, S2nEndpoint.Name],
+        S2nKey.SERVICES: [APIEndpoint.Badge, APIEndpoint.Name],
         "icon": {
             "active": "itis_active.png",
             "inactive": "itis_inactive.png",
@@ -201,7 +198,7 @@ class ServiceProvider:
         S2nKey.NAME: "MorphoSource",
         S2nKey.PARAM: "mopho",
         S2nKey.SERVICES: [
-            S2nEndpoint.Badge, S2nEndpoint.Occurrence, S2nEndpoint.SpecimenExtension],
+            APIEndpoint.Badge, APIEndpoint.Occurrence],
         "icon": {
             "active": "morpho_active-01.png",
             "inactive": "morpho_inactive-01.png",
@@ -212,7 +209,7 @@ class ServiceProvider:
     WoRMS = {
         S2nKey.NAME: "WoRMS",
         S2nKey.PARAM: "worms",
-        S2nKey.SERVICES: [S2nEndpoint.Badge, S2nEndpoint.Name],
+        S2nKey.SERVICES: [APIEndpoint.Badge, APIEndpoint.Name],
         "icon": {
             "active": "worms_active.png",
         }
@@ -238,10 +235,6 @@ class ServiceProvider:
                 ServiceProvider.iDigBio[S2nKey.PARAM]
         ):
             return ServiceProvider.iDigBio
-        # elif param_or_name in (
-        #         ServiceProvider.IPNI[S2nKey.NAME], ServiceProvider.IPNI[S2nKey.PARAM]
-        # ):
-        #     return ServiceProvider.IPNI
         elif param_or_name in (
                 ServiceProvider.ITISSolr[S2nKey.NAME],
                 ServiceProvider.ITISSolr[S2nKey.PARAM]

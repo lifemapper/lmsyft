@@ -4,7 +4,7 @@ from http import HTTPStatus
 import urllib
 
 from flask_app.broker.constants import ITIS, ServiceProvider, TST_VALUES
-from flask_app.broker.s2n_type import S2nEndpoint, S2nOutput, S2nSchema
+from flask_app.common.s2n_type import APIEndpoint, BrokerOutput, BrokerSchema
 from flask_app.common.constants import URL_ESCAPES
 
 from sppy.tools.provider.api import APIQuery
@@ -21,7 +21,7 @@ class ItisAPI(APIQuery):
         * https://www.itis.gov/web_service.html
     """
     PROVIDER = ServiceProvider.ITISSolr
-    NAME_MAP = S2nSchema.get_itis_name_map()
+    NAME_MAP = BrokerSchema.get_itis_name_map()
 
     # ...............................................
     def __init__(
@@ -40,6 +40,8 @@ class ItisAPI(APIQuery):
             ITIS Solr service does not have nested services
         """
         if base_url == ITIS.SOLR_URL:
+            if other_filters is None:
+                other_filters = {}
             other_filters["wt"] = "json"
         if service is not None:
             base_url = f"{base_url}/{service}"
@@ -192,7 +194,7 @@ class ItisAPI(APIQuery):
                             temp_hierarchy[rnk] = name
                 # Reorder and filter to desired ranks
                 hierarchy = OrderedDict()
-                for rnk in S2nSchema.RANKS:
+                for rnk in BrokerSchema.RANKS:
                     try:
                         hierarchy[rnk] = temp_hierarchy[rnk]
                     except KeyError:
@@ -218,8 +220,8 @@ class ItisAPI(APIQuery):
     @classmethod
     def _standardize_record(cls, rec, is_accepted=False):
         newrec = {}
-        view_std_fld = S2nSchema.get_view_url_fld()
-        data_std_fld = S2nSchema.get_data_url_fld()
+        view_std_fld = BrokerSchema.get_view_url_fld()
+        data_std_fld = BrokerSchema.get_data_url_fld()
         hierarchy_prov_fld = "hierarchySoFarWRanks"
         synonym_prov_fld = "synonyms"
         good_statii = ("accepted", "valid")
@@ -272,7 +274,7 @@ class ItisAPI(APIQuery):
                     stdrecs.append(newrec)
         prov_meta = cls._get_provider_response_elt(
             query_status=query_status, query_urls=query_urls)
-        std_output = S2nOutput(
+        std_output = BrokerOutput(
             total, service, provider=prov_meta, records=stdrecs, errors=errinfo)
 
         return std_output
@@ -307,7 +309,7 @@ class ItisAPI(APIQuery):
         except Exception:
             tb = get_traceback()
             std_output = cls.get_api_failure(
-                S2nEndpoint.Name, HTTPStatus.INTERNAL_SERVER_ERROR,
+                APIEndpoint.Name, HTTPStatus.INTERNAL_SERVER_ERROR,
                 errinfo=[{"error": cls._get_error_message(err=tb)}])
         else:
             try:
@@ -316,20 +318,20 @@ class ItisAPI(APIQuery):
                 if api.error is not None:
                     errinfo["error"] = [cls._get_error_message(err=api.error)]
                     std_output = cls.get_api_failure(
-                        S2nEndpoint.Name, HTTPStatus.INTERNAL_SERVER_ERROR,
+                        APIEndpoint.Name, HTTPStatus.INTERNAL_SERVER_ERROR,
                         errinfo=errinfo)
                 else:
                     errinfo = add_errinfo(
                         errinfo, "error",
                         cls._get_error_message(msg="Missing `response` element"))
                     std_output = cls.get_api_failure(
-                        S2nEndpoint.Name, HTTPStatus.INTERNAL_SERVER_ERROR,
+                        APIEndpoint.Name, HTTPStatus.INTERNAL_SERVER_ERROR,
                         errinfo=errinfo)
             else:
                 errinfo = add_errinfo(errinfo, "error", api.error)
                 # Standardize output from provider response
                 std_output = cls._standardize_output(
-                    output, ITIS.COUNT_KEY, ITIS.RECORDS_KEY, S2nEndpoint.Name,
+                    output, ITIS.COUNT_KEY, ITIS.RECORDS_KEY, APIEndpoint.Name,
                     query_status=api.status_code, query_urls=[api.url],
                     is_accepted=is_accepted, errinfo=errinfo)
         return std_output
@@ -346,7 +348,7 @@ class ItisAPI(APIQuery):
         Note: not used or tested yet
 
         Returns:
-            flask_app.broker.s2n_type.S2nOutput object
+            flask_app.broker.s2n_type.BrokerOutput object
 
         Ex: https://services.itis.gov/?q=tsn:566578&wt=json
         """
@@ -360,13 +362,13 @@ class ItisAPI(APIQuery):
             tb = get_traceback()
             errinfo = add_errinfo(errinfo, "error", cls._get_error_message(err=tb))
             std_output = cls.get_api_failure(
-                S2nEndpoint.Name, HTTPStatus.INTERNAL_SERVER_ERROR,
+                APIEndpoint.Name, HTTPStatus.INTERNAL_SERVER_ERROR,
                 errinfo=errinfo)
         else:
             errinfo = add_errinfo(errinfo, "error", apiq.error)
             # Standardize output from provider response
             std_output = cls._standardize_output(
-                output, ITIS.COUNT_KEY, ITIS.RECORDS_KEY, S2nEndpoint.Name,
+                output, ITIS.COUNT_KEY, ITIS.RECORDS_KEY, APIEndpoint.Name,
                 apiq.status_code, query_urls=[apiq.url], is_accepted=True,
                 errinfo=errinfo)
 
@@ -481,7 +483,7 @@ if __name__ == "__main__":
 
     for name in names:
         s2nout = ItisAPI.match_name(name)
-        print(f"Matched {name} with {len(s2nout.record_count)} ITIS names using Solr")
+        print(f"Matched {name} with {s2nout.record_count} ITIS names using Solr")
         for n in s2nout.records:
             print(f"{n['nameWOInd']}, {n['kingdom']}, {n['usage']}, {n['rank']}")
         print("")

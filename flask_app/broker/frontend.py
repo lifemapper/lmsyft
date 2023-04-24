@@ -1,11 +1,12 @@
 """Class for the frontend UI of the Specify Network API services."""
-from flask_app.broker.constants import (APIService)
+from flask_app.broker.base import _BrokerService
+from flask_app.common.s2n_type import APIService
+
 from sppy.frontend.templates import frontend_template
-from flask_app.broker.base import _S2nService
 
 
 # .............................................................................
-class FrontendSvc(_S2nService):
+class FrontendSvc(_BrokerService):
     """Class for the User Interface to the Specify Network services."""
     SERVICE_TYPE = APIService.Frontend
 

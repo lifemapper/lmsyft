@@ -2,21 +2,21 @@
 from flask import Blueprint, request, render_template
 import os
 
-from flask_app.broker.constants import S2nEndpoint
 from flask_app.common.constants import (
     TEMPLATE_DIR, STATIC_DIR, SCHEMA_DIR, SCHEMA_FNAME
 )
+from flask_app.common.s2n_type import APIEndpoint
+
 from flask_app.broker.badge import BadgeSvc
 from flask_app.broker.frontend import FrontendSvc
 from flask_app.broker.name import NameSvc
 from flask_app.broker.occ import OccurrenceSvc
-from flask_app.broker.stats import StatsSvc
 
 # downloadable from <baseurl>/static/schema/open_api.yaml
-
+# TODO: Add "broker" to front of prefix, parallel to flask_app.analyst.routes
 bp = Blueprint(
-    "broker", __name__, url_prefix="/broker/api/v1", template_folder=TEMPLATE_DIR,
-    static_folder=STATIC_DIR, static_url_path="/static")
+    "broker", __name__, url_prefix=APIEndpoint.broker_root(),
+    template_folder=TEMPLATE_DIR, static_folder=STATIC_DIR, static_url_path="/static")
 
 
 # .....................................................................................
@@ -27,7 +27,7 @@ def broker_status():
     Returns:
         dict: A dictionary of status information for the server.
     """
-    endpoints = S2nEndpoint.get_endpoints()
+    endpoints = APIEndpoint.get_broker_endpoints()
     system_status = "In Development"
     return {
         "num_services": len(endpoints),
@@ -67,10 +67,19 @@ def badge_endpoint():
     """Show the providers/icons available for the badge service.
 
     Returns:
-        response: A flask_app.broker.s2n_type.S2nOutput object containing the Specify
+        response: A flask_app.common.s2n_type.BrokerOutput object containing the Specify
             Network badge API response containing available providers.
     """
-    response = BadgeSvc.get_endpoint()
+    provider_arg = request.args.get("provider", default=None, type=str)
+    if provider_arg is None:
+        response = BadgeSvc.get_endpoint()
+    else:
+        icon_status = request.args.get("icon_status", default="active", type=str)
+        stream = request.args.get("stream", default="True", type=str)
+        response = BadgeSvc.get_icon(
+            provider=provider_arg, icon_status=icon_status, stream=stream,
+            app_path=bp.root_path)
+
     return response
 
 
@@ -101,7 +110,7 @@ def name_endpoint():
     """Show the providers available for the name service.
 
     Returns:
-        response: A flask_app.broker.s2n_type.S2nOutput object containing the Specify
+        response: A flask_app.common.s2n_type.BrokerOutput object containing the Specify
             Network name API response containing available providers.
     """
     name_arg = request.args.get("namestr", default=None, type=str)
@@ -129,7 +138,7 @@ def name_get(namestr):
         namestr (str): A scientific name to search for among taxonomic providers.
 
     Returns:
-        response: A flask_app.broker.s2n_type.S2nOutput object containing the Specify
+        response: A flask_app.common.s2n_type.BrokerOutput object containing the Specify
             Network name API response.
     """
     # response = OccurrenceSvc.get_occurrence_records(occid="identifier")
@@ -175,7 +184,7 @@ def occ_get(identifier):
         identifier (str): An occurrence identifier to search from occurrence providers.
 
     Returns:
-        response: A flask_app.broker.s2n_type.S2nOutput object containing the Specify
+        response: A flask_app.common.s2n_type.BrokerOutput object containing the Specify
             Network occurrence API response.
     """
     provider = request.args.get("provider", default=None, type=str)
@@ -184,19 +193,6 @@ def occ_get(identifier):
     response = OccurrenceSvc.get_occurrence_records(
         occid=identifier, provider=provider, gbif_dataset_key=gbif_dataset_key,
         count_only=count_only)
-    return response
-
-
-# .....................................................................................
-@bp.route("/stats/")
-def stats_get():
-    """Get the available statistics.
-
-    Returns:
-        response: A flask_app.broker.s2n_type.S2nOutput object containing the Specify
-            Network statistics API response.
-    """
-    response = StatsSvc.get_stats()
     return response
 
 

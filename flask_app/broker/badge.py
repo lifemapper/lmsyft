@@ -1,20 +1,19 @@
 """Class for the Specify Network badge (icon) API service."""
 from flask import json, send_file
-import io
 import os
 from werkzeug.exceptions import (BadRequest, InternalServerError)
 
 from flask_app.broker.constants import (
-    APIService, ICON_CONTENT, ICON_DIR, ServiceProvider, VALID_ICON_OPTIONS)
-from flask_app.broker.s2n_type import S2nKey
+    ICON_CONTENT, ICON_DIR, ServiceProvider, VALID_ICON_OPTIONS)
+from flask_app.common.s2n_type import APIService, S2nKey
 
 from sppy.tools.s2n.utils import get_traceback
 
-from flask_app.broker.base import _S2nService
+from flask_app.broker.base import _BrokerService
 
 
 # .............................................................................
-class BadgeSvc(_S2nService):
+class BadgeSvc(_BrokerService):
     """Specify Network API service for retrieving icon images."""
     SERVICE_TYPE = APIService.Badge
 

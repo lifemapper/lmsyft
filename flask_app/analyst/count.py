@@ -2,158 +2,48 @@
 from http import HTTPStatus
 from werkzeug.exceptions import (BadRequest, InternalServerError)
 
-from flask_app.broker.constants import (APIService, ServiceProvider)
-from flask_app.broker.s2n_type import (S2nKey, S2nOutput, S2nSchema, print_s2n_output)
-from flask_app.broker.base import _S2nService
+from flask_app.common.s2n_type import S2nKey, AnalystService, AnalystOutput
+from flask_app.analyst.base import _AnalystService
 
-from sppy.tools.provider.gbif import GbifAPI
-# from sppy.tools.provider.ipni import IpniAPI
-from sppy.tools.provider.itis import ItisAPI
-from sppy.tools.provider.worms import WormsAPI
 from sppy.tools.s2n.utils import get_traceback
 
 
 # .............................................................................
-class CountSvc(_S2nService):
+class CountSvc(_AnalystService):
     """Specify Network API service for retrieving taxonomic information."""
-    SERVICE_TYPE = APIService.Name
-    ORDERED_FIELDNAMES = S2nSchema.get_s2n_fields(APIService.Name["endpoint"])
+    SERVICE_TYPE = AnalystService.Stats
+    ORDERED_FIELDNAMES = []
 
     # ...............................................
     @classmethod
-    def _get_gbif_records(cls, namestr, is_accepted, gbif_count):
+    def get_stats(cls, collection_id, organization_id):
         try:
-            output = GbifAPI.match_name(namestr, is_accepted=is_accepted)
+            output = cls._get_records(collection_id, organization_id)
         except Exception:
             traceback = get_traceback()
-            output = GbifAPI.get_api_failure(
+            output = cls.get_failure(
                 cls.SERVICE_TYPE["endpoint"], HTTPStatus.INTERNAL_SERVER_ERROR,
                 errinfo={"error": [traceback]})
         else:
             output.set_value(
                 S2nKey.RECORD_FORMAT, cls.SERVICE_TYPE[S2nKey.RECORD_FORMAT])
-
-            # Add occurrence count to name records
-            if gbif_count is True:
-                prov_query_list = output.provider_query
-                keyfld = S2nSchema.get_gbif_taxonkey_fld()
-                cntfld = S2nSchema.get_gbif_occcount_fld()
-                urlfld = S2nSchema.get_gbif_occurl_fld()
-                for namerec in output.records:
-                    try:
-                        taxon_key = namerec[keyfld]
-                    except Exception:
-                        print(f"No usageKey for counting {namestr} records")
-                    else:
-                        # Add more info to each record
-                        try:
-                            count_output = GbifAPI.count_occurrences_for_taxon(
-                                taxon_key)
-                        except Exception:
-                            traceback = get_traceback()
-                            print(traceback)
-                        else:
-                            try:
-                                count_query = count_output.provider[
-                                    S2nKey.PROVIDER_QUERY_URL][0]
-                                namerec[cntfld] = count_output.count
-                            except Exception:
-                                traceback = get_traceback()
-                                output.append_value(S2nKey.ERRORS, {"error": traceback})
-                            else:
-                                namerec[urlfld] = count_query
-                                prov_query_list.append(count_query)
-                # add count queries to list
-                output.set_value(S2nKey.PROVIDER_QUERY_URL, prov_query_list)
-                output.format_records(cls.ORDERED_FIELDNAMES)
         return output.response
 
-    # # ...............................................
-    # @classmethod
-    # def _get_ipni_records(cls, namestr, is_accepted):
-    #     try:
-    #         output = IpniAPI.match_name(namestr, is_accepted=is_accepted)
-    #     except Exception:
-    #         traceback = get_traceback()
-    #         output = IpniAPI.get_api_failure(
-    #             cls.SERVICE_TYPE["endpoint"], HTTPStatus.INTERNAL_SERVER_ERROR,
-    #             errinfo={"error": [traceback]})
-    #     else:
-    #         output.set_value(
-    #             S2nKey.RECORD_FORMAT, cls.SERVICE_TYPE[S2nKey.RECORD_FORMAT])
-    #         output.format_records(cls.ORDERED_FIELDNAMES)
-    #     return output.response
+
 
     # ...............................................
     @classmethod
-    def _get_itis_records(cls, namestr, is_accepted, kingdom):
-        try:
-            output = ItisAPI.match_name(
-                namestr, is_accepted=is_accepted, kingdom=kingdom)
-        except Exception:
-            traceback = get_traceback()
-            output = ItisAPI.get_api_failure(
-                cls.SERVICE_TYPE["endpoint"], HTTPStatus.INTERNAL_SERVER_ERROR,
-                errinfo={"error": [traceback]})
-        else:
-            output.set_value(
-                S2nKey.RECORD_FORMAT, cls.SERVICE_TYPE[S2nKey.RECORD_FORMAT])
-            output.format_records(cls.ORDERED_FIELDNAMES)
-        return output.response
-
-    # ...............................................
-    @classmethod
-    def _get_worms_records(cls, namestr, is_accepted):
-        try:
-            output = WormsAPI.match_name(namestr, is_accepted=is_accepted)
-        except Exception:
-            traceback = get_traceback()
-            output = WormsAPI.get_api_failure(
-                cls.SERVICE_TYPE["endpoint"], HTTPStatus.INTERNAL_SERVER_ERROR,
-                errinfo={"error": [traceback]})
-        else:
-            output.set_value(
-                S2nKey.RECORD_FORMAT, cls.SERVICE_TYPE[S2nKey.RECORD_FORMAT])
-            output.format_records(cls.ORDERED_FIELDNAMES)
-        return output.response
-
-    # ...............................................
-    @classmethod
-    def _get_records(
-            cls, namestr, req_providers, is_accepted, gbif_count, kingdom):
+    def _get_records(cls, collection_id, organization_id):
         allrecs = []
         # for response metadata
         query_term = ""
-        if namestr is not None:
-            query_term = \
-                f"namestr={namestr}&provider={','.join(req_providers)}&" \
-                f"is_accepted={is_accepted}&gbif_count={gbif_count}&kingdom={kingdom}"
-
-        for pr in req_providers:
-            # Address single record
-            if namestr is not None:
-                # GBIF
-                if pr == ServiceProvider.GBIF[S2nKey.PARAM]:
-                    goutput = cls._get_gbif_records(namestr, is_accepted, gbif_count)
-                    allrecs.append(goutput)
-                # # IPNI
-                # elif pr == ServiceProvider.IPNI[S2nKey.PARAM]:
-                #     isoutput = cls._get_ipni_records(namestr, is_accepted)
-                #     allrecs.append(isoutput)
-                #  ITIS
-                elif pr == ServiceProvider.ITISSolr[S2nKey.PARAM]:
-                    isoutput = cls._get_itis_records(namestr, is_accepted, kingdom)
-                    allrecs.append(isoutput)
-                #  WoRMS
-                elif pr == ServiceProvider.WoRMS[S2nKey.PARAM]:
-                    woutput = cls._get_worms_records(namestr, is_accepted)
-                    allrecs.append(woutput)
-            # TODO: enable filter parameters
+        if collection_id is not None:
+            return
 
         # Assemble
         prov_meta = cls._get_s2n_provider_response_elt(query_term=query_term)
-        full_out = S2nOutput(
-            len(allrecs), cls.SERVICE_TYPE["endpoint"], provider=prov_meta,
+        full_out = AnalystOutput(
+            1, cls.SERVICE_TYPE["endpoint"], provider=prov_meta,
             records=allrecs, errors={})
 
         return full_out

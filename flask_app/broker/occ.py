@@ -2,9 +2,9 @@
 from http import HTTPStatus
 from werkzeug.exceptions import (BadRequest, InternalServerError)
 
-from flask_app.broker.base import _S2nService
-from flask_app.broker.constants import (APIService, ServiceProvider)
-from flask_app.broker.s2n_type import (S2nKey, S2nOutput, S2nSchema, print_s2n_output)
+from flask_app.broker.base import _BrokerService
+from flask_app.broker.constants import ServiceProvider
+from flask_app.common.s2n_type import (APIService, BrokerOutput, BrokerSchema, S2nKey)
 
 from sppy.tools.provider.gbif import GbifAPI
 from sppy.tools.provider.idigbio import IdigbioAPI
@@ -12,10 +12,10 @@ from sppy.tools.provider.mopho import MorphoSourceAPI
 from sppy.tools.s2n.utils import get_traceback
 
 
-class OccurrenceSvc(_S2nService):
+class OccurrenceSvc(_BrokerService):
     """Specify Network API service for retrieving occurrence record information."""
     SERVICE_TYPE = APIService.Occurrence
-    ORDERED_FIELDNAMES = S2nSchema.get_s2n_fields(APIService.Occurrence["endpoint"])
+    ORDERED_FIELDNAMES = BrokerSchema.get_s2n_fields(APIService.Occurrence["endpoint"])
 
     # ...............................................
     @classmethod
@@ -29,7 +29,7 @@ class OccurrenceSvc(_S2nService):
             provider parameter values acceptable to the Specify Network service.
 
         Note:
-            Overrides _S2nService.get_providers
+            Overrides _BrokerService.get_providers
         """
         provnames = set()
         if filter_params is None:
@@ -139,7 +139,7 @@ class OccurrenceSvc(_S2nService):
         prov_meta = cls._get_s2n_provider_response_elt(query_term=query_term)
         # Assemble
         # TODO: Why are errors retained from query to query!!!  Resetting to {} works.
-        full_out = S2nOutput(
+        full_out = BrokerOutput(
             len(allrecs), cls.SERVICE_TYPE["endpoint"], provider=prov_meta,
             records=allrecs, errors={})
         return full_out
@@ -166,7 +166,7 @@ class OccurrenceSvc(_S2nService):
             InternalServerError: on unknown exception when executing request
 
         Returns:
-            a flask_app.broker.s2n_type.S2nOutput object with optional records as a
+            a flask_app.broker.s2n_type.BrokerOutput object with optional records as a
             list of dictionaries of records corresponding to specimen occurrences in
             the provider database.
         """
@@ -242,4 +242,4 @@ if __name__ == "__main__":
     # for occid in occids:
     #     out = svc.get_occurrence_records(occid=occid, provider=None, count_only=False)
     #     outputs = out["records"]
-    #     print_s2n_output(out, do_print_rec=True)
+    #     print_broker_output(out, do_print_rec=True)

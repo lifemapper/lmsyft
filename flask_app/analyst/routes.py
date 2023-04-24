@@ -2,17 +2,16 @@
 from flask import Blueprint, render_template
 import os
 
-from flask_app.analyst.constants import (
-    AnalystEndpoint)
+from flask_app.analyst.count import CountSvc
 from flask_app.common.constants import (
     STATIC_DIR, TEMPLATE_DIR, SCHEMA_DIR, SCHEMA_FNAME)
-from flask_app.broker.stats import StatsSvc
+from flask_app.common.s2n_type import APIEndpoint
 
 # downloadable from <baseurl>/static/schema/open_api.yaml
 
 bp = Blueprint(
-    "analyst", __name__, url_prefix="/analyst/api/v1", template_folder=TEMPLATE_DIR,
-    static_folder=STATIC_DIR, static_url_path="/static")
+    "analyst", __name__, url_prefix=APIEndpoint.analyst_root(),
+    template_folder=TEMPLATE_DIR, static_folder=STATIC_DIR, static_url_path="/static")
 
 
 # .....................................................................................
@@ -23,7 +22,7 @@ def analyst_status():
     Returns:
         dict: A dictionary of status information for the server.
     """
-    endpoints = AnalystEndpoint.get_endpoints()
+    endpoints = APIEndpoint.get_analyst_endpoints()
     system_status = "In Development"
     return {
         "num_services": len(endpoints),
@@ -66,7 +65,7 @@ def counts_get():
         response: A flask_app.analyst API response object containing the count
             API response.
     """
-    response = StatsSvc.get_stats()
+    response = CountSvc.get_stats()
     return response
 
 

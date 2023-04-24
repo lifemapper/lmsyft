@@ -2,7 +2,7 @@
 from http import HTTPStatus
 
 from flask_app.broker.constants import (MorphoSource, ServiceProvider, TST_VALUES)
-from flask_app.broker.s2n_type import S2nEndpoint, S2nKey, S2nSchema
+from flask_app.common.s2n_type import APIEndpoint, S2nKey, BrokerSchema
 
 from sppy.tools.provider.api import APIQuery
 from sppy.tools.s2n.utils import add_errinfo, get_traceback
@@ -12,7 +12,7 @@ from sppy.tools.s2n.utils import add_errinfo, get_traceback
 class MorphoSourceAPI(APIQuery):
     """Class to query Specify portal APIs and return results."""
     PROVIDER = ServiceProvider.MorphoSource
-    OCCURRENCE_MAP = S2nSchema.get_mopho_occurrence_map()
+    OCCURRENCE_MAP = BrokerSchema.get_mopho_occurrence_map()
 
     # ...............................................
     def __init__(
@@ -35,8 +35,8 @@ class MorphoSourceAPI(APIQuery):
     @classmethod
     def _standardize_record(cls, rec):
         newrec = {}
-        view_std_fld = S2nSchema.get_view_url_fld()
-        data_std_fld = S2nSchema.get_data_url_fld()
+        view_std_fld = BrokerSchema.get_view_url_fld()
+        data_std_fld = BrokerSchema.get_data_url_fld()
         for stdfld, provfld in cls.OCCURRENCE_MAP.items():
             try:
                 val = rec[provfld]
@@ -86,7 +86,7 @@ class MorphoSourceAPI(APIQuery):
             tb = get_traceback()
             errinfo = add_errinfo(errinfo, "error", cls._get_error_message(err=tb))
             std_out = cls.get_api_failure(
-                S2nEndpoint.Occurrence, HTTPStatus.INTERNAL_SERVER_ERROR,
+                APIEndpoint.Occurrence, HTTPStatus.INTERNAL_SERVER_ERROR,
                 errinfo=errinfo)
         else:
             # Standardize output from provider response
@@ -95,7 +95,7 @@ class MorphoSourceAPI(APIQuery):
 
             std_out = cls._standardize_output(
                 api.output, MorphoSource.TOTAL_KEY, MorphoSource.RECORDS_KEY,
-                MorphoSource.RECORD_FORMAT, S2nEndpoint.Occurrence,
+                MorphoSource.RECORD_FORMAT, APIEndpoint.Occurrence,
                 query_status=api.status_code, query_urls=[api.url],
                 count_only=count_only, errinfo=errinfo)
 

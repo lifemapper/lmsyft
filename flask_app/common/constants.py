@@ -8,3 +8,4 @@ ICON_DIR = "{}/icon".format(STATIC_DIR)
 TEMPLATE_DIR = "../templates"
 SCHEMA_DIR = "{}/schema".format(STATIC_DIR)
 SCHEMA_FNAME = "open_api.yaml"
+

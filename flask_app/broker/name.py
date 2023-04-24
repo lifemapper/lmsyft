@@ -2,9 +2,10 @@
 from http import HTTPStatus
 from werkzeug.exceptions import (BadRequest, InternalServerError)
 
-from flask_app.broker.constants import (APIService, ServiceProvider)
-from flask_app.broker.s2n_type import (S2nKey, S2nOutput, S2nSchema, print_s2n_output)
-from flask_app.broker.base import _S2nService
+from flask_app.broker.constants import ServiceProvider
+from flask_app.common.s2n_type import (
+    S2nKey, BrokerOutput, BrokerSchema, APIService, print_broker_output)
+from flask_app.broker.base import _BrokerService
 
 from sppy.tools.provider.gbif import GbifAPI
 # from sppy.tools.provider.ipni import IpniAPI
@@ -14,10 +15,10 @@ from sppy.tools.s2n.utils import get_traceback
 
 
 # .............................................................................
-class NameSvc(_S2nService):
+class NameSvc(_BrokerService):
     """Specify Network API service for retrieving taxonomic information."""
     SERVICE_TYPE = APIService.Name
-    ORDERED_FIELDNAMES = S2nSchema.get_s2n_fields(APIService.Name["endpoint"])
+    ORDERED_FIELDNAMES = BrokerSchema.get_s2n_fields(APIService.Name["endpoint"])
 
     # ...............................................
     @classmethod
@@ -36,9 +37,9 @@ class NameSvc(_S2nService):
             # Add occurrence count to name records
             if gbif_count is True:
                 prov_query_list = output.provider_query
-                keyfld = S2nSchema.get_gbif_taxonkey_fld()
-                cntfld = S2nSchema.get_gbif_occcount_fld()
-                urlfld = S2nSchema.get_gbif_occurl_fld()
+                keyfld = BrokerSchema.get_gbif_taxonkey_fld()
+                cntfld = BrokerSchema.get_gbif_occcount_fld()
+                urlfld = BrokerSchema.get_gbif_occurl_fld()
                 for namerec in output.records:
                     try:
                         taxon_key = namerec[keyfld]
@@ -152,7 +153,7 @@ class NameSvc(_S2nService):
 
         # Assemble
         prov_meta = cls._get_s2n_provider_response_elt(query_term=query_term)
-        full_out = S2nOutput(
+        full_out = BrokerOutput(
             len(allrecs), cls.SERVICE_TYPE["endpoint"], provider=prov_meta,
             records=allrecs, errors={})
 
@@ -178,9 +179,9 @@ class NameSvc(_S2nService):
             **kwargs: additional keyword arguments are accepted and ignored
 
         Returns:
-            A flask_app.broker.s2n_type.S2nOutput object containing records for each
-            provider.  Each provider element is a S2nOutput object with records as a
-            list of dictionaries following the flask_app.broker.s2n_type.S2nSchema.NAME
+            A flask_app.broker.s2n_type.BrokerOutput object containing records for each
+            provider.  Each provider element is a BrokerOutput object with records as a
+            list of dictionaries following the flask_app.broker.s2n_type.BrokerSchema.NAME
             corresponding to names in the provider taxonomy.
 
         Raises:
@@ -246,4 +247,4 @@ if __name__ == "__main__":
         out = svc.get_name_records(
             namestr=namestr, provider=None, is_accepted=False, gbif_parse=True,
             gbif_count=True, kingdom=None)
-        print_s2n_output(out, do_print_rec=True)
+        print_broker_output(out, do_print_rec=True)

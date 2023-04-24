@@ -5,7 +5,7 @@ import requests
 import urllib
 
 from flask_app.broker.constants import ServiceProvider
-from flask_app.broker.s2n_type import S2nKey, S2nOutput
+from flask_app.common.s2n_type import S2nKey, BrokerOutput
 from flask_app.common.constants import ENCODING, URL_ESCAPES
 
 from sppy.tools.util.logtools import logit
@@ -90,7 +90,7 @@ class APIQuery:
 
         prov_meta = cls._get_provider_response_elt(
             query_status=query_status, query_urls=query_urls)
-        std_output = S2nOutput(
+        std_output = BrokerOutput(
             total, service, provider=prov_meta, record_format=record_format,
             records=stdrecs, errors=errinfo)
 
@@ -329,11 +329,11 @@ class APIQuery:
             errinfo: dictionary of info messages, warnings, errors
 
         Returns:
-            flask_app.broker.s2n_type.S2nOutput object
+            flask_app.broker.s2n_type.BrokerOutput object
         """
         prov_meta = cls._get_provider_response_elt(
             query_status=provider_response_status)
-        return S2nOutput(0, service, provider=prov_meta, errors=errinfo)
+        return BrokerOutput(0, service, provider=prov_meta, errors=errinfo)
 
     # ...............................................
     def query_by_get(self, output_type="json", verify=True):

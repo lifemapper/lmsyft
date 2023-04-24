@@ -4,7 +4,7 @@ import os
 
 from flask_app.broker.constants import (
     GBIF_MISSING_KEY, Idigbio, ISSUE_DEFINITIONS, ServiceProvider)
-from flask_app.broker.s2n_type import S2nEndpoint, S2nKey, S2nSchema
+from flask_app.common.s2n_type import APIEndpoint, S2nKey, BrokerSchema
 from flask_app.common.constants import ENCODING
 
 from sppy.tools.util.logtools import logit
@@ -18,7 +18,7 @@ class IdigbioAPI(APIQuery):
     """Class to query iDigBio APIs and return results."""
 
     PROVIDER = ServiceProvider.iDigBio
-    OCCURRENCE_MAP = S2nSchema.get_idb_occurrence_map()
+    OCCURRENCE_MAP = BrokerSchema.get_idb_occurrence_map()
 
     # ...............................................
     def __init__(self, q_filters=None, other_filters=None, filter_string=None,
@@ -86,8 +86,8 @@ class IdigbioAPI(APIQuery):
         to_list_fields = ("dwc:associatedSequences", "dwc:associatedReferences")
         issue_fld = "s2n:issues"
         cc_std_fld = "dwc:countryCode"
-        view_std_fld = S2nSchema.get_view_url_fld()
-        data_std_fld = S2nSchema.get_data_url_fld()
+        view_std_fld = BrokerSchema.get_view_url_fld()
+        data_std_fld = BrokerSchema.get_data_url_fld()
 
         # Outer record must contain "data" and may contain "indexTerms" elements
         try:
@@ -218,13 +218,13 @@ class IdigbioAPI(APIQuery):
         except Exception as e:
             errinfo = add_errinfo(errinfo, "error", cls._get_error_message(err=e))
             std_out = cls.get_api_failure(
-                S2nEndpoint.Occurrence, HTTPStatus.INTERNAL_SERVER_ERROR,
+                APIEndpoint.Occurrence, HTTPStatus.INTERNAL_SERVER_ERROR,
                 errinfo=errinfo)
         else:
             errinfo = add_errinfo(errinfo, "error", api.error)
             std_out = cls._standardize_output(
                 api.output, Idigbio.COUNT_KEY, Idigbio.RECORDS_KEY, Idigbio.RECORD_FORMAT,
-                S2nEndpoint.Occurrence, query_status=api.status_code,
+                APIEndpoint.Occurrence, query_status=api.status_code,
                 query_urls=[api.url], count_only=count_only, errinfo=errinfo)
 
         return std_out
