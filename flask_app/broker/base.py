@@ -24,7 +24,7 @@ class _BrokerService:
         s2ncode = ServiceProvider.Broker[S2nKey.PARAM]
         provider_element[S2nKey.PROVIDER_CODE] = s2ncode
         provider_element[S2nKey.PROVIDER_LABEL] = ServiceProvider.Broker[S2nKey.NAME]
-        icon_url = lmutil.get_icon_url(s2ncode)
+        icon_url = ServiceProvider.get_icon_url(s2ncode)
         if icon_url:
             provider_element[S2nKey.PROVIDER_ICON_URL] = icon_url
         # Status will be 200 if anyone ever sees this
@@ -154,10 +154,11 @@ class _BrokerService:
 
     # ...............................................
     @classmethod
-    def get_endpoint(cls, **kwargs):
+    def get_endpoint(cls, root_url, **kwargs):
         """Return the http response for this class endpoint.
 
         Args:
+            root_url: the URL of this Specify Network service
             **kwargs: keyword arguments are accepted but ignored
 
         Returns:
@@ -168,7 +169,7 @@ class _BrokerService:
         """
         try:
             valid_providers = cls.get_providers()
-            output = cls._show_online(valid_providers)
+            output = cls._show_online(root_url, valid_providers)
         except Exception:
             raise
         return output.response

@@ -162,11 +162,12 @@ class NameSvc(_BrokerService):
     # ...............................................
     @classmethod
     def get_name_records(
-            cls, namestr=None, provider=None, is_accepted=True, gbif_parse=True,
-            gbif_count=True, kingdom=None, **kwargs):
+            cls, root_url, namestr=None, provider=None, is_accepted=True,
+            gbif_parse=True, gbif_count=True, kingdom=None, **kwargs):
         """Get taxon records for a scientific name from each requested name service.
 
         Args:
+            root_url: the URL of this Specify Network service
             namestr: a scientific name
             provider: comma-delimited list of requested provider codes.  Codes are
                 delimited for each in flask_app.broker.constants ServiceProvider
@@ -233,13 +234,14 @@ if __name__ == "__main__":
     pass
     # test_names = TST_VALUES.NAMES[0:4]
     test_names = [
-        "Notemigonus crysoleucas (Mitchill, 1814)",
-        "Artemisia ludoviciana",
-        "Mycteroperca microlepis",
-        "Plagiloecia patina Lamarck, 1816",
-        "Poa annua",
-        "Gnatholepis cauerensis (Bleeker, 1853)",
-        "Tulipa sylvestris"
+        # "Notemigonus crysoleucas (Mitchill, 1814)",
+        # "Artemisia ludoviciana",
+        # "Mycteroperca microlepis",
+        # "Plagiloecia patina Lamarck, 1816",
+        # "Poa annua",
+        # "Gnatholepis cauerensis (Bleeker, 1853)",
+        # "Tulipa sylvestris",
+        "Acer leucoderme Small"
     ]
 
     svc = NameSvc()

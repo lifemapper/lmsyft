@@ -18,6 +18,11 @@ bp = Blueprint(
     "broker", __name__, url_prefix=APIEndpoint.broker_root(),
     template_folder=TEMPLATE_DIR, static_folder=STATIC_DIR, static_url_path="/static")
 
+# .....................................................................................
+@app.route('/foo')
+def index():
+    return request.base_url
+
 
 # .....................................................................................
 @bp.route("/", methods=["GET"])
@@ -113,6 +118,8 @@ def name_endpoint():
         response: A flask_app.common.s2n_type.BrokerOutput object containing the Specify
             Network name API response containing available providers.
     """
+    root_url = f"{request.base_url}{APIEndpoint.broker_root()}"
+
     name_arg = request.args.get("namestr", default=None, type=str)
     provider = request.args.get("provider", default=None, type=str)
     is_accepted = request.args.get("is_accepted", default="True", type=str)
@@ -120,11 +127,11 @@ def name_endpoint():
     gbif_count = request.args.get("gbif_count", default="True", type=str)
     # kingdom = request.args.get("kingdom", default=None, type=str)
     if name_arg is None:
-        response = NameSvc.get_endpoint()
+        response = NameSvc.get_endpoint(root_url)
     else:
         response = NameSvc.get_name_records(
-            namestr=name_arg, provider=provider, is_accepted=is_accepted,
-            gbif_parse=gbif_parse, gbif_count=gbif_count)
+            root_url, namestr=name_arg, provider=provider,
+            is_accepted=is_accepted, gbif_parse=gbif_parse, gbif_count=gbif_count)
 
     return response
 
@@ -141,6 +148,7 @@ def name_get(namestr):
         response: A flask_app.common.s2n_type.BrokerOutput object containing the Specify
             Network name API response.
     """
+    root_url = f"{request.base_url}{APIEndpoint.broker_root()}"
     # response = OccurrenceSvc.get_occurrence_records(occid="identifier")
     provider = request.args.get("provider", default=None, type=str)
     is_accepted = request.args.get("is_accepted", default="True", type=str)
@@ -148,7 +156,7 @@ def name_get(namestr):
     gbif_count = request.args.get("gbif_count", default="True", type=str)
     # kingdom = request.args.get("kingdom", default=None, type=str)
     response = NameSvc.get_name_records(
-        namestr=namestr, provider=provider, is_accepted=is_accepted,
+        root_url, namestr=namestr, provider=provider, is_accepted=is_accepted,
         gbif_parse=gbif_parse, gbif_count=gbif_count)
     return response
 
@@ -162,16 +170,18 @@ def occ_endpoint():
         response: A flask_app.broker.s2n_type.S2nOutput object containing the Specify
             Network occurrence API response containing available providers.
     """
+    root_url = f"{request.base_url}{APIEndpoint.broker_root()}"
+
     occ_arg = request.args.get("occid", default=None, type=str)
     provider = request.args.get("provider", default=None, type=str)
     gbif_dataset_key = request.args.get("gbif_dataset_key", default=None, type=str)
     count_only = request.args.get("count_only", default="False", type=str)
     if occ_arg is None and gbif_dataset_key is None:
-        response = OccurrenceSvc.get_endpoint()
+        response = OccurrenceSvc.get_endpoint(root_url)
     else:
         response = OccurrenceSvc.get_occurrence_records(
-            occid=occ_arg, provider=provider, gbif_dataset_key=gbif_dataset_key,
-            count_only=count_only)
+            root_url, occid=occ_arg, provider=provider,
+            gbif_dataset_key=gbif_dataset_key, count_only=count_only)
     return response
 
 
@@ -187,12 +197,14 @@ def occ_get(identifier):
         response: A flask_app.common.s2n_type.BrokerOutput object containing the Specify
             Network occurrence API response.
     """
+    root_url = f"{request.base_url}{APIEndpoint.broker_root()}"
+
     provider = request.args.get("provider", default=None, type=str)
     gbif_dataset_key = request.args.get("gbif_dataset_key", default=None, type=str)
     count_only = request.args.get("count_only", default="False", type=str)
     response = OccurrenceSvc.get_occurrence_records(
-        occid=identifier, provider=provider, gbif_dataset_key=gbif_dataset_key,
-        count_only=count_only)
+        root_url, occid=identifier, provider=provider,
+        gbif_dataset_key=gbif_dataset_key, count_only=count_only)
     return response
 
 

@@ -147,11 +147,12 @@ class OccurrenceSvc(_BrokerService):
     # ...............................................
     @classmethod
     def get_occurrence_records(
-            cls, occid=None, provider=None, gbif_dataset_key=None, count_only=False,
-            **kwargs):
+            cls, root_url, occid=None, provider=None, gbif_dataset_key=None,
+            count_only=False, **kwargs):
         """Get one or more occurrence records from each occurrence provider.
 
         Args:
+            root_url: the URL of this Specify Network service
             occid: an occurrenceID, a DarwinCore field intended for a globally
                 unique identifier (https://dwc.tdwg.org/list/#dwc_occurrenceID)
             provider: comma-delimited list of providers to query

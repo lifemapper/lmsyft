@@ -19,9 +19,8 @@ GBIF_MISSING_KEY = "unmatched_gbif_ids"
 # VALID broker parameter options, must be list
 VALID_ICON_OPTIONS = ["active", "inactive", "hover"]
 ICON_CONTENT = "image/png"
-ICON_API = '/api/v1/badge'
+# ICON_API = '/api/v1/badge'
 ICON_DIR = "{}/icon".format(STATIC_DIR)
-
 
 # .............................................................................
 class DWC:
@@ -257,7 +256,7 @@ class ServiceProvider:
         else:
             return None
 
-# ....................
+    # ....................
     @classmethod
     def is_valid_param(cls, param):
         """Return a flag indicating if the parameter key is valid for services.
@@ -273,7 +272,7 @@ class ServiceProvider:
             return True
         return False
 
-# ....................
+    # ....................
     @classmethod
     def is_valid_service(cls, param, svc):
         """Return a flag indicating if the parameter key is valid for given service.
@@ -291,7 +290,7 @@ class ServiceProvider:
                 return True
         return False
 
-# ....................
+    # ....................
     @classmethod
     def get_name_from_param(cls, param):
         """Return a full name of a service for the given service parameter value.
@@ -308,7 +307,7 @@ class ServiceProvider:
             name = val_dict[S2nKey.NAME]
         return name
 
-# ....................
+    # ....................
     @classmethod
     def all(cls):
         """Return all available ServiceProviders for the Specify network.
@@ -322,6 +321,24 @@ class ServiceProvider:
             ServiceProvider.ITISSolr, ServiceProvider.MorphoSource,
             ServiceProvider.WoRMS, ServiceProvider.Broker]
 
+    # ....................
+    def get_icon_url(provider_code, icon_status=None):
+        """Get a URL to the badge service with provider param and optionally icon_status.
+
+        Args:
+            provider_code: code for provider to get an icon for.
+            icon_status: one of flask_app.broker.constants.VALID_ICON_OPTIONS:
+                active, inactive, hover
+
+        Returns:
+            URL of for the badge API
+        """
+        broker_url = "https://broker-dev.spcoco.org"
+        if ServiceProvider.is_valid_service(provider_code, APIEndpoint.Badge):
+            url = f"{broker_url}{APIEndpoint.broker_root()}/{APIEndpoint.Badge}/{provider_code}"
+            if icon_status:
+                url = f"{url}&icon_status={icon_status}"
+        return url
 
 # .............................................................................
 BrokerParameters = {
