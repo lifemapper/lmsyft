@@ -97,7 +97,7 @@ class OccurrenceSvc(_BrokerService):
 
     # ...............................................
     @classmethod
-    def _get_records(cls, occid, req_providers, count_only, gbif_dataset_key=None):
+    def _get_records(cls, root_url, occid, req_providers, count_only, gbif_dataset_key=None):
         allrecs = []
         # for response metadata
         query_term = None
@@ -136,7 +136,7 @@ class OccurrenceSvc(_BrokerService):
                         occid, gbif_dataset_key, count_only)
                     allrecs.append(gbif_output)
 
-        prov_meta = cls._get_s2n_provider_response_elt(query_term=query_term)
+        prov_meta = cls._get_s2n_provider_response_elt(root_url, query_term=query_term)
         # Assemble
         # TODO: Why are errors retained from query to query!!!  Resetting to {} works.
         full_out = BrokerOutput(

@@ -19,29 +19,25 @@ class _BrokerService:
 
     # ...............................................
     @classmethod
-    def _get_s2n_provider_response_elt(cls, query_term=None):
+    def _get_s2n_provider_response_elt(cls, root_url, query_term=None):
         provider_element = {}
         s2ncode = ServiceProvider.Broker[S2nKey.PARAM]
         provider_element[S2nKey.PROVIDER_CODE] = s2ncode
         provider_element[S2nKey.PROVIDER_LABEL] = ServiceProvider.Broker[S2nKey.NAME]
-        icon_url = ServiceProvider.get_icon_url(s2ncode)
+        icon_url = ServiceProvider.get_icon_url(root_url, s2ncode)
         if icon_url:
             provider_element[S2nKey.PROVIDER_ICON_URL] = icon_url
         # Status will be 200 if anyone ever sees this
         provider_element[S2nKey.PROVIDER_STATUS_CODE] = 200
-        # Handle local debugging
-        try:
-            # TODO: get from headers
-            base_url = "https://spcoco.org"
-            # base_url = cherrypy.request.headers["Origin"]
-        except KeyError:
-            base_url = "https://localhost"
+        # # Handle local debugging
+        # try:
+        #     # TODO: get from headers
+        #     base_url = "https://spcoco.org"
+        #     # base_url = cherrypy.request.headers["Origin"]
+        # except KeyError:
+        #     base_url = "https://localhost"
         # Optional URL queries
-        standardized_url = "{}{}/{}".format(
-            base_url,
-            APIEndpoint.broker_root(),
-            cls.SERVICE_TYPE["endpoint"]
-        )
+        standardized_url = f"{root_url}/{cls.SERVICE_TYPE['endpoint']}"
         if query_term:
             standardized_url = "{}?{}".format(standardized_url, query_term)
         provider_element[S2nKey.PROVIDER_QUERY_URL] = [standardized_url]

@@ -322,10 +322,11 @@ class ServiceProvider:
             ServiceProvider.WoRMS, ServiceProvider.Broker]
 
     # ....................
-    def get_icon_url(provider_code, icon_status=None):
+    def get_icon_url(root_url, provider_code, icon_status=None):
         """Get a URL to the badge service with provider param and optionally icon_status.
 
         Args:
+            root_url: the URL of this Specify Network service
             provider_code: code for provider to get an icon for.
             icon_status: one of flask_app.broker.constants.VALID_ICON_OPTIONS:
                 active, inactive, hover
@@ -333,9 +334,8 @@ class ServiceProvider:
         Returns:
             URL of for the badge API
         """
-        broker_url = "https://broker-dev.spcoco.org"
         if ServiceProvider.is_valid_service(provider_code, APIEndpoint.Badge):
-            url = f"{broker_url}{APIEndpoint.broker_root()}/{APIEndpoint.Badge}/{provider_code}"
+            url = f"{root_url}{APIEndpoint.broker_root()}/{APIEndpoint.Badge}/{provider_code}"
             if icon_status:
                 url = f"{url}&icon_status={icon_status}"
         return url

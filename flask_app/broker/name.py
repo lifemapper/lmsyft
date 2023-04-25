@@ -121,7 +121,7 @@ class NameSvc(_BrokerService):
     # ...............................................
     @classmethod
     def _get_records(
-            cls, namestr, req_providers, is_accepted, gbif_count, kingdom):
+            cls, root_url, namestr, req_providers, is_accepted, gbif_count, kingdom):
         allrecs = []
         # for response metadata
         query_term = ""
@@ -152,7 +152,7 @@ class NameSvc(_BrokerService):
             # TODO: enable filter parameters
 
         # Assemble
-        prov_meta = cls._get_s2n_provider_response_elt(query_term=query_term)
+        prov_meta = cls._get_s2n_provider_response_elt(root_url, query_term=query_term)
         full_out = BrokerOutput(
             len(allrecs), cls.SERVICE_TYPE["endpoint"], provider=prov_meta,
             records=allrecs, errors={})
@@ -211,7 +211,7 @@ class NameSvc(_BrokerService):
             try:
                 # Do Query!
                 output = cls._get_records(
-                    good_params["namestr"], good_params["provider"],
+                    root_url, good_params["namestr"], good_params["provider"],
                     good_params["is_accepted"], good_params["gbif_count"],
                     good_params["kingdom"])
 
