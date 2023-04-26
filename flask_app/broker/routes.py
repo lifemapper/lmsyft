@@ -19,7 +19,7 @@ bp = Blueprint(
     template_folder=TEMPLATE_DIR, static_folder=STATIC_DIR, static_url_path="/static")
 
 # .....................................................................................
-@app.route('/foo')
+@bp.route('/foo')
 def index():
     return request.base_url
 

@@ -2,13 +2,12 @@
 from http import HTTPStatus
 from werkzeug.exceptions import (BadRequest, InternalServerError)
 
-from flask_app.broker.constants import ServiceProvider
 from flask_app.common.s2n_type import (
-    S2nKey, BrokerOutput, BrokerSchema, APIService, print_broker_output)
+    APIService, BrokerOutput, BrokerSchema, S2nKey, ServiceProvider,
+    print_broker_output)
 from flask_app.broker.base import _BrokerService
 
 from sppy.tools.provider.gbif import GbifAPI
-# from sppy.tools.provider.ipni import IpniAPI
 from sppy.tools.provider.itis import ItisAPI
 from sppy.tools.provider.worms import WormsAPI
 from sppy.tools.s2n.utils import get_traceback
@@ -247,6 +246,6 @@ if __name__ == "__main__":
     svc = NameSvc()
     for namestr in test_names:
         out = svc.get_name_records(
-            namestr=namestr, provider=None, is_accepted=False, gbif_parse=True,
-            gbif_count=True, kingdom=None)
+            "localhost", namestr=namestr, provider=None, is_accepted=False,
+            gbif_parse=True, gbif_count=True, kingdom=None)
         print_broker_output(out, do_print_rec=True)

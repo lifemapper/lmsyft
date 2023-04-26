@@ -3,9 +3,8 @@ from flask import json, send_file
 import os
 from werkzeug.exceptions import (BadRequest, InternalServerError)
 
-from flask_app.broker.constants import (
-    ICON_CONTENT, ICON_DIR, ServiceProvider, VALID_ICON_OPTIONS)
-from flask_app.common.s2n_type import APIService, S2nKey
+from flask_app.broker.constants import (ICON_CONTENT, ICON_DIR)
+from flask_app.common.s2n_type import APIService, S2nKey, ServiceProvider
 
 from sppy.tools.s2n.utils import get_traceback
 
@@ -62,9 +61,7 @@ class BadgeSvc(_BrokerService):
             provider: comma-delimited list of requested provider codes.  Codes are
                 delimited for each in lmtrex.common.lmconstants ServiceProvider
             icon_status: string indicating which version of the icon to return,
-                valid options are:
-                    lmtrex.common.lmconstants.VALID_ICON_OPTIONS
-                    (active, inactive, hover)
+                one of APIService.Badge["params"]["icon_status"]["options"]
             stream: If true, return a generator for streaming output, else return file
                 contents.
             app_path: Base application path used for locating the icon files.
@@ -121,7 +118,7 @@ if __name__ == "__main__":
     # Get all providers
     valid_providers = svc.get_providers()
     for pr in valid_providers:
-        for stat in VALID_ICON_OPTIONS:
+        for stat in APIService.Badge["params"]["icon_status"]["options"]:
             retval = svc.get_icon(
                 provider=pr, icon_status=stat,
                 app_path="/home/astewart/git/sp_network/sppy/frontend")

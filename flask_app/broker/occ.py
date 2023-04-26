@@ -3,8 +3,8 @@ from http import HTTPStatus
 from werkzeug.exceptions import (BadRequest, InternalServerError)
 
 from flask_app.broker.base import _BrokerService
-from flask_app.broker.constants import ServiceProvider
-from flask_app.common.s2n_type import (APIService, BrokerOutput, BrokerSchema, S2nKey)
+from flask_app.common.s2n_type import (
+    APIService, BrokerOutput, BrokerSchema, S2nKey, ServiceProvider)
 
 from sppy.tools.provider.gbif import GbifAPI
 from sppy.tools.provider.idigbio import IdigbioAPI
@@ -43,15 +43,15 @@ class OccurrenceSvc(_BrokerService):
 
     # ...............................................
     @classmethod
-    def _get_mopho_records(cls, occid, count_only):
+    def _get_mopho_records(cls, root_url, occid, count_only):
         try:
             output = MorphoSourceAPI.get_occurrences_by_occid_page1(
                 occid, count_only=count_only)
         except Exception:
             traceback = get_traceback()
             output = MorphoSourceAPI.get_api_failure(
-                cls.SERVICE_TYPE["endpoint"], HTTPStatus.INTERNAL_SERVER_ERROR,
-                errinfo={"error": [traceback]})
+                root_url, cls.SERVICE_TYPE["endpoint"],
+                HTTPStatus.INTERNAL_SERVER_ERROR, errinfo={"error": [traceback]})
         else:
             output.set_value(
                 S2nKey.RECORD_FORMAT, cls.SERVICE_TYPE[S2nKey.RECORD_FORMAT])
@@ -60,14 +60,14 @@ class OccurrenceSvc(_BrokerService):
 
     # ...............................................
     @classmethod
-    def _get_idb_records(cls, occid, count_only):
+    def _get_idb_records(cls, root_url, occid, count_only):
         try:
             output = IdigbioAPI.get_occurrences_by_occid(occid, count_only=count_only)
         except Exception:
             traceback = get_traceback()
             output = IdigbioAPI.get_api_failure(
-                cls.SERVICE_TYPE["endpoint"], HTTPStatus.INTERNAL_SERVER_ERROR,
-                errinfo={"error": [traceback]})
+                root_url, cls.SERVICE_TYPE["endpoint"],
+                HTTPStatus.INTERNAL_SERVER_ERROR, errinfo={"error": [traceback]})
         else:
             output.set_value(
                 S2nKey.RECORD_FORMAT, cls.SERVICE_TYPE[S2nKey.RECORD_FORMAT])
@@ -76,7 +76,7 @@ class OccurrenceSvc(_BrokerService):
 
     # ...............................................
     @classmethod
-    def _get_gbif_records(cls, occid, gbif_dataset_key, count_only):
+    def _get_gbif_records(cls, root_url, occid, gbif_dataset_key, count_only):
         try:
             if occid is not None:
                 output = GbifAPI.get_occurrences_by_occid(
@@ -87,8 +87,8 @@ class OccurrenceSvc(_BrokerService):
         except Exception:
             traceback = get_traceback()
             output = GbifAPI.get_api_failure(
-                cls.SERVICE_TYPE["endpoint"], HTTPStatus.INTERNAL_SERVER_ERROR,
-                errinfo={"error": [traceback]})
+                root_url, cls.SERVICE_TYPE["endpoint"],
+                HTTPStatus.INTERNAL_SERVER_ERROR, errinfo={"error": [traceback]})
         else:
             output.set_value(
                 S2nKey.RECORD_FORMAT, cls.SERVICE_TYPE[S2nKey.RECORD_FORMAT])
@@ -115,15 +115,15 @@ class OccurrenceSvc(_BrokerService):
                 # GBIF
                 if pr == ServiceProvider.GBIF[S2nKey.PARAM]:
                     gbif_output = cls._get_gbif_records(
-                        occid, gbif_dataset_key, count_only)
+                        root_url, occid, gbif_dataset_key, count_only)
                     allrecs.append(gbif_output)
                 # iDigBio
                 elif pr == ServiceProvider.iDigBio[S2nKey.PARAM]:
-                    idb_output = cls._get_idb_records(occid, count_only)
+                    idb_output = cls._get_idb_records(root_url, occid, count_only)
                     allrecs.append(idb_output)
                 # MorphoSource
                 elif pr == ServiceProvider.MorphoSource[S2nKey.PARAM]:
-                    mopho_output = cls._get_mopho_records(occid, count_only)
+                    mopho_output = cls._get_mopho_records(root_url, occid, count_only)
                     allrecs.append(mopho_output)
                 # Specify
                 # elif pr == ServiceProvider.Specify[S2nKey.PARAM]:
@@ -133,7 +133,7 @@ class OccurrenceSvc(_BrokerService):
             elif gbif_dataset_key:
                 if pr == ServiceProvider.GBIF[S2nKey.PARAM]:
                     gbif_output = cls._get_gbif_records(
-                        occid, gbif_dataset_key, count_only)
+                        root_url, occid, gbif_dataset_key, count_only)
                     allrecs.append(gbif_output)
 
         prov_meta = cls._get_s2n_provider_response_elt(root_url, query_term=query_term)
@@ -193,7 +193,7 @@ class OccurrenceSvc(_BrokerService):
             # Do Query!
             try:
                 output = cls._get_records(
-                    good_params["occid"], good_params["provider"],
+                    root_url, good_params["occid"], good_params["provider"],
                     good_params["count_only"],
                     gbif_dataset_key=good_params["gbif_dataset_key"])
 
@@ -233,10 +233,11 @@ if __name__ == "__main__":
               "2c1becd5-e641-4e83-b3f5-76a55206539a"]
     occids = ["bffe655b-ea32-4838-8e80-a80e391d5b11"]
     occids = ["db193603-1ed3-11e3-bfac-90b11c41863e"]
+    root_url = "localhost"
 
     svc = OccurrenceSvc()
-    out = svc.get_endpoint()
-    out = svc.get_occurrence_records(occid="a7156437-55ec-4c6f-89de-938f9361753d")
+    out = svc.get_endpoint(root_url)
+    out = svc.get_occurrence_records(root_url, occid="a7156437-55ec-4c6f-89de-938f9361753d")
 
     print(out)
 

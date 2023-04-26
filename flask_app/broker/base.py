@@ -2,9 +2,8 @@
 from flask import Flask
 
 import sppy.tools.s2n.utils as lmutil
-from flask_app.broker.constants import BrokerParameters, ServiceProvider
 from flask_app.common.s2n_type import (
-    APIEndpoint, S2nKey, BrokerOutput, APIService)
+    APIEndpoint, S2nKey, BrokerOutput, APIService, ServiceProvider)
 from sppy.tools.provider.gbif import GbifAPI
 from sppy.tools.provider.itis import ItisAPI
 
@@ -15,7 +14,7 @@ app = Flask(__name__)
 class _BrokerService:
     """Base S-to-the-N service, handles parameter names and acceptable values."""
     # overridden by subclasses
-    SERVICE_TYPE = APIService.Root
+    SERVICE_TYPE = APIService.BrokerRoot
 
     # ...............................................
     @classmethod
@@ -119,26 +118,6 @@ class _BrokerService:
 
     # .............................................................................
     @classmethod
-    def get_failure(cls, service=None, query_term=None, errors=None):
-        """Output format for all (soon) S^n services.
-
-        Args:
-            service: type of S^n services
-            query_term: query term provided by the user, ex: name or id
-            errors: list of info messages, warnings and errors (dictionaries)
-
-        Returns:
-            flask_app.broker.s2n_type.BrokerOutput object
-        """
-        if not service:
-            service = cls.SERVICE_TYPE["endpoint"]
-        prov_meta = cls._get_s2n_provider_response_elt(query_term=query_term)
-        all_output = BrokerOutput(
-            0, service, provider=prov_meta, errors=errors)
-        return all_output
-
-    # .............................................................................
-    @classmethod
     def endpoint(cls):
         """Return the URL endpoint for this class.
 
@@ -172,21 +151,21 @@ class _BrokerService:
 
     # ...............................................
     @classmethod
-    def _show_online(cls, providers):
+    def _show_online(cls, root_url, providers):
         svc = cls.SERVICE_TYPE["endpoint"]
         info = {
             "info": "Specify Network {} service is online.".format(svc)}
 
         param_lst = []
-        for p in cls.SERVICE_TYPE["params"]:
-            pinfo = BrokerParameters[p].copy()
+        for p, pdict in cls.SERVICE_TYPE["params"].items():
+            pinfo = pdict.copy()
             pinfo["type"] = str(type(pinfo["type"]))
             if providers is not None and p == "provider":
                 pinfo["options"] = list(providers)
             param_lst.append({p: pinfo})
         info["parameters"] = param_lst
 
-        prov_meta = cls._get_s2n_provider_response_elt()
+        prov_meta = cls._get_s2n_provider_response_elt(root_url)
 
         output = BrokerOutput(0, svc, provider=prov_meta, errors=info)
         return output
@@ -266,12 +245,13 @@ class _BrokerService:
         except Exception:
             pass
 
+        param_meta = cls.SERVICE_TYPE["params"][key]
         # First see if restricted to options
-        default_val = BrokerParameters[key]["default"]
-        type_val = BrokerParameters[key]["type"]
+        default_val = param_meta["default"]
+        type_val = param_meta["type"]
         # If restricted options, check
         try:
-            options = BrokerParameters[key]["options"]
+            options = param_meta["options"]
         except KeyError:
             options = None
         else:
@@ -338,7 +318,7 @@ class _BrokerService:
         errinfo = {}
 
         # Correct all parameter keys/values present
-        for key in cls.SERVICE_TYPE["params"]:
+        for key, param_meta in cls.SERVICE_TYPE["params"].items():
             val = user_kwargs[key]
             # Done in calling function
             if key == "provider":
@@ -350,7 +330,7 @@ class _BrokerService:
 
             # Require one valid icon_status
             elif key == "icon_status":
-                valid_stat = BrokerParameters[key]["options"]
+                valid_stat = param_meta["options"]
                 if val is None:
                     errinfo = lmutil.add_errinfo(
                         errinfo, "error",
@@ -370,14 +350,14 @@ class _BrokerService:
                     errinfo = lmutil.add_errinfo(
                         errinfo, "error",
                         f"Value {val} for parameter {key} is not in valid options "
-                        f"{BrokerParameters[key]['options']}")
+                        f"{param_meta['options']}")
                     good_params[key] = None
                 else:
                     good_params[key] = usr_val
 
         # Fill in defaults for missing parameters
         for key in cls.SERVICE_TYPE["params"]:
-            param_meta = BrokerParameters[key]
+            param_meta = cls.SERVICE_TYPE["params"][key]
             try:
                 _ = good_params[key]
             except KeyError:

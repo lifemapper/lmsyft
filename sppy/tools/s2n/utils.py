@@ -50,33 +50,6 @@ def get_traceback():
     return trcbk
 
 
-# # ...............................................
-# def get_icon_url(provider_code, icon_status=None):
-#     """Get a URL to the badge service with provider param and optionally icon_status.
-#
-#     Args:
-#         provider_code: code for provider to get an icon for.
-#         icon_status: one of flask_app.broker.constants.VALID_ICON_OPTIONS:
-#             active, inactive, hover
-#
-#     Returns:
-#         URL of for the badge API
-#     """
-#     url = None
-#     try:
-#         # TODO: get the URL from headers
-#         base_url = "https://broker-dev.spcoco.org"
-#         # base_url = cherrypy.request.headers["Origin"]
-#     except Exception:
-#         base_url = "https://localhost"
-#
-#     if ServiceProvider.is_valid_service(provider_code, APIEndpoint.Badge):
-#         url = f"{base_url}{ICON_API}/{provider_code}"
-#         if icon_status:
-#             url = f"{url}&icon_status={icon_status}"
-#     return url
-#
-
 # ...............................................
 def combine_errinfo(errinfo1, errinfo2):
     """Combine 2 dictionaries with keys `error`, `warning` and `info`.

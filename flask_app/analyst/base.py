@@ -2,8 +2,7 @@
 from flask import Flask
 
 import sppy.tools.s2n.utils as lmutil
-from flask_app.analyst.constants import AnalystParameters
-from flask_app.common.s2n_type import AnalystEndpoint, AnalystOutput, AnalystService
+from flask_app.common.s2n_type import AnalystOutput, APIEndpoint, APIService
 
 app = Flask(__name__)
 
@@ -12,7 +11,7 @@ app = Flask(__name__)
 class _AnalystService:
     """Base S-to-the-N service, handles parameter names and acceptable values."""
     # overridden by subclasses
-    SERVICE_TYPE = AnalystService.Root
+    SERVICE_TYPE = APIService.AnalystRoot
 
     # ...............................................
 
@@ -67,7 +66,7 @@ class _AnalystService:
         Returns:
             URL endpoint for the service
         """
-        endpoint = f"{AnalystEndpoint.Root}/{cls.SERVICE_TYPE['endpoint']}"
+        endpoint = f"{APIEndpoint.analyst_root()}/{cls.SERVICE_TYPE['endpoint']}"
         return endpoint
 
     # ...............................................
@@ -85,29 +84,27 @@ class _AnalystService:
             Exception: on unknown error.
         """
         try:
-            valid_services = []
-            output = cls._show_online(valid_services)
+            output = cls._show_online()
         except Exception:
             raise
         return output.response
 
     # ...............................................
     @classmethod
-    def _show_online(cls, services):
+    def _show_online(cls):
         svc = cls.SERVICE_TYPE["endpoint"]
         info = {
             "info": "Specify Network {} service is online.".format(svc)}
 
         param_lst = []
-        for p in cls.SERVICE_TYPE["params"]:
-            pinfo = AnalystParameters[p].copy()
+        for p, pdict in cls.SERVICE_TYPE["params"].items():
+            pinfo = pdict.copy()
             pinfo["type"] = str(type(pinfo["type"]))
             param_lst.append({p: pinfo})
         info["parameters"] = param_lst
 
-        prov_meta = cls._get_s2n_provider_response_elt()
-
-        output = AnalystOutput(0, svc, provider=prov_meta, errors=info)
+        output = AnalystOutput(
+            svc, description=cls.SERVICE_TYPE["description"], errors=info)
         return output
 
 
@@ -140,11 +137,11 @@ class _AnalystService:
             pass
 
         # First see if restricted to options
-        default_val = AnalystParameters[key]["default"]
-        type_val = AnalystParameters[key]["type"]
+        default_val = cls.SERVICE_TYPE["params"][key]["default"]
+        type_val = cls.SERVICE_TYPE["params"][key]["type"]
         # If restricted options, check
         try:
-            options = AnalystParameters[key]["options"]
+            options = cls.SERVICE_TYPE["params"][key]["options"]
         except KeyError:
             options = None
         else:
@@ -214,43 +211,20 @@ class _AnalystService:
         for key in cls.SERVICE_TYPE["params"]:
             val = user_kwargs[key]
             # Done in calling function
-            if key == "provider":
-                pass
-
-            # Do not edit namestr, maintain capitalization
-            elif key == "namestr":
-                good_params["namestr"] = val
-
-            # Require one valid icon_status
-            elif key == "icon_status":
-                valid_stat = AnalystParameters[key]["options"]
-                if val is None:
-                    errinfo = lmutil.add_errinfo(
-                        errinfo, "error",
-                        f"Parameter {key} containing one of {valid_stat} options is "
-                        f"required")
-                elif val not in valid_stat:
-                    errinfo = lmutil.add_errinfo(
-                        errinfo, "error",
-                        f"Value {val} for parameter {key} not in valid options "
-                        f"{valid_stat}")
-                else:
-                    good_params[key] = val
-
-            elif val is not None:
+            if val is not None:
                 usr_val, valid_options = cls._fix_type_new(key, val)
                 if valid_options is not None and val not in valid_options:
                     errinfo = lmutil.add_errinfo(
                         errinfo, "error",
                         f"Value {val} for parameter {key} is not in valid options "
-                        f"{AnalystParameters[key]['options']}")
+                        f"{cls.SERVICE_TYPE['params'][key]['options']}")
                     good_params[key] = None
                 else:
                     good_params[key] = usr_val
 
         # Fill in defaults for missing parameters
         for key in cls.SERVICE_TYPE["params"]:
-            param_meta = AnalystParameters[key]
+            param_meta = cls.SERVICE_TYPE["params"][key]
             try:
                 _ = good_params[key]
             except KeyError:

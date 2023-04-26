@@ -82,6 +82,25 @@ class APIEndpoint:
     Count = "count"
 
     @classmethod
+    def Resources(cls):
+        return {
+            cls.Analyst: [cls.Count],
+            cls.Broker:
+                [
+                    cls.Badge, cls.Name,
+                    cls.Occurrence, cls.Frontend
+                ]
+        }
+
+    @classmethod
+    def BrokerServices(cls):
+        return cls.Resources[cls.Broker]
+
+    @classmethod
+    def AnalystServices(cls):
+        return cls.Resources[cls.Analyst]
+
+    @classmethod
     def analyst_root(cls):
         """Get the endpoints for all Specify Network API services.
 
@@ -107,7 +126,7 @@ class APIEndpoint:
         Returns:
             list of all Endpoints
         """
-        return [cls.Count]
+        [f"{cls.analyst_root()}/{svc}" for svc in cls.AnalystServices()]
 
     @classmethod
     def get_broker_endpoints(cls):
@@ -116,46 +135,126 @@ class APIEndpoint:
         Returns:
             list of all BrokerEndpoints
         """
-        return [cls.Badge, cls.Name, cls.Occurrence, cls.Frontend]
+        return [f"{cls.broker_root()}/{svc}" for svc in cls.BrokerServices()]
 
 
 # .............................................................................
 class APIService:
     """Endpoint, parameters, output format for all Specify Network Broker APIs."""
-    Root = {
+    BrokerRoot = {
         "endpoint": APIEndpoint.broker_root(),
-        "params": [],
+        "params": {},
+        "description": "",
+        S2nKey.RECORD_FORMAT: None
+    }
+    AnalystRoot = {
+        "endpoint": APIEndpoint.analyst_root(),
+        "params": {},
+        "description": "",
         S2nKey.RECORD_FORMAT: None
     }
     # Icons for service providers
     Badge = {
         "endpoint": APIEndpoint.Badge,
-        "params": ["provider", "icon_status"],
+        "params": {
+            "provider": {
+                "type": "",
+                "default": None,
+                "options": ["gbif", "idb", "itis", "mopho", "worms"]
+            },
+            "icon_status": {
+                "type": "",
+                "options": ["active", "inactive", "hover"],
+                "default": None
+            }
+        },
+        "description": "Return an icon for the given data provider service.",
         S2nKey.RECORD_FORMAT: "image/png"
+    }
+    # Counts
+    Count = {
+        "endpoint": APIEndpoint.Count,
+        "params": {
+            "collection_id": {
+                "type": "",
+                "description": "Collection identifier",
+                "default": None
+            },
+            "organization_id": {
+                "type": "",
+                "description": "Organization identifier",
+                "default": None
+            }
+        },
+        "description": "Return record count for the given collection or organization.",
+        S2nKey.RECORD_FORMAT: ""
     }
     # Taxonomic Resolution
     Name = {
         "endpoint": APIEndpoint.Name,
-        "params": [
-            "provider", "namestr", "is_accepted", "gbif_parse", "gbif_count", "kingdom"
-        ],
+        "params": {
+            "provider": {
+                "type": "",
+                "default": None,
+                "options": ["gbif", "itis", "worms"]
+            },
+            "namestr": {"type": "", "default": None},
+            "is_accepted": {"type": False, "default": False},
+            "gbif_parse": {"type": False, "default": False},
+            "gbif_count": {"type": False, "default": False},
+            "kingdom": {"type": "", "default": None}
+        },
+        "description":
+            "Return `accepted` taxonomic names for a given string from taxonomic name "
+            "services.",
         S2nKey.RECORD_FORMAT: ""
     }
     # Specimen occurrence records
     Occurrence = {
         "endpoint": APIEndpoint.Occurrence,
-        "params": ["provider", "occid", "gbif_dataset_key", "count_only"],
+        "params": {
+            "provider": {
+                "type": "",
+                "default": None,
+                # Must match parameters in ServiceProvider["param"]
+                "options": ["gbif", "idb", "mopho"]
+            },
+            "occid": {"type": "", "default": None},
+            "gbif_dataset_key": {"type": "", "default": None},
+            "count_only": {"type": False, "default": False},
+        },
+        "description":
+            "Return occurrence records for a given identifier from occurrence data "
+            "aggregators.",
         S2nKey.RECORD_FORMAT: ""
     }
     Frontend = {
         "endpoint": APIEndpoint.Frontend,
-        "params": ["occid", "namestr"],
+        "params": {
+            "occid" : {"type": "", "default": None},
+            "namestr": {"type": "", "default": None}
+        },
+        "description":
+            "Return a formatted webpage of metadata for a given occurrence identifier "
+            "and its scientific name from occurrence aggregators and taxonomic name "
+            "services.",
         S2nKey.RECORD_FORMAT: ""
     }
 
+    @classmethod
+    def _get_provider_param(cls):
+        return {
+            "type": "",
+            "default": None,
+            "options": [
+                ServiceProvider.GBIF[S2nKey.PARAM],
+                ServiceProvider.iDigBio[S2nKey.PARAM],
+                ServiceProvider.ITISSolr[S2nKey.PARAM],
+                ServiceProvider.MorphoSource[S2nKey.PARAM],
+            ]
+        }
 
-
-# .............................................................................
+    # .............................................................................
 class COMMUNITY_SCHEMA:
     """Codes and URLs for community schemas used by the Specify Network."""
     DWC = {"code": "dwc", "url": "http://rs.tdwg.org/dwc/terms"}
@@ -922,6 +1021,193 @@ class AnalystOutput:
             S2nKey.RECORDS: records,
             S2nKey.ERRORS: errors
         }
+
+# .............................................................................
+class ServiceProvider:
+    """Name and metadata for external Specify Network data providers."""
+    Broker = {
+        S2nKey.NAME: "Specify Network",
+        S2nKey.PARAM: "specifynetwork",
+        S2nKey.SERVICES: [APIEndpoint.Badge],
+        # "icon": {"active": "{}/SpNetwork_active.png",
+        #          "inactive": "{}/SpNetwork_inactive.png",
+        #          "hover": "{}/SpNetwork_hover.png"}
+    }
+    GBIF = {
+        S2nKey.NAME: "GBIF",
+        S2nKey.PARAM: "gbif",
+        S2nKey.SERVICES: [APIEndpoint.Occurrence, APIEndpoint.Name, APIEndpoint.Badge],
+        "icon": {
+            "active": "gbif_active-01.png",
+            "inactive": "gbif_inactive-01.png",
+            "hover": "gbif_hover-01-01.png"
+        }
+    }
+    iDigBio = {
+        S2nKey.NAME: "iDigBio",
+        S2nKey.PARAM: "idb",
+        S2nKey.SERVICES: [APIEndpoint.Occurrence, APIEndpoint.Badge],
+        "icon": {
+            "active": "idigbio_colors_active-01.png",
+            "inactive": "idigbio_colors_inactive-01.png",
+            "hover": "idigbio_colors_hover-01.png"
+        }
+    }
+    ITISSolr = {
+        S2nKey.NAME: "ITIS",
+        S2nKey.PARAM: "itis",
+        S2nKey.SERVICES: [APIEndpoint.Badge, APIEndpoint.Name],
+        "icon": {
+            "active": "itis_active.png",
+            "inactive": "itis_inactive.png",
+            "hover": "itis_hover.png"
+        }
+    }
+    MorphoSource = {
+        S2nKey.NAME: "MorphoSource",
+        S2nKey.PARAM: "mopho",
+        S2nKey.SERVICES: [
+            APIEndpoint.Badge, APIEndpoint.Occurrence],
+        "icon": {
+            "active": "morpho_active-01.png",
+            "inactive": "morpho_inactive-01.png",
+            "hover": "morpho_hover-01.png"
+        }
+    }
+    # TODO: need an WoRMS badge
+    WoRMS = {
+        S2nKey.NAME: "WoRMS",
+        S2nKey.PARAM: "worms",
+        S2nKey.SERVICES: [APIEndpoint.Badge, APIEndpoint.Name],
+        "icon": {
+            "active": "worms_active.png",
+        }
+    }
+
+    # ....................
+    @classmethod
+    def get_values(cls, param_or_name):
+        """Return the ServiceProvider object for standard provider long or short name.
+
+        Args:
+            param_or_name: full name or URL parameter for a ServiceProvider.
+
+        Returns:
+            ServiceProvider object.
+        """
+        if param_or_name in (
+                cls.GBIF[S2nKey.NAME], cls.GBIF[S2nKey.PARAM]
+        ):
+            return cls.GBIF
+        elif param_or_name in (
+                cls.iDigBio[S2nKey.NAME],
+                cls.iDigBio[S2nKey.PARAM]
+        ):
+            return cls.iDigBio
+        elif param_or_name in (
+                cls.ITISSolr[S2nKey.NAME],
+                cls.ITISSolr[S2nKey.PARAM]
+        ):
+            return cls.ITISSolr
+        elif param_or_name in (
+                cls.MorphoSource[S2nKey.NAME],
+                cls.MorphoSource[S2nKey.PARAM]
+        ):
+            return cls.MorphoSource
+        elif param_or_name in (
+                cls.WoRMS[S2nKey.NAME], cls.WoRMS[S2nKey.PARAM]
+        ):
+            return cls.WoRMS
+        elif param_or_name in (
+                cls.Broker[S2nKey.NAME],
+                cls.Broker[S2nKey.PARAM]
+        ):
+            return cls.Broker
+        else:
+            return None
+
+    # ....................
+    @classmethod
+    def is_valid_param(cls, param):
+        """Return a flag indicating if the parameter key is valid for services.
+
+        Args:
+            param: keyword for URL request to a sp_network service
+
+        Returns:
+            boolean flag
+        """
+        params = [svc[S2nKey.PARAM] for svc in cls.all()]
+        if param in params:
+            return True
+        return False
+
+    # ....................
+    @classmethod
+    def is_valid_service(cls, param, svc):
+        """Return a flag indicating if the parameter key is valid for given service.
+
+        Args:
+            param: keyword for URL request to a sp_network service
+            svc: name of a sp_network service
+
+        Returns:
+            boolean flag
+        """
+        if param is not None:
+            val_dict = cls.get_values(param)
+            if svc in (val_dict["services"]):
+                return True
+        return False
+
+    # ....................
+    @classmethod
+    def get_name_from_param(cls, param):
+        """Return a full name of a service for the given service parameter value.
+
+        Args:
+            param: keyword for URL request to a sp_network service
+
+        Returns:
+            name for the service
+        """
+        name = None
+        if param is not None:
+            val_dict = cls.get_values(param)
+            name = val_dict[S2nKey.NAME]
+        return name
+
+    # ....................
+    @classmethod
+    def all(cls):
+        """Return all available ServiceProviders for the Specify network.
+
+        Returns:
+            list of ServiceProviders
+        """
+        return [
+            cls.GBIF, cls.iDigBio, cls.ITISSolr, cls.MorphoSource, cls.WoRMS
+        ]
+
+    # ....................
+    @classmethod
+    def get_icon_url(cls, root_url, provider_code, icon_status=None):
+        """Get a URL to the badge service with provider param and optionally icon_status.
+
+        Args:
+            root_url: the URL of this Specify Network service
+            provider_code: code for provider to get an icon for.
+            icon_status: one of APIService.Badge["params"]["icon_status"]["options"]:
+                active, inactive, hover
+
+        Returns:
+            URL of for the badge API
+        """
+        if cls.is_valid_service(provider_code, APIEndpoint.Badge):
+            url = f"{root_url}{APIEndpoint.broker_root()}/{APIEndpoint.Badge}/{provider_code}"
+            if icon_status:
+                url = f"{url}&icon_status={icon_status}"
+        return url
 
 
 # .............................................................................

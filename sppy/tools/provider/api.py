@@ -4,8 +4,7 @@ from logging import WARN
 import requests
 import urllib
 
-from flask_app.broker.constants import ServiceProvider
-from flask_app.common.s2n_type import S2nKey, BrokerOutput
+from flask_app.common.s2n_type import BrokerOutput, S2nKey, ServiceProvider
 from flask_app.common.constants import ENCODING, URL_ESCAPES
 
 from sppy.tools.util.logtools import logit
@@ -122,12 +121,12 @@ class APIQuery:
 
     # ...............................................
     @classmethod
-    def _get_provider_response_elt(cls, query_status=None, query_urls=None):
+    def _get_provider_response_elt(cls, broker_url, query_status=None, query_urls=None):
         provider_element = {}
         provcode = cls.PROVIDER[S2nKey.PARAM]
         provider_element[S2nKey.PROVIDER_CODE] = provcode
         provider_element[S2nKey.PROVIDER_LABEL] = cls.PROVIDER[S2nKey.NAME]
-        icon_url = ServiceProvider.get_icon_url(provcode)
+        icon_url = ServiceProvider.get_icon_url(broker_url, provcode)
         if icon_url:
             provider_element[S2nKey.PROVIDER_ICON_URL] = icon_url
         # Optional http status_code
@@ -320,7 +319,7 @@ class APIQuery:
     # ...............................................
     @classmethod
     def get_api_failure(
-            cls, service, provider_response_status, errinfo=None):
+            cls, broker_url, service, provider_response_status, errinfo=None):
         """Output format for all (soon) API queries.
 
         Args:
@@ -332,7 +331,7 @@ class APIQuery:
             flask_app.broker.s2n_type.BrokerOutput object
         """
         prov_meta = cls._get_provider_response_elt(
-            query_status=provider_response_status)
+            broker_url, query_status=provider_response_status)
         return BrokerOutput(0, service, provider=prov_meta, errors=errinfo)
 
     # ...............................................

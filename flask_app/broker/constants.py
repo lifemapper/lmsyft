@@ -17,7 +17,6 @@ DATA_DUMP_DELIMITER = "\t"
 GBIF_MISSING_KEY = "unmatched_gbif_ids"
 
 # VALID broker parameter options, must be list
-VALID_ICON_OPTIONS = ["active", "inactive", "hover"]
 ICON_CONTENT = "image/png"
 # ICON_API = '/api/v1/badge'
 ICON_DIR = "{}/icon".format(STATIC_DIR)
@@ -152,219 +151,218 @@ class TST_VALUES:
 #     }
 
 
-# .............................................................................
-class ServiceProvider:
-    """Name and metadata for external Specify Network data providers."""
-    Broker = {
-        S2nKey.NAME: "Specify Network",
-        S2nKey.PARAM: "specifynetwork",
-        S2nKey.SERVICES: [APIEndpoint.Badge],
-        # "icon": {"active": "{}/SpNetwork_active.png",
-        #          "inactive": "{}/SpNetwork_inactive.png",
-        #          "hover": "{}/SpNetwork_hover.png"}
-    }
-    GBIF = {
-        S2nKey.NAME: "GBIF",
-        S2nKey.PARAM: "gbif",
-        S2nKey.SERVICES: [APIEndpoint.Occurrence, APIEndpoint.Name, APIEndpoint.Badge],
-        "icon": {
-            "active": "gbif_active-01.png",
-            "inactive": "gbif_inactive-01.png",
-            "hover": "gbif_hover-01-01.png"
-        }
-    }
-    iDigBio = {
-        S2nKey.NAME: "iDigBio",
-        S2nKey.PARAM: "idb",
-        S2nKey.SERVICES: [APIEndpoint.Occurrence, APIEndpoint.Badge],
-        "icon": {
-            "active": "idigbio_colors_active-01.png",
-            "inactive": "idigbio_colors_inactive-01.png",
-            "hover": "idigbio_colors_hover-01.png"
-        }
-    }
-    ITISSolr = {
-        S2nKey.NAME: "ITIS",
-        S2nKey.PARAM: "itis",
-        S2nKey.SERVICES: [APIEndpoint.Badge, APIEndpoint.Name],
-        "icon": {
-            "active": "itis_active.png",
-            "inactive": "itis_inactive.png",
-            "hover": "itis_hover.png"
-        }
-    }
-    MorphoSource = {
-        S2nKey.NAME: "MorphoSource",
-        S2nKey.PARAM: "mopho",
-        S2nKey.SERVICES: [
-            APIEndpoint.Badge, APIEndpoint.Occurrence],
-        "icon": {
-            "active": "morpho_active-01.png",
-            "inactive": "morpho_inactive-01.png",
-            "hover": "morpho_hover-01.png"
-        }
-    }
-    # TODO: need an WoRMS badge
-    WoRMS = {
-        S2nKey.NAME: "WoRMS",
-        S2nKey.PARAM: "worms",
-        S2nKey.SERVICES: [APIEndpoint.Badge, APIEndpoint.Name],
-        "icon": {
-            "active": "worms_active.png",
-        }
-    }
-
-    # ....................
-    @classmethod
-    def get_values(cls, param_or_name):
-        """Return the ServiceProvider object for standard provider long or short name.
-
-        Args:
-            param_or_name: full name or URL parameter for a ServiceProvider.
-
-        Returns:
-            ServiceProvider object.
-        """
-        if param_or_name in (
-                ServiceProvider.GBIF[S2nKey.NAME], ServiceProvider.GBIF[S2nKey.PARAM]
-        ):
-            return ServiceProvider.GBIF
-        elif param_or_name in (
-                ServiceProvider.iDigBio[S2nKey.NAME],
-                ServiceProvider.iDigBio[S2nKey.PARAM]
-        ):
-            return ServiceProvider.iDigBio
-        elif param_or_name in (
-                ServiceProvider.ITISSolr[S2nKey.NAME],
-                ServiceProvider.ITISSolr[S2nKey.PARAM]
-        ):
-            return ServiceProvider.ITISSolr
-        elif param_or_name in (
-                ServiceProvider.MorphoSource[S2nKey.NAME],
-                ServiceProvider.MorphoSource[S2nKey.PARAM]
-        ):
-            return ServiceProvider.MorphoSource
-        elif param_or_name in (
-                ServiceProvider.WoRMS[S2nKey.NAME], ServiceProvider.WoRMS[S2nKey.PARAM]
-        ):
-            return ServiceProvider.WoRMS
-        elif param_or_name in (
-                ServiceProvider.Broker[S2nKey.NAME],
-                ServiceProvider.Broker[S2nKey.PARAM]
-        ):
-            return ServiceProvider.Broker
-        else:
-            return None
-
-    # ....................
-    @classmethod
-    def is_valid_param(cls, param):
-        """Return a flag indicating if the parameter key is valid for services.
-
-        Args:
-            param: keyword for URL request to a sp_network service
-
-        Returns:
-            boolean flag
-        """
-        params = [svc[S2nKey.PARAM] for svc in cls.all()]
-        if param in params:
-            return True
-        return False
-
-    # ....................
-    @classmethod
-    def is_valid_service(cls, param, svc):
-        """Return a flag indicating if the parameter key is valid for given service.
-
-        Args:
-            param: keyword for URL request to a sp_network service
-            svc: name of a sp_network service
-
-        Returns:
-            boolean flag
-        """
-        if param is not None:
-            val_dict = ServiceProvider.get_values(param)
-            if svc in (val_dict["services"]):
-                return True
-        return False
-
-    # ....................
-    @classmethod
-    def get_name_from_param(cls, param):
-        """Return a full name of a service for the given service parameter value.
-
-        Args:
-            param: keyword for URL request to a sp_network service
-
-        Returns:
-            name for the service
-        """
-        name = None
-        if param is not None:
-            val_dict = ServiceProvider.get_values(param)
-            name = val_dict[S2nKey.NAME]
-        return name
-
-    # ....................
-    @classmethod
-    def all(cls):
-        """Return all available ServiceProviders for the Specify network.
-
-        Returns:
-            list of ServiceProviders
-        """
-        return [
-            ServiceProvider.GBIF, ServiceProvider.iDigBio,
-            # ServiceProvider.IPNI,
-            ServiceProvider.ITISSolr, ServiceProvider.MorphoSource,
-            ServiceProvider.WoRMS, ServiceProvider.Broker]
-
-    # ....................
-    def get_icon_url(root_url, provider_code, icon_status=None):
-        """Get a URL to the badge service with provider param and optionally icon_status.
-
-        Args:
-            root_url: the URL of this Specify Network service
-            provider_code: code for provider to get an icon for.
-            icon_status: one of flask_app.broker.constants.VALID_ICON_OPTIONS:
-                active, inactive, hover
-
-        Returns:
-            URL of for the badge API
-        """
-        if ServiceProvider.is_valid_service(provider_code, APIEndpoint.Badge):
-            url = f"{root_url}{APIEndpoint.broker_root()}/{APIEndpoint.Badge}/{provider_code}"
-            if icon_status:
-                url = f"{url}&icon_status={icon_status}"
-        return url
-
-# .............................................................................
-BrokerParameters = {
-    "provider": {
-        "type": "", "default": None, "options": [
-            ServiceProvider.GBIF[S2nKey.PARAM],
-            ServiceProvider.iDigBio[S2nKey.PARAM],
-            ServiceProvider.ITISSolr[S2nKey.PARAM],
-            ServiceProvider.MorphoSource[S2nKey.PARAM],
-            ]
-        },
-    "namestr": {"type": "", "default": None},
-    "is_accepted": {"type": False, "default": False},
-    "gbif_parse": {"type": False, "default": False},
-    "gbif_count": {"type": False, "default": False},
-    "itis_match": {"type": False, "default": False},
-    "kingdom": {"type": "", "default": None},
-    "occid": {"type": "", "default": None},
-    "gbif_dataset_key": {"type": "", "default": None},
-    "count_only": {"type": False, "default": False},
-    "url": {"type": "", "default": None},
-    "icon_status": {
-        "type": "",
-        "options": VALID_ICON_OPTIONS,
-        "default": None}
-    }
+# # .............................................................................
+# class ServiceProvider:
+#     """Name and metadata for external Specify Network data providers."""
+#     Broker = {
+#         S2nKey.NAME: "Specify Network",
+#         S2nKey.PARAM: "specifynetwork",
+#         S2nKey.SERVICES: [APIEndpoint.Badge],
+#         # "icon": {"active": "{}/SpNetwork_active.png",
+#         #          "inactive": "{}/SpNetwork_inactive.png",
+#         #          "hover": "{}/SpNetwork_hover.png"}
+#     }
+#     GBIF = {
+#         S2nKey.NAME: "GBIF",
+#         S2nKey.PARAM: "gbif",
+#         S2nKey.SERVICES: [APIEndpoint.Occurrence, APIEndpoint.Name, APIEndpoint.Badge],
+#         "icon": {
+#             "active": "gbif_active-01.png",
+#             "inactive": "gbif_inactive-01.png",
+#             "hover": "gbif_hover-01-01.png"
+#         }
+#     }
+#     iDigBio = {
+#         S2nKey.NAME: "iDigBio",
+#         S2nKey.PARAM: "idb",
+#         S2nKey.SERVICES: [APIEndpoint.Occurrence, APIEndpoint.Badge],
+#         "icon": {
+#             "active": "idigbio_colors_active-01.png",
+#             "inactive": "idigbio_colors_inactive-01.png",
+#             "hover": "idigbio_colors_hover-01.png"
+#         }
+#     }
+#     ITISSolr = {
+#         S2nKey.NAME: "ITIS",
+#         S2nKey.PARAM: "itis",
+#         S2nKey.SERVICES: [APIEndpoint.Badge, APIEndpoint.Name],
+#         "icon": {
+#             "active": "itis_active.png",
+#             "inactive": "itis_inactive.png",
+#             "hover": "itis_hover.png"
+#         }
+#     }
+#     MorphoSource = {
+#         S2nKey.NAME: "MorphoSource",
+#         S2nKey.PARAM: "mopho",
+#         S2nKey.SERVICES: [
+#             APIEndpoint.Badge, APIEndpoint.Occurrence],
+#         "icon": {
+#             "active": "morpho_active-01.png",
+#             "inactive": "morpho_inactive-01.png",
+#             "hover": "morpho_hover-01.png"
+#         }
+#     }
+#     # TODO: need an WoRMS badge
+#     WoRMS = {
+#         S2nKey.NAME: "WoRMS",
+#         S2nKey.PARAM: "worms",
+#         S2nKey.SERVICES: [APIEndpoint.Badge, APIEndpoint.Name],
+#         "icon": {
+#             "active": "worms_active.png",
+#         }
+#     }
+#
+#     # ....................
+#     @classmethod
+#     def get_values(cls, param_or_name):
+#         """Return the ServiceProvider object for standard provider long or short name.
+#
+#         Args:
+#             param_or_name: full name or URL parameter for a ServiceProvider.
+#
+#         Returns:
+#             ServiceProvider object.
+#         """
+#         if param_or_name in (
+#                 ServiceProvider.GBIF[S2nKey.NAME], ServiceProvider.GBIF[S2nKey.PARAM]
+#         ):
+#             return ServiceProvider.GBIF
+#         elif param_or_name in (
+#                 ServiceProvider.iDigBio[S2nKey.NAME],
+#                 ServiceProvider.iDigBio[S2nKey.PARAM]
+#         ):
+#             return ServiceProvider.iDigBio
+#         elif param_or_name in (
+#                 ServiceProvider.ITISSolr[S2nKey.NAME],
+#                 ServiceProvider.ITISSolr[S2nKey.PARAM]
+#         ):
+#             return ServiceProvider.ITISSolr
+#         elif param_or_name in (
+#                 ServiceProvider.MorphoSource[S2nKey.NAME],
+#                 ServiceProvider.MorphoSource[S2nKey.PARAM]
+#         ):
+#             return ServiceProvider.MorphoSource
+#         elif param_or_name in (
+#                 ServiceProvider.WoRMS[S2nKey.NAME], ServiceProvider.WoRMS[S2nKey.PARAM]
+#         ):
+#             return ServiceProvider.WoRMS
+#         elif param_or_name in (
+#                 ServiceProvider.Broker[S2nKey.NAME],
+#                 ServiceProvider.Broker[S2nKey.PARAM]
+#         ):
+#             return ServiceProvider.Broker
+#         else:
+#             return None
+#
+#     # ....................
+#     @classmethod
+#     def is_valid_param(cls, param):
+#         """Return a flag indicating if the parameter key is valid for services.
+#
+#         Args:
+#             param: keyword for URL request to a sp_network service
+#
+#         Returns:
+#             boolean flag
+#         """
+#         params = [svc[S2nKey.PARAM] for svc in cls.all()]
+#         if param in params:
+#             return True
+#         return False
+#
+#     # ....................
+#     @classmethod
+#     def is_valid_service(cls, param, svc):
+#         """Return a flag indicating if the parameter key is valid for given service.
+#
+#         Args:
+#             param: keyword for URL request to a sp_network service
+#             svc: name of a sp_network service
+#
+#         Returns:
+#             boolean flag
+#         """
+#         if param is not None:
+#             val_dict = ServiceProvider.get_values(param)
+#             if svc in (val_dict["services"]):
+#                 return True
+#         return False
+#
+#     # ....................
+#     @classmethod
+#     def get_name_from_param(cls, param):
+#         """Return a full name of a service for the given service parameter value.
+#
+#         Args:
+#             param: keyword for URL request to a sp_network service
+#
+#         Returns:
+#             name for the service
+#         """
+#         name = None
+#         if param is not None:
+#             val_dict = ServiceProvider.get_values(param)
+#             name = val_dict[S2nKey.NAME]
+#         return name
+#
+#     # ....................
+#     @classmethod
+#     def all(cls):
+#         """Return all available ServiceProviders for the Specify network.
+#
+#         Returns:
+#             list of ServiceProviders
+#         """
+#         return [
+#             ServiceProvider.GBIF, ServiceProvider.iDigBio,
+#             # ServiceProvider.IPNI,
+#             ServiceProvider.ITISSolr, ServiceProvider.MorphoSource,
+#             ServiceProvider.WoRMS, ServiceProvider.Broker]
+#
+#     # ....................
+#     def get_icon_url(root_url, provider_code, icon_status=None):
+#         """Get a URL to the badge service with provider param and optionally icon_status.
+#
+#         Args:
+#             root_url: the URL of this Specify Network service
+#             provider_code: code for provider to get an icon for.
+#             icon_status: one of APIService.Badge["params"]["icon_status"]["options"]
+#
+#         Returns:
+#             URL of for the badge API
+#         """
+#         if ServiceProvider.is_valid_service(provider_code, APIEndpoint.Badge):
+#             url = f"{root_url}{APIEndpoint.broker_root()}/{APIEndpoint.Badge}/{provider_code}"
+#             if icon_status:
+#                 url = f"{url}&icon_status={icon_status}"
+#         return url
+#
+# # .............................................................................
+# BrokerParameters = {
+#     "provider": {
+#         "type": "", "default": None, "options": [
+#             ServiceProvider.GBIF[S2nKey.PARAM],
+#             ServiceProvider.iDigBio[S2nKey.PARAM],
+#             ServiceProvider.ITISSolr[S2nKey.PARAM],
+#             ServiceProvider.MorphoSource[S2nKey.PARAM],
+#             ]
+#         },
+#     "namestr": {"type": "", "default": None},
+#     "is_accepted": {"type": False, "default": False},
+#     "gbif_parse": {"type": False, "default": False},
+#     "gbif_count": {"type": False, "default": False},
+#     "itis_match": {"type": False, "default": False},
+#     "kingdom": {"type": "", "default": None},
+#     "occid": {"type": "", "default": None},
+#     "gbif_dataset_key": {"type": "", "default": None},
+#     "count_only": {"type": False, "default": False},
+#     "url": {"type": "", "default": None},
+#     "icon_status": {
+#         "type": "",
+#         "options": VALID_ICON_OPTIONS,
+#         "default": None}
+#     }
 
 
 # ......................................................
