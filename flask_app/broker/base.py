@@ -172,6 +172,16 @@ class _BrokerService:
 
     # ...............................................
     @classmethod
+    def _get_badquery_output(cls, root_url, error_msg):
+        svc = cls.SERVICE_TYPE["endpoint"]
+        errinfo = {"error": [error_msg]}
+        prov_meta = cls._get_s2n_provider_response_elt(root_url)
+
+        output = BrokerOutput(0, svc, provider=prov_meta, errors=errinfo)
+        return output
+
+    # ...............................................
+    @classmethod
     def parse_name_with_gbif(cls, namestr):
         """Return the canonical name parsed from a complex scientific name by GBIF.
 

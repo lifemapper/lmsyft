@@ -1,10 +1,10 @@
 """Class for the Specify Network Occurrence API service."""
-from http import HTTPStatus
 from werkzeug.exceptions import (BadRequest, InternalServerError)
 
 from flask_app.broker.base import _BrokerService
 from flask_app.common.s2n_type import (
-    APIService, BrokerOutput, BrokerSchema, S2nKey, ServiceProvider)
+    APIService, BrokerOutput, BrokerSchema, S2nKey, ServiceProvider,
+    print_broker_output)
 
 from sppy.tools.provider.gbif import GbifAPI
 from sppy.tools.provider.idigbio import IdigbioAPI
@@ -44,55 +44,40 @@ class OccurrenceSvc(_BrokerService):
     # ...............................................
     @classmethod
     def _get_mopho_records(cls, root_url, occid, count_only):
-        try:
-            output = MorphoSourceAPI.get_occurrences_by_occid_page1(
-                occid, count_only=count_only)
-        except Exception:
-            traceback = get_traceback()
-            output = MorphoSourceAPI.get_api_failure(
-                root_url, cls.SERVICE_TYPE["endpoint"],
-                HTTPStatus.INTERNAL_SERVER_ERROR, errinfo={"error": [traceback]})
-        else:
-            output.set_value(
-                S2nKey.RECORD_FORMAT, cls.SERVICE_TYPE[S2nKey.RECORD_FORMAT])
-            output.format_records(cls.ORDERED_FIELDNAMES)
+        output = MorphoSourceAPI.get_occurrences_by_occid_page1(
+            root_url, occid, count_only=count_only)
+        output.set_value(
+            S2nKey.RECORD_FORMAT, cls.SERVICE_TYPE[S2nKey.RECORD_FORMAT])
+        output.format_records(cls.ORDERED_FIELDNAMES)
         return output.response
 
     # ...............................................
     @classmethod
     def _get_idb_records(cls, root_url, occid, count_only):
-        try:
-            output = IdigbioAPI.get_occurrences_by_occid(occid, count_only=count_only)
-        except Exception:
-            traceback = get_traceback()
-            output = IdigbioAPI.get_api_failure(
-                root_url, cls.SERVICE_TYPE["endpoint"],
-                HTTPStatus.INTERNAL_SERVER_ERROR, errinfo={"error": [traceback]})
-        else:
-            output.set_value(
-                S2nKey.RECORD_FORMAT, cls.SERVICE_TYPE[S2nKey.RECORD_FORMAT])
-            output.format_records(cls.ORDERED_FIELDNAMES)
+        output = IdigbioAPI.get_occurrences_by_occid(
+            root_url, occid, count_only=count_only)
+        output.set_value(
+            S2nKey.RECORD_FORMAT, cls.SERVICE_TYPE[S2nKey.RECORD_FORMAT])
+        output.format_records(cls.ORDERED_FIELDNAMES)
         return output.response
 
     # ...............................................
     @classmethod
     def _get_gbif_records(cls, root_url, occid, gbif_dataset_key, count_only):
-        try:
+        if not (occid is None and gbif_dataset_key is None):
             if occid is not None:
                 output = GbifAPI.get_occurrences_by_occid(
-                    occid, count_only=count_only)
-            elif gbif_dataset_key is not None:
+                    root_url, occid, count_only=count_only)
+            else:
                 output = GbifAPI.get_occurrences_by_dataset(
-                    gbif_dataset_key, count_only)
-        except Exception:
-            traceback = get_traceback()
-            output = GbifAPI.get_api_failure(
-                root_url, cls.SERVICE_TYPE["endpoint"],
-                HTTPStatus.INTERNAL_SERVER_ERROR, errinfo={"error": [traceback]})
-        else:
+                    root_url, gbif_dataset_key, count_only)
             output.set_value(
                 S2nKey.RECORD_FORMAT, cls.SERVICE_TYPE[S2nKey.RECORD_FORMAT])
             output.format_records(cls.ORDERED_FIELDNAMES)
+
+        else:
+            output = cls._get_badquery_output(
+                root_url, "Must provide occurrence_id or gbif_dataset_key")
         return output.response
 
     # ...............................................
@@ -239,7 +224,7 @@ if __name__ == "__main__":
     out = svc.get_endpoint(root_url)
     out = svc.get_occurrence_records(root_url, occid="a7156437-55ec-4c6f-89de-938f9361753d")
 
-    print(out)
+    print_broker_output(out, do_print_rec=True)
 
     # for occid in occids:
     #     out = svc.get_occurrence_records(occid=occid, provider=None, count_only=False)

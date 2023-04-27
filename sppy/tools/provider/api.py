@@ -9,7 +9,7 @@ from flask_app.common.constants import ENCODING, URL_ESCAPES
 
 from sppy.tools.util.logtools import logit
 from sppy.tools.s2n.lm_xml import fromstring, deserialize
-from sppy.tools.s2n.utils import add_errinfo
+from sppy.tools.s2n.utils import add_errinfo, get_traceback
 
 
 # .............................................................................
@@ -58,7 +58,7 @@ class APIQuery:
     @classmethod
     def _standardize_output(
             cls, output, count_key, records_key, record_format, service,
-            query_status=None, query_urls=None, count_only=False, errinfo=None):
+            provider_meta, query_urls=None, count_only=False, errinfo=None):
         if output is None:
             raise Exception(f"Failed to return output from {cls.url}")
 
@@ -87,10 +87,10 @@ class APIQuery:
                         msg = cls._get_error_message(err=e)
                         errinfo = add_errinfo(errinfo, "error", msg)
 
-        prov_meta = cls._get_provider_response_elt(
-            query_status=query_status, query_urls=query_urls)
+        # prov_meta = cls._get_provider_response_elt(
+        #     query_status=query_status, query_urls=query_urls)
         std_output = BrokerOutput(
-            total, service, provider=prov_meta, record_format=record_format,
+            total, service, provider=provider_meta, record_format=record_format,
             records=stdrecs, errors=errinfo)
 
         return std_output
@@ -118,6 +118,16 @@ class APIQuery:
                 except KeyError:
                     code_dict[code] = code
         return code_dict
+
+    # ...............................................
+    @classmethod
+    def _get_query_fail_output(cls, broker_url, query_urls, api_endpoint):
+        errinfo = {"error": [cls._get_error_message(err=get_traceback())]}
+        prov_meta = cls._get_provider_response_elt(
+            broker_url, query_status=HTTPStatus.INTERNAL_SERVER_ERROR,
+            query_urls=query_urls)
+        std_output = BrokerOutput(
+            0, api_endpoint, provider=prov_meta, errors=errinfo)
 
     # ...............................................
     @classmethod
@@ -316,23 +326,23 @@ class APIQuery:
         q_val = first_clause + q_val
         return q_val
 
-    # ...............................................
-    @classmethod
-    def get_api_failure(
-            cls, broker_url, service, provider_response_status, errinfo=None):
-        """Output format for all (soon) API queries.
-
-        Args:
-            service: type of Specify Network service
-            provider_response_status: HTTPStatus of provider query
-            errinfo: dictionary of info messages, warnings, errors
-
-        Returns:
-            flask_app.broker.s2n_type.BrokerOutput object
-        """
-        prov_meta = cls._get_provider_response_elt(
-            broker_url, query_status=provider_response_status)
-        return BrokerOutput(0, service, provider=prov_meta, errors=errinfo)
+    # # ...............................................
+    # @classmethod
+    # def get_api_failure(
+    #         cls, broker_url, service, provider_response_status, errinfo=None):
+    #     """Output format for all (soon) API queries.
+    #
+    #     Args:
+    #         service: type of Specify Network service
+    #         provider_response_status: HTTPStatus of provider query
+    #         errinfo: dictionary of info messages, warnings, errors
+    #
+    #     Returns:
+    #         flask_app.broker.s2n_type.BrokerOutput object
+    #     """
+    #     prov_meta = cls._get_provider_response_elt(
+    #         broker_url, query_status=provider_response_status)
+    #     return BrokerOutput(0, service, provider=prov_meta, errors=errinfo)
 
     # ...............................................
     def query_by_get(self, output_type="json", verify=True):

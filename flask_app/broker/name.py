@@ -21,100 +21,63 @@ class NameSvc(_BrokerService):
 
     # ...............................................
     @classmethod
-    def _get_gbif_records(cls, namestr, is_accepted, gbif_count):
-        try:
-            output = GbifAPI.match_name(namestr, is_accepted=is_accepted)
-        except Exception:
-            traceback = get_traceback()
-            output = GbifAPI.get_api_failure(
-                cls.SERVICE_TYPE["endpoint"], HTTPStatus.INTERNAL_SERVER_ERROR,
-                errinfo={"error": [traceback]})
-        else:
-            output.set_value(
-                S2nKey.RECORD_FORMAT, cls.SERVICE_TYPE[S2nKey.RECORD_FORMAT])
+    def _get_gbif_records(cls, root_url, namestr, is_accepted, gbif_count):
+        output = GbifAPI.match_name(root_url, namestr, is_accepted=is_accepted)
+        output.set_value(
+            S2nKey.RECORD_FORMAT, cls.SERVICE_TYPE[S2nKey.RECORD_FORMAT])
 
-            # Add occurrence count to name records
-            if gbif_count is True:
-                prov_query_list = output.provider_query
-                keyfld = BrokerSchema.get_gbif_taxonkey_fld()
-                cntfld = BrokerSchema.get_gbif_occcount_fld()
-                urlfld = BrokerSchema.get_gbif_occurl_fld()
-                for namerec in output.records:
+        # Add occurrence count to name records
+        if gbif_count is True:
+            prov_query_list = output.provider_query
+            keyfld = BrokerSchema.get_gbif_taxonkey_fld()
+            cntfld = BrokerSchema.get_gbif_occcount_fld()
+            urlfld = BrokerSchema.get_gbif_occurl_fld()
+            for namerec in output.records:
+                try:
+                    taxon_key = namerec[keyfld]
+                except Exception:
+                    print(f"No usageKey for counting {namestr} records")
+                else:
+                    # Add more info to each record
                     try:
-                        taxon_key = namerec[keyfld]
+                        count_output = GbifAPI.count_occurrences_for_taxon(
+                            root_url, taxon_key)
                     except Exception:
-                        print(f"No usageKey for counting {namestr} records")
+                        traceback = get_traceback()
+                        print(traceback)
                     else:
-                        # Add more info to each record
                         try:
-                            count_output = GbifAPI.count_occurrences_for_taxon(
-                                taxon_key)
+                            count_query = count_output.provider[
+                                S2nKey.PROVIDER_QUERY_URL][0]
+                            namerec[cntfld] = count_output.count
                         except Exception:
                             traceback = get_traceback()
-                            print(traceback)
+                            output.append_value(S2nKey.ERRORS, {"error": traceback})
                         else:
-                            try:
-                                count_query = count_output.provider[
-                                    S2nKey.PROVIDER_QUERY_URL][0]
-                                namerec[cntfld] = count_output.count
-                            except Exception:
-                                traceback = get_traceback()
-                                output.append_value(S2nKey.ERRORS, {"error": traceback})
-                            else:
-                                namerec[urlfld] = count_query
-                                prov_query_list.append(count_query)
-                # add count queries to list
-                output.set_value(S2nKey.PROVIDER_QUERY_URL, prov_query_list)
-                output.format_records(cls.ORDERED_FIELDNAMES)
-        return output.response
-
-    # # ...............................................
-    # @classmethod
-    # def _get_ipni_records(cls, namestr, is_accepted):
-    #     try:
-    #         output = IpniAPI.match_name(namestr, is_accepted=is_accepted)
-    #     except Exception:
-    #         traceback = get_traceback()
-    #         output = IpniAPI.get_api_failure(
-    #             cls.SERVICE_TYPE["endpoint"], HTTPStatus.INTERNAL_SERVER_ERROR,
-    #             errinfo={"error": [traceback]})
-    #     else:
-    #         output.set_value(
-    #             S2nKey.RECORD_FORMAT, cls.SERVICE_TYPE[S2nKey.RECORD_FORMAT])
-    #         output.format_records(cls.ORDERED_FIELDNAMES)
-    #     return output.response
-
-    # ...............................................
-    @classmethod
-    def _get_itis_records(cls, namestr, is_accepted, kingdom):
-        try:
-            output = ItisAPI.match_name(
-                namestr, is_accepted=is_accepted, kingdom=kingdom)
-        except Exception:
-            traceback = get_traceback()
-            output = ItisAPI.get_api_failure(
-                cls.SERVICE_TYPE["endpoint"], HTTPStatus.INTERNAL_SERVER_ERROR,
-                errinfo={"error": [traceback]})
-        else:
-            output.set_value(
-                S2nKey.RECORD_FORMAT, cls.SERVICE_TYPE[S2nKey.RECORD_FORMAT])
+                            namerec[urlfld] = count_query
+                            prov_query_list.append(count_query)
+            # add count queries to list
+            output.set_value(S2nKey.PROVIDER_QUERY_URL, prov_query_list)
             output.format_records(cls.ORDERED_FIELDNAMES)
         return output.response
 
     # ...............................................
     @classmethod
-    def _get_worms_records(cls, namestr, is_accepted):
-        try:
-            output = WormsAPI.match_name(namestr, is_accepted=is_accepted)
-        except Exception:
-            traceback = get_traceback()
-            output = WormsAPI.get_api_failure(
-                cls.SERVICE_TYPE["endpoint"], HTTPStatus.INTERNAL_SERVER_ERROR,
-                errinfo={"error": [traceback]})
-        else:
-            output.set_value(
-                S2nKey.RECORD_FORMAT, cls.SERVICE_TYPE[S2nKey.RECORD_FORMAT])
-            output.format_records(cls.ORDERED_FIELDNAMES)
+    def _get_itis_records(cls, root_url, namestr, is_accepted, kingdom):
+        output = ItisAPI.match_name(
+            root_url, namestr, is_accepted=is_accepted, kingdom=kingdom)
+        output.set_value(
+            S2nKey.RECORD_FORMAT, cls.SERVICE_TYPE[S2nKey.RECORD_FORMAT])
+        output.format_records(cls.ORDERED_FIELDNAMES)
+        return output.response
+
+    # ...............................................
+    @classmethod
+    def _get_worms_records(cls, root_url, namestr, is_accepted):
+        output = WormsAPI.match_name(root_url, namestr, is_accepted=is_accepted)
+        output.set_value(
+            S2nKey.RECORD_FORMAT, cls.SERVICE_TYPE[S2nKey.RECORD_FORMAT])
+        output.format_records(cls.ORDERED_FIELDNAMES)
         return output.response
 
     # ...............................................
@@ -134,19 +97,18 @@ class NameSvc(_BrokerService):
             if namestr is not None:
                 # GBIF
                 if pr == ServiceProvider.GBIF[S2nKey.PARAM]:
-                    goutput = cls._get_gbif_records(namestr, is_accepted, gbif_count)
+                    goutput = cls._get_gbif_records(
+                        root_url, namestr, is_accepted, gbif_count)
                     allrecs.append(goutput)
-                # # IPNI
-                # elif pr == ServiceProvider.IPNI[S2nKey.PARAM]:
-                #     isoutput = cls._get_ipni_records(namestr, is_accepted)
-                #     allrecs.append(isoutput)
                 #  ITIS
                 elif pr == ServiceProvider.ITISSolr[S2nKey.PARAM]:
-                    isoutput = cls._get_itis_records(namestr, is_accepted, kingdom)
+                    isoutput = cls._get_itis_records(
+                        root_url, namestr, is_accepted, kingdom)
                     allrecs.append(isoutput)
                 #  WoRMS
                 elif pr == ServiceProvider.WoRMS[S2nKey.PARAM]:
-                    woutput = cls._get_worms_records(namestr, is_accepted)
+                    woutput = cls._get_worms_records(
+                        root_url, namestr, is_accepted)
                     allrecs.append(woutput)
             # TODO: enable filter parameters
 

@@ -255,8 +255,8 @@ class ItisAPI(APIQuery):
     # ...............................................
     @classmethod
     def _standardize_output(
-            cls, output, count_key, records_key, service,
-            query_status=None, query_urls=None, is_accepted=False, errinfo=None):
+            cls, output, count_key, records_key, service, provider_meta,
+            is_accepted=False, errinfo=None):
         total = 0
         stdrecs = []
 
@@ -273,19 +273,19 @@ class ItisAPI(APIQuery):
                 newrec = cls._standardize_record(doc, is_accepted=is_accepted)
                 if newrec:
                     stdrecs.append(newrec)
-        prov_meta = cls._get_provider_response_elt(
-            query_status=query_status, query_urls=query_urls)
         std_output = BrokerOutput(
-            total, service, provider=prov_meta, records=stdrecs, errors=errinfo)
+            total, service, provider=provider_meta, records=stdrecs, errors=errinfo)
 
         return std_output
 
 # ...............................................
     @classmethod
-    def match_name(cls, sciname, is_accepted=False, kingdom=None, logger=None):
-        r"""Return an ITIS record for a scientific name using the ITIS Solr service.
+    def match_name(
+            cls, broker_url, sciname, is_accepted=False, kingdom=None, logger=None):
+        """Return an ITIS record for a scientific name using the ITIS Solr service.
 
         Args:
+            broker_url: the URL of the calling Specify Network service
             sciname: a scientific name designating a taxon
             is_accepted: True to search only for an ITIS accepted name.
             kingdom: optional designation for kingdom
@@ -308,41 +308,43 @@ class ItisAPI(APIQuery):
         try:
             api.query()
         except Exception:
-            tb = get_traceback()
-            std_output = cls.get_api_failure(
-                APIEndpoint.Name, HTTPStatus.INTERNAL_SERVER_ERROR,
-                errinfo=[{"error": cls._get_error_message(err=tb)}])
+            std_output = cls._get_query_fail_output(
+                broker_url, [api.url], APIEndpoint.Name)
+            # errinfo["error"] = [cls._get_error_message(err=get_traceback())]
+            # prov_meta = cls._get_provider_response_elt(
+            #     broker_url, query_status=HTTPStatus.INTERNAL_SERVER_ERROR,
+            #     query_urls=[api.url])
+            # std_output = BrokerOutput(
+            #     0, APIEndpoint.Name, provider=prov_meta, errors=errinfo)
         else:
+            prov_meta = cls._get_provider_response_elt(
+                broker_url, query_status=api.status_code, query_urls=[api.url])
             try:
                 output = api.output["response"]
             except KeyError:
                 if api.error is not None:
                     errinfo["error"] = [cls._get_error_message(err=api.error)]
-                    std_output = cls.get_api_failure(
-                        APIEndpoint.Name, HTTPStatus.INTERNAL_SERVER_ERROR,
-                        errinfo=errinfo)
                 else:
-                    errinfo = add_errinfo(
-                        errinfo, "error",
-                        cls._get_error_message(msg="Missing `response` element"))
-                    std_output = cls.get_api_failure(
-                        APIEndpoint.Name, HTTPStatus.INTERNAL_SERVER_ERROR,
-                        errinfo=errinfo)
+                    errinfo["error"] = [
+                        cls._get_error_message(msg="Missing `response` element")
+                    ]
+                std_output = BrokerOutput(
+                    0, APIEndpoint.Name, provider=prov_meta, errors=errinfo)
             else:
                 errinfo = add_errinfo(errinfo, "error", api.error)
                 # Standardize output from provider response
                 std_output = cls._standardize_output(
                     output, ITIS.COUNT_KEY, ITIS.RECORDS_KEY, APIEndpoint.Name,
-                    query_status=api.status_code, query_urls=[api.url],
-                    is_accepted=is_accepted, errinfo=errinfo)
+                    prov_meta, is_accepted=is_accepted, errinfo=errinfo)
         return std_output
 
 # ...............................................
     @classmethod
-    def get_name_by_tsn(cls, tsn, logger=None):
+    def get_name_by_tsn(cls, broker_url, tsn, logger=None):
         """Return a name and kingdom for an ITIS TSN using the ITIS Solr service.
 
         Args:
+            broker_url: the URL of the calling Specify Network service
             tsn: a unique integer identifier for a taxonomic record in ITIS
             logger: object for logging messages and errors.
 
@@ -360,18 +362,20 @@ class ItisAPI(APIQuery):
         try:
             apiq.query()
         except Exception:
-            tb = get_traceback()
-            errinfo = add_errinfo(errinfo, "error", cls._get_error_message(err=tb))
-            std_output = cls.get_api_failure(
-                APIEndpoint.Name, HTTPStatus.INTERNAL_SERVER_ERROR,
-                errinfo=errinfo)
+            errinfo["error"] = [cls._get_error_message(err=get_traceback())]
+            prov_meta = cls._get_provider_response_elt(
+                broker_url, query_status=HTTPStatus.INTERNAL_SERVER_ERROR,
+                query_urls=[apiq.url])
+            std_output = BrokerOutput(
+                0, APIEndpoint.Name, provider=prov_meta, errors=errinfo)
         else:
             errinfo = add_errinfo(errinfo, "error", apiq.error)
+            prov_meta = cls._get_provider_response_elt(
+                broker_url, query_status=apiq.status_code, query_urls=[apiq.url])
             # Standardize output from provider response
             std_output = cls._standardize_output(
                 output, ITIS.COUNT_KEY, ITIS.RECORDS_KEY, APIEndpoint.Name,
-                apiq.status_code, query_urls=[apiq.url], is_accepted=True,
-                errinfo=errinfo)
+                prov_meta, is_accepted=True, errinfo=errinfo)
 
         return std_output
 

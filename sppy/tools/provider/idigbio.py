@@ -185,7 +185,7 @@ class IdigbioAPI(APIQuery):
             taxon_key: GBIF assigned taxonKey
 
         Returns:
-            specimen_list: list of specimen records
+            full_count: count of specimen records
         """
         self._q_filters[Idigbio.GBIFID_FIELD] = taxon_key
         self.query()
@@ -195,10 +195,11 @@ class IdigbioAPI(APIQuery):
 
     # ...............................................
     @classmethod
-    def get_occurrences_by_occid(cls, occid, count_only=False, logger=None):
+    def get_occurrences_by_occid(cls, broker_url, occid, count_only=False, logger=None):
         """Return iDigBio occurrences for this occurrenceId.
 
         Args:
+            broker_url: the URL of the calling Specify Network service
             occid: occurrenceID for record to return.
             count_only: True to only return a count of matching records
             logger: object for logging messages and errors.
@@ -216,16 +217,20 @@ class IdigbioAPI(APIQuery):
         try:
             api.query()
         except Exception as e:
-            errinfo = add_errinfo(errinfo, "error", cls._get_error_message(err=e))
-            std_out = cls.get_api_failure(
-                APIEndpoint.Occurrence, HTTPStatus.INTERNAL_SERVER_ERROR,
-                errinfo=errinfo)
+            std_output = cls._get_query_fail_output(
+                broker_url, [api.url], APIEndpoint.Occurrence)
+            # errinfo = add_errinfo(errinfo, "error", cls._get_error_message(err=e))
+            # std_out = cls.get_api_failure(
+            #     APIEndpoint.Occurrence, HTTPStatus.INTERNAL_SERVER_ERROR,
+            #     errinfo=errinfo)
         else:
             errinfo = add_errinfo(errinfo, "error", api.error)
+            prov_meta = cls._get_provider_response_elt(
+                broker_url, query_status=api.status_code, query_urls=[api.url])
             std_out = cls._standardize_output(
-                api.output, Idigbio.COUNT_KEY, Idigbio.RECORDS_KEY, Idigbio.RECORD_FORMAT,
-                APIEndpoint.Occurrence, query_status=api.status_code,
-                query_urls=[api.url], count_only=count_only, errinfo=errinfo)
+                api.output, Idigbio.COUNT_KEY, Idigbio.RECORDS_KEY,
+                Idigbio.RECORD_FORMAT, APIEndpoint.Occurrence, prov_meta,
+                count_only=count_only, errinfo=errinfo)
 
         return std_out
 

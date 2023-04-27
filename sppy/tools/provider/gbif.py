@@ -105,10 +105,11 @@ class GbifAPI(APIQuery):
 
     # ...............................................
     @classmethod
-    def get_occurrences_by_occid(cls, occid, count_only=False, logger=None):
+    def get_occurrences_by_occid(cls, broker_url, occid, count_only=False, logger=None):
         """Return GBIF occurrences for this occurrenceId.
 
         Args:
+            broker_url: the URL of the calling Specify Network service
             occid: occurrenceID for query
             count_only: boolean flag signaling to return records or only count
             logger: object for logging messages and errors.
@@ -129,19 +130,23 @@ class GbifAPI(APIQuery):
         try:
             api.query()
         except Exception:
-            tb = get_traceback()
-            add_errinfo(errinfo, "error", cls._get_error_message(err=tb))
-            std_output = cls.get_api_failure(
-                APIEndpoint.Occurrence, HTTPStatus.INTERNAL_SERVER_ERROR,
-                errinfo=errinfo)
+            std_output = cls._get_query_fail_output(
+                broker_url, [api.url], APIEndpoint.Occurrence)
+            # errinfo["error"] = [cls._get_error_message(err=get_traceback())]
+            # prov_meta = cls._get_provider_response_elt(
+            #     broker_url, query_status=HTTPStatus.INTERNAL_SERVER_ERROR,
+            #     query_urls=[api.url])
+            # std_output = BrokerOutput(
+            #     0, APIEndpoint.Name, provider=prov_meta, errors=errinfo)
         else:
             if api.error:
                 add_errinfo(errinfo, "error", api.error)
+            prov_meta = cls._get_provider_response_elt(
+                broker_url, query_status=api.status_code, query_urls=[api.url])
 
             # Standardize output from provider response
             std_output = cls._standardize_occurrence_output(
-                api.output, api.status_code, query_urls=[api.url],
-                count_only=count_only, errinfo=errinfo)
+                api.output, prov_meta, count_only=count_only, errinfo=errinfo)
 
         return std_output
 
@@ -256,7 +261,7 @@ class GbifAPI(APIQuery):
     # ...............................................
     @classmethod
     def _standardize_match_output(
-            cls, output, record_status, query_status, query_urls=None, errinfo=None):
+            cls, output, record_status, provider_meta, query_urls=None, errinfo=None):
         stdrecs = []
         try:
             alternatives = output.pop("alternatives")
@@ -283,11 +288,9 @@ class GbifAPI(APIQuery):
             for r in goodrecs:
                 stdrecs.append(cls._standardize_name_record(r))
         total = len(stdrecs)
-        prov_meta = cls._get_provider_response_elt(
-            query_status=query_status, query_urls=query_urls)
         # TODO: standardize_record and provide schema link
         std_output = BrokerOutput(
-            total, APIEndpoint.Name, provider=prov_meta, records=stdrecs,
+            total, APIEndpoint.Name, provider=provider_meta, records=stdrecs,
             errors=errinfo)
         return std_output
 
@@ -304,7 +307,7 @@ class GbifAPI(APIQuery):
     # ...............................................
     @classmethod
     def _standardize_occurrence_output(
-            cls, output, query_status, query_urls=None, count_only=False, errinfo=None):
+            cls, output, provider_meta, count_only=False, errinfo=None):
         # GBIF.COUNT_KEY, GBIF.RECORDS_KEY, GBIF.RECORD_FORMAT_OCCURRENCE,
         stdrecs = []
         total = 0
@@ -331,10 +334,8 @@ class GbifAPI(APIQuery):
                     except Exception as e:
                         msg = cls._get_error_message(err=e)
                         errinfo = add_errinfo(errinfo, "error", msg)
-        prov_meta = cls._get_provider_response_elt(
-            query_status=query_status, query_urls=query_urls)
         std_output = BrokerOutput(
-            total, APIEndpoint.Occurrence, provider=prov_meta, records=stdrecs,
+            total, APIEndpoint.Occurrence, provider=provider_meta, records=stdrecs,
             errors=errinfo)
 
         return std_output
@@ -342,10 +343,11 @@ class GbifAPI(APIQuery):
     # ...............................................
     @classmethod
     def get_occurrences_by_dataset(
-            cls, gbif_dataset_key, count_only, logger=None):
+            cls, broker_url, gbif_dataset_key, count_only, logger=None):
         """Count and optionally return records with the given gbif_dataset_key.
 
         Args:
+            broker_url: the URL of the calling Specify Network service
             gbif_dataset_key: unique identifier for the dataset, assigned by GBIF
                 and retained by Specify
             count_only: boolean flag signaling to return records or only count
@@ -375,27 +377,31 @@ class GbifAPI(APIQuery):
         try:
             api.query()
         except Exception:
-            tb = get_traceback()
-            std_out = cls.get_api_failure(
-                APIEndpoint.Occurrence, HTTPStatus.INTERNAL_SERVER_ERROR,
-                errinfo={"error": [cls._get_error_message(err=tb)]})
+            std_output = cls._get_query_fail_output(
+                broker_url, [api.url], APIEndpoint.Occurrence)
+            # errinfo["error"] = [cls._get_error_message(err=get_traceback())]
+            # prov_meta = cls._get_provider_response_elt(
+            #     broker_url, query_status=HTTPStatus.INTERNAL_SERVER_ERROR,
+            #     query_urls=[api.url])
+            # std_output = BrokerOutput(
+            #     0, APIEndpoint.Name, provider=prov_meta, errors=errinfo)
         else:
-            # Standardize output from provider response
             if api.error:
                 add_errinfo(errinfo, "error", api.error)
+            prov_meta = cls._get_provider_response_elt(
+                broker_url, query_status=api.status_code, query_urls=[api.url])
+            std_output = cls._standardize_occurrence_output(
+                api.output, prov_meta, count_only=count_only, errinfo=errinfo)
 
-            std_out = cls._standardize_occurrence_output(
-                api.output, api.status_code, query_urls=[api.url],
-                count_only=count_only, errinfo=errinfo)
-
-        return std_out
+        return std_output
 
     # ...............................................
     @classmethod
-    def match_name(cls, namestr, is_accepted=False, logger=None):
+    def match_name(cls, broker_url, namestr, is_accepted=False, logger=None):
         """Return closest accepted species in GBIF backbone taxonomy.
 
         Args:
+            broker_url: the URL of the calling Specify Network service
             namestr: A scientific namestring possibly including author, year,
                 rank marker or other name information.
             is_accepted: match the ACCEPTED TaxonomicStatus in the GBIF record
@@ -429,26 +435,33 @@ class GbifAPI(APIQuery):
         try:
             api.query()
         except Exception:
-            tb = get_traceback()
-            add_errinfo(errinfo, "error", cls._get_error_message(err=tb))
-            std_output = cls.get_api_failure(
-                APIEndpoint.Name, HTTPStatus.INTERNAL_SERVER_ERROR, errinfo=errinfo)
+            std_output = cls._get_query_fail_output(
+                broker_url, [api.url], APIEndpoint.Name)
+            # errinfo["error"] = [cls._get_error_message(err=get_traceback())]
+            # prov_meta = cls._get_provider_response_elt(
+            #     broker_url, query_status=HTTPStatus.INTERNAL_SERVER_ERROR,
+            #     query_urls=[api.url])
+            # std_output = BrokerOutput(
+            #     0, APIEndpoint.Name, provider=prov_meta, errors=errinfo)
+
         else:
             if api.error:
                 add_errinfo(errinfo, "error", api.error)
+            prov_meta = cls._get_provider_response_elt(
+                broker_url, query_status=api.status_code, query_urls=[api.url])
             # Standardize output from provider response
             std_output = cls._standardize_match_output(
-                api.output, status, api.status_code, query_urls=[api.url],
-                errinfo=errinfo)
+                api.output, status, prov_meta, errinfo=errinfo)
 
         return std_output
 
     # ...............................................
     @classmethod
-    def count_occurrences_for_taxon(cls, taxon_key, logger=None):
+    def count_occurrences_for_taxon(cls, broker_url, taxon_key, logger=None):
         """Return a count of occurrence records in GBIF with the indicated taxon.
 
         Args:
+            broker_url: the URL of the calling Specify Network service
             taxon_key: A GBIF unique identifier indicating a taxon object.
             logger: object for logging messages and errors.
 
@@ -467,25 +480,28 @@ class GbifAPI(APIQuery):
         try:
             api.query_by_get()
         except Exception as e:
-            msg = cls._get_error_message(err=e)
-            errinfo = add_errinfo(errinfo, "error", msg)
+            std_output = cls._get_query_fail_output(
+                broker_url, [api.url], APIEndpoint.Occurrence)
+            # query_status = HTTPStatus.INTERNAL_SERVER_ERROR
+            # errinfo["error"] = [cls._get_error_message(err=get_traceback())]
         else:
             try:
                 total = api.output["count"]
             except Exception:
-                msg = cls._get_error_message(msg="Missing `count` element")
-                errinfo = add_errinfo(errinfo, "error", msg)
+                errinfo = add_errinfo(
+                    errinfo, "error", cls._get_error_message(
+                        msg="Missing `count` element"))
             else:
                 if total < 1:
-                    msg = cls._get_error_message(msg="No match")
-                    errinfo = add_errinfo(errinfo, "info", msg)
+                    errinfo = add_errinfo(
+                        errinfo, "info", cls._get_error_message(msg="No match"))
                     simple_output[S2nKey.OCCURRENCE_URL] = None
                 else:
                     simple_output[S2nKey.OCCURRENCE_URL] = api.url
-        prov_meta = cls._get_provider_response_elt(
-            query_status=api.status_code, query_urls=[api.url])
-        std_output = BrokerOutput(
-            total, APIEndpoint.Occurrence, provider=prov_meta, errors=errinfo)
+            prov_meta = cls._get_provider_response_elt(
+                broker_url, query_status=api.status_code, query_urls=[api.url])
+            std_output = BrokerOutput(
+                total, APIEndpoint.Occurrence, provider=prov_meta, errors=errinfo)
         return std_output
 
     # ......................................

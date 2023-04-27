@@ -143,7 +143,7 @@ class WormsAPI(APIQuery):
     # ...............................................
     @classmethod
     def _standardize_output(
-            cls, output, service, query_status=None, query_urls=None, is_accepted=False,
+            cls, output, service, provider_meta, is_accepted=False,
             errinfo=None):
         total = 0
         stdrecs = []
@@ -154,18 +154,18 @@ class WormsAPI(APIQuery):
                 newrec = cls._standardize_record(rec, is_accepted=is_accepted)
                 if newrec:
                     stdrecs.append(newrec)
-        prov_meta = cls._get_provider_response_elt(query_status=query_status, query_urls=query_urls)
         std_output = BrokerOutput(
-            total, service, provider=prov_meta, records=stdrecs, errors=errinfo)
+            total, service, provider=provider_meta, records=stdrecs, errors=errinfo)
 
         return std_output
 
     # ...............................................
     @classmethod
-    def match_name(cls, namestr, is_accepted=False, logger=None):
+    def match_name(cls, broker_url, namestr, is_accepted=False, logger=None):
         """Return closest accepted species in WoRMS taxonomy.
 
         Args:
+            broker_url: the URL of the calling Specify Network service
             namestr: A scientific namestring possibly including author, year,
                 rank marker or other name information.
             is_accepted: if True, return the validName, otherwise Name
@@ -181,17 +181,23 @@ class WormsAPI(APIQuery):
         try:
             api.query()
         except Exception:
-            tb = get_traceback()
-            errinfo = add_errinfo(errinfo, "error", cls._get_error_message(err=tb))
-            std_output = cls.get_api_failure(
-                APIEndpoint.Name, HTTPStatus.INTERNAL_SERVER_ERROR, errinfo=errinfo)
+            std_output = cls._get_query_fail_output(
+                broker_url, [api.url], APIEndpoint.Occurrence)
+            # errinfo["error"] = [cls._get_error_message(err=get_traceback())]
+            # prov_meta = cls._get_provider_response_elt(
+            #     broker_url, query_status=HTTPStatus.INTERNAL_SERVER_ERROR,
+            #     query_urls=[api.url])
+            # std_output = BrokerOutput(
+            #     0, APIEndpoint.Name, provider=prov_meta, errors=errinfo)
         else:
             if api.error:
                 errinfo = add_errinfo(errinfo, "error", api.error)
+            prov_meta = cls._get_provider_response_elt(
+                broker_url, query_status=api.status_code, query_urls=[api.url])
             # Standardize output from provider response
             std_output = cls._standardize_output(
-                api.output, APIEndpoint.Name, query_status=api.status_code, query_urls=[api.url],
-                is_accepted=is_accepted, errinfo=errinfo)
+                api.output, APIEndpoint.Name, prov_meta, is_accepted=is_accepted,
+                errinfo=errinfo)
 
         return std_output
 
