@@ -11,14 +11,14 @@ info:
     name: GPL-3.0 License
     url: 'https://www.gnu.org/licenses/gpl-3.0.en.html'
 servers:
-  - url: 'https://broker-dev.spcoco.org/broker/api/v1'
+  - url: 'https://broker-dev.spcoco.org/api/v1'
     description: Internal testing broker server
-  - url: 'https://broker-dev.spcoco.org/analyst/api/v1'
-    description: Internal testing broker server
-#  - url: 'https://broker-dev.spcoco.org/broker/api/v1'
-#    description: Production broker server
 #  - url: 'https://broker-dev.spcoco.org/analyst/api/v1'
-#    description: Production analyst server
+#    description: Internal testing broker server
+#  - url: 'http://localhost/broker/api/v1'
+#    description: Local broker server
+#  - url: 'http://localhost/analyst/api/v1'
+#    description: Local analyst server
 tags:
   - name: name
     description: Get taxonomy information for a scientific name

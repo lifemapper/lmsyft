@@ -332,12 +332,12 @@ $ pip install -r requirements.txt
 
 ## Debug
 
-To run flask in debug mode, first setup Flask environment, then start the flask 
-application.
+To run flask in debug mode, first set up Flask environment, then start the flask 
+application (in this case flask_app.broker.__init__)
 
 ```zsh
 export FLASK_ENV=development
-export FLASK_APP=flask_app.broker.routes
+export FLASK_APP=flask_app.broker
 flask run
 ```
 

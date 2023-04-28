@@ -28,6 +28,8 @@ FROM base as dev-flask
 # Debug image reusing the base
 # Install dev dependencies for debugging
 RUN venv/bin/pip install debugpy
+#
+ENV DEBUG_PORT 5003
 # Keeps Python from generating .pyc files in the container
 ENV PYTHONDONTWRITEBYTECODE 1
 # Turns off buffering for easier container logging

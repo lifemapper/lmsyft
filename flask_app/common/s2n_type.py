@@ -73,8 +73,8 @@ class S2nKey:
 class APIEndpoint:
     """URL elements for a valid Specify Network API request."""
     Root = "/api/v1"
-    AnalystPrefix = "analyst"
-    BrokerPrefix = "broker"
+    Analyst = "analyst"
+    Broker = "broker"
     Badge = "badge"
     Name = "name"
     Occurrence = "occ"
@@ -87,18 +87,20 @@ class APIEndpoint:
             cls.Analyst: [cls.Count],
             cls.Broker:
                 [
-                    cls.Badge, cls.Name,
-                    cls.Occurrence, cls.Frontend
+                    cls.Badge,
+                    cls.Name,
+                    cls.Occurrence,
+                    cls.Frontend
                 ]
         }
 
     @classmethod
     def BrokerServices(cls):
-        return cls.Resources[cls.Broker]
+        return cls.Resources()[cls.Broker]
 
     @classmethod
     def AnalystServices(cls):
-        return cls.Resources[cls.Analyst]
+        return cls.Resources()[cls.Analyst]
 
     @classmethod
     def analyst_root(cls):
@@ -107,7 +109,7 @@ class APIEndpoint:
         Returns:
             list of all BrokerEndpoints
         """
-        return f"{cls.AnalystPrefix}/{cls.Root}"
+        return f"{cls.Analyst}/{cls.Root}"
 
     @classmethod
     def broker_root(cls):
@@ -116,7 +118,8 @@ class APIEndpoint:
         Returns:
             list of all BrokerEndpoints
         """
-        # return f"{cls.BrokerPrefix}}/{cls.Root}"
+        # TODO: when FQDN changes, add broker-prefix to URL
+        # return f"{cls.Broker}}/{cls.Root}"
         return cls.Root
 
     @classmethod

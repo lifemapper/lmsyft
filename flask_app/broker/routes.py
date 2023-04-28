@@ -1,7 +1,8 @@
 """URL Routes for the Specify Network API services."""
-from flask import Blueprint, request, render_template
 import os
+from flask import Blueprint, request, render_template
 
+# from flask_app.application import create_app
 from flask_app.common.constants import (
     TEMPLATE_DIR, STATIC_DIR, SCHEMA_DIR, SCHEMA_FNAME
 )
@@ -22,7 +23,6 @@ bp = Blueprint(
 @bp.route('/foo')
 def index():
     return request.base_url
-
 
 # .....................................................................................
 @bp.route("/", methods=["GET"])
@@ -225,4 +225,6 @@ def frontend_get():
 # .....................................................................................
 # .....................................................................................
 if __name__ == "__main__":
+    # app = create_app(bp)
+    # app.config['JSON_SORT_KEYS'] = False
     bp.run(debug=True)
