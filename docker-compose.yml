@@ -1,6 +1,22 @@
 version: "3.9"
 services:
 
+#  analyst:
+#    build:
+#      context: ./.
+#      target: flask
+#    networks:
+#      - nginx
+#    environment:
+#      - FLASK_APP=flask_app.analyst:app
+#    env_file:
+#      ./.env.conf
+#    restart: unless-stopped
+#    volumes:
+#      - "scratch-path:/scratch-path"
+#      - "webpack-output:/volumes/webpack-output"
+#      - "static-files:/home/specify/frontend/static"
+
   broker:
     build:
       context: ./.

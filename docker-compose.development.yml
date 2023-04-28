@@ -1,16 +1,29 @@
 version: "3.9"
 services:
 
+#  analyst:
+#    build:
+#      context: ./.
+#      target: dev-flask
+#    ports:
+#      - "5001:5001"
+#    environment:
+#      - FLASK_APP=flask_app.analyst:app
+#      - FLASK_MANAGE=flask_app.analyst.manage
+#      - DEBUG_PORT=5001
+#    volumes:
+#      - "./flask_app/:/home/specify/flask_app/"
+
   broker:
     build:
       context: ./.
       target: dev-flask
-    ports:
-      - "5003:5003"
+#    ports:
+#      - "5001:5001"
     environment:
       - FLASK_APP=flask_app.broker:app
       - FLASK_MANAGE=flask_app.broker.manage
-      - DEBUG_PORT=5003
+      - DEBUG_PORT=5001
     volumes:
       - "./flask_app/:/home/specify/flask_app/"
 
