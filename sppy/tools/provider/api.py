@@ -346,12 +346,12 @@ class APIQuery:
     #     return BrokerOutput(0, service, provider=prov_meta, errors=errinfo)
 
     # ...............................................
-    def query_by_get(self, output_type="json", verify=True):
+    def query_by_get(self, output_type="json", verify=False):
         """Query the API, setting the output attribute to a JSON or ElementTree object.
 
         Args:
             output_type: data type of body of URL GET response
-            verify: boolean indicating whether to verify the response.
+            verify: boolean indicating whether to verify the request.
 
         Note:
             Sets a single error message, not a list, to error attribute
@@ -362,10 +362,7 @@ class APIQuery:
         self.reason = None
         errmsg = None
         try:
-            if verify:
-                response = requests.get(self.url, headers=self.headers)
-            else:
-                response = requests.get(self.url, headers=self.headers, verify=False)
+            response = requests.get(self.url, headers=self.headers, verify=verify)
         except Exception as e:
             errmsg = self._get_error_message(err=e)
         else:

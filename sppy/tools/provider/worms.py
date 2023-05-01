@@ -204,7 +204,7 @@ class WormsAPI(APIQuery):
     # ...............................................
     def query(self):
         """Query the API and sets "output" attribute to a ElementTree object."""
-        APIQuery.query_by_get(self, output_type="json")
+        APIQuery.query_by_get(self, output_type="json", verify=False)
 
 
 # .............................................................................
