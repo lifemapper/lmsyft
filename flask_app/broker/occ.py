@@ -3,7 +3,7 @@ from werkzeug.exceptions import (BadRequest, InternalServerError)
 
 from flask_app.broker.base import _BrokerService
 from flask_app.common.s2n_type import (
-    APIService, BrokerOutput, BrokerSchema, S2nKey, ServiceProvider,
+    APIEndpoint, APIService, BrokerOutput, BrokerSchema, S2nKey, ServiceProvider,
     print_broker_output)
 
 from sppy.tools.provider.gbif import GbifAPI
@@ -15,7 +15,7 @@ from sppy.tools.s2n.utils import get_traceback
 class OccurrenceSvc(_BrokerService):
     """Specify Network API service for retrieving occurrence record information."""
     SERVICE_TYPE = APIService.Occurrence
-    ORDERED_FIELDNAMES = BrokerSchema.get_s2n_fields(APIService.Occurrence["endpoint"])
+    ORDERED_FIELDNAMES = BrokerSchema.get_s2n_fields(APIEndpoint.Occurrence)
 
     # ...............................................
     @classmethod
@@ -34,7 +34,7 @@ class OccurrenceSvc(_BrokerService):
         provnames = set()
         if filter_params is None:
             for p in ServiceProvider.all():
-                if cls.SERVICE_TYPE["endpoint"] in p[S2nKey.SERVICES]:
+                if cls.SERVICE_TYPE["name"] in p[S2nKey.SERVICES]:
                     provnames.add(p[S2nKey.PARAM])
         # Fewer providers by dataset
         elif "gbif_dataset_key" in filter_params.keys():
@@ -125,7 +125,7 @@ class OccurrenceSvc(_BrokerService):
         # Assemble
         # TODO: Why are errors retained from query to query!!!  Resetting to {} works.
         full_out = BrokerOutput(
-            len(allrecs), cls.SERVICE_TYPE["endpoint"], provider=prov_meta,
+            len(allrecs), cls.SERVICE_TYPE["name"], provider=prov_meta,
             records=allrecs, errors={})
         return full_out
 

@@ -16,7 +16,7 @@ from flask_app.broker.occ import OccurrenceSvc
 # downloadable from <baseurl>/static/schema/open_api.yaml
 # TODO: Add "broker" to front of prefix, parallel to flask_app.analyst.routes
 bp = Blueprint(
-    "broker", __name__, url_prefix=APIEndpoint.broker_root(),
+    "broker", __name__, url_prefix="/api/v1",
     template_folder=TEMPLATE_DIR, static_folder=STATIC_DIR, static_url_path="/static")
 
 # .....................................................................................

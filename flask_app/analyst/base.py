@@ -92,7 +92,7 @@ class _AnalystService:
     # ...............................................
     @classmethod
     def _show_online(cls):
-        svc = cls.SERVICE_TYPE["endpoint"]
+        svc = cls.SERVICE_TYPE["name"]
         info = {
             "info": "Specify Network {} service is online.".format(svc)}
 

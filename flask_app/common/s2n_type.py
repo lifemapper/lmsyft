@@ -119,8 +119,8 @@ class APIEndpoint:
             list of all BrokerEndpoints
         """
         # TODO: when FQDN changes, add broker-prefix to URL
-        # return f"{cls.Broker}}/{cls.Root}"
-        return cls.Root
+        return f"{cls.Broker}{cls.Root}"
+        # return cls.Root
 
     @classmethod
     def get_analyst_endpoints(cls):
@@ -145,12 +145,14 @@ class APIEndpoint:
 class APIService:
     """Endpoint, parameters, output format for all Specify Network Broker APIs."""
     BrokerRoot = {
+        "name": APIEndpoint.Broker,
         "endpoint": APIEndpoint.broker_root(),
         "params": {},
         "description": "",
         S2nKey.RECORD_FORMAT: None
     }
     AnalystRoot = {
+        "name": APIEndpoint.Analyst,
         "endpoint": APIEndpoint.analyst_root(),
         "params": {},
         "description": "",
@@ -158,7 +160,8 @@ class APIService:
     }
     # Icons for service providers
     Badge = {
-        "endpoint": APIEndpoint.Badge,
+        "name": APIEndpoint.Badge,
+        "endpoint": f"{APIEndpoint.broker_root()}/{APIEndpoint.Badge}",
         "params": {
             "provider": {
                 "type": "",
@@ -176,7 +179,8 @@ class APIService:
     }
     # Counts
     Count = {
-        "endpoint": APIEndpoint.Count,
+        "name": APIEndpoint.Count,
+        "endpoint": f"{APIEndpoint.analyst_root()}/{APIEndpoint.Count}",
         "params": {
             "collection_id": {
                 "type": "",
@@ -194,7 +198,8 @@ class APIService:
     }
     # Taxonomic Resolution
     Name = {
-        "endpoint": APIEndpoint.Name,
+        "name": APIEndpoint.Name,
+        "endpoint": f"{APIEndpoint.broker_root()}/{APIEndpoint.Name}",
         "params": {
             "provider": {
                 "type": "",
@@ -214,7 +219,8 @@ class APIService:
     }
     # Specimen occurrence records
     Occurrence = {
-        "endpoint": APIEndpoint.Occurrence,
+        "name": APIEndpoint.Occurrence,
+        "endpoint": f"{APIEndpoint.broker_root()}/{APIEndpoint.Occurrence}",
         "params": {
             "provider": {
                 "type": "",
@@ -232,7 +238,8 @@ class APIService:
         S2nKey.RECORD_FORMAT: ""
     }
     Frontend = {
-        "endpoint": APIEndpoint.Frontend,
+        "name": APIEndpoint.Frontend,
+        "endpoint": f"{APIEndpoint.broker_root()}/{APIEndpoint.Frontend}",
         "params": {
             "occid" : {"type": "", "default": None},
             "namestr": {"type": "", "default": None}
@@ -413,7 +420,7 @@ class BrokerSchema:
         """Get the record fieldnames for a Specify Network API response.
 
         Args:
-            svc: BrokerEndpoint of interest
+            svc: APIEndpoint of interest
 
         Returns:
             list of fieldnames in the records for a Specify Network service.
@@ -1207,7 +1214,8 @@ class ServiceProvider:
             URL of for the badge API
         """
         if cls.is_valid_service(provider_code, APIEndpoint.Badge):
-            url = f"{root_url}{APIEndpoint.broker_root()}/{APIEndpoint.Badge}/{provider_code}"
+            endpoint = APIService.Badge["endpoint"]
+            url = f"{root_url}/{endpoint}/{provider_code}"
             if icon_status:
                 url = f"{url}&icon_status={icon_status}"
         return url

@@ -22,7 +22,7 @@ class CountSvc(_AnalystService):
         except Exception:
             traceback = get_traceback()
             output = AnalystOutput(
-                cls.SERVICE_TYPE["endpoint"],
+                cls.SERVICE_TYPE["name"],
                 description=cls.SERVICE_TYPE["description"],
                 errors={"error": [HTTPStatus.INTERNAL_SERVER_ERROR, traceback]})
         return output.response
@@ -74,7 +74,7 @@ class CountSvc(_AnalystService):
 
         # Assemble
         full_out = AnalystOutput(
-            cls.SERVICE_TYPE["endpoint"], description=cls.SERVICE_TYPE["description"],
+            cls.SERVICE_TYPE["name"], description=cls.SERVICE_TYPE["description"],
             records=allrecs, errors={})
 
         return full_out

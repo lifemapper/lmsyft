@@ -1,6 +1,5 @@
 """Module containing functions for GBIF API Queries."""
 from collections import OrderedDict
-from http import HTTPStatus
 from logging import ERROR
 import os
 import requests
@@ -272,6 +271,9 @@ class GbifAPI(APIQuery):
         try:
             if output["matchType"].lower() == "none":
                 is_match = False
+        except KeyError:
+            msg = cls._get_error_message(msg=f"No matchType element in {output.keys()}")
+            errinfo = add_errinfo(errinfo, "error", msg)
         except AttributeError:
             msg = cls._get_error_message(msg="No matchType")
             errinfo = add_errinfo(errinfo, "error", msg)
@@ -585,12 +587,13 @@ class GbifAPI(APIQuery):
         # Parse results (should be only one)
         if name_api.output is not None:
             recs = name_api._trim_parsed_output(name_api.output)
-            try:
-                output["record"] = recs[0]
-            except KeyError:
-                msg = f"Failed to return results from {name_api.url}"
-                logit(logger, msg, refname=cls.__name__, log_level=ERROR)
-                output[S2nKey.ERRORS] = msg
+            if recs:
+                try:
+                    output["record"] = recs[0]
+                except KeyError:
+                    msg = f"Failed to return results from {name_api.url}"
+                    logit(logger, msg, refname=cls.__name__, log_level=ERROR)
+                    output[S2nKey.ERRORS] = msg
         return output, name_api.url
 
     # ...............................................

@@ -1,9 +1,8 @@
 """Class for the Specify Network Name API service."""
-from http import HTTPStatus
 from werkzeug.exceptions import (BadRequest, InternalServerError)
 
 from flask_app.common.s2n_type import (
-    APIService, BrokerOutput, BrokerSchema, S2nKey, ServiceProvider,
+    APIEndpoint, APIService, BrokerOutput, BrokerSchema, S2nKey, ServiceProvider,
     print_broker_output)
 from flask_app.broker.base import _BrokerService
 
@@ -17,7 +16,7 @@ from sppy.tools.s2n.utils import get_traceback
 class NameSvc(_BrokerService):
     """Specify Network API service for retrieving taxonomic information."""
     SERVICE_TYPE = APIService.Name
-    ORDERED_FIELDNAMES = BrokerSchema.get_s2n_fields(APIService.Name["endpoint"])
+    ORDERED_FIELDNAMES = BrokerSchema.get_s2n_fields(APIEndpoint.Name)
 
     # ...............................................
     @classmethod
@@ -115,7 +114,7 @@ class NameSvc(_BrokerService):
         # Assemble
         prov_meta = cls._get_s2n_provider_response_elt(root_url, query_term=query_term)
         full_out = BrokerOutput(
-            len(allrecs), cls.SERVICE_TYPE["endpoint"], provider=prov_meta,
+            len(allrecs), cls.SERVICE_TYPE["name"], provider=prov_meta,
             records=allrecs, errors={})
 
         return full_out
@@ -202,7 +201,8 @@ if __name__ == "__main__":
         # "Poa annua",
         # "Gnatholepis cauerensis (Bleeker, 1853)",
         # "Tulipa sylvestris",
-        "Acer leucoderme Small"
+        "Notemigonus crysoleucas (Mitchill, 1814)",
+        # "Acer leucoderme Small"
     ]
 
     svc = NameSvc()

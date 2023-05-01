@@ -140,15 +140,16 @@ class APIQuery:
         if icon_url:
             provider_element[S2nKey.PROVIDER_ICON_URL] = icon_url
         # Optional http status_code
-        try:
-            stat = int(query_status)
-        except ValueError:
+        if query_status is not None:
             try:
-                stat = max(query_status)
+                stat = int(query_status)
             except ValueError:
-                stat = None
-        if stat:
-            provider_element[S2nKey.PROVIDER_STATUS_CODE] = stat
+                try:
+                    stat = max(query_status)
+                except ValueError:
+                    stat = None
+            if stat:
+                provider_element[S2nKey.PROVIDER_STATUS_CODE] = stat
         # Optional URL queries
         if query_urls:
             provider_element[S2nKey.PROVIDER_QUERY_URL] = query_urls

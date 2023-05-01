@@ -69,7 +69,7 @@ class _BrokerService:
         provnames = set()
         # Ignore as-yet undefined filter_params
         for p in ServiceProvider.all():
-            if cls.SERVICE_TYPE["endpoint"] in p[S2nKey.SERVICES]:
+            if cls.SERVICE_TYPE["name"] in p[S2nKey.SERVICES]:
                 provnames.add(p[S2nKey.PARAM])
         provnames = cls._order_providers(provnames)
         return provnames
@@ -152,7 +152,7 @@ class _BrokerService:
     # ...............................................
     @classmethod
     def _show_online(cls, root_url, providers):
-        svc = cls.SERVICE_TYPE["endpoint"]
+        svc = cls.SERVICE_TYPE["name"]
         info = {
             "info": "Specify Network {} service is online.".format(svc)}
 
@@ -173,7 +173,7 @@ class _BrokerService:
     # ...............................................
     @classmethod
     def _get_badquery_output(cls, root_url, error_msg):
-        svc = cls.SERVICE_TYPE["endpoint"]
+        svc = cls.SERVICE_TYPE["name"]
         errinfo = {"error": [error_msg]}
         prov_meta = cls._get_s2n_provider_response_elt(root_url)
 
