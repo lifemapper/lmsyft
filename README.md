@@ -264,8 +264,12 @@ Specify Network is now available at [https://localhost/](https://localhost:443)
 
 ## Run the containers (development)
 
+Note that the development compose file, docker-compose.development.yml, is referenced
+first on the command line.  It has elements that override those defined in the 
+general compose file, docker-compose.yml. 
+
 ```zsh
-docker compose -f docker-compose.yml -f docker-compose.development.yml up
+docker compose -f docker-compose.development.yml -f docker-compose.yml  up
 ```
 
 Flask has hot-reload enabled.
