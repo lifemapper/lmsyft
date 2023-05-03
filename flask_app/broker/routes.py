@@ -14,7 +14,6 @@ from flask_app.broker.name import NameSvc
 from flask_app.broker.occ import OccurrenceSvc
 
 # downloadable from <baseurl>/static/schema/open_api.yaml
-# TODO: Add "broker" to front of prefix, parallel to flask_app.analyst.routes
 broker_blueprint = Blueprint(
     "broker", __name__, template_folder=TEMPLATE_DIR, static_folder=STATIC_DIR,
     static_url_path="/static")
@@ -34,7 +33,7 @@ def index():
 
 
 # .....................................................................................
-@app.route("/broker/api/v1/", methods=["GET"])
+@app.route("/api/v1/", methods=["GET"])
 def broker_status():
     """Get services available from broker.
 
@@ -51,7 +50,7 @@ def broker_status():
 
 
 # ..........................
-@app.route("/broker/api/v1/schema")
+@app.route("/api/v1/schema")
 def display_raw_schema():
     """Show the schema XML.
 
@@ -65,7 +64,7 @@ def display_raw_schema():
 
 
 # ..........................
-@app.route("/broker/api/v1/swaggerui")
+@app.route("/api/v1/swaggerui")
 def swagger_ui():
     """Show the swagger UI to the schema.
 
@@ -76,7 +75,7 @@ def swagger_ui():
 
 
 # .....................................................................................
-@app.route("/broker/api/v1/badge/")
+@app.route("/api/v1/badge/")
 def badge_endpoint():
     """Show the providers/icons available for the badge service.
 
@@ -98,7 +97,7 @@ def badge_endpoint():
 
 
 # .....................................................................................
-@app.route("/broker/api/v1/badge/<string:provider>", methods=["GET"])
+@app.route("/api/v1/badge/<string:provider>", methods=["GET"])
 def badge_get(provider):
     """Get an occurrence record from available providers.
 
@@ -119,7 +118,7 @@ def badge_get(provider):
 
 
 # .....................................................................................
-@app.route("/broker/api/v1/name/")
+@app.route("/api/v1/name/")
 def name_endpoint():
     """Show the providers available for the name service.
 
@@ -146,7 +145,7 @@ def name_endpoint():
 
 
 # .....................................................................................
-@app.route("/broker/api/v1/name/<string:namestr>", methods=["GET"])
+@app.route("/api/v1/name/<string:namestr>", methods=["GET"])
 def name_get(namestr):
     """Get a taxonomic name record from available providers.
 
@@ -171,7 +170,7 @@ def name_get(namestr):
 
 
 # .....................................................................................
-@app.route("/broker/api/v1/occ/")
+@app.route("/api/v1/occ/")
 def occ_endpoint():
     """Show the providers available for the occurrence service.
 
@@ -195,7 +194,7 @@ def occ_endpoint():
 
 
 # .....................................................................................
-@app.route("/broker/api/v1/occ/<string:identifier>", methods=["GET"])
+@app.route("/api/v1/occ/<string:identifier>", methods=["GET"])
 def occ_get(identifier):
     """Get an occurrence record from available providers.
 
@@ -218,7 +217,7 @@ def occ_get(identifier):
 
 
 # .....................................................................................
-@app.route("/broker/api/v1/frontend/")
+@app.route("/api/v1/frontend/")
 def frontend_get():
     """Return the UI for the Specify Network.
 
