@@ -1,6 +1,6 @@
 """URL Routes for the Specify Network API services."""
 import os
-from flask import Blueprint, request, render_template
+from flask import Blueprint, Flask, request, render_template
 
 # from flask_app.application import create_app
 from flask_app.common.constants import (
@@ -15,17 +15,26 @@ from flask_app.broker.occ import OccurrenceSvc
 
 # downloadable from <baseurl>/static/schema/open_api.yaml
 # TODO: Add "broker" to front of prefix, parallel to flask_app.analyst.routes
-bp = Blueprint(
-    "broker", __name__, url_prefix="/api/v1",
-    template_folder=TEMPLATE_DIR, static_folder=STATIC_DIR, static_url_path="/static")
+broker_blueprint = Blueprint(
+    "broker", __name__, template_folder=TEMPLATE_DIR, static_folder=STATIC_DIR,
+    static_url_path="/static")
+# broker_blueprint = Blueprint(
+#     "broker", __name__, url_prefix="/api/v1",
+#     template_folder=TEMPLATE_DIR, static_folder=STATIC_DIR, static_url_path="/static")
+
+app = Flask(__name__)
+app.config["JSON_SORT_KEYS"] = False
+app.register_blueprint(broker_blueprint)
+
 
 # .....................................................................................
-@bp.route('/foo')
+@app.route('/')
 def index():
-    return request.base_url
+    return render_template("index.html")
+
 
 # .....................................................................................
-@bp.route("/", methods=["GET"])
+@app.route("/broker/api/v1/", methods=["GET"])
 def broker_status():
     """Get services available from broker.
 
@@ -42,7 +51,7 @@ def broker_status():
 
 
 # ..........................
-@bp.route("/schema")
+@app.route("/broker/api/v1/schema")
 def display_raw_schema():
     """Show the schema XML.
 
@@ -56,7 +65,7 @@ def display_raw_schema():
 
 
 # ..........................
-@bp.route("/swaggerui")
+@app.route("/broker/api/v1/swaggerui")
 def swagger_ui():
     """Show the swagger UI to the schema.
 
@@ -67,7 +76,7 @@ def swagger_ui():
 
 
 # .....................................................................................
-@bp.route("/badge/")
+@app.route("/broker/api/v1/badge/")
 def badge_endpoint():
     """Show the providers/icons available for the badge service.
 
@@ -83,13 +92,13 @@ def badge_endpoint():
         stream = request.args.get("stream", default="True", type=str)
         response = BadgeSvc.get_icon(
             provider=provider_arg, icon_status=icon_status, stream=stream,
-            app_path=bp.root_path)
+            app_path=app.root_path)
 
     return response
 
 
 # .....................................................................................
-@bp.route("/badge/<string:provider>", methods=["GET"])
+@app.route("/broker/api/v1/badge/<string:provider>", methods=["GET"])
 def badge_get(provider):
     """Get an occurrence record from available providers.
 
@@ -105,12 +114,12 @@ def badge_get(provider):
     stream = request.args.get("stream", default="True", type=str)
     response = BadgeSvc.get_icon(
         provider=provider, icon_status=icon_status, stream=stream,
-        app_path=bp.root_path)
+        app_path=app.root_path)
     return response
 
 
 # .....................................................................................
-@bp.route("/name/")
+@app.route("/broker/api/v1/name/")
 def name_endpoint():
     """Show the providers available for the name service.
 
@@ -137,7 +146,7 @@ def name_endpoint():
 
 
 # .....................................................................................
-@bp.route("/name/<string:namestr>", methods=["GET"])
+@app.route("/broker/api/v1/name/<string:namestr>", methods=["GET"])
 def name_get(namestr):
     """Get a taxonomic name record from available providers.
 
@@ -162,7 +171,7 @@ def name_get(namestr):
 
 
 # .....................................................................................
-@bp.route("/occ/")
+@app.route("/broker/api/v1/occ/")
 def occ_endpoint():
     """Show the providers available for the occurrence service.
 
@@ -186,7 +195,7 @@ def occ_endpoint():
 
 
 # .....................................................................................
-@bp.route("/occ/<string:identifier>", methods=["GET"])
+@app.route("/broker/api/v1/occ/<string:identifier>", methods=["GET"])
 def occ_get(identifier):
     """Get an occurrence record from available providers.
 
@@ -209,7 +218,7 @@ def occ_get(identifier):
 
 
 # .....................................................................................
-@bp.route("/frontend/")
+@app.route("/broker/api/v1/frontend/")
 def frontend_get():
     """Return the UI for the Specify Network.
 
@@ -227,4 +236,4 @@ def frontend_get():
 if __name__ == "__main__":
     # app = create_app(bp)
     # app.config['JSON_SORT_KEYS'] = False
-    bp.run(debug=True)
+    app.run(debug=True)
