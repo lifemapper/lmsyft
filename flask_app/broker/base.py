@@ -1,5 +1,6 @@
 """Parent Class for the Specify Network API services."""
 from flask import Flask
+from werkzeug.exceptions import BadRequest, InternalServerError
 
 import sppy.tools.s2n.utils as lmutil
 from flask_app.common.s2n_type import (
@@ -9,6 +10,14 @@ from sppy.tools.provider.itis import ItisAPI
 
 app = Flask(__name__)
 
+@app.errorhandler(BadRequest)
+def handle_bad_request(e):
+    return f"Bad request: {e}"
+
+
+@app.errorhandler(InternalServerError)
+def handle_bad_response(e):
+    return f"Internal Server Error: {e}"
 
 # .............................................................................
 class _BrokerService:
