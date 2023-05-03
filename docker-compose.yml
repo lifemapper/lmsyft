@@ -24,7 +24,7 @@ services:
     networks:
       - nginx
     environment:
-      - FLASK_APP=flask_app.broker:app
+      - FLASK_APP=flask_app.broker.routes:app
     env_file:
       ./.env.conf
     restart: unless-stopped
@@ -32,6 +32,7 @@ services:
       - "scratch-path:/scratch-path"
       - "webpack-output:/volumes/webpack-output"
       - "static-files:/home/specify/frontend/static"
+
 
   nginx:
     image: nginx:alpine
