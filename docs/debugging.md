@@ -23,7 +23,7 @@ cd $PROJDIR/lmtrex/flask_app/broker/
 
 export PYTHONPATH=$PROJECT_DIR
 export FLASK_ENV=development
-export FLASK_APP=routes
+export FLASK_APP=flask_app.broker.routes
 flask run
 ```
 
