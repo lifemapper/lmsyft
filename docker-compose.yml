@@ -15,7 +15,7 @@ services:
 #    volumes:
 #      - "scratch-path:/scratch-path"
 #      - "webpack-output:/volumes/webpack-output"
-#      - "static-files:/home/specify/frontend/static"
+#      - "static-files:/home/specify/sppy/frontend/static"
 
   broker:
     build:
