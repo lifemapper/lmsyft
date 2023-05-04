@@ -2,9 +2,10 @@
 URL_ESCAPES = [[" ", r"\%20"], [",", r"\%2C"]]
 ENCODING = "utf-8"
 
+# Used in broker, so relative to the flask_app/broker or analyst directories
 STATIC_DIR = "../../sppy/frontend/static"
-ICON_DIR = "{}/icon".format(STATIC_DIR)
+ICON_DIR = f"{STATIC_DIR}/icon"
+SCHEMA_DIR = f"{STATIC_DIR}/schema"
 
 TEMPLATE_DIR = "../templates"
-SCHEMA_DIR = "{}/schema".format(STATIC_DIR)
 SCHEMA_FNAME = "open_api.yaml"

@@ -18,7 +18,6 @@ GBIF_MISSING_KEY = "unmatched_gbif_ids"
 
 # VALID broker parameter options, must be list
 ICON_CONTENT = "image/png"
-# ICON_API = '/api/v1/badge'
 ICON_DIR = "{}/icon".format(STATIC_DIR)
 
 # .............................................................................
