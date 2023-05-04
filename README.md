@@ -212,16 +212,16 @@ On a development server, check the following URL endpoints:
 * Index page: https://localhost
 
 * Broker:
-  * https://localhost/broker/api/v1/
-    * https://localhost/broker/api/v1/badge/
-    * https://localhost/broker/api/v1/name/
-    * https://localhost/broker/api/v1/occ/
-    * https://localhost/broker/api/v1/frontend/
+  * https://localhost/api/v1/
+    * https://localhost/api/v1/badge/
+    * https://localhost/api/v1/name/
+    * https://localhost/api/v1/occ/
+    * https://localhost/api/v1/frontend/
   
-  * https://localhost/broker/api/v1/badge/gbif?icon_status=active
-  * https://localhost/broker/api/v1/occ/?occid=a7156437-55ec-4c6f-89de-938f9361753d
-  * https://localhost/broker/api/v1/name/Harengula%20jaguana
-  * https://localhost/broker/api/v1/frontend/?occid=a7156437-55ec-4c6f-89de-938f9361753d
+  * https://localhost/api/v1/badge/gbif?icon_status=active
+  * https://localhost/api/v1/occ/?occid=a7156437-55ec-4c6f-89de-938f9361753d
+  * https://localhost/api/v1/name/Harengula%20jaguana
+  * https://localhost/api/v1/frontend/?occid=a7156437-55ec-4c6f-89de-938f9361753d
   
 For local testing in a development environment, tests in the tests directory
 require the lmtest module available at https://github.com/lifemapper/lmtest.
@@ -241,8 +241,8 @@ export WORKING_DIRECTORY="scratch-path"
 
 **Broker** (aka back-end):
 
-   * https://localhost/broker/api/v1/name?namestr=Notemigonus%20crysoleucas%20(Mitchill,%201814)
-   * https://localhost/broker/api/v1/occ?occid=01493b05-4310-4f28-9d81-ad20860311f3
+   * https://localhost/api/v1/name?namestr=Notemigonus%20crysoleucas%20(Mitchill,%201814)
+   * https://localhost/api/v1/occ?occid=01493b05-4310-4f28-9d81-ad20860311f3
 
 **Webpack** is watching for front-end file changes and rebuilds the bundle when
 needed.
@@ -348,7 +348,7 @@ flask run
 `broker` container is running `debugpy` on port `5000`
 
 http://localhost:5000/api/v1/name?namestr=Notemigonus%20crysoleucas%20(Mitchill,%201814)
-http://localhost:5000/broker/api/v1/occ?occid=01493b05-4310-4f28-9d81-ad20860311f3
+http://localhost:5000/api/v1/occ?occid=01493b05-4310-4f28-9d81-ad20860311f3
 
 ## Troubleshooting
 

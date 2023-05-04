@@ -72,7 +72,7 @@ class S2nKey:
 # .............................................................................
 class APIEndpoint:
     """URL elements for a valid Specify Network API request."""
-    Root = "/api/v1"
+    Root = "api/v1"
     Analyst = "analyst"
     Broker = "broker"
     Badge = "badge"
@@ -119,8 +119,8 @@ class APIEndpoint:
             list of all BrokerEndpoints
         """
         # TODO: when FQDN changes, add broker-prefix to URL
-        return f"{cls.Broker}{cls.Root}"
-        # return cls.Root
+        # return f"{cls.Broker}/{cls.Root}"
+        return cls.Root
 
     @classmethod
     def get_analyst_endpoints(cls):

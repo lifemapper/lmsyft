@@ -67,7 +67,7 @@ export const fetchOccurrence = async (
   occId: string
 ): Promise<LoadedOccurrenceAction> =>
   (occId
-    ? fetchFromEndpoint(`/broker/api/v1/occ/?occid=${occId}`, OCC_PROVIDERS)
+    ? fetchFromEndpoint(`/api/v1/occ/?occid=${occId}`, OCC_PROVIDERS)
     : Promise.resolve(undefined)
   ).then((occurrence) => ({ type: 'LoadedOccurrenceAction', occurrence }));
 
@@ -76,7 +76,7 @@ export const fetchName = async (
   defaultValue: 'invalid' | undefined
 ): Promise<LoadedNameAction> =>
   (nameString
-    ? fetchFromEndpoint(`/broker/api/v1/name/?namestr=${nameString}`, NAME_PROVIDERS)
+    ? fetchFromEndpoint(`/api/v1/name/?namestr=${nameString}`, NAME_PROVIDERS)
     : Promise.resolve(undefined)
   ).then((name) => ({ type: 'LoadedNameAction', name: name ?? defaultValue }));
 

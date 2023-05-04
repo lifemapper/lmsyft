@@ -15,5 +15,5 @@ full_test(
 )
 
 """
-https://broker-dev.spcoco.org/broker/api/v1/occ/?provider=gbif&gbif_dataset_key=e635240a-3cb1-4d26-ab87-57d8c7afdfdb
+https://broker-dev.spcoco.org/api/v1/occ/?provider=gbif&gbif_dataset_key=e635240a-3cb1-4d26-ab87-57d8c7afdfdb
 """
