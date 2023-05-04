@@ -95,7 +95,7 @@ class BadgeSvc(_BrokerService):
             raise BadRequest(error_description)
 
         icon_basename = cls._get_icon_filename(
-            good_params["provider"], good_params["icon_status"])
+            good_params["provider"][0], good_params["icon_status"])
         icon_fname = os.path.join(app_path, ICON_DIR, icon_basename)
 
         if icon_fname is not None:
