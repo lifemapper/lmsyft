@@ -2,6 +2,8 @@
 from collections import OrderedDict
 import typing
 
+from flask_app.common.util import get_host_url
+
 RecordsList = typing.List[typing.Dict]
 
 
@@ -66,7 +68,7 @@ class S2nKey:
         Returns:
             list of all top level keywords in a flask_app.analyst API response
         """
-        return {cls.COUNT, cls.ERRORS}
+        return {cls.SERVICE, cls.DESCRIPTION, cls.RECORDS, cls.ERRORS}
 
 
 # .............................................................................
@@ -129,7 +131,7 @@ class APIEndpoint:
         Returns:
             list of all Endpoints
         """
-        [f"{cls.analyst_root()}/{svc}" for svc in cls.AnalystServices()]
+        return [f"{cls.analyst_root()}/{svc}" for svc in cls.AnalystServices()]
 
     @classmethod
     def get_broker_endpoints(cls):
@@ -1032,6 +1034,16 @@ class AnalystOutput:
             S2nKey.ERRORS: errors
         }
 
+    # ...............................................
+    @property
+    def response(self):
+        """Return the S2nOutput query response.
+
+        Returns:
+            the response object
+        """
+        return self._response
+
 # .............................................................................
 class ServiceProvider:
     """Name and metadata for external Specify Network data providers."""
@@ -1201,11 +1213,10 @@ class ServiceProvider:
 
     # ....................
     @classmethod
-    def get_icon_url(cls, root_url, provider_code, icon_status=None):
+    def get_icon_url(cls, provider_code, icon_status=None):
         """Get a URL to the badge service with provider param and optionally icon_status.
 
         Args:
-            root_url: the URL of this Specify Network service
             provider_code: code for provider to get an icon for.
             icon_status: one of APIService.Badge["params"]["icon_status"]["options"]:
                 active, inactive, hover
@@ -1213,68 +1224,11 @@ class ServiceProvider:
         Returns:
             URL of for the badge API
         """
+        root_url = get_host_url()
         if cls.is_valid_service(provider_code, APIEndpoint.Badge):
             endpoint = APIService.Badge["endpoint"]
             url = f"{root_url}/{endpoint}/{provider_code}"
             if icon_status:
                 url = f"{url}&icon_status={icon_status}"
         return url
-
-
-# .............................................................................
-def get_root_url(request_url, url_prefix):
-    end_idx = request_url.index(url_prefix) - 1
-    root_url = request_url[:end_idx]
-    return root_url
-
-
-# .............................................................................
-def _print_oneprov_output(oneprov, do_print_rec):
-    print("* One provider S^n output *")
-    for name, attelt in oneprov.items():
-        try:
-            if name == "records":
-                print("   records")
-                if do_print_rec is False:
-                    print(f"      {name}: {len(attelt)} returned records")
-                else:
-                    for rec in attelt:
-                        print("      record")
-                        for k, v in rec.items():
-                            print("         {}: {}".format(k, v))
-            else:
-                print("   {}: {}".format(name, attelt))
-        except Exception:
-            pass
-
-
-# ....................................
-def print_broker_output(response_dict, do_print_rec=False):
-    """Print a formatted string of the elements in an S2nOutput query response.
-
-    Args:
-        response_dict: flask_app.broker.s2n_type.S2nOutput object
-        do_print_rec: True to print each record in the response.
-
-    TODO: move to a class method
-    """
-    print("*** Dictionary of S^n dictionaries ***")
-    for name, attelt in response_dict.items():
-        try:
-            if name == "records":
-                print(f"{name}: ")
-                for respdict in attelt:
-                    _print_oneprov_output(respdict, do_print_rec)
-            else:
-                print(f"{name}: {attelt}")
-        except Exception:
-            pass
-    outelts = set(response_dict.keys())
-    missing = S2nKey.broker_response_keys().difference(outelts)
-    extras = outelts.difference(S2nKey.broker_response_keys())
-    if missing:
-        print(f"Missing elements: {missing}")
-    if extras:
-        print(f"Extra elements: {extras}")
-    print("")
 

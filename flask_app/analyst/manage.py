@@ -2,9 +2,10 @@
 
 from flask.cli import FlaskGroup
 
-from flask_app.analyst import app
+from flask_app.analyst.routes import app
 
 cli = FlaskGroup(app)
 
+# .....................................................................................
 if __name__ == '__main__':
     cli()
