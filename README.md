@@ -341,7 +341,7 @@ application (in this case flask_app.broker.__init__)
 
 ```zsh
 export FLASK_ENV=development
-export FLASK_APP=flask_app.broker.routes
+export FLASK_APP=flask_app.broker.routes:app
 flask run
 ```
 
