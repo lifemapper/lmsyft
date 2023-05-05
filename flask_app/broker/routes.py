@@ -6,7 +6,7 @@ from flask import Blueprint, Flask, request, render_template
 from flask_app.common.constants import (
     TEMPLATE_DIR, STATIC_DIR, SCHEMA_DIR, SCHEMA_FNAME
 )
-from flask_app.common.s2n_type import APIEndpoint
+from flask_app.common.s2n_type import APIEndpoint, get_root_url
 
 from flask_app.broker.badge import BadgeSvc
 from flask_app.broker.frontend import FrontendSvc
@@ -126,7 +126,7 @@ def name_endpoint():
         response: A flask_app.common.s2n_type.BrokerOutput object containing the Specify
             Network name API response containing available providers.
     """
-    root_url = f"{request.base_url}{APIEndpoint.broker_root()}"
+    root_url = get_root_url(request.base_url, APIEndpoint.broker_root())
 
     name_arg = request.args.get("namestr", default=None, type=str)
     provider = request.args.get("provider", default=None, type=str)
@@ -156,7 +156,7 @@ def name_get(namestr):
         response: A flask_app.common.s2n_type.BrokerOutput object containing the Specify
             Network name API response.
     """
-    root_url = f"{request.base_url}{APIEndpoint.broker_root()}"
+    root_url = get_root_url(request.base_url, APIEndpoint.broker_root())
     # response = OccurrenceSvc.get_occurrence_records(occid="identifier")
     provider = request.args.get("provider", default=None, type=str)
     is_accepted = request.args.get("is_accepted", default="True", type=str)
@@ -178,7 +178,7 @@ def occ_endpoint():
         response: A flask_app.broker.s2n_type.S2nOutput object containing the Specify
             Network occurrence API response containing available providers.
     """
-    root_url = f"{request.base_url}{APIEndpoint.broker_root()}"
+    root_url = get_root_url(request.base_url, APIEndpoint.broker_root())
 
     occ_arg = request.args.get("occid", default=None, type=str)
     provider = request.args.get("provider", default=None, type=str)
@@ -205,7 +205,7 @@ def occ_get(identifier):
         response: A flask_app.common.s2n_type.BrokerOutput object containing the Specify
             Network occurrence API response.
     """
-    root_url = f"{request.base_url}{APIEndpoint.broker_root()}"
+    root_url = get_root_url(request.base_url, APIEndpoint.broker_root())
 
     provider = request.args.get("provider", default=None, type=str)
     gbif_dataset_key = request.args.get("gbif_dataset_key", default=None, type=str)

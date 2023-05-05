@@ -1222,6 +1222,12 @@ class ServiceProvider:
 
 
 # .............................................................................
+def get_root_url(request_url, url_prefix):
+    end_idx = request_url.index(url_prefix) - 1
+    root_url = request_url[:end_idx]
+    return root_url
+
+
 # .............................................................................
 def _print_oneprov_output(oneprov, do_print_rec):
     print("* One provider S^n output *")
@@ -1271,3 +1277,4 @@ def print_broker_output(response_dict, do_print_rec=False):
     if extras:
         print(f"Extra elements: {extras}")
     print("")
+
