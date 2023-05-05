@@ -57,6 +57,7 @@ $ sudo apt update
 $ sudo apt install awscli
 $ sudo apt install apache2
 $ sudo apt install certbot
+$ sudo apt install plocate
 ```
 
 # Set up client machines

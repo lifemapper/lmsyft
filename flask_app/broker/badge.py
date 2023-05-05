@@ -1,20 +1,18 @@
 """Class for the Specify Network badge (icon) API service."""
 from flask import json, send_file
-import io
 import os
 from werkzeug.exceptions import (BadRequest, InternalServerError)
 
-from flask_app.broker.constants import (
-    APIService, ICON_CONTENT, ICON_DIR, ServiceProvider, VALID_ICON_OPTIONS)
-from flask_app.broker.s2n_type import S2nKey
+from flask_app.broker.constants import (ICON_CONTENT, ICON_DIR)
+from flask_app.common.s2n_type import APIService, S2nKey, ServiceProvider
 
 from sppy.tools.s2n.utils import get_traceback
 
-from flask_app.broker.base import _S2nService
+from flask_app.broker.base import _BrokerService
 
 
 # .............................................................................
-class BadgeSvc(_S2nService):
+class BadgeSvc(_BrokerService):
     """Specify Network API service for retrieving icon images."""
     SERVICE_TYPE = APIService.Badge
 
@@ -63,9 +61,7 @@ class BadgeSvc(_S2nService):
             provider: comma-delimited list of requested provider codes.  Codes are
                 delimited for each in lmtrex.common.lmconstants ServiceProvider
             icon_status: string indicating which version of the icon to return,
-                valid options are:
-                    lmtrex.common.lmconstants.VALID_ICON_OPTIONS
-                    (active, inactive, hover)
+                one of APIService.Badge["params"]["icon_status"]["options"]
             stream: If true, return a generator for streaming output, else return file
                 contents.
             app_path: Base application path used for locating the icon files.
@@ -99,7 +95,7 @@ class BadgeSvc(_S2nService):
             raise BadRequest(error_description)
 
         icon_basename = cls._get_icon_filename(
-            good_params["provider"], good_params["icon_status"])
+            good_params["provider"][0], good_params["icon_status"])
         icon_fname = os.path.join(app_path, ICON_DIR, icon_basename)
 
         if icon_fname is not None:
@@ -122,7 +118,7 @@ if __name__ == "__main__":
     # Get all providers
     valid_providers = svc.get_providers()
     for pr in valid_providers:
-        for stat in VALID_ICON_OPTIONS:
+        for stat in APIService.Badge["params"]["icon_status"]["options"]:
             retval = svc.get_icon(
                 provider=pr, icon_status=stat,
                 app_path="/home/astewart/git/sp_network/sppy/frontend")

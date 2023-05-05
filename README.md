@@ -212,16 +212,16 @@ On a development server, check the following URL endpoints:
 * Index page: https://localhost
 
 * Broker:
-  * https://localhost/broker/api/v1/
-    * https://localhost/broker/api/v1/badge/
-    * https://localhost/broker/api/v1/name/
-    * https://localhost/broker/api/v1/occ/
-    * https://localhost/broker/api/v1/frontend/
+  * https://localhost/api/v1/
+    * https://localhost/api/v1/badge/
+    * https://localhost/api/v1/name/
+    * https://localhost/api/v1/occ/
+    * https://localhost/api/v1/frontend/
   
-  * https://localhost/broker/api/v1/badge/gbif?icon_status=active
-  * https://localhost/broker/api/v1/occ/?occid=a7156437-55ec-4c6f-89de-938f9361753d
-  * https://localhost/broker/api/v1/name/Harengula%20jaguana
-  * https://localhost/broker/api/v1/frontend/?occid=a7156437-55ec-4c6f-89de-938f9361753d
+  * https://localhost/api/v1/badge/gbif?icon_status=active
+  * https://localhost/api/v1/occ/?occid=a7156437-55ec-4c6f-89de-938f9361753d
+  * https://localhost/api/v1/name/Harengula%20jaguana
+  * https://localhost/api/v1/frontend/?occid=a7156437-55ec-4c6f-89de-938f9361753d
   
 For local testing in a development environment, tests in the tests directory
 require the lmtest module available at https://github.com/lifemapper/lmtest.
@@ -241,8 +241,8 @@ export WORKING_DIRECTORY="scratch-path"
 
 **Broker** (aka back-end):
 
-   * https://localhost/broker/api/v1/name?namestr=Notemigonus%20crysoleucas%20(Mitchill,%201814)
-   * https://localhost/broker/api/v1/occ?occid=01493b05-4310-4f28-9d81-ad20860311f3
+   * https://localhost/api/v1/name?namestr=Notemigonus%20crysoleucas%20(Mitchill,%201814)
+   * https://localhost/api/v1/occ?occid=01493b05-4310-4f28-9d81-ad20860311f3
 
 **Webpack** is watching for front-end file changes and rebuilds the bundle when
 needed.
@@ -264,8 +264,12 @@ Specify Network is now available at [https://localhost/](https://localhost:443)
 
 ## Run the containers (development)
 
+Note that the development compose file, docker-compose.development.yml, is referenced
+first on the command line.  It has elements that override those defined in the 
+general compose file, docker-compose.yml. 
+
 ```zsh
-docker compose -f docker-compose.yml -f docker-compose.development.yml up
+docker compose -f docker-compose.development.yml -f docker-compose.yml  up
 ```
 
 Flask has hot-reload enabled.
@@ -332,20 +336,19 @@ $ pip install -r requirements.txt
 
 ## Debug
 
-To run flask in debug mode, first setup Flask environment, then start the flask 
-application.
+To run flask in debug mode, first set up Flask environment, then start the flask 
+application (in this case flask_app.broker.__init__)
 
 ```zsh
 export FLASK_ENV=development
-export FLASK_APP=flask_app.broker.routes
+export FLASK_APP=flask_app.broker.routes:app
 flask run
 ```
 
-`broker` container is running `debugpy` on port `5003`.
+`broker` container is running `debugpy` on port `5000`
 
-w/ SSL:
-https://localhost:5003/broker/api/v1/name?namestr=Notemigonus%20crysoleucas%20(Mitchill,%201814)
-https://localhost:5003/broker/api/v1/occ?occid=01493b05-4310-4f28-9d81-ad20860311f3
+http://localhost:5000/api/v1/name?namestr=Notemigonus%20crysoleucas%20(Mitchill,%201814)
+http://localhost:5000/api/v1/occ?occid=01493b05-4310-4f28-9d81-ad20860311f3
 
 ## Troubleshooting
 

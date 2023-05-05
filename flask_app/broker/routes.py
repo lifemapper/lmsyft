@@ -1,31 +1,46 @@
 """URL Routes for the Specify Network API services."""
-from flask import Blueprint, request, render_template
 import os
+from flask import Blueprint, Flask, request, render_template
 
-from flask_app.broker.constants import (
-    TEMPLATE_DIR, STATIC_DIR, SCHEMA_DIR, SCHEMA_FNAME, S2nEndpoint)
+# from flask_app.application import create_app
+from flask_app.common.constants import (
+    TEMPLATE_DIR, STATIC_DIR, SCHEMA_DIR, SCHEMA_FNAME
+)
+from flask_app.common.s2n_type import APIEndpoint, get_root_url
+
 from flask_app.broker.badge import BadgeSvc
 from flask_app.broker.frontend import FrontendSvc
 from flask_app.broker.name import NameSvc
 from flask_app.broker.occ import OccurrenceSvc
-from flask_app.broker.stats import StatsSvc
 
 # downloadable from <baseurl>/static/schema/open_api.yaml
+broker_blueprint = Blueprint(
+    "broker", __name__, template_folder=TEMPLATE_DIR, static_folder=STATIC_DIR,
+    static_url_path="/static")
+# broker_blueprint = Blueprint(
+#     "broker", __name__, url_prefix="/api/v1",
+#     template_folder=TEMPLATE_DIR, static_folder=STATIC_DIR, static_url_path="/static")
 
-bp = Blueprint(
-    "broker", __name__, url_prefix="/broker/api/v1", template_folder=TEMPLATE_DIR,
-    static_folder=STATIC_DIR, static_url_path="/static")
+app = Flask(__name__)
+app.config["JSON_SORT_KEYS"] = False
+app.register_blueprint(broker_blueprint)
 
 
 # .....................................................................................
-@bp.route("/", methods=["GET"])
+@app.route('/')
+def index():
+    return render_template("index.html")
+
+
+# .....................................................................................
+@app.route("/api/v1/", methods=["GET"])
 def broker_status():
     """Get services available from broker.
 
     Returns:
         dict: A dictionary of status information for the server.
     """
-    endpoints = S2nEndpoint.get_endpoints()
+    endpoints = APIEndpoint.get_broker_endpoints()
     system_status = "In Development"
     return {
         "num_services": len(endpoints),
@@ -35,7 +50,7 @@ def broker_status():
 
 
 # ..........................
-@bp.route("/schema")
+@app.route("/api/v1/schema")
 def display_raw_schema():
     """Show the schema XML.
 
@@ -49,7 +64,7 @@ def display_raw_schema():
 
 
 # ..........................
-@bp.route("/swaggerui")
+@app.route("/api/v1/swaggerui")
 def swagger_ui():
     """Show the swagger UI to the schema.
 
@@ -60,20 +75,29 @@ def swagger_ui():
 
 
 # .....................................................................................
-@bp.route("/badge/")
+@app.route("/api/v1/badge/")
 def badge_endpoint():
     """Show the providers/icons available for the badge service.
 
     Returns:
-        response: A flask_app.broker.s2n_type.S2nOutput object containing the Specify
+        response: A flask_app.common.s2n_type.BrokerOutput object containing the Specify
             Network badge API response containing available providers.
     """
-    response = BadgeSvc.get_endpoint()
+    provider_arg = request.args.get("provider", default=None, type=str)
+    if provider_arg is None:
+        response = BadgeSvc.get_endpoint()
+    else:
+        icon_status = request.args.get("icon_status", default="active", type=str)
+        stream = request.args.get("stream", default="True", type=str)
+        response = BadgeSvc.get_icon(
+            provider=provider_arg, icon_status=icon_status, stream=stream,
+            app_path=app.root_path)
+
     return response
 
 
 # .....................................................................................
-@bp.route("/badge/<string:provider>", methods=["GET"])
+@app.route("/api/v1/badge/<string:provider>", methods=["GET"])
 def badge_get(provider):
     """Get an occurrence record from available providers.
 
@@ -89,19 +113,21 @@ def badge_get(provider):
     stream = request.args.get("stream", default="True", type=str)
     response = BadgeSvc.get_icon(
         provider=provider, icon_status=icon_status, stream=stream,
-        app_path=bp.root_path)
+        app_path=app.root_path)
     return response
 
 
 # .....................................................................................
-@bp.route("/name/")
+@app.route("/api/v1/name/")
 def name_endpoint():
     """Show the providers available for the name service.
 
     Returns:
-        response: A flask_app.broker.s2n_type.S2nOutput object containing the Specify
+        response: A flask_app.common.s2n_type.BrokerOutput object containing the Specify
             Network name API response containing available providers.
     """
+    root_url = get_root_url(request.base_url, APIEndpoint.broker_root())
+
     name_arg = request.args.get("namestr", default=None, type=str)
     provider = request.args.get("provider", default=None, type=str)
     is_accepted = request.args.get("is_accepted", default="True", type=str)
@@ -109,17 +135,17 @@ def name_endpoint():
     gbif_count = request.args.get("gbif_count", default="True", type=str)
     # kingdom = request.args.get("kingdom", default=None, type=str)
     if name_arg is None:
-        response = NameSvc.get_endpoint()
+        response = NameSvc.get_endpoint(root_url)
     else:
         response = NameSvc.get_name_records(
-            namestr=name_arg, provider=provider, is_accepted=is_accepted,
-            gbif_parse=gbif_parse, gbif_count=gbif_count)
+            root_url, namestr=name_arg, provider=provider,
+            is_accepted=is_accepted, gbif_parse=gbif_parse, gbif_count=gbif_count)
 
     return response
 
 
 # .....................................................................................
-@bp.route("/name/<string:namestr>", methods=["GET"])
+@app.route("/api/v1/name/<string:namestr>", methods=["GET"])
 def name_get(namestr):
     """Get a taxonomic name record from available providers.
 
@@ -127,9 +153,10 @@ def name_get(namestr):
         namestr (str): A scientific name to search for among taxonomic providers.
 
     Returns:
-        response: A flask_app.broker.s2n_type.S2nOutput object containing the Specify
+        response: A flask_app.common.s2n_type.BrokerOutput object containing the Specify
             Network name API response.
     """
+    root_url = get_root_url(request.base_url, APIEndpoint.broker_root())
     # response = OccurrenceSvc.get_occurrence_records(occid="identifier")
     provider = request.args.get("provider", default=None, type=str)
     is_accepted = request.args.get("is_accepted", default="True", type=str)
@@ -137,13 +164,13 @@ def name_get(namestr):
     gbif_count = request.args.get("gbif_count", default="True", type=str)
     # kingdom = request.args.get("kingdom", default=None, type=str)
     response = NameSvc.get_name_records(
-        namestr=namestr, provider=provider, is_accepted=is_accepted,
+        root_url, namestr=namestr, provider=provider, is_accepted=is_accepted,
         gbif_parse=gbif_parse, gbif_count=gbif_count)
     return response
 
 
 # .....................................................................................
-@bp.route("/occ/")
+@app.route("/api/v1/occ/")
 def occ_endpoint():
     """Show the providers available for the occurrence service.
 
@@ -151,21 +178,23 @@ def occ_endpoint():
         response: A flask_app.broker.s2n_type.S2nOutput object containing the Specify
             Network occurrence API response containing available providers.
     """
+    root_url = get_root_url(request.base_url, APIEndpoint.broker_root())
+
     occ_arg = request.args.get("occid", default=None, type=str)
     provider = request.args.get("provider", default=None, type=str)
     gbif_dataset_key = request.args.get("gbif_dataset_key", default=None, type=str)
     count_only = request.args.get("count_only", default="False", type=str)
     if occ_arg is None and gbif_dataset_key is None:
-        response = OccurrenceSvc.get_endpoint()
+        response = OccurrenceSvc.get_endpoint(root_url)
     else:
         response = OccurrenceSvc.get_occurrence_records(
-            occid=occ_arg, provider=provider, gbif_dataset_key=gbif_dataset_key,
-            count_only=count_only)
+            root_url, occid=occ_arg, provider=provider,
+            gbif_dataset_key=gbif_dataset_key, count_only=count_only)
     return response
 
 
 # .....................................................................................
-@bp.route("/occ/<string:identifier>", methods=["GET"])
+@app.route("/api/v1/occ/<string:identifier>", methods=["GET"])
 def occ_get(identifier):
     """Get an occurrence record from available providers.
 
@@ -173,33 +202,22 @@ def occ_get(identifier):
         identifier (str): An occurrence identifier to search from occurrence providers.
 
     Returns:
-        response: A flask_app.broker.s2n_type.S2nOutput object containing the Specify
+        response: A flask_app.common.s2n_type.BrokerOutput object containing the Specify
             Network occurrence API response.
     """
+    root_url = get_root_url(request.base_url, APIEndpoint.broker_root())
+
     provider = request.args.get("provider", default=None, type=str)
     gbif_dataset_key = request.args.get("gbif_dataset_key", default=None, type=str)
     count_only = request.args.get("count_only", default="False", type=str)
     response = OccurrenceSvc.get_occurrence_records(
-        occid=identifier, provider=provider, gbif_dataset_key=gbif_dataset_key,
-        count_only=count_only)
+        root_url, occid=identifier, provider=provider,
+        gbif_dataset_key=gbif_dataset_key, count_only=count_only)
     return response
 
 
 # .....................................................................................
-@bp.route("/stats/")
-def stats_get():
-    """Get the available statistics.
-
-    Returns:
-        response: A flask_app.broker.s2n_type.S2nOutput object containing the Specify
-            Network statistics API response.
-    """
-    response = StatsSvc.get_stats()
-    return response
-
-
-# .....................................................................................
-@bp.route("/frontend/")
+@app.route("/api/v1/frontend/")
 def frontend_get():
     """Return the UI for the Specify Network.
 
@@ -215,4 +233,6 @@ def frontend_get():
 # .....................................................................................
 # .....................................................................................
 if __name__ == "__main__":
-    bp.run(debug=True)
+    # app = create_app(bp)
+    # app.config['JSON_SORT_KEYS'] = False
+    app.run(debug=True)

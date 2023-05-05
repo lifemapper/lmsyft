@@ -1,8 +1,9 @@
 """Module containing functions for MorphoSource API Queries."""
 from http import HTTPStatus
 
-from flask_app.broker.constants import (MorphoSource, ServiceProvider, TST_VALUES)
-from flask_app.broker.s2n_type import S2nEndpoint, S2nKey, S2nSchema
+from flask_app.broker.constants import (MorphoSource, TST_VALUES)
+from flask_app.common.s2n_type import (
+    APIEndpoint, BrokerSchema, S2nKey, ServiceProvider)
 
 from sppy.tools.provider.api import APIQuery
 from sppy.tools.s2n.utils import add_errinfo, get_traceback
@@ -12,7 +13,7 @@ from sppy.tools.s2n.utils import add_errinfo, get_traceback
 class MorphoSourceAPI(APIQuery):
     """Class to query Specify portal APIs and return results."""
     PROVIDER = ServiceProvider.MorphoSource
-    OCCURRENCE_MAP = S2nSchema.get_mopho_occurrence_map()
+    OCCURRENCE_MAP = BrokerSchema.get_mopho_occurrence_map()
 
     # ...............................................
     def __init__(
@@ -35,8 +36,8 @@ class MorphoSourceAPI(APIQuery):
     @classmethod
     def _standardize_record(cls, rec):
         newrec = {}
-        view_std_fld = S2nSchema.get_view_url_fld()
-        data_std_fld = S2nSchema.get_data_url_fld()
+        view_std_fld = BrokerSchema.get_view_url_fld()
+        data_std_fld = BrokerSchema.get_data_url_fld()
         for stdfld, provfld in cls.OCCURRENCE_MAP.items():
             try:
                 val = rec[provfld]
@@ -59,10 +60,11 @@ class MorphoSourceAPI(APIQuery):
 
     # ...............................................
     @classmethod
-    def get_occurrences_by_occid_page1(cls, occid, count_only=False, logger=None):
+    def get_occurrences_by_occid_page1(cls, broker_url, occid, count_only=False, logger=None):
         """Class method to return the first page of occurrence records.
 
         Args:
+            broker_url: the URL of the calling Specify Network service
             occid: OccurrenceID for searching API
             count_only: True to return only a count, no records.
             logger: object for logging messages and errors.
@@ -83,21 +85,23 @@ class MorphoSourceAPI(APIQuery):
         try:
             api.query_by_get(verify=verify)
         except Exception:
-            tb = get_traceback()
-            errinfo = add_errinfo(errinfo, "error", cls._get_error_message(err=tb))
-            std_out = cls.get_api_failure(
-                S2nEndpoint.Occurrence, HTTPStatus.INTERNAL_SERVER_ERROR,
-                errinfo=errinfo)
+            std_output = cls._get_query_fail_output(
+                broker_url, [api.url], APIEndpoint.Occurrence)
+            # tb = get_traceback()
+            # errinfo = add_errinfo(errinfo, "error", cls._get_error_message(err=tb))
+            # std_out = cls.get_api_failure(
+            #     APIEndpoint.Occurrence, HTTPStatus.INTERNAL_SERVER_ERROR,
+            #     errinfo=errinfo)
         else:
-            # Standardize output from provider response
             if api.error:
                 errinfo = add_errinfo(errinfo, "error", api.error)
+            prov_meta = cls._get_provider_response_elt(
+                broker_url, query_status=api.status_code, query_urls=[api.url])
 
             std_out = cls._standardize_output(
                 api.output, MorphoSource.TOTAL_KEY, MorphoSource.RECORDS_KEY,
-                MorphoSource.RECORD_FORMAT, S2nEndpoint.Occurrence,
-                query_status=api.status_code, query_urls=[api.url],
-                count_only=count_only, errinfo=errinfo)
+                MorphoSource.RECORD_FORMAT, APIEndpoint.Occurrence,
+                prov_meta, count_only=count_only, errinfo=errinfo)
 
         return std_out
 
@@ -105,9 +109,9 @@ class MorphoSourceAPI(APIQuery):
 # .............................................................................
 if __name__ == "__main__":
     # test
-
+    root_url = "localhost"
     for guid in TST_VALUES.GUIDS_WO_SPECIFY_ACCESS:
-        moutput = MorphoSourceAPI.get_occurrences_by_occid_page1(guid)
+        moutput = MorphoSourceAPI.get_occurrences_by_occid_page1(root_url, guid)
         for r in moutput.response[S2nKey.RECORDS]:
             occid = notes = None
             try:

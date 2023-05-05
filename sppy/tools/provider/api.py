@@ -4,12 +4,12 @@ from logging import WARN
 import requests
 import urllib
 
-from flask_app.broker.constants import (ENCODING, ServiceProvider, URL_ESCAPES)
-from flask_app.broker.s2n_type import S2nKey, S2nOutput
+from flask_app.common.s2n_type import BrokerOutput, S2nKey, ServiceProvider
+from flask_app.common.constants import ENCODING, URL_ESCAPES
 
 from sppy.tools.util.logtools import logit
 from sppy.tools.s2n.lm_xml import fromstring, deserialize
-from sppy.tools.s2n.utils import add_errinfo, get_icon_url
+from sppy.tools.s2n.utils import add_errinfo, get_traceback
 
 
 # .............................................................................
@@ -58,7 +58,7 @@ class APIQuery:
     @classmethod
     def _standardize_output(
             cls, output, count_key, records_key, record_format, service,
-            query_status=None, query_urls=None, count_only=False, errinfo=None):
+            provider_meta, query_urls=None, count_only=False, errinfo=None):
         if output is None:
             raise Exception(f"Failed to return output from {cls.url}")
 
@@ -87,10 +87,10 @@ class APIQuery:
                         msg = cls._get_error_message(err=e)
                         errinfo = add_errinfo(errinfo, "error", msg)
 
-        prov_meta = cls._get_provider_response_elt(
-            query_status=query_status, query_urls=query_urls)
-        std_output = S2nOutput(
-            total, service, provider=prov_meta, record_format=record_format,
+        # prov_meta = cls._get_provider_response_elt(
+        #     query_status=query_status, query_urls=query_urls)
+        std_output = BrokerOutput(
+            total, service, provider=provider_meta, record_format=record_format,
             records=stdrecs, errors=errinfo)
 
         return std_output
@@ -121,24 +121,36 @@ class APIQuery:
 
     # ...............................................
     @classmethod
-    def _get_provider_response_elt(cls, query_status=None, query_urls=None):
+    def _get_query_fail_output(cls, broker_url, query_urls, api_endpoint):
+        errinfo = {"error": [cls._get_error_message(err=get_traceback())]}
+        prov_meta = cls._get_provider_response_elt(
+            broker_url, query_status=HTTPStatus.INTERNAL_SERVER_ERROR,
+            query_urls=query_urls)
+        std_output = BrokerOutput(
+            0, api_endpoint, provider=prov_meta, errors=errinfo)
+        return std_output
+
+    # ...............................................
+    @classmethod
+    def _get_provider_response_elt(cls, broker_url, query_status=None, query_urls=None):
         provider_element = {}
         provcode = cls.PROVIDER[S2nKey.PARAM]
         provider_element[S2nKey.PROVIDER_CODE] = provcode
         provider_element[S2nKey.PROVIDER_LABEL] = cls.PROVIDER[S2nKey.NAME]
-        icon_url = get_icon_url(provcode)
+        icon_url = ServiceProvider.get_icon_url(broker_url, provcode)
         if icon_url:
             provider_element[S2nKey.PROVIDER_ICON_URL] = icon_url
         # Optional http status_code
-        try:
-            stat = int(query_status)
-        except ValueError:
+        if query_status is not None:
             try:
-                stat = max(query_status)
+                stat = int(query_status)
             except ValueError:
-                stat = None
-        if stat:
-            provider_element[S2nKey.PROVIDER_STATUS_CODE] = stat
+                try:
+                    stat = max(query_status)
+                except ValueError:
+                    stat = None
+            if stat:
+                provider_element[S2nKey.PROVIDER_STATUS_CODE] = stat
         # Optional URL queries
         if query_urls:
             provider_element[S2nKey.PROVIDER_QUERY_URL] = query_urls
@@ -316,31 +328,31 @@ class APIQuery:
         q_val = first_clause + q_val
         return q_val
 
+    # # ...............................................
+    # @classmethod
+    # def get_api_failure(
+    #         cls, broker_url, service, provider_response_status, errinfo=None):
+    #     """Output format for all (soon) API queries.
+    #
+    #     Args:
+    #         service: type of Specify Network service
+    #         provider_response_status: HTTPStatus of provider query
+    #         errinfo: dictionary of info messages, warnings, errors
+    #
+    #     Returns:
+    #         flask_app.broker.s2n_type.BrokerOutput object
+    #     """
+    #     prov_meta = cls._get_provider_response_elt(
+    #         broker_url, query_status=provider_response_status)
+    #     return BrokerOutput(0, service, provider=prov_meta, errors=errinfo)
+
     # ...............................................
-    @classmethod
-    def get_api_failure(
-            cls, service, provider_response_status, errinfo=None):
-        """Output format for all (soon) API queries.
-
-        Args:
-            service: type of Specify Network service
-            provider_response_status: HTTPStatus of provider query
-            errinfo: dictionary of info messages, warnings, errors
-
-        Returns:
-            flask_app.broker.s2n_type.S2nOutput object
-        """
-        prov_meta = cls._get_provider_response_elt(
-            query_status=provider_response_status)
-        return S2nOutput(0, service, provider=prov_meta, errors=errinfo)
-
-    # ...............................................
-    def query_by_get(self, output_type="json", verify=True):
+    def query_by_get(self, output_type="json", verify=False):
         """Query the API, setting the output attribute to a JSON or ElementTree object.
 
         Args:
             output_type: data type of body of URL GET response
-            verify: boolean indicating whether to verify the response.
+            verify: boolean indicating whether to verify the request.
 
         Note:
             Sets a single error message, not a list, to error attribute
@@ -351,10 +363,7 @@ class APIQuery:
         self.reason = None
         errmsg = None
         try:
-            if verify:
-                response = requests.get(self.url, headers=self.headers)
-            else:
-                response = requests.get(self.url, headers=self.headers, verify=False)
+            response = requests.get(self.url, headers=self.headers, verify=verify)
         except Exception as e:
             errmsg = self._get_error_message(err=e)
         else:

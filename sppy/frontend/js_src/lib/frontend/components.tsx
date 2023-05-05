@@ -63,7 +63,7 @@ export function SyftoriumLink({
           hashedFields.institution_code ?? '',
           hashedFields.collection_code ?? '',
           (text) => (
-            <a href={`/broker/api/v1/stats/?${queryString}`}>{text}</a>
+            <a href={`/api/v1/stats/?${queryString}`}>{text}</a>
           )
         )}
       </p>

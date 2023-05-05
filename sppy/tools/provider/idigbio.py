@@ -3,8 +3,9 @@ from http import HTTPStatus
 import os
 
 from flask_app.broker.constants import (
-    ENCODING, GBIF_MISSING_KEY, Idigbio, ISSUE_DEFINITIONS, ServiceProvider)
-from flask_app.broker.s2n_type import S2nEndpoint, S2nKey, S2nSchema
+    GBIF_MISSING_KEY, Idigbio, ISSUE_DEFINITIONS)
+from flask_app.common.s2n_type import APIEndpoint, BrokerSchema, S2nKey, ServiceProvider
+from flask_app.common.constants import ENCODING
 
 from sppy.tools.util.logtools import logit
 from sppy.tools.util.fileop import ready_filename
@@ -17,7 +18,7 @@ class IdigbioAPI(APIQuery):
     """Class to query iDigBio APIs and return results."""
 
     PROVIDER = ServiceProvider.iDigBio
-    OCCURRENCE_MAP = S2nSchema.get_idb_occurrence_map()
+    OCCURRENCE_MAP = BrokerSchema.get_idb_occurrence_map()
 
     # ...............................................
     def __init__(self, q_filters=None, other_filters=None, filter_string=None,
@@ -85,8 +86,8 @@ class IdigbioAPI(APIQuery):
         to_list_fields = ("dwc:associatedSequences", "dwc:associatedReferences")
         issue_fld = "s2n:issues"
         cc_std_fld = "dwc:countryCode"
-        view_std_fld = S2nSchema.get_view_url_fld()
-        data_std_fld = S2nSchema.get_data_url_fld()
+        view_std_fld = BrokerSchema.get_view_url_fld()
+        data_std_fld = BrokerSchema.get_data_url_fld()
 
         # Outer record must contain "data" and may contain "indexTerms" elements
         try:
@@ -184,7 +185,7 @@ class IdigbioAPI(APIQuery):
             taxon_key: GBIF assigned taxonKey
 
         Returns:
-            specimen_list: list of specimen records
+            full_count: count of specimen records
         """
         self._q_filters[Idigbio.GBIFID_FIELD] = taxon_key
         self.query()
@@ -194,10 +195,11 @@ class IdigbioAPI(APIQuery):
 
     # ...............................................
     @classmethod
-    def get_occurrences_by_occid(cls, occid, count_only=False, logger=None):
+    def get_occurrences_by_occid(cls, broker_url, occid, count_only=False, logger=None):
         """Return iDigBio occurrences for this occurrenceId.
 
         Args:
+            broker_url: the URL of the calling Specify Network service
             occid: occurrenceID for record to return.
             count_only: True to only return a count of matching records
             logger: object for logging messages and errors.
@@ -215,16 +217,16 @@ class IdigbioAPI(APIQuery):
         try:
             api.query()
         except Exception as e:
-            errinfo = add_errinfo(errinfo, "error", cls._get_error_message(err=e))
-            std_out = cls.get_api_failure(
-                S2nEndpoint.Occurrence, HTTPStatus.INTERNAL_SERVER_ERROR,
-                errinfo=errinfo)
+            std_out = cls._get_query_fail_output(
+                broker_url, [api.url], APIEndpoint.Occurrence)
         else:
             errinfo = add_errinfo(errinfo, "error", api.error)
+            prov_meta = cls._get_provider_response_elt(
+                broker_url, query_status=api.status_code, query_urls=[api.url])
             std_out = cls._standardize_output(
-                api.output, Idigbio.COUNT_KEY, Idigbio.RECORDS_KEY, Idigbio.RECORD_FORMAT,
-                S2nEndpoint.Occurrence, query_status=api.status_code,
-                query_urls=[api.url], count_only=count_only, errinfo=errinfo)
+                api.output, Idigbio.COUNT_KEY, Idigbio.RECORDS_KEY,
+                Idigbio.RECORD_FORMAT, APIEndpoint.Occurrence, prov_meta,
+                count_only=count_only, errinfo=errinfo)
 
         return std_out
 

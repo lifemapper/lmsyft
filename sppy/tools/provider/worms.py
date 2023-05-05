@@ -3,8 +3,10 @@ from collections import OrderedDict
 from http import HTTPStatus
 import urllib
 
-from flask_app.broker.constants import (ENCODING, ServiceProvider, URL_ESCAPES, WORMS)
-from flask_app.broker.s2n_type import S2nEndpoint, S2nOutput, S2nSchema
+from flask_app.broker.constants import WORMS
+from flask_app.common.s2n_type import (
+    APIEndpoint, BrokerOutput, BrokerSchema, ServiceProvider)
+from flask_app.common.constants import URL_ESCAPES, ENCODING
 
 from sppy.tools.provider.api import APIQuery
 from sppy.tools.s2n.utils import add_errinfo, get_traceback
@@ -18,7 +20,7 @@ class WormsAPI(APIQuery):
         Extend for other services
     """
     PROVIDER = ServiceProvider.WoRMS
-    NAME_MAP = S2nSchema.get_worms_name_map()
+    NAME_MAP = BrokerSchema.get_worms_name_map()
 
     # ...............................................
     def __init__(self, name, other_filters=None, logger=None):
@@ -67,7 +69,7 @@ class WormsAPI(APIQuery):
     @classmethod
     def _standardize_record(cls, rec, is_accepted=False):
         newrec = {}
-        data_std_fld = S2nSchema.get_data_url_fld()
+        data_std_fld = BrokerSchema.get_data_url_fld()
         prov_sciname_fn = "valid_authority"
         prov_canname_fn = "valid_name"
         hierarchy_fld = "hierarchy"
@@ -107,7 +109,7 @@ class WormsAPI(APIQuery):
             # Assemble from other fields
             elif provfld == hierarchy_fld:
                 hierarchy = OrderedDict()
-                for rnk in S2nSchema.RANKS:
+                for rnk in BrokerSchema.RANKS:
                     try:
                         val = rec[rnk]
                     except KeyError:
@@ -141,7 +143,7 @@ class WormsAPI(APIQuery):
     # ...............................................
     @classmethod
     def _standardize_output(
-            cls, output, service, query_status=None, query_urls=None, is_accepted=False,
+            cls, output, service, provider_meta, is_accepted=False,
             errinfo=None):
         total = 0
         stdrecs = []
@@ -152,25 +154,25 @@ class WormsAPI(APIQuery):
                 newrec = cls._standardize_record(rec, is_accepted=is_accepted)
                 if newrec:
                     stdrecs.append(newrec)
-        prov_meta = cls._get_provider_response_elt(query_status=query_status, query_urls=query_urls)
-        std_output = S2nOutput(
-            total, service, provider=prov_meta, records=stdrecs, errors=errinfo)
+        std_output = BrokerOutput(
+            total, service, provider=provider_meta, records=stdrecs, errors=errinfo)
 
         return std_output
 
     # ...............................................
     @classmethod
-    def match_name(cls, namestr, is_accepted=False, logger=None):
+    def match_name(cls, broker_url, namestr, is_accepted=False, logger=None):
         """Return closest accepted species in WoRMS taxonomy.
 
         Args:
+            broker_url: the URL of the calling Specify Network service
             namestr: A scientific namestring possibly including author, year,
                 rank marker or other name information.
             is_accepted: if True, return the validName, otherwise Name
             logger: object for logging messages and errors.
 
         Returns:
-            flask_app.broker.s2n_type.S2nOutput object
+            flask_app.broker.s2n_type.BrokerOutput object
         """
         errinfo = {}
         name_clean = namestr.strip()
@@ -179,24 +181,30 @@ class WormsAPI(APIQuery):
         try:
             api.query()
         except Exception:
-            tb = get_traceback()
-            errinfo = add_errinfo(errinfo, "error", cls._get_error_message(err=tb))
-            std_output = cls.get_api_failure(
-                S2nEndpoint.Name, HTTPStatus.INTERNAL_SERVER_ERROR, errinfo=errinfo)
+            std_output = cls._get_query_fail_output(
+                broker_url, [api.url], APIEndpoint.Occurrence)
+            # errinfo["error"] = [cls._get_error_message(err=get_traceback())]
+            # prov_meta = cls._get_provider_response_elt(
+            #     broker_url, query_status=HTTPStatus.INTERNAL_SERVER_ERROR,
+            #     query_urls=[api.url])
+            # std_output = BrokerOutput(
+            #     0, APIEndpoint.Name, provider=prov_meta, errors=errinfo)
         else:
             if api.error:
                 errinfo = add_errinfo(errinfo, "error", api.error)
+            prov_meta = cls._get_provider_response_elt(
+                broker_url, query_status=api.status_code, query_urls=[api.url])
             # Standardize output from provider response
             std_output = cls._standardize_output(
-                api.output, S2nEndpoint.Name, query_status=api.status_code, query_urls=[api.url],
-                is_accepted=is_accepted, errinfo=errinfo)
+                api.output, APIEndpoint.Name, prov_meta, is_accepted=is_accepted,
+                errinfo=errinfo)
 
         return std_output
 
     # ...............................................
     def query(self):
         """Query the API and sets "output" attribute to a ElementTree object."""
-        APIQuery.query_by_get(self, output_type="json")
+        APIQuery.query_by_get(self, output_type="json", verify=False)
 
 
 # .............................................................................

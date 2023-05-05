@@ -13,17 +13,17 @@ info:
 servers:
   - url: 'https://broker-dev.spcoco.org/api/v1'
     description: Internal testing broker server
-  - url: 'https://spcoco.org/broker/api/v1'
-    description: Production broker server
+#  - url: 'https://broker-dev.spcoco.org/analyst/api/v1'
+#    description: Internal testing broker server
+#  - url: 'http://localhost/api/v1'
+#    description: Local broker server
+#  - url: 'http://localhost/analyst/api/v1'
+#    description: Local analyst server
 tags:
   - name: name
     description: Get taxonomy information for a scientific name
   - name: occ
     description: Get specimen occurrences
-  - name: resolve
-    description: Get resolution metadata for a digital specimen object in Specify
-  - name: map
-    description: Get URL for map of species points and predicted distributions
 paths:
   '/name/{namestr}':
     get:
@@ -76,43 +76,6 @@ paths:
               examples:
                 KU Bird occurrence:
                   $ref: '#/components/examples/occ_tentacles'
-
-  '/map/{namestr}':
-    get:
-      tags:
-        - map
-      summary: 'Get map information for a species'
-      description: Get map metadata for species points and predicted distributions
-      operationId: map
-      parameters:
-        - $ref: '#/components/parameters/namestr'
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/map_tentacles'
-
-  '/resolve/{occid}':
-    get:
-      tags:
-        - resolve
-      summary: 'Get a metadata record with URL for a Specify GUID'
-      description: Get resolution metadata for a digital specimen object in Specify
-      operationId: resolve
-      parameters:
-        - $ref: '#/components/parameters/occid'
-      responses:
-        '200':
-          description: successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/resolve_record'
-              examples:
-                KU Bird occurrence:
-                  $ref: '#/components/examples/resolve'
 
 components:
 
@@ -215,9 +178,9 @@ components:
         default: true
     gbif_dataset_key:
       name: gbif_dataset_key
-      in: path
+      in: query
       description: Dataset GUID from GBIF
-      required: true
+      required: false
       schema:
         $ref: '#/components/schemas/guid'
       examples:
@@ -270,16 +233,13 @@ components:
           enum:
             - 'gbif'
             - 'idb'
-            - 'ipni'
             - 'itis'
-            - 'lm'
             - 'mopho'
-            - 'specify'
             - 'worms'
             - 'specifynetwork'
         icon_url:
           type: string
-          example: https://spcoco.org/broker/api/v1/badge?provider=specifynetwork
+          example: https://broker-dev.spcoco.org/api/v1/badge/specifynetwork
         label:
           type: string
           description: Human-readable provider name
@@ -288,7 +248,7 @@ components:
           type: array
           items:
             type: string
-            example: https://spcoco.org/broker/api/v1/name?namestr=Acer saccharum Marshall&provider=gbif,itis,worms&is_accepted=True&gbif_count=True&kingdom=None
+            example: https://broker-dev.spcoco.org/api/v1/name?namestr=Acer saccharum Marshall&provider=gbif,itis,worms&is_accepted=True&gbif_count=True&kingdom=None
         status_code:
           type: number
           example: 200
@@ -721,103 +681,6 @@ components:
         's2n:specify_identifier':
           $ref: '#/components/schemas/nullable_guid'
 
-    map_tentacles:
-      allOf:
-        - $ref: '#/components/schemas/wrapper'
-        - type: object
-          properties:
-            service:
-              type: string
-              enum:
-                - 'map'
-            records:
-              type: array
-              items:
-                 $ref: '#/components/schemas/map_one_prov'
-              minItems: 1
-              maxItems: 1
-    map_one_prov:
-      allOf:
-        - $ref: '#/components/schemas/wrapper'
-        - type: object
-          properties:
-            service:
-              type: string
-              enum:
-                - 'map'
-            records:
-              type: array
-              items:
-                $ref: '#/components/schemas/map_record'
-    map_record:
-      type: object
-      properties:
-        's2n:view_url':
-          $ref: '#/components/schemas/view_url'
-        's2n:api_url':
-          $ref: '#/components/schemas/api_url'
-        's2n:endpoint':
-          type: string
-          example: 'https://data.lifemapper.org/api/v2/ogc'
-        's2n:data_link':
-          type: string
-          example: 'https://data.lifemapper.org/api/v2/sdmProject/119965'
-        's2n:layer_type':
-          type: string
-          enum:
-            - 'vector'
-            - 'raster'
-        's2n:layer_name':
-          type: string
-          example: 'prj_119965'
-        's2n:point_count':
-          type: integer
-          example: 456
-        's2n:point_bbox':
-          type: string
-          example: '-180,-90,180,90'
-        's2n:species_name':
-          type: string
-          example: 'Phlox longifolia Nutt.'
-        's2n:sdm_projection_scenario_code':
-          type: string
-          example: 'worldclim-curr'
-        's2n:sdm_projection_scenario_link':
-          type: string
-          example: 'https://data.lifemapper.org/api/v2/scenario/1'
-        's2n:status':
-          type: integer
-          example: 300
-        's2n:modtime':
-          type: string
-          example: '2021-09-05 10:23:09'
-        's2n:vendor_specific_parameters':
-          type: array
-          items:
-            $ref: '#/components/schemas/vsp'
-
-    resolve_record:
-      type: object
-      properties:
-        's2n:ident':
-          $ref: '#/components/schemas/guid'
-        's2n:dataset_guid':
-          $ref: '#/components/schemas/guid'
-        'dwc:institutionCode':
-          type: string
-          example: 'KUIT'
-        'dwc:basisOfRecord':
-          type: string
-          example: 'MaterialSample'
-        's2n:date':
-          type: string
-          example: '2021-09-27'
-        's2n:ark':
-          type: string
-          example: 'http://spcoco.org/ark:/2c1becd5-e641-4e83-b3f5-76a55206539a'
-        's2n:api_url':
-          $ref: '#/components/schemas/api_url'
-
     vsp:
       type: object
       properties:
@@ -1103,10 +966,10 @@ components:
         errors: {}
         provider:
           code: specifynetwork
-          icon_url: https://spcoco.org/broker/api/v1/badge?provider=specifynetwork
+          icon_url: https://broker-dev.spcoco.org/api/v1/badge/specifynetwork
           label: Specify Network
           query_url:
-            - https://spcoco.org/broker/api/v1/name?namestr=Denitrobacterium detoxificans&provider=gbif,itis,worms&is_accepted=True&gbif_count=True&kingdom=None
+            - https://broker-dev.spcoco.org/api/v1/name?namestr=Denitrobacterium detoxificans&provider=gbif,itis,worms&is_accepted=True&gbif_count=True&kingdom=None
           status_code: 200
         record_format: ''
         records:
@@ -1114,7 +977,7 @@ components:
             errors: {}
             provider:
               code: gbif
-              icon_url: https://spcoco.org/broker/api/v1/badge?provider=gbif
+              icon_url: https://broker-dev.spcoco.org/api/v1/badge/gbif
               label: GBIF
               query_url:
                 - https://api.gbif.org/v1/species/match?name=Denitrobacterium+detoxificans&verbose=true
@@ -1158,7 +1021,7 @@ components:
             errors: {}
             provider:
               code: itis
-              icon_url: https://spcoco.org/broker/api/v1/badge?provider=itis
+              icon_url: https://broker-dev.spcoco.org/api/v1/badge/itis
               label: ITIS
               query_url:
                 - https://services.itis.gov?wt=json&q=nameWInd:Denitrobacterium\%20detoxificans
@@ -1203,7 +1066,7 @@ components:
                 - WormsAPI; URL http://www.marinespecies.org/rest/AphiaRecordsByMatchNames, code = 204, reason = No Content
             provider:
               code: worms
-              icon_url: https://spcoco.org/broker/api/v1/badge?provider=worms
+              icon_url: https://broker-dev.spcoco.org/api/v1/badge/worms
               label: WoRMS
               query_url:
                 - http://www.marinespecies.org/rest/AphiaRecordsByMatchNames?marine_only=true&scientificnames%5B%5D%3D=Denitrobacterium+detoxificans
@@ -1219,10 +1082,10 @@ components:
         errors: {}
         provider:
           code: specifynetwork
-          icon_url: https://spcoco.org/broker/api/v1/badge?provider=specifynetwork
+          icon_url: https://broker-dev.spcoco.org/api/v1/badge/specifynetwork
           label: Specify Network
           query_url:
-            - https://spcoco.org/broker/api/v1/name?namestr=Plagioecia patina&provider=gbif,itis,worms&is_accepted=True&gbif_count=True&kingdom=None
+            - https://broker-dev.spcoco.org/api/v1/name?namestr=Plagioecia patina&provider=gbif,itis,worms&is_accepted=True&gbif_count=True&kingdom=None
           status_code: 200
         record_format: ''
         records:
@@ -1230,7 +1093,7 @@ components:
             errors: {}
             provider:
               code: gbif
-              icon_url: https://spcoco.org/broker/api/v1/badge?provider=gbif
+              icon_url: https://broker-dev.spcoco.org/api/v1/badge/gbif
               label: GBIF
               query_url:
                 - https://api.gbif.org/v1/species/match?name=Plagioecia+patina&verbose=true
@@ -1274,7 +1137,7 @@ components:
             errors: {}
             provider:
               code: itis
-              icon_url: https://spcoco.org/broker/api/v1/badge?provider=itis
+              icon_url: https://broker-dev.spcoco.org/api/v1/badge/itis
               label: ITIS
               query_url:
                 - https://services.itis.gov?wt=json&q=nameWInd:Plagioecia\%20patina
@@ -1317,7 +1180,7 @@ components:
             errors: {}
             provider:
               code: worms
-              icon_url: https://spcoco.org/broker/api/v1/badge?provider=worms
+              icon_url: https://broker-dev.spcoco.org/api/v1/badge/worms
               label: WoRMS
               query_url:
                 - http://www.marinespecies.org/rest/AphiaRecordsByMatchNames?marine_only=true&scientificnames%5B%5D%3D=Plagioecia+patina
@@ -1363,10 +1226,10 @@ components:
         errors: {}
         provider:
           code: specifynetwork
-          icon_url: https://spcoco.org/broker/api/v1/badge?provider=specifynetwork
+          icon_url: https://broker-dev.spcoco.org/api/v1/badge/specifynetwork
           label: Specify Network
           query_url:
-            - https://spcoco.org/broker/api/v1/name?namestr=Tulipa sylvestris&provider=gbif,itis,worms&is_accepted=True&gbif_count=True&kingdom=None
+            - https://broker-dev.spcoco.org/api/v1/name?namestr=Tulipa sylvestris&provider=gbif,itis,worms&is_accepted=True&gbif_count=True&kingdom=None
           status_code: 200
         record_format: ''
         records:
@@ -1374,7 +1237,7 @@ components:
             errors: {}
             provider:
               code: gbif
-              icon_url: https://spcoco.org/broker/api/v1/badge?provider=gbif
+              icon_url: https://broker-dev.spcoco.org/api/v1/badge/gbif
               label: GBIF
               query_url:
                 - https://api.gbif.org/v1/species/match?name=Tulipa+sylvestris&verbose=true
@@ -1450,7 +1313,7 @@ components:
             errors: {}
             provider:
               code: itis
-              icon_url: https://spcoco.org/broker/api/v1/badge?provider=itis
+              icon_url: https://broker-dev.spcoco.org/api/v1/badge/itis
               label: ITIS
               query_url:
                 - https://services.itis.gov?wt=json&q=nameWInd:Tulipa\%20sylvestris
@@ -1495,7 +1358,7 @@ components:
                 - WormsAPI; URL http://www.marinespecies.org/rest/AphiaRecordsByMatchNames, code = 204, reason = No Content
             provider:
               code: worms
-              icon_url: https://spcoco.org/broker/api/v1/badge?provider=worms
+              icon_url: https://broker-dev.spcoco.org/api/v1/badge/worms
               label: WoRMS
               query_url:
                 - http://www.marinespecies.org/rest/AphiaRecordsByMatchNames?marine_only=true&scientificnames%5B%5D%3D=Tulipa+sylvestris
@@ -1511,10 +1374,10 @@ components:
         errors: {}
         provider:
           code: specifynetwork
-          icon_url: https://spcoco.org/broker/api/v1/badge?provider=specifynetwork
+          icon_url: https://broker-dev.spcoco.org/api/v1/badge/specifynetwork
           label: Specify Network
           query_url:
-            - https://spcoco.org/broker/api/v1/occ?occid=ed8cfa5a-7b47-11e4-8ef3-782bcb9cd5b5&provider=specify,gbif,idb,mopho&count_only=False
+            - https://broker-dev.spcoco.org/api/v1/occ?occid=ed8cfa5a-7b47-11e4-8ef3-782bcb9cd5b5&provider=specify,gbif,idb,mopho&count_only=False
           status_code: 200
         record_format: ''
         records:
@@ -1522,7 +1385,7 @@ components:
             errors: {}
             provider:
               code: specify
-              icon_url: https://spcoco.org/broker/api/v1/badge?provider=specify
+              icon_url: https://broker-dev.spcoco.org/api/v1/badge/specify
               label: Specify
               query_url:
                 - https://syftorium.org/api/v1/sp_cache/collection/d4b334b9-8063-4fab-bd0d-71e3fc04ae00/occurrences/ed8cfa5a-7b47-11e4-8ef3-782bcb9cd5b5
@@ -1581,7 +1444,7 @@ components:
             errors: {}
             provider:
               code: gbif
-              icon_url: https://spcoco.org/broker/api/v1/badge?provider=gbif
+              icon_url: https://broker-dev.spcoco.org/api/v1/badge/gbif
               label: GBIF
               query_url:
                 - https://api.gbif.org/v1/occurrence/search?occurrenceID=ed8cfa5a-7b47-11e4-8ef3-782bcb9cd5b5
@@ -1640,7 +1503,7 @@ components:
             errors: {}
             provider:
               code: idb
-              icon_url: https://spcoco.org/broker/api/v1/badge?provider=idb
+              icon_url: https://broker-dev.spcoco.org/api/v1/badge/idb
               label: iDigBio
               query_url:
                 - https://search.idigbio.org/v2/search/records?rq=%7B%22occurrenceid%22%3A%22ed8cfa5a-7b47-11e4-8ef3-782bcb9cd5b5%22%7D
@@ -1713,7 +1576,7 @@ components:
             errors: {}
             provider:
               code: mopho
-              icon_url: https://spcoco.org/broker/api/v1/badge?provider=mopho
+              icon_url: https://broker-dev.spcoco.org/api/v1/badge/mopho
               label: MorphoSource
               query_url:
                 - https://ms1.morphosource.org/api/v1/find/specimens?start=0&limit=1000&q=occurrence_id%3Aed8cfa5a-7b47-11e4-8ef3-782bcb9cd5b5
@@ -1776,10 +1639,10 @@ components:
         errors: {}
         provider:
           code: specifynetwork
-          icon_url: https://spcoco.org/broker/api/v1/badge?provider=specifynetwork
+          icon_url: https://broker-dev.spcoco.org/api/v1/badge/specifynetwork
           label: Specify Network
           query_url:
-            - https://spcoco.org/broker/api/v1/resolve?occid=ed8cfa5a-7b47-11e4-8ef3-782bcb9cd5b5
+            - https://broker-dev.spcoco.org/api/v1/resolve?occid=ed8cfa5a-7b47-11e4-8ef3-782bcb9cd5b5
           status_code: 200
         record_format: ''
         records:
@@ -1787,7 +1650,7 @@ components:
             errors: {}
             provider:
               code: specify
-              icon_url: https://spcoco.org/broker/api/v1/badge?provider=specify
+              icon_url: https://broker-dev.spcoco.org/api/v1/badge/specify
               label: Specify
               query_url:
                 - https://syftorium.org/api/v1/resolve/ed8cfa5a-7b47-11e4-8ef3-782bcb9cd5b5

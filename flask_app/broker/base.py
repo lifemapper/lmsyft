@@ -1,46 +1,51 @@
 """Parent Class for the Specify Network API services."""
 from flask import Flask
+from werkzeug.exceptions import BadRequest, InternalServerError
 
 import sppy.tools.s2n.utils as lmutil
-from flask_app.broker.constants import (APIService, BrokerParameters, ServiceProvider)
-from flask_app.broker.s2n_type import S2nEndpoint, S2nKey, S2nOutput
+from flask_app.common.s2n_type import (
+    APIEndpoint, S2nKey, BrokerOutput, APIService, ServiceProvider)
 from sppy.tools.provider.gbif import GbifAPI
 from sppy.tools.provider.itis import ItisAPI
 
 app = Flask(__name__)
 
+@app.errorhandler(BadRequest)
+def handle_bad_request(e):
+    return f"Bad request: {e}"
+
+
+@app.errorhandler(InternalServerError)
+def handle_bad_response(e):
+    return f"Internal Server Error: {e}"
 
 # .............................................................................
-class _S2nService:
+class _BrokerService:
     """Base S-to-the-N service, handles parameter names and acceptable values."""
     # overridden by subclasses
-    SERVICE_TYPE = APIService.Root
+    SERVICE_TYPE = APIService.BrokerRoot
 
     # ...............................................
     @classmethod
-    def _get_s2n_provider_response_elt(cls, query_term=None):
+    def _get_s2n_provider_response_elt(cls, root_url, query_term=None):
         provider_element = {}
         s2ncode = ServiceProvider.Broker[S2nKey.PARAM]
         provider_element[S2nKey.PROVIDER_CODE] = s2ncode
         provider_element[S2nKey.PROVIDER_LABEL] = ServiceProvider.Broker[S2nKey.NAME]
-        icon_url = lmutil.get_icon_url(s2ncode)
+        icon_url = ServiceProvider.get_icon_url(root_url, s2ncode)
         if icon_url:
             provider_element[S2nKey.PROVIDER_ICON_URL] = icon_url
         # Status will be 200 if anyone ever sees this
         provider_element[S2nKey.PROVIDER_STATUS_CODE] = 200
-        # Handle local debugging
-        try:
-            # TODO: get from headers
-            base_url = "https://broker.spcoco.org"
-            # base_url = cherrypy.request.headers["Origin"]
-        except KeyError:
-            base_url = "https://localhost"
+        # # Handle local debugging
+        # try:
+        #     # TODO: get from headers
+        #     base_url = "https://spcoco.org"
+        #     # base_url = cherrypy.request.headers["Origin"]
+        # except KeyError:
+        #     base_url = "https://localhost"
         # Optional URL queries
-        standardized_url = "{}{}/{}".format(
-            base_url,
-            S2nEndpoint.Root,
-            cls.SERVICE_TYPE["endpoint"]
-        )
+        standardized_url = f"{root_url}/{cls.SERVICE_TYPE['endpoint']}"
         if query_term:
             standardized_url = "{}?{}".format(standardized_url, query_term)
         provider_element[S2nKey.PROVIDER_QUERY_URL] = [standardized_url]
@@ -73,7 +78,7 @@ class _S2nService:
         provnames = set()
         # Ignore as-yet undefined filter_params
         for p in ServiceProvider.all():
-            if cls.SERVICE_TYPE["endpoint"] in p[S2nKey.SERVICES]:
+            if cls.SERVICE_TYPE["name"] in p[S2nKey.SERVICES]:
                 provnames.add(p[S2nKey.PARAM])
         provnames = cls._order_providers(provnames)
         return provnames
@@ -122,75 +127,66 @@ class _S2nService:
 
     # .............................................................................
     @classmethod
-    def get_failure(cls, service=None, query_term=None, errors=None):
-        """Output format for all (soon) S^n services.
-
-        Args:
-            service: type of S^n services
-            query_term: query term provided by the user, ex: name or id
-            errors: list of info messages, warnings and errors (dictionaries)
-
-        Returns:
-            flask_app.broker.s2n_type.S2nOutput object
-        """
-        if not service:
-            service = cls.SERVICE_TYPE["endpoint"]
-        prov_meta = cls._get_s2n_provider_response_elt(query_term=query_term)
-        all_output = S2nOutput(
-            0, service, provider=prov_meta, errors=errors)
-        return all_output
-
-    # .............................................................................
-    @classmethod
     def endpoint(cls):
         """Return the URL endpoint for this class.
 
         Returns:
             URL endpoint for the service
         """
-        endpoint = f"{S2nEndpoint.Root}/{cls.SERVICE_TYPE['endpoint']}"
+        endpoint = f"{APIEndpoint.broker_root()}/{cls.SERVICE_TYPE['endpoint']}"
         return endpoint
 
     # ...............................................
     @classmethod
-    def get_endpoint(cls, **kwargs):
+    def get_endpoint(cls, root_url, **kwargs):
         """Return the http response for this class endpoint.
 
         Args:
+            root_url: the URL of this Specify Network service
             **kwargs: keyword arguments are accepted but ignored
 
         Returns:
-            flask_app.broker.s2n_type.S2nOutput object
+            flask_app.broker.s2n_type.BrokerOutput object
 
         Raises:
             Exception: on unknown error.
         """
         try:
             valid_providers = cls.get_providers()
-            output = cls._show_online(valid_providers)
+            output = cls._show_online(root_url, valid_providers)
         except Exception:
             raise
         return output.response
 
     # ...............................................
     @classmethod
-    def _show_online(cls, providers):
-        svc = cls.SERVICE_TYPE["endpoint"]
+    def _show_online(cls, root_url, providers):
+        svc = cls.SERVICE_TYPE["name"]
         info = {
-            "info": "S^n {} service is online.".format(svc)}
+            "info": "Specify Network {} service is online.".format(svc)}
 
         param_lst = []
-        for p in cls.SERVICE_TYPE["params"]:
-            pinfo = BrokerParameters[p].copy()
+        for p, pdict in cls.SERVICE_TYPE["params"].items():
+            pinfo = pdict.copy()
             pinfo["type"] = str(type(pinfo["type"]))
             if providers is not None and p == "provider":
                 pinfo["options"] = list(providers)
             param_lst.append({p: pinfo})
         info["parameters"] = param_lst
 
-        prov_meta = cls._get_s2n_provider_response_elt()
+        prov_meta = cls._get_s2n_provider_response_elt(root_url)
 
-        output = S2nOutput(0, svc, provider=prov_meta, errors=info)
+        output = BrokerOutput(0, svc, provider=prov_meta, errors=info)
+        return output
+
+    # ...............................................
+    @classmethod
+    def _get_badquery_output(cls, root_url, error_msg):
+        svc = cls.SERVICE_TYPE["name"]
+        errinfo = {"error": [error_msg]}
+        prov_meta = cls._get_s2n_provider_response_elt(root_url)
+
+        output = BrokerOutput(0, svc, provider=prov_meta, errors=errinfo)
         return output
 
     # ...............................................
@@ -230,7 +226,7 @@ class _S2nService:
         Returns:
             namestr: a canonical name
         """
-        # output is a flask_app.broker.s2n_type.S2nOutput object
+        # output is a flask_app.broker.s2n_type.BrokerOutput object
         output = ItisAPI.match_name(namestr, is_accepted=True)
         if output.record_count > 0:
             try:
@@ -268,12 +264,13 @@ class _S2nService:
         except Exception:
             pass
 
+        param_meta = cls.SERVICE_TYPE["params"][key]
         # First see if restricted to options
-        default_val = BrokerParameters[key]["default"]
-        type_val = BrokerParameters[key]["type"]
+        default_val = param_meta["default"]
+        type_val = param_meta["type"]
         # If restricted options, check
         try:
-            options = BrokerParameters[key]["options"]
+            options = param_meta["options"]
         except KeyError:
             options = None
         else:
@@ -340,7 +337,7 @@ class _S2nService:
         errinfo = {}
 
         # Correct all parameter keys/values present
-        for key in cls.SERVICE_TYPE["params"]:
+        for key, param_meta in cls.SERVICE_TYPE["params"].items():
             val = user_kwargs[key]
             # Done in calling function
             if key == "provider":
@@ -352,7 +349,7 @@ class _S2nService:
 
             # Require one valid icon_status
             elif key == "icon_status":
-                valid_stat = BrokerParameters[key]["options"]
+                valid_stat = param_meta["options"]
                 if val is None:
                     errinfo = lmutil.add_errinfo(
                         errinfo, "error",
@@ -372,14 +369,14 @@ class _S2nService:
                     errinfo = lmutil.add_errinfo(
                         errinfo, "error",
                         f"Value {val} for parameter {key} is not in valid options "
-                        f"{BrokerParameters[key]['options']}")
+                        f"{param_meta['options']}")
                     good_params[key] = None
                 else:
                     good_params[key] = usr_val
 
         # Fill in defaults for missing parameters
         for key in cls.SERVICE_TYPE["params"]:
-            param_meta = BrokerParameters[key]
+            param_meta = cls.SERVICE_TYPE["params"][key]
             try:
                 _ = good_params[key]
             except KeyError:
@@ -397,7 +394,7 @@ class _S2nService:
         valid_requested_providers, invalid_providers = cls._get_valid_requested_params(
             usr_req_providers, valid_providers)
 
-        if cls.SERVICE_TYPE != APIService.Badge:
+        if cls.SERVICE_TYPE != APIEndpoint.Badge:
             if valid_requested_providers:
                 providers = valid_requested_providers
             else:

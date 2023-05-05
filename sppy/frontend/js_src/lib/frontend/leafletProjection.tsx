@@ -34,7 +34,7 @@ export function useProjectionLayers(
   React.useEffect(() => {
     if (typeof scientificName === 'undefined') return;
     fetch(
-      `/broker/api/v1/map/?namestr=${scientificName}&scenariocode=worldclim-curr&provider=lm`
+      `/api/v1/map/?namestr=${scientificName}&scenariocode=worldclim-curr&provider=lm`
     )
       .then(async (response) => response.json())
       .then(setResponse)

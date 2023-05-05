@@ -3,7 +3,7 @@ import requests
 import subprocess
 
 from flask_app.broker.constants import SPECIFY, TST_VALUES
-from flask_app.broker.s2n_type import S2nKey, S2nOutput
+from flask_app.common.s2n_type import S2nKey, S2nOutput
 
 from sppy.tools.provider.api import APIQuery
 
