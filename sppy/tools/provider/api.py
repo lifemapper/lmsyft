@@ -128,6 +128,7 @@ class APIQuery:
             query_urls=query_urls)
         std_output = BrokerOutput(
             0, api_endpoint, provider=prov_meta, errors=errinfo)
+        return std_output
 
     # ...............................................
     @classmethod

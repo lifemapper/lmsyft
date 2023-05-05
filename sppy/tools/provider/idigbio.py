@@ -217,12 +217,8 @@ class IdigbioAPI(APIQuery):
         try:
             api.query()
         except Exception as e:
-            std_output = cls._get_query_fail_output(
+            std_out = cls._get_query_fail_output(
                 broker_url, [api.url], APIEndpoint.Occurrence)
-            # errinfo = add_errinfo(errinfo, "error", cls._get_error_message(err=e))
-            # std_out = cls.get_api_failure(
-            #     APIEndpoint.Occurrence, HTTPStatus.INTERNAL_SERVER_ERROR,
-            #     errinfo=errinfo)
         else:
             errinfo = add_errinfo(errinfo, "error", api.error)
             prov_meta = cls._get_provider_response_elt(
