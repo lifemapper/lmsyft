@@ -161,11 +161,10 @@ class WormsAPI(APIQuery):
 
     # ...............................................
     @classmethod
-    def match_name(cls, broker_url, namestr, is_accepted=False, logger=None):
+    def match_name(cls, namestr, is_accepted=False, logger=None):
         """Return closest accepted species in WoRMS taxonomy.
 
         Args:
-            broker_url: the URL of the calling Specify Network service
             namestr: A scientific namestring possibly including author, year,
                 rank marker or other name information.
             is_accepted: if True, return the validName, otherwise Name
@@ -181,8 +180,7 @@ class WormsAPI(APIQuery):
         try:
             api.query()
         except Exception:
-            std_output = cls._get_query_fail_output(
-                broker_url, [api.url], APIEndpoint.Occurrence)
+            std_output = cls._get_query_fail_output([api.url], APIEndpoint.Occurrence)
             # errinfo["error"] = [cls._get_error_message(err=get_traceback())]
             # prov_meta = cls._get_provider_response_elt(
             #     broker_url, query_status=HTTPStatus.INTERNAL_SERVER_ERROR,
@@ -193,7 +191,7 @@ class WormsAPI(APIQuery):
             if api.error:
                 errinfo = add_errinfo(errinfo, "error", api.error)
             prov_meta = cls._get_provider_response_elt(
-                broker_url, query_status=api.status_code, query_urls=[api.url])
+                query_status=api.status_code, query_urls=[api.url])
             # Standardize output from provider response
             std_output = cls._standardize_output(
                 api.output, APIEndpoint.Name, prov_meta, is_accepted=is_accepted,

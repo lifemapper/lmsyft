@@ -4,7 +4,7 @@ from werkzeug.exceptions import BadRequest, InternalServerError
 
 import sppy.tools.s2n.utils as lmutil
 from flask_app.common.s2n_type import (
-    APIEndpoint, S2nKey, BrokerOutput, APIService, ServiceProvider)
+    APIEndpoint, APIService, BrokerOutput, get_host_url, S2nKey, ServiceProvider)
 from sppy.tools.provider.gbif import GbifAPI
 from sppy.tools.provider.itis import ItisAPI
 
@@ -27,12 +27,12 @@ class _BrokerService:
 
     # ...............................................
     @classmethod
-    def _get_s2n_provider_response_elt(cls, root_url, query_term=None):
+    def _get_s2n_provider_response_elt(cls, query_term=None):
         provider_element = {}
         s2ncode = ServiceProvider.Broker[S2nKey.PARAM]
         provider_element[S2nKey.PROVIDER_CODE] = s2ncode
         provider_element[S2nKey.PROVIDER_LABEL] = ServiceProvider.Broker[S2nKey.NAME]
-        icon_url = ServiceProvider.get_icon_url(root_url, s2ncode)
+        icon_url = ServiceProvider.get_icon_url(s2ncode)
         if icon_url:
             provider_element[S2nKey.PROVIDER_ICON_URL] = icon_url
         # Status will be 200 if anyone ever sees this
@@ -45,7 +45,7 @@ class _BrokerService:
         # except KeyError:
         #     base_url = "https://localhost"
         # Optional URL queries
-        standardized_url = f"{root_url}/{cls.SERVICE_TYPE['endpoint']}"
+        standardized_url = f"{get_host_url()}/{cls.SERVICE_TYPE['endpoint']}"
         if query_term:
             standardized_url = "{}?{}".format(standardized_url, query_term)
         provider_element[S2nKey.PROVIDER_QUERY_URL] = [standardized_url]
@@ -138,11 +138,10 @@ class _BrokerService:
 
     # ...............................................
     @classmethod
-    def get_endpoint(cls, root_url, **kwargs):
+    def get_endpoint(cls, **kwargs):
         """Return the http response for this class endpoint.
 
         Args:
-            root_url: the URL of this Specify Network service
             **kwargs: keyword arguments are accepted but ignored
 
         Returns:
@@ -153,14 +152,14 @@ class _BrokerService:
         """
         try:
             valid_providers = cls.get_providers()
-            output = cls._show_online(root_url, valid_providers)
+            output = cls._show_online(valid_providers)
         except Exception:
             raise
         return output.response
 
     # ...............................................
     @classmethod
-    def _show_online(cls, root_url, providers):
+    def _show_online(cls, providers):
         svc = cls.SERVICE_TYPE["name"]
         info = {
             "info": "Specify Network {} service is online.".format(svc)}
@@ -174,17 +173,17 @@ class _BrokerService:
             param_lst.append({p: pinfo})
         info["parameters"] = param_lst
 
-        prov_meta = cls._get_s2n_provider_response_elt(root_url)
+        prov_meta = cls._get_s2n_provider_response_elt()
 
         output = BrokerOutput(0, svc, provider=prov_meta, errors=info)
         return output
 
     # ...............................................
     @classmethod
-    def _get_badquery_output(cls, root_url, error_msg):
+    def _get_badquery_output(cls, error_msg):
         svc = cls.SERVICE_TYPE["name"]
         errinfo = {"error": [error_msg]}
-        prov_meta = cls._get_s2n_provider_response_elt(root_url)
+        prov_meta = cls._get_s2n_provider_response_elt()
 
         output = BrokerOutput(0, svc, provider=prov_meta, errors=errinfo)
         return output

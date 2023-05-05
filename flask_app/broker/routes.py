@@ -1,12 +1,12 @@
 """URL Routes for the Specify Network API services."""
 import os
-from flask import Blueprint, Flask, request, render_template
+from flask import Blueprint, Flask, render_template, request
 
 # from flask_app.application import create_app
 from flask_app.common.constants import (
     TEMPLATE_DIR, STATIC_DIR, SCHEMA_DIR, SCHEMA_FNAME
 )
-from flask_app.common.s2n_type import APIEndpoint, get_root_url
+from flask_app.common.s2n_type import APIEndpoint
 
 from flask_app.broker.badge import BadgeSvc
 from flask_app.broker.frontend import FrontendSvc
@@ -17,9 +17,6 @@ from flask_app.broker.occ import OccurrenceSvc
 broker_blueprint = Blueprint(
     "broker", __name__, template_folder=TEMPLATE_DIR, static_folder=STATIC_DIR,
     static_url_path="/static")
-# broker_blueprint = Blueprint(
-#     "broker", __name__, url_prefix="/api/v1",
-#     template_folder=TEMPLATE_DIR, static_folder=STATIC_DIR, static_url_path="/static")
 
 app = Flask(__name__)
 app.config["JSON_SORT_KEYS"] = False
@@ -107,7 +104,6 @@ def badge_get(provider):
     Returns:
         dict: An image file as binary or an attachment.
     """
-    # response = OccurrenceSvc.get_occurrence_records(occid="identifier")
     # provider = request.args.get("provider", default=None, type=str)
     icon_status = request.args.get("icon_status", default="active", type=str)
     stream = request.args.get("stream", default="True", type=str)
@@ -126,8 +122,6 @@ def name_endpoint():
         response: A flask_app.common.s2n_type.BrokerOutput object containing the Specify
             Network name API response containing available providers.
     """
-    root_url = get_root_url(request.base_url, APIEndpoint.broker_root())
-
     name_arg = request.args.get("namestr", default=None, type=str)
     provider = request.args.get("provider", default=None, type=str)
     is_accepted = request.args.get("is_accepted", default="True", type=str)
@@ -135,10 +129,10 @@ def name_endpoint():
     gbif_count = request.args.get("gbif_count", default="True", type=str)
     # kingdom = request.args.get("kingdom", default=None, type=str)
     if name_arg is None:
-        response = NameSvc.get_endpoint(root_url)
+        response = NameSvc.get_endpoint()
     else:
         response = NameSvc.get_name_records(
-            root_url, namestr=name_arg, provider=provider,
+            namestr=name_arg, provider=provider,
             is_accepted=is_accepted, gbif_parse=gbif_parse, gbif_count=gbif_count)
 
     return response
@@ -156,7 +150,6 @@ def name_get(namestr):
         response: A flask_app.common.s2n_type.BrokerOutput object containing the Specify
             Network name API response.
     """
-    root_url = get_root_url(request.base_url, APIEndpoint.broker_root())
     # response = OccurrenceSvc.get_occurrence_records(occid="identifier")
     provider = request.args.get("provider", default=None, type=str)
     is_accepted = request.args.get("is_accepted", default="True", type=str)
@@ -164,7 +157,7 @@ def name_get(namestr):
     gbif_count = request.args.get("gbif_count", default="True", type=str)
     # kingdom = request.args.get("kingdom", default=None, type=str)
     response = NameSvc.get_name_records(
-        root_url, namestr=namestr, provider=provider, is_accepted=is_accepted,
+        namestr=namestr, provider=provider, is_accepted=is_accepted,
         gbif_parse=gbif_parse, gbif_count=gbif_count)
     return response
 
@@ -178,18 +171,16 @@ def occ_endpoint():
         response: A flask_app.broker.s2n_type.S2nOutput object containing the Specify
             Network occurrence API response containing available providers.
     """
-    root_url = get_root_url(request.base_url, APIEndpoint.broker_root())
-
     occ_arg = request.args.get("occid", default=None, type=str)
     provider = request.args.get("provider", default=None, type=str)
     gbif_dataset_key = request.args.get("gbif_dataset_key", default=None, type=str)
     count_only = request.args.get("count_only", default="False", type=str)
     if occ_arg is None and gbif_dataset_key is None:
-        response = OccurrenceSvc.get_endpoint(root_url)
+        response = OccurrenceSvc.get_endpoint()
     else:
         response = OccurrenceSvc.get_occurrence_records(
-            root_url, occid=occ_arg, provider=provider,
-            gbif_dataset_key=gbif_dataset_key, count_only=count_only)
+            occid=occ_arg, provider=provider, gbif_dataset_key=gbif_dataset_key,
+            count_only=count_only)
     return response
 
 
@@ -205,13 +196,11 @@ def occ_get(identifier):
         response: A flask_app.common.s2n_type.BrokerOutput object containing the Specify
             Network occurrence API response.
     """
-    root_url = get_root_url(request.base_url, APIEndpoint.broker_root())
-
     provider = request.args.get("provider", default=None, type=str)
     gbif_dataset_key = request.args.get("gbif_dataset_key", default=None, type=str)
     count_only = request.args.get("count_only", default="False", type=str)
     response = OccurrenceSvc.get_occurrence_records(
-        root_url, occid=identifier, provider=provider,
+        occid=identifier, provider=provider,
         gbif_dataset_key=gbif_dataset_key, count_only=count_only)
     return response
 
@@ -233,6 +222,4 @@ def frontend_get():
 # .....................................................................................
 # .....................................................................................
 if __name__ == "__main__":
-    # app = create_app(bp)
-    # app.config['JSON_SORT_KEYS'] = False
     app.run(debug=True)
