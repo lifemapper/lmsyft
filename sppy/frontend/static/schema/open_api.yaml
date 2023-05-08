@@ -1,4 +1,4 @@
-openapi: 3.0.0
+openapi: 3.1.0
 info:
   title: Specify Network services
   description: API services for returning biological metadata from available data providers
@@ -13,12 +13,8 @@ info:
 servers:
   - url: 'https://broker-dev.spcoco.org/api/v1'
     description: Internal testing broker server
-#  - url: 'https://broker-dev.spcoco.org/analyst/api/v1'
-#    description: Internal testing broker server
-#  - url: 'http://localhost/api/v1'
+#  - url: 'https://localhost/api/v1'
 #    description: Local broker server
-#  - url: 'http://localhost/analyst/api/v1'
-#    description: Local analyst server
 tags:
   - name: name
     description: Get taxonomy information for a scientific name
@@ -223,44 +219,73 @@ components:
         type: boolean
         default: false
 
-
   schemas:
-    provider:
-      type: object
-      properties:
-        code:
-          type: string
-          enum:
-            - 'gbif'
-            - 'idb'
-            - 'itis'
-            - 'mopho'
-            - 'worms'
-            - 'specifynetwork'
-        icon_url:
-          type: string
-          example: https://broker-dev.spcoco.org/api/v1/badge/specifynetwork
-        label:
-          type: string
-          description: Human-readable provider name
-          example: Specify Network
-        query_url:
-          type: array
-          items:
-            type: string
-            example: https://broker-dev.spcoco.org/api/v1/name?namestr=Acer saccharum Marshall&provider=gbif,itis,worms&is_accepted=True&gbif_count=True&kingdom=None
-        status_code:
-          type: number
-          example: 200
+#    provider:
+#      type: object
+#      properties:
+#        code:
+#          type: string
+#          enum:
+#            - 'gbif'
+#            - 'idb'
+#            - 'itis'
+#            - 'mopho'
+#            - 'worms'
+#            - 'specifynetwork'
+#        label:
+#          type: string
+#          description: Human-readable provider name
+#          example: Specify Network
+#        icon_url:
+#          type: string
+#          example: https://broker-dev.spcoco.org/api/v1/badge/specifynetwork
+#        status_code:
+#          type: integer
+#          example: 200
+#        query_url:
+#          type: array
+#          items:
+#            type: string
+#            example: https://broker-dev.spcoco.org/api/v1/name?namestr=Acer saccharum Marshall&provider=gbif,itis,worms&is_accepted=True&gbif_count=True&kingdom=None
     wrapper:
       type: object
       properties:
         count:
-          $ref: '#/components/schemas/count'
+          type: integer
+          description: >-
+            Number of records that matched the query. For specimen occurrence IDs,
+            there are usually 0 or 1 matches
+          minimum: 0
         service:
           type: string
         provider:
-          $ref: '#/components/schemas/provider'
+#          $ref: '#/components/schemas/provider'
+          type: object
+          properties:
+            code:
+              type: string
+              enum:
+                - 'gbif'
+                - 'idb'
+                - 'itis'
+                - 'mopho'
+                - 'worms'
+                - 'specifynetwork'
+            label:
+              type: string
+              description: Human-readable provider name
+              example: Specify Network
+            icon_url:
+              type: string
+              example: https://broker-dev.spcoco.org/api/v1/badge/specifynetwork
+            status_code:
+              type: integer
+              example: 200
+            query_url:
+              type: array
+              items:
+                type: string
+                example: https://broker-dev.spcoco.org/api/v1/name?namestr=Acer saccharum Marshall&provider=gbif,itis,worms&is_accepted=True&gbif_count=True&kingdom=None
         record_format:
           type: string
         errors:
@@ -270,21 +295,14 @@ components:
               type: array
               items:
                 type: string
-            info:
-              type: array
-              items:
-                type: string
             warning:
               type: array
               items:
                 type: string
-    count:
-      type: integer
-      description: >-
-        Number of records that matched the query. For specimen occurrence IDs,
-        there are usually 0 or 1 matches
-      minimum: 0
-      example: 1
+            info:
+              type: array
+              items:
+                type: string
     guid:
       type: string
       minLength: 36
@@ -310,24 +328,31 @@ components:
           kingdom:
             type: string
             example: 'Animalia'
+            nullable: true
           phylum:
             type: string
             example: 'Bryozoa'
+            nullable: true
           class:
             type: string
             example: 'Stenolaemata'
+            nullable: true
           order:
             type: string
             example: 'Cyclostomatida'
+            nullable: true
           family:
             type: string
             example: 'Plagioeciidae'
+            nullable: true
           genus:
             type: string
             example: 'Plagioecia'
+            nullable: true
           species:
             type: string
             example: 'Plagioecia patina'
+            nullable: true
 
     names_tentacles:
       allOf:
@@ -388,10 +413,16 @@ components:
           example: 'genus'
         "s2n:synonyms":
           type: array
+          nullable: true
+          description: Array of synonyms of this name
           items:
             type: string
-          description: Array of synonyms of this name
-          nullable: true
+            example: https://broker-dev.spcoco.org/api/v1/name?namestr=Acer saccharum Marshall&provider=gbif,itis,worms&is_accepted=True&gbif_count=True&kingdom=None
+#          type: array
+#          description: Array of synonyms of this name
+#          nullable: true
+#          items:
+#            type: string
         "s2n:hierarchy":
           $ref: '#/components/schemas/hierarchy'
         s2n:gbif_occurrence_count:
@@ -416,7 +447,7 @@ components:
           description: GBIF identifier key for this taxon
           nullable: true
         "s2n:itis_tsn":
-          type: integer
+          type: string
           description: ITIS identifier key for this taxon
           nullable: true
         "s2n:itis_credibility":
@@ -499,7 +530,7 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/occ_record'
-              description: This array would be empty if count_only is True
+              description: This array is empty if count_only is True
     occ_record:
       type: object
       properties:
@@ -680,14 +711,6 @@ components:
           nullable: true
         's2n:specify_identifier':
           $ref: '#/components/schemas/nullable_guid'
-
-    vsp:
-      type: object
-      properties:
-        vsp_param:
-          type: string
-        vsp_arg:
-          type: string
 
     issue_pairs:
       type: object
