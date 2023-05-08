@@ -1,10 +1,10 @@
 """Class for the Specify Network Name API service."""
 from werkzeug.exceptions import (BadRequest, InternalServerError)
 
-from flask_app.common.s2n_type import (
-    APIEndpoint, APIService, BrokerOutput, BrokerSchema, S2nKey, ServiceProvider,
-    print_broker_output)
 from flask_app.broker.base import _BrokerService
+from flask_app.common.s2n_type import (
+    APIEndpoint, APIService, BrokerOutput, BrokerSchema, S2nKey, ServiceProvider)
+from flask_app.common.util import print_broker_output
 
 from sppy.tools.provider.gbif import GbifAPI
 from sppy.tools.provider.itis import ItisAPI
@@ -20,8 +20,8 @@ class NameSvc(_BrokerService):
 
     # ...............................................
     @classmethod
-    def _get_gbif_records(cls, root_url, namestr, is_accepted, gbif_count):
-        output = GbifAPI.match_name(root_url, namestr, is_accepted=is_accepted)
+    def _get_gbif_records(cls, namestr, is_accepted, gbif_count):
+        output = GbifAPI.match_name(namestr, is_accepted=is_accepted)
         output.set_value(
             S2nKey.RECORD_FORMAT, cls.SERVICE_TYPE[S2nKey.RECORD_FORMAT])
 
@@ -39,8 +39,7 @@ class NameSvc(_BrokerService):
                 else:
                     # Add more info to each record
                     try:
-                        count_output = GbifAPI.count_occurrences_for_taxon(
-                            root_url, taxon_key)
+                        count_output = GbifAPI.count_occurrences_for_taxon(taxon_key)
                     except Exception:
                         traceback = get_traceback()
                         print(traceback)
@@ -62,9 +61,9 @@ class NameSvc(_BrokerService):
 
     # ...............................................
     @classmethod
-    def _get_itis_records(cls, root_url, namestr, is_accepted, kingdom):
+    def _get_itis_records(cls, namestr, is_accepted, kingdom):
         output = ItisAPI.match_name(
-            root_url, namestr, is_accepted=is_accepted, kingdom=kingdom)
+            namestr, is_accepted=is_accepted, kingdom=kingdom)
         output.set_value(
             S2nKey.RECORD_FORMAT, cls.SERVICE_TYPE[S2nKey.RECORD_FORMAT])
         output.format_records(cls.ORDERED_FIELDNAMES)
@@ -72,8 +71,8 @@ class NameSvc(_BrokerService):
 
     # ...............................................
     @classmethod
-    def _get_worms_records(cls, root_url, namestr, is_accepted):
-        output = WormsAPI.match_name(root_url, namestr, is_accepted=is_accepted)
+    def _get_worms_records(cls, namestr, is_accepted):
+        output = WormsAPI.match_name(namestr, is_accepted=is_accepted)
         output.set_value(
             S2nKey.RECORD_FORMAT, cls.SERVICE_TYPE[S2nKey.RECORD_FORMAT])
         output.format_records(cls.ORDERED_FIELDNAMES)
@@ -82,7 +81,7 @@ class NameSvc(_BrokerService):
     # ...............................................
     @classmethod
     def _get_records(
-            cls, root_url, namestr, req_providers, is_accepted, gbif_count, kingdom):
+            cls, namestr, req_providers, is_accepted, gbif_count, kingdom):
         allrecs = []
         # for response metadata
         query_term = ""
@@ -97,22 +96,22 @@ class NameSvc(_BrokerService):
                 # GBIF
                 if pr == ServiceProvider.GBIF[S2nKey.PARAM]:
                     goutput = cls._get_gbif_records(
-                        root_url, namestr, is_accepted, gbif_count)
+                        namestr, is_accepted, gbif_count)
                     allrecs.append(goutput)
                 #  ITIS
                 elif pr == ServiceProvider.ITISSolr[S2nKey.PARAM]:
                     isoutput = cls._get_itis_records(
-                        root_url, namestr, is_accepted, kingdom)
+                        namestr, is_accepted, kingdom)
                     allrecs.append(isoutput)
                 #  WoRMS
                 elif pr == ServiceProvider.WoRMS[S2nKey.PARAM]:
                     woutput = cls._get_worms_records(
-                        root_url, namestr, is_accepted)
+                        namestr, is_accepted)
                     allrecs.append(woutput)
             # TODO: enable filter parameters
 
         # Assemble
-        prov_meta = cls._get_s2n_provider_response_elt(root_url, query_term=query_term)
+        prov_meta = cls._get_s2n_provider_response_elt(query_term=query_term)
         full_out = BrokerOutput(
             len(allrecs), cls.SERVICE_TYPE["name"], provider=prov_meta,
             records=allrecs, errors={})
@@ -122,12 +121,11 @@ class NameSvc(_BrokerService):
     # ...............................................
     @classmethod
     def get_name_records(
-            cls, root_url, namestr=None, provider=None, is_accepted=True,
+            cls, namestr=None, provider=None, is_accepted=True,
             gbif_parse=True, gbif_count=True, kingdom=None, **kwargs):
         """Get taxon records for a scientific name from each requested name service.
 
         Args:
-            root_url: the URL of this Specify Network service
             namestr: a scientific name
             provider: comma-delimited list of requested provider codes.  Codes are
                 delimited for each in flask_app.broker.constants ServiceProvider
@@ -171,7 +169,7 @@ class NameSvc(_BrokerService):
             try:
                 # Do Query!
                 output = cls._get_records(
-                    root_url, good_params["namestr"], good_params["provider"],
+                    good_params["namestr"], good_params["provider"],
                     good_params["is_accepted"], good_params["gbif_count"],
                     good_params["kingdom"])
 
@@ -201,6 +199,7 @@ if __name__ == "__main__":
         # "Poa annua",
         # "Gnatholepis cauerensis (Bleeker, 1853)",
         # "Tulipa sylvestris",
+        "Acer nigrum Michx.f",
         "Notemigonus crysoleucas (Mitchill, 1814)",
         # "Acer leucoderme Small"
     ]
@@ -208,6 +207,6 @@ if __name__ == "__main__":
     svc = NameSvc()
     for namestr in test_names:
         out = svc.get_name_records(
-            "localhost", namestr=namestr, provider=None, is_accepted=False,
+            namestr=namestr, provider=None, is_accepted=False,
             gbif_parse=True, gbif_count=True, kingdom=None)
         print_broker_output(out, do_print_rec=True)

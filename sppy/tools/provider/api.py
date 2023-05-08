@@ -121,10 +121,10 @@ class APIQuery:
 
     # ...............................................
     @classmethod
-    def _get_query_fail_output(cls, broker_url, query_urls, api_endpoint):
+    def _get_query_fail_output(cls, query_urls, api_endpoint):
         errinfo = {"error": [cls._get_error_message(err=get_traceback())]}
         prov_meta = cls._get_provider_response_elt(
-            broker_url, query_status=HTTPStatus.INTERNAL_SERVER_ERROR,
+            query_status=HTTPStatus.INTERNAL_SERVER_ERROR,
             query_urls=query_urls)
         std_output = BrokerOutput(
             0, api_endpoint, provider=prov_meta, errors=errinfo)
@@ -132,12 +132,12 @@ class APIQuery:
 
     # ...............................................
     @classmethod
-    def _get_provider_response_elt(cls, broker_url, query_status=None, query_urls=None):
+    def _get_provider_response_elt(cls, query_status=None, query_urls=None):
         provider_element = {}
         provcode = cls.PROVIDER[S2nKey.PARAM]
         provider_element[S2nKey.PROVIDER_CODE] = provcode
         provider_element[S2nKey.PROVIDER_LABEL] = cls.PROVIDER[S2nKey.NAME]
-        icon_url = ServiceProvider.get_icon_url(broker_url, provcode)
+        icon_url = ServiceProvider.get_icon_url(provcode)
         if icon_url:
             provider_element[S2nKey.PROVIDER_ICON_URL] = icon_url
         # Optional http status_code
@@ -327,24 +327,6 @@ class APIQuery:
                 q_val = " AND ".join((q_val, cls))
         q_val = first_clause + q_val
         return q_val
-
-    # # ...............................................
-    # @classmethod
-    # def get_api_failure(
-    #         cls, broker_url, service, provider_response_status, errinfo=None):
-    #     """Output format for all (soon) API queries.
-    #
-    #     Args:
-    #         service: type of Specify Network service
-    #         provider_response_status: HTTPStatus of provider query
-    #         errinfo: dictionary of info messages, warnings, errors
-    #
-    #     Returns:
-    #         flask_app.broker.s2n_type.BrokerOutput object
-    #     """
-    #     prov_meta = cls._get_provider_response_elt(
-    #         broker_url, query_status=provider_response_status)
-    #     return BrokerOutput(0, service, provider=prov_meta, errors=errinfo)
 
     # ...............................................
     def query_by_get(self, output_type="json", verify=False):

@@ -337,7 +337,9 @@ $ pip install -r requirements.txt
 ## Debug
 
 To run flask in debug mode, first set up Flask environment, then start the flask 
-application (in this case flask_app.broker.__init__)
+application (in this case flask_app.broker.__init__).  Only one resource (aka broker or 
+analyst) at a time can be tested in this way.  Reset the FLASK_APP variable to test an
+alternate resource.
 
 ```zsh
 export FLASK_ENV=development
