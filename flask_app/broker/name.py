@@ -199,6 +199,7 @@ if __name__ == "__main__":
         # "Poa annua",
         # "Gnatholepis cauerensis (Bleeker, 1853)",
         # "Tulipa sylvestris",
+        "Acer nigrum Michx.f",
         "Notemigonus crysoleucas (Mitchill, 1814)",
         # "Acer leucoderme Small"
     ]
