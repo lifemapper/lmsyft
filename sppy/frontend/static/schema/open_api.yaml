@@ -12,7 +12,9 @@ info:
     url: 'https://www.gnu.org/licenses/gpl-3.0.en.html'
 servers:
   - url: 'https://broker-dev.spcoco.org/api/v1'
-    description: Internal testing broker server
+    description: Development broker server
+  - url: 'https://broker.spcoco.org/api/v1'
+    description: Production broker server
 #  - url: 'https://localhost/api/v1'
 #    description: Local broker server
 tags:
@@ -220,33 +222,6 @@ components:
         default: false
 
   schemas:
-#    provider:
-#      type: object
-#      properties:
-#        code:
-#          type: string
-#          enum:
-#            - 'gbif'
-#            - 'idb'
-#            - 'itis'
-#            - 'mopho'
-#            - 'worms'
-#            - 'specifynetwork'
-#        label:
-#          type: string
-#          description: Human-readable provider name
-#          example: Specify Network
-#        icon_url:
-#          type: string
-#          example: https://broker-dev.spcoco.org/api/v1/badge/specifynetwork
-#        status_code:
-#          type: integer
-#          example: 200
-#        query_url:
-#          type: array
-#          items:
-#            type: string
-#            example: https://broker-dev.spcoco.org/api/v1/name?namestr=Acer saccharum Marshall&provider=gbif,itis,worms&is_accepted=True&gbif_count=True&kingdom=None
     wrapper:
       type: object
       properties:
@@ -417,12 +392,7 @@ components:
           description: Array of synonyms of this name
           items:
             type: string
-            example: https://broker-dev.spcoco.org/api/v1/name?namestr=Acer saccharum Marshall&provider=gbif,itis,worms&is_accepted=True&gbif_count=True&kingdom=None
-#          type: array
-#          description: Array of synonyms of this name
-#          nullable: true
-#          items:
-#            type: string
+            example: 'Acer saccharum nigrum'
         "s2n:hierarchy":
           $ref: '#/components/schemas/hierarchy'
         s2n:gbif_occurrence_count:
