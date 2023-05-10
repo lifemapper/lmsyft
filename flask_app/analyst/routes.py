@@ -14,7 +14,7 @@ app.config["JSON_SORT_KEYS"] = False
 app.register_blueprint(analyst_blueprint)
 
 # .....................................................................................
-@app.route("/analyst/api/v1/", methods=["GET"])
+@app.route("/api/v1/", methods=["GET"])
 def analyst_status():
     """Get services available from broker.
 
@@ -31,7 +31,7 @@ def analyst_status():
 
 
 # # ..........................
-# @app.route("/analyst/api/v1/schema")
+# @app.route("/api/v1/schema")
 # def display_raw_schema():
 #     """Show the schema XML.
 #
@@ -45,7 +45,7 @@ def analyst_status():
 #
 #
 # # ..........................
-# @app.route("/analyst/api/v1/swaggerui")
+# @app.route("/api/v1/swaggerui")
 # def swagger_ui():
 #     """Show the swagger UI to the schema.
 #
@@ -56,7 +56,7 @@ def analyst_status():
 
 
 # .....................................................................................
-@app.route("/analyst/api/v1/count/")
+@app.route("/api/v1/count/")
 def count_endpoint():
     """Get the available counts.
 

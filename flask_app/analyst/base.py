@@ -66,7 +66,7 @@ class _AnalystService:
         Returns:
             URL endpoint for the service
         """
-        endpoint = f"{APIEndpoint.analyst_root()}/{cls.SERVICE_TYPE['endpoint']}"
+        endpoint = f"{APIEndpoint.Root}/{cls.SERVICE_TYPE['endpoint']}"
         return endpoint
 
     # ...............................................

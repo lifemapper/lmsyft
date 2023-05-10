@@ -133,7 +133,7 @@ class _BrokerService:
         Returns:
             URL endpoint for the service
         """
-        endpoint = f"{APIEndpoint.broker_root()}/{cls.SERVICE_TYPE['endpoint']}"
+        endpoint = f"{APIEndpoint.Root}/{cls.SERVICE_TYPE['endpoint']}"
         return endpoint
 
     # ...............................................
