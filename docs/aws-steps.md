@@ -2,7 +2,7 @@
 
 * Create a security group for the instance (and all other instances in region)
   * Must be tied to the region of instance
-  * aimee.stewart_SG_useast2
+  * aimee.stewart_SG_useast1
   * inbound: SSH from campus, HTTP/HTTPS from all
 
 # Create AWS Elastic Compute Cloud (EC2) instance
@@ -12,7 +12,6 @@
 * Default user for ubuntu instance is `ubuntu`
 * (opt) Request an Elastic IP and assign DNS to it
   * Register FQDN (GoDaddy) to IP for public access
-  * 54.221.46.214 (broker-dev)
 
 # Enable SSH access to EC2 
 
@@ -22,11 +21,22 @@
 * One chance only: Download the private key (.pem file for Linux and OSX) to local machine
 * Set file permissions to 400
 
-## Connect and set SSH service timeout
+
+## Set up local/client 
+
+* Copy SSH private key to each machine used for AWS access
+* Extend the SSH timeout vim ~/.ssh/config
+
+```
+Host *
+    ServerAliveInterval 20
+```
 
 ```commandline
 ssh -i ~/.ssh/aws_rsa.pem ubuntu@xxx.xxx.xx.xx
 ```
+
+## Connect and set EC2 SSH service timeout
 
 * Extend the SSH timeout (in AMI or instance?) in new config file under ssh config dir:
 
@@ -45,7 +55,10 @@ ClientAliveCountMax 3
 $ sudo systemctl reload sshd
 ```
 
-# Install base software
+
+# Install software
+
+## Base software 
 
 * update apt
 * install AWS client, awscli
@@ -60,17 +73,70 @@ $ sudo apt install certbot
 $ sudo apt install plocate
 ```
 
-# Set up client machines
+## Docker
 
-## SSH
+Follow instructions at https://docs.docker.com/engine/install/ubuntu/
 
-* Copy SSH private key to each machine used for AWS access
-* Extend the SSH timeout vim ~/.ssh/config
+* Set up the repository:
 
+```commandline
+$ sudo apt-get update
+$ sudo apt-get install ca-certificates curl gnupg
 ```
-Host *
-    ServerAliveInterval 20
+
+* Add Docker GPG key
+
+```commandline
+$ sudo install -m 0755 -d /etc/apt/keyrings
+$ curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+$ sudo chmod a+r /etc/apt/keyrings/docker.gpg
 ```
+
+* Set up the docker repository
+
+```commandline
+$ echo \
+  "deb [arch="$(dpkg --print-architecture)" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+  "$(. /etc/os-release && echo "$VERSION_CODENAME")" stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+```
+
+* Update apt and install Docker Engine, containerd, and Docker Compose.
+
+```commandline
+$ sudo apt-get update
+$ sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+```
+
+# Add the Github repo to EC2 instance
+
+## Generate a local ssh key 
+
+```commandline
+$ ssh-keygen -t ed25519 -C "aimee.stewart@ku.edu"
+$ eval "$(ssh-agent -s)"
+$ ssh-add ~/.ssh/id_ed25519
+```
+
+## Add the ssh key to Github
+
+* In the Github website, login, and navigate to your user profile
+* Select **SSH and GPG keys** from the left vertical menu
+* Choose **New SSH key**
+* In a terminal window, copy the key to the clipboard
+
+```commandline
+$ cat ~/.ssh/id_ed25519.pub
+```
+* In the resulting text window, add your public key, and tie with your EC2 instance 
+  with a memorable name 
+
+## Clone the repository to the EC2 instance
+
+```commandline
+git clone git@github.com:specifysystems/sp_network 
+```
+
 
 # Later: Create Amazon Machine Image (AMI) 
 

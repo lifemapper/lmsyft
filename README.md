@@ -121,32 +121,58 @@ If you like Certbot, please consider supporting our work by:
  * Donating to EFF:                    https://eff.org/donate-le
 ```
 
-* copy the newly created directory with certificates to the home directory
-* change the owner so that they can be used in Docker containers
+* Create a certificates directory under the home directory
 
 ```commandline
-$ cd
+$ cd ~
 $ mkdir certificates
-$ sudo cp -rp /etc/letsencrypt/archive/broker-dev.spcoco.org/*  ~/certificates
-$ sudo chown ubuntu:ubuntu ~/certificates/*
 ```
 
+* Login as superuser, then copy the certificates to the newly created certificates 
+  directory
+* Change the owner of the files in the certificates directory 
+* Exit superuser
+
+```commandline
+$ sudo su -
+# cp -rp /etc/letsencrypt/archive/broker-dev.spcoco.org/*  /home/ubuntu/certificates
+# chown ubuntu:ubuntu /home/ubuntu/certificates/*
+# exit
+```
+
+* link these copied certificates to the config directory in this project, as
+  names fullchain.pem and privkey.pem
+
+```commandline
+$ cd ~/git/sp_network/config
+$ ln -s ~/certificates/fullchain1.pem fullchain.pem
+$ ln -s ~/certificates/privkey1.pem   privkey.pem
+```
 ### Renew Certbot SSL certificates
+
 
 SSL certificates are served from the base VM, and need apache to be renewed.
 These are administered by Letsencrypt using Certbot and are only valid for 90 days at
 a time. When it is time for a renewal (approx every 60 days), bring the docker
-containers down, and start apache. Renew the certificates, then stop apache,
-and bring the containers up again.
+containers down, renew the certificates, then bring the containers up again.
 
 ```zsh
 certbot certificates
 docker compose stop
-systemctl start httpd
 certbot renew
-systemctl stop httpd
 docker compose up -d
 ```
+
+Copy the new certificates back to the certificates subdirectory of the home directory, 
+and change the owner.  The existing symlinks will now point to the updated certificates. 
+
+```commandline
+$ sudo su -
+# cp -rp /etc/letsencrypt/archive/broker-dev.spcoco.org/*  /home/ubuntu/certificates/
+# chown ubuntu:ubuntu /home/ubuntu/certificates/*
+# exit
+```
+
 
 ### SSL through Amazon?
 
@@ -256,7 +282,7 @@ needed.
 ## Run the containers (production)
 
 ```zsh
-docker compose up -d
+sudo docker compose -f docker-compose.yml up -d
 ```
 
 Specify Network is now available at [https://localhost/](https://localhost:443)
