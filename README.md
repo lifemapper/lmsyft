@@ -279,6 +279,15 @@ needed.
 
 # Docker manipulation
 
+## Edit the docker environment files
+
+* Add the container domain name to the files .env.broker.conf and .env.analyst.conf
+* Change the FQDN value to the fully qualified domain name of the server.  
+  * If this is a local testing deployment, it will be "localhost"
+  * For a development or production server it will be the FQDN with correct subdomain 
+    for each container, i.e FQDN=broker.spcoco.org in .env.broker.conf and 
+    FQDN=analyst.spcoco.org in .env.analyst.conf    
+
 ## Run the containers (production)
 
 ```zsh
