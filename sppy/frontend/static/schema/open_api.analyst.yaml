@@ -1,0 +1,174 @@
+openapi: 3.1.0
+info:
+  title: Specify Network services
+  description: API services for returning statistical data about biological collections.
+  version: 1.0.0
+#  termsOfService: 'https://lifemapper.ku.edu/?page_id=1096'
+  contact:
+    name: Aimee Stewart
+    email: aimee.stewart@ku.edu
+  license:
+    name: GPL-3.0 License
+    url: 'https://www.gnu.org/licenses/gpl-3.0.en.html'
+servers:
+#  - url: 'https://broker.spcoco.org/analyst/api/v1'
+#    description: Development analyst server
+  - url: 'https://localhost/analyst/api/v1'
+    description: Local testing analyst server
+tags:
+  - name: count
+    description: Get comparative counts for a collection or organization
+paths:
+  '/count/':
+    get:
+      tags:
+        - count
+      summary: 'Get comparative counts for a collection or organization'
+      description: Get comparative counts for a collection or organization
+      operationId: count_tentacles
+      parameters:
+        - $ref: '#/components/parameters/collection_id'
+        - $ref: '#/components/parameters/organization_id'
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/count_tentacles'
+              examples:
+                KU collection X:
+                   $ref:
+                    '#/components/examples/collection_3f55b3fa-292d-4170-bd46-66dca41d7f05'
+                KU collection Y:
+                  $ref:
+                    '#/components/examples/collection_4fa7b334-ce0d-4e88-aaae-2e0c138d049e'
+
+components:
+
+  parameters:
+    collection_id:
+      name: collection_id
+      in: query
+      description: Collection/dataset GUID from GBIF
+      required: false
+      schema:
+        $ref: '#/components/schemas/guid'
+      examples:
+        ku_mammology_collection:
+          value: 1d04e739-98a9-4e16-9970-8f8f3bf9e9e3
+        ku_ichthyology_collection:
+          value: 8f79c802-a58c-447f-99aa-1d6a0790825a
+        ku_herpetology_collection:
+          value: dce00a1f-f6b4-4e11-9771-92c62c40ad80
+        ku_ornithology_collection:
+          value: e635240a-3cb1-4d26-ab87-57d8c7afdfdb
+
+    organization_id:
+      name: organization_id
+      in: query
+      description: Organization GUID from GBIF
+      required: false
+      schema:
+        $ref: '#/components/schemas/guid'
+      examples:
+        kubi_organization:
+          value: b554c320-0560-11d8-b851-b8a03c50a862
+        Cornell Lab of Ornithology:
+          value: e2e717bf-551a-4917-bdc9-4fa0f342c530
+        University of Miami Voss Marine Invertebrate Collection:
+          value: 5624d6f9-a94b-42c4-8814-a587e7e5e6f0
+        Western Illinois University:
+          value: 26b1b249-1145-4fd4-ae38-0544700224ad
+
+  schemas:
+    wrapper:
+      type: object
+      properties:
+        service:
+          type: string
+        description:
+          type: string
+        errors:
+          type: object
+          properties:
+            error:
+              type: array
+              items:
+                type: string
+            warning:
+              type: array
+              items:
+                type: string
+            info:
+              type: array
+              items:
+                type: string
+    guid:
+      type: string
+      minLength: 36
+      maxLength: 36
+    nullable_guid:
+      type: string
+      minLength: 36
+      maxLength: 36
+      nullable: true
+    view_url:
+      type: string
+      description: URL to provider web page for this data
+      nullable: true
+    api_url:
+      type: string
+      description: URL for provider api query for this data
+      nullable: true
+
+    count_tentacles:
+      allOf:
+        - $ref: '#/components/schemas/wrapper'
+        - type: object
+          properties:
+            service:
+              type: string
+              enum:
+                - 'count'
+            records:
+              type: array
+              items:
+                $ref: '#/components/schemas/count_one_facet'
+              minItems: 3
+              maxItems: 3
+    count_one_facet:
+      allOf:
+        - $ref: '#/components/schemas/wrapper'
+        - type: object
+          properties:
+            service:
+              type: string
+              enum:
+                - 'count'
+            records:
+              type: array
+              items:
+                $ref: '#/components/schemas/count_record'
+    count_record:
+      type: object
+      properties:
+        "s2n:identifier":
+          type: string
+        "s2n:count":
+          type: integer
+          description: record count for the group
+          example: 1347
+
+
+  examples:
+    collection_3f55b3fa-292d-4170-bd46-66dca41d7f05:
+      description: 'collection_id: 3f55b3fa-292d-4170-bd46-66dca41d7f05'
+      value:
+        count: 3
+
+    collection_4fa7b334-ce0d-4e88-aaae-2e0c138d049e:
+      description: 'collection_id: 3f55b3fa-292d-4170-bd46-66dca41d7f05'
+      value:
+        count: 3
+
