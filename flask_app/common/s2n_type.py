@@ -1003,7 +1003,7 @@ class AnalystOutput:
         if errors is None:
             errors = {}
         if description is None:
-            description = {}
+            description = ""
         if records is None:
             records = []
         # Dictionary is json-serializable
