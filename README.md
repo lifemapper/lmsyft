@@ -372,20 +372,25 @@ $ pip install -r requirements.txt
 ## Debug
 
 To run flask in debug mode, first set up Flask environment, then start the flask 
-application (in this case flask_app.broker.__init__).  Only one resource (aka broker or 
-analyst) at a time can be tested in this way.  Reset the FLASK_APP variable to test an
-alternate resource.
+application (in this case, main in flask_app.broker.routes.py).  Only one resource 
+(aka broker or analyst) at a time can be tested in this way.  
+Reset the FLASK_APP variable to test an alternate resource.
+
+** the broker frontend can NOT be tested this way, as it depends on docker volumes
 
 ```zsh
 export FLASK_ENV=development
 export FLASK_APP=flask_app.broker.routes:app
+# or 
+# export FLASK_APP=flask_app.analyst.routes:app
 flask run
 ```
 
-`broker` container is running `debugpy` on port `5000`
-
-http://localhost:5000/api/v1/name?namestr=Notemigonus%20crysoleucas%20(Mitchill,%201814)
-http://localhost:5000/api/v1/occ?occid=01493b05-4310-4f28-9d81-ad20860311f3
+* `broker` container is running `debugpy` on localhost, port `5000`
+* Test with http, no https!!
+  
+  http://localhost:5000/api/v1/name?namestr=Notemigonus%20crysoleucas%20(Mitchill,%201814)
+  http://localhost:5000/api/v1/occ?occid=01493b05-4310-4f28-9d81-ad20860311f3
 
 ## Troubleshooting
 
