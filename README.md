@@ -252,8 +252,8 @@ On a development server, check the following URL endpoints:
 For local testing in a development environment, tests in the tests directory
 require the lmtest module available at https://github.com/lifemapper/lmtest.
 
-Environment variables set in the Docker containers from the .env.conf file are
-necessary to test containers from the host machine.
+Environment variables set in the Docker containers from the .env.broker.conf and
+.env.broker.conf files are necessary to inform the host machine/container of its FQDN.
 
 **Temp solution:** Export these variables to the local environment in the python
 virtual environment activation script (bin/activate) script.
