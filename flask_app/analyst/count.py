@@ -114,7 +114,9 @@ if __name__ == "__main__":
     out = svc.get_endpoint()
     print_analyst_output(out, do_print_rec=True)
 
-    out = svc.get_occurrence_records(collection_id="a7156437-55ec-4c6f-89de-938f9361753d")
+    coll_id = "a7156437-55ec-4c6f-89de-938f9361753d"
+    org_id = None
+    out = svc.get_counts(coll_id, org_id)
     print_analyst_output(out, do_print_rec=True)
 
     # for occid in occids:

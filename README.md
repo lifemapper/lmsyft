@@ -376,7 +376,7 @@ application (in this case, main in flask_app.broker.routes.py).  Only one resour
 (aka broker or analyst) at a time can be tested in this way.  
 Reset the FLASK_APP variable to test an alternate resource.
 
-** the broker frontend can NOT be tested this way, as it depends on docker volumes
+** the broker frontend can NOT be tested this way, as it depends on a docker volume
 
 ```zsh
 export FLASK_ENV=development

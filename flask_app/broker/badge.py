@@ -117,6 +117,7 @@ if __name__ == "__main__":
     svc = BadgeSvc()
     # Get all providers
     valid_providers = svc.get_providers()
+    valid_providers = ["idb"]
     for pr in valid_providers:
         for stat in APIService.Badge["params"]["icon_status"]["options"]:
             retval = svc.get_icon(

@@ -31,7 +31,7 @@ def analyst_status():
 
 
 # # ..........................
-# @app.route("/analyst/api/v1/schema")
+# @app.route("/api/v1/schema")
 # def display_raw_schema():
 #     """Show the schema XML.
 #
@@ -45,7 +45,7 @@ def analyst_status():
 #
 #
 # # ..........................
-# @app.route("/analyst/api/v1/swaggerui")
+# @app.route("/api/v1/swaggerui")
 # def swagger_ui():
 #     """Show the swagger UI to the schema.
 #
