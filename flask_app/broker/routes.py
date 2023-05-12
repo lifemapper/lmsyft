@@ -26,7 +26,7 @@ app.register_blueprint(broker_blueprint)
 # .....................................................................................
 @app.route('/')
 def index():
-    return render_template("index.html")
+    return render_template("broker.index.html")
 
 
 # .....................................................................................

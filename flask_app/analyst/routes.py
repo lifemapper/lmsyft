@@ -14,21 +14,26 @@ app.config["JSON_SORT_KEYS"] = False
 app.register_blueprint(analyst_blueprint)
 
 # .....................................................................................
-@app.route("/api/v1/", methods=["GET"])
-def analyst_status():
-    """Get services available from broker.
+@app.route('/')
+def index():
+    return render_template("analyst.index.html")
 
-    Returns:
-        dict: A dictionary of status information for the server.
-    """
-    endpoints = APIEndpoint.get_analyst_endpoints()
-    system_status = "In Development"
-    return {
-        "num_services": len(endpoints),
-        "endpoints": endpoints,
-        "status": system_status
-    }
-
+# # .....................................................................................
+# @app.route("/api/v1/", methods=["GET"])
+# def analyst_status():
+#     """Get services available from broker.
+#
+#     Returns:
+#         dict: A dictionary of status information for the server.
+#     """
+#     endpoints = APIEndpoint.get_analyst_endpoints()
+#     system_status = "In Development"
+#     return {
+#         "num_services": len(endpoints),
+#         "endpoints": endpoints,
+#         "status": system_status
+#     }
+#
 
 # # ..........................
 # @app.route("/api/v1/schema")
