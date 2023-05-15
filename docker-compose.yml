@@ -53,8 +53,6 @@ services:
 
       - "./sppy/frontend/static/:/var/www/:ro"
       - "./config/nginx.conf:/etc/nginx/conf.d/default.conf:ro"
-      - "./config/broker.nginx.conf:/etc/nginx/conf.d/broker.conf:ro"
-      - "./config/analyst.nginx.conf:/etc/nginx/conf.d/analyst.conf:ro"
       - "./config/fullchain.pem:/etc/letsencrypt/fullchain.pem:ro"
       - "./config/privkey.pem:/etc/letsencrypt/privkey.pem:ro"
 
