@@ -22,8 +22,12 @@ Lifemapper backend.
 
 ## Specify Network Analyst (in development)
 
-The Specify Network Analyst is in development, and will be a collection of specimen-based analytics
-assessing the composition of collection holdings and available species information.
+The Specify Network Analyst is in development, and will be a set of specimen-based
+analytics assessing the composition of collection holdings and available species 
+information.
+
+Individual collections will be compared with data downloaded regularly from GBIF:
+https://www.gbif.org/occurrence/download?basis_of_record=PRESERVED_SPECIMEN&basis_of_record=FOSSIL_SPECIMEN&basis_of_record=OCCURRENCE&advanced=1&occurrence_status=present
 
 These data are used to compare and assess collections against and among the collective
 holdings globally distributed data.  The analytics are then returned to the
@@ -45,7 +49,7 @@ to provide as much value and feedback to the community as possible.
 To run the containers, generate `fullchain.pem` and `privkey.pem` (certificate
 and the private key) using Let's Encrypt and link these files in `./sp_network/config/`.
 
-While in development, you can generate self-signed certificates then link them in
+While in development, generate self-signed certificates then link them in
 ~/git/sp_network/config/ directory for this project:
 
 ```zsh
@@ -434,6 +438,11 @@ git config --global http.sslVerify true
 * Errors installing toml, Poetry, dependencies of isort.
   * Updated .pre-commit-config.yaml isort version to latest,
      https://github.com/PyCQA/isort, fixed build
+
+# AWS setup
+
+* Add raw GBIF data to S3
+* 
 
 # Misc
 
