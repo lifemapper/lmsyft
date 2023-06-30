@@ -55,8 +55,7 @@ ClientAliveCountMax 3
 $ sudo systemctl reload sshd
 ```
 
-
-# Install software
+# Install software on EC2
 
 ## Base software 
 
@@ -136,6 +135,15 @@ $ cat ~/.ssh/id_ed25519.pub
 ```commandline
 git clone git@github.com:specifysystems/sp_network 
 ```
+
+# Enable S3 access from EC2
+
+# Configure AWS; written to ~/.aws/config
+aws configure set default.region us-east-1;
+aws configure set default.output json;
+# Configure AWS; written to ~/.aws/credentials
+aws configure set aws_access_key_id "";
+aws configure set aws_secret_access_key "";
 
 
 # Later: Create Amazon Machine Image (AMI) 
