@@ -136,15 +136,48 @@ $ cat ~/.ssh/id_ed25519.pub
 git clone git@github.com:specifysystems/sp_network 
 ```
 
-# Enable S3 access from EC2
+# Enable S3 access from local machine and EC2
 
-# Configure AWS; written to ~/.aws/config
+## Configure AWS credentials and defaults
+
+### Using aws_cli
+```commandline
+# written to ~/.aws/config
 aws configure set default.region us-east-1;
 aws configure set default.output json;
 # Configure AWS; written to ~/.aws/credentials
 aws configure set aws_access_key_id "";
 aws configure set aws_secret_access_key "";
 
+```
+
+### or setting environment variables in ~/.bashrc
+```commandline
+# AWS credentials and defaults
+export AWS_DEFAULT_REGION=us-east-1
+export AWS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+export AWS_ACCESS_KEY_ID=xxx
+export AWS_SECRET_ACCESS_KEY=xxx
+
+```
+# Test access locally with 
+
+```commandline
+$ aws s3 ls
+$ aws ec2 describe-instances
+```
+
+## Error: SSL
+```
+SSL validation failed for https://ec2.us-east-1.amazonaws.com/ 
+[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer 
+certificate (_ssl.c:1002)
+```
+
+```commandline
+$ aws s3 ls --no-verify-ssl
+$ aws ec2 describe-instances --no-verify-ssl
+```
 
 # Later: Create Amazon Machine Image (AMI) 
 
