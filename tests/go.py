@@ -60,10 +60,11 @@ def create_spot_launch_template(spot_template_data, spot_template_name):
         VersionDescription = "0.0.1",
         LaunchTemplateData = spot_template_data
     )
-    print(response[""])
+    success = (response["HTTPStatusCode"] == 200)
+    return success
 
 # ----------------------------------------------------
-def create_spot_ec2_instance(spot_template_data, key_name):
+def create_spot_ec2_instance(spot_template_name, key_name):
     key_pair = get_key_pair(key_name)
     if key_pair is None:
         raise Exception(f"No credentials for key {key_name}")
@@ -236,7 +237,8 @@ if __name__ == "__main__":
                 "DeviceName": "/dev/sdb",
                 "Ebs": {"Encrypted": False,
                         "DeleteOnTermination": False,
-                        "SnapshotId": "", "VolumeSize": 400,
+                        # "SnapshotId": "",
+                        "VolumeSize": 400,
                         "VolumeType": "standard"}
             }
         ],
@@ -388,32 +390,15 @@ ec2_ip = "54.156.84.82"
 # EC2 Spot Instance
 # iam_fleet_role = "arn:aws:iam::321942852011:user/aimee.stewart"
 iam_instance_role = "arn:aws:iam::321942852011:user/aimee.stewart"
-iam_instance_profile = arn:aws:iam::321942852011:instance-profile/<instance-profile-name>
+# iam_instance_profile = arn:aws:iam::321942852011:instance-profile/<instance-profile-name
 image_id = "spot_sp_network_analysis"
 instance_type = "instant"
-template_name = "transform_gbif_spot_launch_template"
+spot_template_name = "transform_gbif_spot_launch_template"
 
 key_pair = get_key_pair(key_name)
 
 ec2_client = boto3.client("ec2")
-spot_config = {
-    "TargetCapacity": 1,
-    "IamFleetRole": iam_fleet_role,
-    "LaunchSpecifications": [
-        {
-            "ImageId": image_id,
-            "InstanceType": instance_type,
-            "KeyName": key_name,
-            "SecurityGroupIds": [security_group_id],
-            # "SubnetId": subnet_id,
-            # "IamInstanceProfile": {
-            #     "Arn": iam_instance_profile
-            # },
-        },
-    ],
-    "Type": "maintain",
-    "InstanceInterruptionBehavior": "terminate",
-}
+
 response = ec2_client.create_fleet(
     DryRun=True, LaunchTemplateConfigs=spot_config)
 
