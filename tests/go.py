@@ -60,7 +60,7 @@ def create_spot_launch_template(spot_template_data, spot_template_name):
         VersionDescription = "0.0.1",
         LaunchTemplateData = spot_template_data
     )
-    success = (response["HTTPStatusCode"] == 200)
+    success = (response["ResponseMetadata"]["HTTPStatusCode"] == 200)
     return success
 
 # ----------------------------------------------------
@@ -73,8 +73,6 @@ def create_spot_ec2_instance(spot_template_name, key_name):
     fleet_token = create_token("fleet")
 
     response = ec2_client.create_fleet(
-        AllocationStrategy="priceCapacityOptimized",
-        TargetCapacity=1,
         Type="request",
         DryRun=False,
         ClientToken=fleet_token,
@@ -83,14 +81,10 @@ def create_spot_ec2_instance(spot_template_name, key_name):
             "TotalTargetCapacity": 1,
             "SpotTargetCapacity": 1,
             "DefaultTargetCapacityType": "spot",
-            # "TargetCapacityUnitType": "vcpu" | "memory-mib" | "units"
         },
-        # TerminateInstancesWithExpiration=True | False,
         SpotOptions={
             "AllocationStrategy": "price-capacity-optimized",
             "InstanceInterruptionBehavior": "terminate",
-            "SingleInstanceType": True,
-            "SingleAvailabilityZone": True
         },
         LaunchTemplateConfigs=[
             {
@@ -216,9 +210,9 @@ if __name__ == "__main__":
     iam_instance_role = "arn:aws:iam::321942852011:user/aimee.stewart"
     image_id = "spot_sp_network_analysis"
     instance_type = "instant"
-    spot_template_name = "transform_gbif_spot_launch_template"
+    spot_template_name = "specnet_analyst_spot_template"
 
-    test_sn_spot_instance_id = "i-0997d00d72be2e1fc"
+    ec2_client = boto3.client("ec2")
 
     spot_template_data = {
         "EbsOptimized": False,
@@ -255,8 +249,9 @@ if __name__ == "__main__":
                 # "SubnetId": "subnet-0fec22aebe18e9994", "NetworkCardIndex": 0
             }
         ],
+        # Amazon Linux 2023 AMI
         "ImageId": "ami-06ca3ca175f37dd66",
-        "InstanceType": "rd5.large",
+        "InstanceType": "r5d.large",
         "KeyName": "aimee-aws-key",
         "Monitoring": {"Enabled": False},
         "Placement": {
@@ -297,6 +292,23 @@ if __name__ == "__main__":
         "MaintenanceOptions": {"AutoRecovery": "default"},
         "DisableApiStop": False
     }
+
+    template_token = create_token("template")
+
+    response = ec2_client.create_launch_template(
+        DryRun = False,
+        ClientToken = template_token,
+        LaunchTemplateName = spot_template_name,
+        VersionDescription = "0.0.1",
+        LaunchTemplateData = spot_template_data
+    )
+    lt = response["LaunchTemplate"]
+
+    response = ec2_client.delete_launch_template(
+        DryRun=False,
+        LaunchTemplateName="spot_template_name"
+    )
+    print(response["LaunchTemplate"].keys())
 
     # Local: Create a Spot EC2 instance
     #        Connect to Spot instance
@@ -388,15 +400,92 @@ ec2_user = "ubuntu"
 ec2_ip = "54.156.84.82"
 
 # EC2 Spot Instance
-# iam_fleet_role = "arn:aws:iam::321942852011:user/aimee.stewart"
+iam_fleet_role = "arn:aws:iam::321942852011:user/aimee.stewart"
 iam_instance_role = "arn:aws:iam::321942852011:user/aimee.stewart"
-# iam_instance_profile = arn:aws:iam::321942852011:instance-profile/<instance-profile-name
 image_id = "spot_sp_network_analysis"
 instance_type = "instant"
-spot_template_name = "transform_gbif_spot_launch_template"
+spot_template_name = "specnet_analyst_spot_template"
 
-key_pair = get_key_pair(key_name)
+test_sn_spot_instance_id = "i-0997d00d72be2e1fc"
 
+spot_template_data = {
+        "EbsOptimized": False,
+        "BlockDeviceMappings": [
+            {
+                "DeviceName": "/dev/xvda",
+                "Ebs": {"Encrypted": False,
+                        "DeleteOnTermination": True,
+                        "Iops": 3000,
+                        # "SnapshotId": "snap-0d80fb72f6dbd3ff5",
+                        "VolumeSize": 8,
+                        "VolumeType": "gp3",
+                        "Throughput": 125}
+            },
+            {
+                "DeviceName": "/dev/sdb",
+                "Ebs": {"Encrypted": False,
+                        "DeleteOnTermination": False,
+                        # "SnapshotId": "",
+                        "VolumeSize": 400,
+                        "VolumeType": "standard"}
+            }
+        ],
+        "NetworkInterfaces": [
+            {
+                "AssociatePublicIpAddress": True,
+                "DeleteOnTermination": True,
+                "Description": "",
+                "DeviceIndex": 0,
+                "Groups": [security_group_id],
+                "InterfaceType": "interface",
+                "Ipv6Addresses": [],
+                # "PrivateIpAddresses": [{"Primary": True, "PrivateIpAddress": "172.31.86.127"}],
+                # "SubnetId": "subnet-0fec22aebe18e9994", "NetworkCardIndex": 0
+            }
+        ],
+        "ImageId": "ami-06ca3ca175f37dd66",
+        "InstanceType": "rd5.large",
+        "KeyName": "aimee-aws-key",
+        "Monitoring": {"Enabled": False},
+        "Placement": {
+            "AvailabilityZone": aws_zone,
+            "GroupName": "",
+            "Tenancy": "default"},
+        "DisableApiTermination": False,
+        "InstanceInitiatedShutdownBehavior": "terminate",
+        "TagSpecifications": [
+            {
+                "ResourceType": "instance",
+                "Tags": [{"Key": "Name", "Value": "test_sn_spot_instance"}]
+            }
+        ],
+        "InstanceMarketOptions": {
+            "MarketType": "spot",
+            "SpotOptions": {
+                # "MaxPrice": "0.011600",
+                "SpotInstanceType": "one-time",
+                "InstanceInterruptionBehavior": "terminate"
+            }
+        },
+        "CreditSpecification": {"CpuCredits": "standard"},
+        "CapacityReservationSpecification": {"CapacityReservationPreference": "open"},
+        "HibernationOptions": {"Configured": False},
+        "MetadataOptions": {
+            "HttpTokens": "required",
+            "HttpPutResponseHopLimit": 2,
+            "HttpEndpoint": "enabled",
+            "HttpProtocolIpv6": "disabled",
+            "InstanceMetadataTags": "disabled"
+        },
+        "EnclaveOptions": {"Enabled": False},
+        "PrivateDnsNameOptions": {
+            "HostnameType": "ip-name",
+            "EnableResourceNameDnsARecord": True,
+            "EnableResourceNameDnsAAAARecord": False},
+        "MaintenanceOptions": {"AutoRecovery": "default"},
+        "DisableApiStop": False
+    }
+    
 ec2_client = boto3.client("ec2")
 
 response = ec2_client.create_fleet(

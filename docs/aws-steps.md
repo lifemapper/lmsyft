@@ -179,7 +179,20 @@ $ aws s3 ls --no-verify-ssl
 $ aws ec2 describe-instances --no-verify-ssl
 ```
 
-# Later: Create Amazon Machine Image (AMI) 
+# Workflow for Specify Network Analyst pre-computations
+
+* Read https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/plan-spot-fleet.html
+* work with: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/work-with-spot-fleets.html
+* create request (console): https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/work-with-spot-fleets.html#create-spot-fleet
+* Local
+  * Create an EC2 instance launch template
+  * Create a Spot EC2 instance 
+    * with create_fleet
+    * send "UserData" with scripts on instantiation
+* Run scripts on Spot EC2
+  * Download from GBIF 
+  * Trim data and save as parquet format on Spot instance 
+  * Upload data to S3, delete on Spot
 
 * template of common software configuration
 
