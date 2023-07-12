@@ -187,12 +187,14 @@ $ aws ec2 describe-instances --no-verify-ssl
 * Local
   * Create an EC2 instance launch template
   * Create a Spot EC2 instance 
-    * with create_fleet
+    * with create_fleet, prerequisites: 
+      https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/manage-ec2-fleet.html#ec2-fleet-prerequisites
     * send "UserData" with scripts on instantiation
-* Run scripts on Spot EC2
-  * Download from GBIF 
-  * Trim data and save as parquet format on Spot instance 
-  * Upload data to S3, delete on Spot
+* On new Spot EC2 instance
+  * UserData Script will run on startup
+    * Download from GBIF 
+    * Trim data and save as parquet format on Spot instance 
+    * Upload data to S3, delete on Spot
 
 * template of common software configuration
 
