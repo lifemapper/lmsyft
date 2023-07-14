@@ -68,7 +68,87 @@ def get_user_data(script_filename):
         return base64_script_text
 
 # ----------------------------------------------------
-def create_spot_launch_template(spot_template_data, spot_template_name):
+def _define_spot_launch_template_data(
+        instance_name, spot_template_name, security_group_id, user_data_filename):
+    user_data = get_user_data(user_data_filename)
+    spot_template_data = {
+        "EbsOptimized": True,
+        "BlockDeviceMappings": [
+            {"DeviceName": "/dev/xvda",
+             "Ebs": {
+                 "Encrypted": False,
+                 "DeleteOnTermination": True,
+                 "Iops": 3000,
+                 # "SnapshotId": "snap-0d80fb72f6dbd3ff5",
+                 "VolumeSize": 8,
+                 "VolumeType": "gp3",
+                 "Throughput": 125}
+             }
+        ],
+        "NetworkInterfaces": [
+            {"AssociatePublicIpAddress": True,
+             "DeleteOnTermination": True,
+             "Description": "",
+             "DeviceIndex": 0,
+             "Groups": [security_group_id],
+             "InterfaceType": "interface",
+             "Ipv6Addresses": [],
+             # "PrivateIpAddresses": [{"Primary": True, "PrivateIpAddress": "172.31.19.17"}],
+             # "SubnetId": "subnet-0beb8b03a44442eef",
+             # "NetworkCardIndex": 0
+             }
+        ],
+        "ImageId": "ami-06ca3ca175f37dd66",
+        "InstanceType": "t3.large",
+        "KeyName": "aimee-aws-key",
+        "Monitoring": {"Enabled": False},
+        # "Placement": {"AvailabilityZone": "us-east-1c", "GroupName": "", "Tenancy": "default"},
+        "DisableApiTermination": False,
+        "InstanceInitiatedShutdownBehavior": "terminate",
+        "UserData": user_data,
+        "TagSpecifications": [
+            {"ResourceType": "instance",
+             # Include this tag for query to return instances started with this template
+             "Tags": [
+                 {"Key": "Name", "Value": instance_name},
+                 {"Key": "TemplateName", "Value": spot_template_name}
+             ]}
+        ],
+        "InstanceMarketOptions": {
+            "MarketType": "spot",
+            "SpotOptions": {
+                "MaxPrice": "0.083200",
+                "SpotInstanceType": "one-time",
+                "InstanceInterruptionBehavior": "terminate"
+            }
+        },
+        "CreditSpecification": {"CpuCredits": "unlimited"},
+        "CpuOptions": {"CoreCount": 1, "ThreadsPerCore": 2},
+        "CapacityReservationSpecification": {"CapacityReservationPreference": "open"},
+        "HibernationOptions": {"Configured": False},
+        "MetadataOptions": {
+            "HttpTokens": "required",
+            "HttpPutResponseHopLimit": 2,
+            "HttpEndpoint": "enabled",
+            "HttpProtocolIpv6": "disabled",
+            "InstanceMetadataTags": "disabled"},
+        "EnclaveOptions": {"Enabled": False},
+        "PrivateDnsNameOptions": {
+            "HostnameType": "ip-name",
+            "EnableResourceNameDnsARecord": True,
+            "EnableResourceNameDnsAAAARecord": False
+        },
+        "MaintenanceOptions": {"AutoRecovery": "default"},
+        "DisableApiStop": False
+    }
+    return spot_template_data
+
+
+# ----------------------------------------------------
+def create_spot_launch_template(
+        instance_name, spot_template_name, security_group_id, user_data_filename):
+    spot_template_data = _define_spot_launch_template_data(
+        instance_name, spot_template_name, security_group_id, user_data_filename)
     template_token = create_token("template")
     ec2_client = boto3.client("ec2")
     response = ec2_client.create_launch_template(
@@ -79,10 +159,10 @@ def create_spot_launch_template(spot_template_data, spot_template_name):
         LaunchTemplateData = spot_template_data
     )
     success = (response["ResponseMetadata"]["HTTPStatusCode"] == 200)
-    return success
+    return response
 
 # ----------------------------------------------------
-def create_spot_ec2_instance(
+def create_fleet_spot_ec2_instance(
         target_capacity_spec, spot_opts, spot_template_name, key_name):
     key_pair = get_key_pair(key_name)
     if key_pair is None:
@@ -104,6 +184,30 @@ def create_spot_ec2_instance(
     # Get the Spot Fleet request ID from response
     spot_fleet_request_id = response["SpotFleetRequestId"]
     return spot_fleet_request_id
+
+# ----------------------------------------------------
+def run_instance_spot_ec2(spot_template_name, key_name):
+    ec2_client = boto3.client("ec2")
+    spot_token = create_token("spot")
+    response = ec2_client.run_instances(
+        KeyName=key_name,
+        ClientToken=spot_token,
+        MinCount=1, MaxCount=1,
+        InstanceMarketOptions = {
+            "SpotOptions": {
+                "SpotInstanceType": "one-time",
+                "InstanceInterruptionBehavior": "terminate"
+            }
+        },
+        LaunchTemplate = {"LaunchTemplateName": spot_template_name, "Version": "1"}
+    )
+    instances = []
+    try:
+        instances = response["Instances"]
+    except KeyError:
+        print("No instance created")
+    return instances
+
 
 # ----------------------------------------------------
 def get_launch_template_from_instance(instance_id):
@@ -153,7 +257,6 @@ def download_from_gbif(gbif_basename):
 # --------------------------------------------------------------------------------------
 def extract_occurrences_from_dwca(gbif_basename):
     local_path = "~"
-    occfilename = "occurrences.txt"
     zipfilename = os.path.join(local_path, f"{gbif_basename}{ZIP_EXT}")
     with zipfile.ZipFile(zipfilename, "r") as zfile:
         zfile.extractall(local_path)
@@ -181,10 +284,10 @@ def upload_to_s3(local_path, filename, dev_bucket, s3_path):
     s3_client.upload_file(local_filename, dev_bucket, s3_path)
     print(f"Successfully uploaded {filename} to s3://{dev_bucket}/{s3_path}")
 
+
 # --------------------------------------------------------------------------------------
 # On local machine: Trim CSV file to named columns and save in parquet format
 # --------------------------------------------------------------------------------------
-
 def trim_gbifcsv_to_parquet(local_filename, parquet_filename):
     gbif_dataframe = pandas.read_csv(
         local_filename, delimiter="\t", encoding="utf-8", low_memory=False,
@@ -194,6 +297,72 @@ def trim_gbifcsv_to_parquet(local_filename, parquet_filename):
     # Write the trimmed DataFrame to Parquet file format
     trimmed_gbif_dataframe.to_parquet(parquet_filename)
 
+def _print_inst_info(reservation):
+    resid = reservation["ReservationId"]
+    inst = reservation["Instances"][0]
+    print(f"ReservationId: {resid}")
+    name = temp_id = None
+    try:
+        tags = inst["Tags"]
+    except:
+        pass
+    else:
+        for t in tags:
+            if t["Key"] == "Name":
+                name = t["Value"]
+            if t["Key"] == "aws:ec2launchtemplate:id":
+                temp_id = t["Value"]
+    ip = inst["PublicIpAddress"]
+    state = inst["State"]["Name"]
+    print(f"Instance name: {name}, template: {temp_id}, IP: {ip}, state: {state}")
+
+
+
+# --------------------------------------------------------------------------------------
+# On local machine: Describe all instances with given key_name and/or launch_template_id
+# --------------------------------------------------------------------------------------
+def find_instances(key_name, launch_template_name):
+    ec2_client = boto3.client("ec2")
+    filters = []
+    if launch_template_name is not None:
+        filters.append({"Name": "tag:TemplateName", "Values": [launch_template_name]})
+    if key_name is not None:
+        filters.append({"Name": "key-name", "Values": [key_name]})
+    response = ec2_client.describe_instances(
+        Filters=filters,
+        DryRun=False,
+        MaxResults=123,
+        # NextToken='string'
+    )
+    for res in response["Reservations"]:
+        _print_inst_info(res)
+    reservations = []
+    try:
+        reservations = response["Reservations"]
+    except:
+        pass
+    return reservations
+
+
+# --------------------------------------------------------------------------------------
+# On local machine: Describe the instance with the instance_id
+# --------------------------------------------------------------------------------------
+def get_instance(instance_id):
+    ec2_client = boto3.client("ec2")
+    response = ec2_client.describe_instances(
+        InstanceIds=[instance_id],
+        DryRun=False,
+    )
+    reservations = []
+    try:
+        reservations = response["Reservations"]
+    except:
+        pass
+    return reservations
+
+
+instance_id = "i-027ac55a6af064eb5"
+launch_template_id = "lt-02c84af0434a7ca60"
 # --------------------------------------------------------------------------------------
 # On EC2: Create a trimmed dataframe from CSV and save to S3 in parquet format
 # --------------------------------------------------------------------------------------
@@ -228,8 +397,6 @@ ec2_ip = "54.156.84.82"
 # EC2 Spot Instance
 iam_fleet_role = "arn:aws:iam::321942852011:user/aimee.stewart"
 iam_instance_role = "arn:aws:iam::321942852011:user/aimee.stewart"
-image_id = "spot_sp_network_analysis"
-instance_type = "instant"
 spot_template_name = "specnet_spot_template"
 
 script_filename = "tests/user_data_for_ec2spot.sh"
@@ -244,72 +411,9 @@ script_filename = "tests/user_data_for_ec2spot.sh"
 
 user_data = get_user_data(script_filename)
 
-spot_template_data = {
-        "EbsOptimized": True, 
-        "BlockDeviceMappings": [
-            {"DeviceName": "/dev/xvda", 
-             "Ebs": {
-                 "Encrypted": False, 
-                 "DeleteOnTermination": True, 
-                 "Iops": 3000, 
-                 # "SnapshotId": "snap-0d80fb72f6dbd3ff5", 
-                 "VolumeSize": 8, 
-                 "VolumeType": "gp3", 
-                 "Throughput": 125 }
-             }
-        ], 
-        "NetworkInterfaces": [
-            {"AssociatePublicIpAddress": True, 
-             "DeleteOnTermination": True, 
-             "Description": "", 
-             "DeviceIndex": 0, 
-             "Groups": [security_group_id], 
-             "InterfaceType": "interface", 
-             "Ipv6Addresses": [], 
-             # "PrivateIpAddresses": [{"Primary": True, "PrivateIpAddress": "172.31.19.17"}], 
-             # "SubnetId": "subnet-0beb8b03a44442eef", 
-             # "NetworkCardIndex": 0
-             }
-        ], 
-        "ImageId": "ami-06ca3ca175f37dd66", 
-        "InstanceType": "t3.large", 
-        "KeyName": "aimee-aws-key", 
-        "Monitoring": {"Enabled": False}, 
-        # "Placement": {"AvailabilityZone": "us-east-1c", "GroupName": "", "Tenancy": "default"}, 
-        "DisableApiTermination": False, 
-        "InstanceInitiatedShutdownBehavior": "terminate",
-        "UserData": user_data,
-        "TagSpecifications": [
-            {"ResourceType": "instance", 
-             "Tags": [{"Key": "Name", "Value": "specnet_spot_launched_from_template"}]}
-        ], 
-        "InstanceMarketOptions": {
-            "MarketType": "spot", 
-            "SpotOptions": {
-                "MaxPrice": "0.083200", 
-                "SpotInstanceType": "one-time", 
-                "InstanceInterruptionBehavior": "terminate"
-            }
-        }, 
-        "CreditSpecification": {"CpuCredits": "unlimited"}, 
-        "CpuOptions": {"CoreCount": 1, "ThreadsPerCore": 2}, 
-        "CapacityReservationSpecification": {"CapacityReservationPreference": "open"}, 
-        "HibernationOptions": {"Configured": False}, 
-        "MetadataOptions": {
-            "HttpTokens": "required", 
-            "HttpPutResponseHopLimit": 2, 
-            "HttpEndpoint": "enabled", 
-            "HttpProtocolIpv6": "disabled", 
-            "InstanceMetadataTags": "disabled"}, 
-        "EnclaveOptions": {"Enabled": False}, 
-        "PrivateDnsNameOptions": {
-            "HostnameType": "ip-name", 
-            "EnableResourceNameDnsARecord": True, 
-            "EnableResourceNameDnsAAAARecord": False
-        }, 
-        "MaintenanceOptions": {"AutoRecovery": "default"}, 
-        "DisableApiStop": False
-    }
+# Template parameters for spot instances to download and process GBIF data
+# Tag with TemplateName = spot_template_name
+#       to allow querying on all instances using this template
 
 target_capactity_spec = {
     "TotalTargetCapacity": 1,
@@ -327,26 +431,43 @@ launch_template_config = {
     }
 }
 
-    
-ec2_client = boto3.client("ec2")
-template_token = create_token("template")
-response1 = ec2_client.create_launch_template(
-        DryRun = False,
-        ClientToken = template_token,
-        LaunchTemplateName = spot_template_name,
-        VersionDescription = "0.0.1",
-        LaunchTemplateData = spot_template_data
-    )
+# response1 = create_spot_launch_template(spot_template_data, spot_template_name)
+
+response1 = create_spot_launch_template(
+        instance_name, spot_template_name, security_group_id, script_filename)
+#
+# # Create Template spot_template_name for spot instances to download and process GBIF data
+# response1 = ec2_client.create_launch_template(
+#         DryRun = False,
+#         ClientToken = template_token,
+#         LaunchTemplateName = spot_template_name,
+#         VersionDescription = "0.0.1",
+#         LaunchTemplateData = spot_template_data
+#     )
 print(response1["ResponseMetadata"]["HTTPStatusCode"])
     
-fleet_token = create_token("fleet")
-response2 = ec2_client.create_fleet(
-    Type="instant",
-    DryRun=False,
-    ClientToken=fleet_token,
-    TargetCapacitySpecification=target_capactity_spec,
-    SpotOptions=spot_opts,
-    LaunchTemplateConfigs=[launch_template_config]
+# fleet_token = create_token("fleet")
+# response2 = ec2_client.create_fleet(
+#     Type="instant",
+#     DryRun=False,
+#     ClientToken=fleet_token,
+#     TargetCapacitySpecification=target_capactity_spec,
+#     SpotOptions=spot_opts,
+#     LaunchTemplateConfigs=[launch_template_config]
+# )
+
+spot_token = create_token("spot")
+response2 = ec2_client.run_instances(
+    KeyName=key_name,
+    ClientToken=spot_token,
+    MinCount=1, MaxCount=1,
+    InstanceMarketOptions = {
+        "SpotOptions": {
+            "SpotInstanceType": "one-time",
+            "InstanceInterruptionBehavior": "terminate"
+        }
+    },
+    LaunchTemplate = {"LaunchTemplateName": spot_template_name, "Version": "1"}
 )
 
 try:
@@ -368,11 +489,11 @@ else:
             print(f"   {k}: {v}")
 
 try:
-    fleet_id = response2["FleetId"]
+    res_id = response2["ReservationId"]
 except:
-    print("No fleet created")
+    print("No reservation created")
 else:
-    print(f"Fleet ID: {fleet_id}")
+    print(f"Res ID: {res_id}")
     try:
         instance_id = response2["Instances"][0]["InstanceIds"][0]
     except:
