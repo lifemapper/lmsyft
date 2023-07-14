@@ -69,8 +69,8 @@ def get_user_data(script_filename):
 
 # ----------------------------------------------------
 def _define_spot_launch_template_data(
-        instance_name, spot_template_name, security_group_id, user_data_filename):
-    user_data = get_user_data(user_data_filename)
+        spot_template_name, security_group_id, script_filename):
+    user_data = get_user_data(script_filename)
     spot_template_data = {
         "EbsOptimized": True,
         "BlockDeviceMappings": [
@@ -110,7 +110,7 @@ def _define_spot_launch_template_data(
             {"ResourceType": "instance",
              # Include this tag for query to return instances started with this template
              "Tags": [
-                 {"Key": "Name", "Value": instance_name},
+                 # {"Key": "Name", "Value": instance_name},
                  {"Key": "TemplateName", "Value": spot_template_name}
              ]}
         ],
@@ -144,51 +144,120 @@ def _define_spot_launch_template_data(
     return spot_template_data
 
 
+# --------------------------------------------------------------------------------------
+# On local machine: Describe the launch_template with the template_name
+# --------------------------------------------------------------------------------------
+def get_launch_template(template_name):
+    ec2_client = boto3.client("ec2")
+    lnch_temp = None
+    try:
+        response = ec2_client.describe_launch_templates(
+            LaunchTemplateNames=[template_name],
+        )
+    except:
+        pass
+    else:
+        # LaunchTemplateName is unique
+        try:
+            lnch_temp = response["LaunchTemplates"][0]
+        except:
+            pass
+    return lnch_temp
+
 # ----------------------------------------------------
 def create_spot_launch_template(
-        instance_name, spot_template_name, security_group_id, user_data_filename):
-    spot_template_data = _define_spot_launch_template_data(
-        instance_name, spot_template_name, security_group_id, user_data_filename)
-    template_token = create_token("template")
-    ec2_client = boto3.client("ec2")
-    response = ec2_client.create_launch_template(
-        DryRun = False,
-        ClientToken = template_token,
-        LaunchTemplateName = spot_template_name,
-        VersionDescription = "0.0.1",
-        LaunchTemplateData = spot_template_data
-    )
-    success = (response["ResponseMetadata"]["HTTPStatusCode"] == 200)
-    return response
+        spot_template_name, security_group_id, script_filename):
+    template = get_launch_template(spot_template_name)
+    if template is not None:
+        success = True
+    else:
+        spot_template_data = _define_spot_launch_template_data(
+            spot_template_name, security_group_id, script_filename)
+        template_token = create_token("template")
+        ec2_client = boto3.client("ec2")
+        response = ec2_client.create_launch_template(
+            DryRun = False,
+            ClientToken = template_token,
+            LaunchTemplateName = spot_template_name,
+            VersionDescription = "0.0.1",
+            LaunchTemplateData = spot_template_data
+        )
+        success = (response["ResponseMetadata"]["HTTPStatusCode"] == 200)
+    return success
 
-# ----------------------------------------------------
-def create_fleet_spot_ec2_instance(
-        target_capacity_spec, spot_opts, spot_template_name, key_name):
-    key_pair = get_key_pair(key_name)
-    if key_pair is None:
-        raise Exception(f"No credentials for key {key_name}")
+# # ----------------------------------------------------
+# def create_fleet_spot_ec2_instance(
+#         target_capacity_spec, spot_opts, spot_template_name, key_name):
+#     key_pair = get_key_pair(key_name)
+#     if key_pair is None:
+#         raise Exception(f"No credentials for key {key_name}")
+#     ec2_client = boto3.client("ec2")
+#     fleet_token = create_token("fleet")
+#     response = ec2_client.create_fleet(
+#         Type="instant",
+#         DryRun=False,
+#         ClientToken=fleet_token,
+#         TargetCapacitySpecification=target_capacity_spec,
+#         SpotOptions=spot_opts,
+#         LaunchTemplateConfigs=[
+#             {"LaunchTemplateSpecification": {
+#                 "LaunchTemplateName": spot_template_name, "Version": "1"}
+#             }
+#         ]
+#     )
+#     # Get the Spot Fleet request ID from response
+#     spot_fleet_request_id = response["SpotFleetRequestId"]
+#     return spot_fleet_request_id
+
+# --------------------------------------------------------------------------------------
+# On local machine: Describe all instances with given key_name and/or launch_template_id
+# --------------------------------------------------------------------------------------
+def find_instances(key_name, launch_template_name):
     ec2_client = boto3.client("ec2")
-    fleet_token = create_token("fleet")
-    response = ec2_client.create_fleet(
-        Type="instant",
+    filters = []
+    if launch_template_name is not None:
+        filters.append({"Name": "tag:TemplateName", "Values": [launch_template_name]})
+    if key_name is not None:
+        filters.append({"Name": "key-name", "Values": [key_name]})
+    response = ec2_client.describe_instances(
+        Filters=filters,
         DryRun=False,
-        ClientToken=fleet_token,
-        TargetCapacitySpecification=target_capacity_spec,
-        SpotOptions=spot_opts,
-        LaunchTemplateConfigs=[
-            {"LaunchTemplateSpecification": {
-                "LaunchTemplateName": spot_template_name, "Version": "1"}
-            }
-        ]
+        MaxResults=123,
+        # NextToken='string'
     )
-    # Get the Spot Fleet request ID from response
-    spot_fleet_request_id = response["SpotFleetRequestId"]
-    return spot_fleet_request_id
+    instances = []
+    try:
+        ress = response["Reservations"]
+    except:
+        pass
+    else:
+        for res in ress:
+            _print_inst_info(res)
+            instances.extend(res["Instances"])
+    return instances
+
+
+# --------------------------------------------------------------------------------------
+# On local machine: Describe the instance with the instance_id
+# --------------------------------------------------------------------------------------
+def get_instance(instance_id):
+    ec2_client = boto3.client("ec2")
+    response = ec2_client.describe_instances(
+        InstanceIds=[instance_id],
+        DryRun=False,
+    )
+    try:
+        instance = response["Reservations"][0]["Instances"][0]
+    except:
+        instance = None
+    return instance
+
 
 # ----------------------------------------------------
-def run_instance_spot_ec2(spot_template_name, key_name):
+def run_instance_from_template(instance_basename, spot_template_name, key_name):
     ec2_client = boto3.client("ec2")
     spot_token = create_token("spot")
+    instance_name = create_token(instance_basename)
     response = ec2_client.run_instances(
         KeyName=key_name,
         ClientToken=spot_token,
@@ -199,14 +268,18 @@ def run_instance_spot_ec2(spot_template_name, key_name):
                 "InstanceInterruptionBehavior": "terminate"
             }
         },
-        LaunchTemplate = {"LaunchTemplateName": spot_template_name, "Version": "1"}
+        LaunchTemplate = {"LaunchTemplateName": spot_template_name, "Version": "1"},
+        TagSpecifications=[{
+            "ResourceType": "instance",
+            "Tags": [{"Key": "Name", "Value": instance_name}]
+        }]
     )
     instances = []
     try:
-        instances = response["Instances"]
+        instances = response["Instances"][0]
     except KeyError:
         print("No instance created")
-    return instances
+    return instance
 
 
 # ----------------------------------------------------
@@ -316,53 +389,6 @@ def _print_inst_info(reservation):
     state = inst["State"]["Name"]
     print(f"Instance name: {name}, template: {temp_id}, IP: {ip}, state: {state}")
 
-
-
-# --------------------------------------------------------------------------------------
-# On local machine: Describe all instances with given key_name and/or launch_template_id
-# --------------------------------------------------------------------------------------
-def find_instances(key_name, launch_template_name):
-    ec2_client = boto3.client("ec2")
-    filters = []
-    if launch_template_name is not None:
-        filters.append({"Name": "tag:TemplateName", "Values": [launch_template_name]})
-    if key_name is not None:
-        filters.append({"Name": "key-name", "Values": [key_name]})
-    response = ec2_client.describe_instances(
-        Filters=filters,
-        DryRun=False,
-        MaxResults=123,
-        # NextToken='string'
-    )
-    for res in response["Reservations"]:
-        _print_inst_info(res)
-    reservations = []
-    try:
-        reservations = response["Reservations"]
-    except:
-        pass
-    return reservations
-
-
-# --------------------------------------------------------------------------------------
-# On local machine: Describe the instance with the instance_id
-# --------------------------------------------------------------------------------------
-def get_instance(instance_id):
-    ec2_client = boto3.client("ec2")
-    response = ec2_client.describe_instances(
-        InstanceIds=[instance_id],
-        DryRun=False,
-    )
-    reservations = []
-    try:
-        reservations = response["Reservations"]
-    except:
-        pass
-    return reservations
-
-
-instance_id = "i-027ac55a6af064eb5"
-launch_template_id = "lt-02c84af0434a7ca60"
 # --------------------------------------------------------------------------------------
 # On EC2: Create a trimmed dataframe from CSV and save to S3 in parquet format
 # --------------------------------------------------------------------------------------
@@ -370,8 +396,6 @@ launch_template_id = "lt-02c84af0434a7ca60"
 # Main
 # --------------------------------------------------------------------------------------
 # if __name__ == "__main__":
-
-
 key_name = "aimee-aws-key"
 aws_zone = "us-east-1"
 # Allows KU Dyche hall
@@ -392,28 +416,14 @@ bucket_path = "gbif_test/gbif_dwc_extract"
 
 # EC2 persistent
 ec2_user = "ubuntu"
-ec2_ip = "54.156.84.82"
+ec2_dev_ip = "54.156.84.82"
 
 # EC2 Spot Instance
-iam_fleet_role = "arn:aws:iam::321942852011:user/aimee.stewart"
 iam_instance_role = "arn:aws:iam::321942852011:user/aimee.stewart"
 spot_template_name = "specnet_spot_template"
+instance_basename = "specnet_analyst"
 
 script_filename = "tests/user_data_for_ec2spot.sh"
-# base64_script_text = ""
-# with open(bash_script_filename, "r") as infile:
-#     script_text = infile.read()
-#
-#
-# text_bytes = script_text.encode('ascii')
-# text_base64_bytes = base64.b64encode(text_bytes)
-# base64_script_text = text_base64_bytes.decode('ascii')
-
-user_data = get_user_data(script_filename)
-
-# Template parameters for spot instances to download and process GBIF data
-# Tag with TemplateName = spot_template_name
-#       to allow querying on all instances using this template
 
 target_capactity_spec = {
     "TotalTargetCapacity": 1,
@@ -431,75 +441,43 @@ launch_template_config = {
     }
 }
 
-# response1 = create_spot_launch_template(spot_template_data, spot_template_name)
+# -------  Find or create template -------
+success = create_spot_launch_template(
+        spot_template_name, security_group_id, script_filename)
 
-response1 = create_spot_launch_template(
-        instance_name, spot_template_name, security_group_id, script_filename)
+# -------  Run instance from template -------
+instance = run_instance_spot_ec2(instance_basename, spot_template_name, key_name)
+
+# try:
+#     errors = response2["Errors"]
+# except:
+#     print("Yay, no errors")
+# else:
+#     for e in errors:
+#         for k, v in e.items():
+#             print(f"   {k}: {v}")
 #
-# # Create Template spot_template_name for spot instances to download and process GBIF data
-# response1 = ec2_client.create_launch_template(
-#         DryRun = False,
-#         ClientToken = template_token,
-#         LaunchTemplateName = spot_template_name,
-#         VersionDescription = "0.0.1",
-#         LaunchTemplateData = spot_template_data
-#     )
-print(response1["ResponseMetadata"]["HTTPStatusCode"])
-    
-# fleet_token = create_token("fleet")
-# response2 = ec2_client.create_fleet(
-#     Type="instant",
-#     DryRun=False,
-#     ClientToken=fleet_token,
-#     TargetCapacitySpecification=target_capactity_spec,
-#     SpotOptions=spot_opts,
-#     LaunchTemplateConfigs=[launch_template_config]
-# )
-
-spot_token = create_token("spot")
-response2 = ec2_client.run_instances(
-    KeyName=key_name,
-    ClientToken=spot_token,
-    MinCount=1, MaxCount=1,
-    InstanceMarketOptions = {
-        "SpotOptions": {
-            "SpotInstanceType": "one-time",
-            "InstanceInterruptionBehavior": "terminate"
-        }
-    },
-    LaunchTemplate = {"LaunchTemplateName": spot_template_name, "Version": "1"}
-)
-
-try:
-    errors = response2["Errors"]
-except:
-    print("Yay, no errors")
-else:
-    for e in errors:
-        for k, v in e.items():
-            print(f"   {k}: {v}")
-
-try:
-    warns = response2["Warnings"]
-except:
-    print("Yay, no warnings")
-else:
-    for w in warns:
-        for k, v in w.items():
-            print(f"   {k}: {v}")
-
-try:
-    res_id = response2["ReservationId"]
-except:
-    print("No reservation created")
-else:
-    print(f"Res ID: {res_id}")
-    try:
-        instance_id = response2["Instances"][0]["InstanceIds"][0]
-    except:
-        print("No instance created")
-    else:
-        print(f"Instance ID: {instance_id}")
+# try:
+#     warns = response2["Warnings"]
+# except:
+#     print("Yay, no warnings")
+# else:
+#     for w in warns:
+#         for k, v in w.items():
+#             print(f"   {k}: {v}")
+#
+# try:
+#     res_id = response2["ReservationId"]
+# except:
+#     print("No reservation created")
+# else:
+#     print(f"Res ID: {res_id}")
+#     try:
+#         instance_id = response2["Instances"][0]["InstanceIds"][0]
+#     except:
+#         print("No instance created")
+#     else:
+#         print(f"Instance ID: {instance_id}")
 
 
 
