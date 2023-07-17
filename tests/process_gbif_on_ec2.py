@@ -1,14 +1,3 @@
-#!/bin/bash
-# This is the user data script to be executed on an EC2 instance.
-
-sudo su -
-apt-get update -y
-apt-get upgrade -y
-apt-get install -y python3-pip
-
-pip3 install boto3 pandas pyarrow requests
-
-cat <<EOF > process_data_on_ec2.py
 import boto3
 import csv
 import logging
@@ -175,9 +164,3 @@ if __name__ == "__main__":
                 logit(logger, f"Removed {zip_filename}")
                 os.remove(csv_filename)
                 logit(logger, f"Removed {csv_filename}")
-
-EOF
-
-python3 process_data_on_ec2.py
-
-

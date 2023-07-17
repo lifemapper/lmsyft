@@ -5,6 +5,8 @@ import boto3
 import csv
 import datetime
 import io
+import logging
+from logging.handlers import RotatingFileHandler
 import os
 import pandas
 import requests
@@ -34,20 +36,55 @@ FIELD_SUBSET = [
     "family",
     ]
 
+# Log processing progress
+LOGINTERVAL = 1000000
+LOG_FORMAT = " ".join(["%(asctime)s", "%(levelname)-8s", "%(message)s"])
+LOG_DATE_FORMAT = "%d %b %Y %H:%M"
+LOGFILE_MAX_BYTES = 52000000
+LOGFILE_BACKUP_COUNT = 5
 
-
-# subnet_id = "subnet-12345678"  # Replace with your subnet ID
-# iam_instance_profile = "arn:aws:iam::YOUR_ACCOUNT_ID:instance-profile/your-instance-profile"  # Replace with your IAM instance profile ARN
 
 # ----------------------------------------------------
-def get_key_pair(key_name):
-    ec2_client = boto3.client("ec2")
-    response = ec2_client.describe_key_pairs()
-    kps = response["KeyPairs"]
-    for kp in kps:
-        if kp["KeyName"] == key_name:
-            return kp
-    return None
+def get_logger(log_directory, log_name, log_level=logging.INFO):
+    filename = f"{log_name}.log"
+    if log_directory is not None:
+        filename = os.path.join(log_directory, f"{filename}")
+        os.makedirs(log_directory, exist_ok=True)
+    # create file handler
+    handler = RotatingFileHandler(
+        filename, mode="w", maxBytes=LOGFILE_MAX_BYTES, backupCount=10,
+        encoding="utf-8"
+    )
+    formatter = logging.Formatter(LOG_FORMAT, LOG_DATE_FORMAT)
+    handler.setLevel(log_level)
+    handler.setFormatter(formatter)
+    # Get logger
+    logger = logging.getLogger(log_name)
+    logger.setLevel(logging.DEBUG)
+    # Add handler to logger
+    logger.addHandler(handler)
+    logger.propagate = False
+    return logger
+
+
+# ........................
+def logit(logger, msg, refname="", log_level=logging.INFO):
+    """Log a message.
+
+    Args:
+        msg (str): A message to write to the logger.
+        refname (str): Class or function name to use in logging message.
+        log_level (int): A level to use when logging the message.
+    """
+    if logger is not None:
+        logger.log(log_level, refname + ": " + msg)
+
+# ----------------------------------------------------
+def get_client(profile, service):
+    session = boto3.Session(profile_name=profile)
+    client = session.client(service)
+    return client
+
 
 # ----------------------------------------------------
 def create_token(type):
@@ -62,91 +99,161 @@ def get_user_data(script_filename):
     except:
         return None
     else:
-        text_bytes = script_text.encode('ascii')
+        text_bytes = script_text.encode("ascii")
         text_base64_bytes = base64.b64encode(text_bytes)
-        base64_script_text = text_base64_bytes.decode('ascii')
+        base64_script_text = text_base64_bytes.decode("ascii")
         return base64_script_text
 
 # ----------------------------------------------------
 def _define_spot_launch_template_data(
-        spot_template_name, security_group_id, script_filename):
-    user_data = get_user_data(script_filename)
-    spot_template_data = {
+        spot_template_name, security_group_id, script_filename, key_name):
+    user_data_64 = get_user_data(script_filename)
+    launch_template_data = {
         "EbsOptimized": True,
+        # "IamInstanceProfile":
+        #     {
+        #         "Arn": "customer-mc-ec2-instance-profile-s3"
+        #          # "arn:aws:iam::321942852011:instance-profile/AmazonEMR-InstanceProfile-20230404T163626"
+        #     },
         "BlockDeviceMappings": [
-            {"DeviceName": "/dev/xvda",
-             "Ebs": {
-                 "Encrypted": False,
-                 "DeleteOnTermination": True,
-                 "Iops": 3000,
-                 # "SnapshotId": "snap-0d80fb72f6dbd3ff5",
-                 "VolumeSize": 8,
-                 "VolumeType": "gp3",
-                 "Throughput": 125}
-             }
+            {
+                "DeviceName": "/dev/sda1",
+                "Ebs": {
+                    "Encrypted": False,
+                    "DeleteOnTermination": True,
+                    # "SnapshotId": "snap-0a6ff81ccbe3194d1",
+                    "VolumeSize": 50, "VolumeType": "gp2"
+                }
+            }
         ],
         "NetworkInterfaces": [
-            {"AssociatePublicIpAddress": True,
-             "DeleteOnTermination": True,
-             "Description": "",
-             "DeviceIndex": 0,
-             "Groups": [security_group_id],
-             "InterfaceType": "interface",
-             "Ipv6Addresses": [],
-             # "PrivateIpAddresses": [{"Primary": True, "PrivateIpAddress": "172.31.19.17"}],
-             # "SubnetId": "subnet-0beb8b03a44442eef",
-             # "NetworkCardIndex": 0
-             }
+            {
+                "AssociatePublicIpAddress": True,
+                "DeleteOnTermination": True,
+                "Description": "",
+                "DeviceIndex": 0,
+                "Groups": [security_group_id],
+                "InterfaceType": "interface",
+                "Ipv6Addresses": [],
+                # "PrivateIpAddresses": [
+                #     {"Primary": True, "PrivateIpAddress": "172.31.16.201"}
+                # ],
+                # "SubnetId": "subnet-0beb8b03a44442eef",
+                # "NetworkCardIndex": 0
+            }
         ],
-        "ImageId": "ami-06ca3ca175f37dd66",
-        "InstanceType": "t3.large",
-        "KeyName": "aimee-aws-key",
+        "ImageId": "ami-0a0c8eebcdd6dcbd0",
+        "InstanceType": "t4g.medium",
+        "KeyName": key_name,
         "Monitoring": {"Enabled": False},
-        # "Placement": {"AvailabilityZone": "us-east-1c", "GroupName": "", "Tenancy": "default"},
+        "Placement": {
+            "AvailabilityZone": "us-east-1c", "GroupName": "", "Tenancy": "default"
+        },
         "DisableApiTermination": False,
         "InstanceInitiatedShutdownBehavior": "terminate",
-        "UserData": user_data,
+        "UserData": user_data_64,
         "TagSpecifications": [
-            {"ResourceType": "instance",
-             # Include this tag for query to return instances started with this template
-             "Tags": [
-                 # {"Key": "Name", "Value": instance_name},
-                 {"Key": "TemplateName", "Value": spot_template_name}
-             ]}
+            {
+                "ResourceType": "instance",
+                "Tags": [{"Key": "TemplateName", "Value": spot_template_name}]
+            }
         ],
         "InstanceMarketOptions": {
             "MarketType": "spot",
             "SpotOptions": {
-                "MaxPrice": "0.083200",
+                "MaxPrice": "0.033600",
                 "SpotInstanceType": "one-time",
                 "InstanceInterruptionBehavior": "terminate"
             }
         },
         "CreditSpecification": {"CpuCredits": "unlimited"},
-        "CpuOptions": {"CoreCount": 1, "ThreadsPerCore": 2},
+        "CpuOptions": {"CoreCount": 2, "ThreadsPerCore": 1},
         "CapacityReservationSpecification": {"CapacityReservationPreference": "open"},
         "HibernationOptions": {"Configured": False},
         "MetadataOptions": {
-            "HttpTokens": "required",
-            "HttpPutResponseHopLimit": 2,
+            "HttpTokens": "optional",
+            "HttpPutResponseHopLimit": 1,
             "HttpEndpoint": "enabled",
             "HttpProtocolIpv6": "disabled",
-            "InstanceMetadataTags": "disabled"},
+            "InstanceMetadataTags": "disabled"
+        },
         "EnclaveOptions": {"Enabled": False},
         "PrivateDnsNameOptions": {
             "HostnameType": "ip-name",
             "EnableResourceNameDnsARecord": True,
-            "EnableResourceNameDnsAAAARecord": False
-        },
+            "EnableResourceNameDnsAAAARecord": False},
         "MaintenanceOptions": {"AutoRecovery": "default"},
         "DisableApiStop": False
     }
-    return spot_template_data
+    return launch_template_data
+    # spot_template_data = {
+    #     "IamInstanceProfile": {
+    #         "Arn": "customer-mc-ec2-instance-profile-s3",
+    #         "Name": "string"
+    #     },
+    #     "BlockDeviceMappings": [
+    #         {"DeviceName": "/dev/xvda",
+    #          "Ebs": {
+    #              "Encrypted": False,
+    #              "DeleteOnTermination": True,
+    #              "Iops": 3000,
+    #              "VolumeSize": 8,
+    #              "VolumeType": "gp3",
+    #              "Throughput": 125}
+    #          }
+    #     ],
+    #     "NetworkInterfaces": [
+    #         {"AssociatePublicIpAddress": True,
+    #          "DeleteOnTermination": True,
+    #          "DeviceIndex": 0,
+    #          "Groups": [security_group_id],
+    #          }
+    #     ],
+    #     "ImageId": "ami-06ca3ca175f37dd66",
+    #     "InstanceType": "t2.small",
+    #     "KeyName": "aimee-aws-key",
+    #     "Monitoring": {"Enabled": False},
+    #     # "Placement": {"AvailabilityZone": "us-east-1c", "GroupName": "", "Tenancy": "default"},
+    #     "DisableApiTermination": False,
+    #     "InstanceInitiatedShutdownBehavior": "terminate",
+    #     "UserData": user_data,
+    #     "TagSpecifications": [
+    #         {"ResourceType": "instance",
+    #          # Include this tag for query to return instances started with this template
+    #          "Tags": [
+    #              {"Key": "TemplateName", "Value": spot_template_name}
+    #          ]}
+    #     ],
+    #     "InstanceMarketOptions": {
+    #         "MarketType": "spot",
+    #         "SpotOptions": {
+    #             "MaxPrice": "0.083200",
+    #             "SpotInstanceType": "one-time",
+    #             "InstanceInterruptionBehavior": "terminate"
+    #         }
+    #     },
+    #     "CreditSpecification": {"CpuCredits": "unlimited"},
+    #     "CapacityReservationSpecification": {"CapacityReservationPreference": "open"},
+    #     "HibernationOptions": {"Configured": False},
+    #     "MetadataOptions": {
+    #         "HttpTokens": "required",
+    #         "HttpPutResponseHopLimit": 2,
+    #         "HttpEndpoint": "enabled",
+    #         "HttpProtocolIpv6": "disabled",
+    #         "InstanceMetadataTags": "disabled"},
+    #     "EnclaveOptions": {"Enabled": False},
+    #     "PrivateDnsNameOptions": {
+    #         "HostnameType": "ip-name",
+    #         "EnableResourceNameDnsARecord": True,
+    #         "EnableResourceNameDnsAAAARecord": False
+    #     },
+    #     "MaintenanceOptions": {"AutoRecovery": "default"},
+    # }
+    # return spot_template_data
 
 
 # --------------------------------------------------------------------------------------
 # On local machine: Describe the launch_template with the template_name
-# --------------------------------------------------------------------------------------
 def get_launch_template(template_name):
     ec2_client = boto3.client("ec2")
     lnch_temp = None
@@ -166,52 +273,28 @@ def get_launch_template(template_name):
 
 # ----------------------------------------------------
 def create_spot_launch_template(
-        spot_template_name, security_group_id, script_filename):
+        spot_template_name, security_group_id, script_filename, key_name):
     template = get_launch_template(spot_template_name)
     if template is not None:
         success = True
     else:
         spot_template_data = _define_spot_launch_template_data(
-            spot_template_name, security_group_id, script_filename)
+            spot_template_name, security_group_id, script_filename, key_name)
         template_token = create_token("template")
         ec2_client = boto3.client("ec2")
         response = ec2_client.create_launch_template(
             DryRun = False,
             ClientToken = template_token,
             LaunchTemplateName = spot_template_name,
-            VersionDescription = "0.0.1",
+            VersionDescription = "Spot for GBIF process",
             LaunchTemplateData = spot_template_data
         )
         success = (response["ResponseMetadata"]["HTTPStatusCode"] == 200)
     return success
 
-# # ----------------------------------------------------
-# def create_fleet_spot_ec2_instance(
-#         target_capacity_spec, spot_opts, spot_template_name, key_name):
-#     key_pair = get_key_pair(key_name)
-#     if key_pair is None:
-#         raise Exception(f"No credentials for key {key_name}")
-#     ec2_client = boto3.client("ec2")
-#     fleet_token = create_token("fleet")
-#     response = ec2_client.create_fleet(
-#         Type="instant",
-#         DryRun=False,
-#         ClientToken=fleet_token,
-#         TargetCapacitySpecification=target_capacity_spec,
-#         SpotOptions=spot_opts,
-#         LaunchTemplateConfigs=[
-#             {"LaunchTemplateSpecification": {
-#                 "LaunchTemplateName": spot_template_name, "Version": "1"}
-#             }
-#         ]
-#     )
-#     # Get the Spot Fleet request ID from response
-#     spot_fleet_request_id = response["SpotFleetRequestId"]
-#     return spot_fleet_request_id
 
 # --------------------------------------------------------------------------------------
 # On local machine: Describe all instances with given key_name and/or launch_template_id
-# --------------------------------------------------------------------------------------
 def find_instances(key_name, launch_template_name):
     ec2_client = boto3.client("ec2")
     filters = []
@@ -223,7 +306,7 @@ def find_instances(key_name, launch_template_name):
         Filters=filters,
         DryRun=False,
         MaxResults=123,
-        # NextToken='string'
+        # NextToken="string"
     )
     instances = []
     try:
@@ -254,32 +337,29 @@ def get_instance(instance_id):
 
 
 # ----------------------------------------------------
-def run_instance_from_template(instance_basename, spot_template_name, key_name):
+def run_instance_spot(instance_basename, spot_template_name):
     ec2_client = boto3.client("ec2")
     spot_token = create_token("spot")
     instance_name = create_token(instance_basename)
     response = ec2_client.run_instances(
-        KeyName=key_name,
+        # KeyName=key_name,
         ClientToken=spot_token,
         MinCount=1, MaxCount=1,
-        InstanceMarketOptions = {
-            "SpotOptions": {
-                "SpotInstanceType": "one-time",
-                "InstanceInterruptionBehavior": "terminate"
-            }
-        },
         LaunchTemplate = {"LaunchTemplateName": spot_template_name, "Version": "1"},
         TagSpecifications=[{
             "ResourceType": "instance",
-            "Tags": [{"Key": "Name", "Value": instance_name}]
+            "Tags": [
+                {"Key": "Name", "Value": instance_name},
+                {"Key": "TemplateName", "Value": spot_template_name}
+            ]
         }]
     )
-    instances = []
     try:
-        instances = response["Instances"][0]
+        instance = response["Instances"][0]
     except KeyError:
+        instance = None
         print("No instance created")
-    return instance
+    return instance["InstanceId"]
 
 
 # ----------------------------------------------------
@@ -420,7 +500,7 @@ ec2_dev_ip = "54.156.84.82"
 
 # EC2 Spot Instance
 iam_instance_role = "arn:aws:iam::321942852011:user/aimee.stewart"
-spot_template_name = "specnet_spot_template"
+spot_template_name = "specnet_launch_template"
 instance_basename = "specnet_analyst"
 
 script_filename = "tests/user_data_for_ec2spot.sh"
@@ -443,43 +523,10 @@ launch_template_config = {
 
 # -------  Find or create template -------
 success = create_spot_launch_template(
-        spot_template_name, security_group_id, script_filename)
+        spot_template_name, security_group_id, script_filename, key_name)
 
 # -------  Run instance from template -------
-instance = run_instance_spot_ec2(instance_basename, spot_template_name, key_name)
+instance_id = run_instance_spot(instance_basename, spot_template_name)
 
-# try:
-#     errors = response2["Errors"]
-# except:
-#     print("Yay, no errors")
-# else:
-#     for e in errors:
-#         for k, v in e.items():
-#             print(f"   {k}: {v}")
-#
-# try:
-#     warns = response2["Warnings"]
-# except:
-#     print("Yay, no warnings")
-# else:
-#     for w in warns:
-#         for k, v in w.items():
-#             print(f"   {k}: {v}")
-#
-# try:
-#     res_id = response2["ReservationId"]
-# except:
-#     print("No reservation created")
-# else:
-#     print(f"Res ID: {res_id}")
-#     try:
-#         instance_id = response2["Instances"][0]["InstanceIds"][0]
-#     except:
-#         print("No instance created")
-#     else:
-#         print(f"Instance ID: {instance_id}")
-
-
-
-# Get the Spot Fleet request ID
-spot_fleet_request_id = response2["SpotFleetRequestId"]
+instance = get_instance(instance_id)
+ip = instance["PublicIpAddress"]
