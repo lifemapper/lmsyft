@@ -17,6 +17,7 @@ import subprocess
 # --------------------------------------------------------------------------------------
 GBIF_BASE_URL = "https://api.gbif.org/v1/occurrence/download/request/"
 ZIP_EXT = ".zip"
+GBIF_OCC_FNAME = "occurrence.txt"
 FIELD_SUBSET = [
     "gbifID",
     "datasetKey",
@@ -110,11 +111,12 @@ def _define_spot_launch_template_data(
     user_data_64 = get_user_data(script_filename)
     launch_template_data = {
         "EbsOptimized": True,
-        # "IamInstanceProfile":
-        #     {
-        #         "Arn": "customer-mc-ec2-instance-profile-s3"
-        #          # "arn:aws:iam::321942852011:instance-profile/AmazonEMR-InstanceProfile-20230404T163626"
-        #     },
+        "IamInstanceProfile":
+            {
+                # "Arn":
+                #     "arn:aws:iam::321942852011:instance-profile/AmazonEMR-InstanceProfile-20230404T163626",
+                 "Name": "AmazonEMR-InstanceProfile-20230404T163626"
+            },
         "BlockDeviceMappings": [
             {
                 "DeviceName": "/dev/sda1",
@@ -499,7 +501,7 @@ ec2_user = "ubuntu"
 ec2_dev_ip = "54.156.84.82"
 
 # EC2 Spot Instance
-iam_instance_role = "arn:aws:iam::321942852011:user/aimee.stewart"
+iam_user = "arn:aws:iam::321942852011:user/aimee.stewart"
 spot_template_name = "specnet_launch_template"
 instance_basename = "specnet_analyst"
 

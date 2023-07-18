@@ -1,6 +1,11 @@
 #!/bin/bash
 # This is the user data script to be executed on an EC2 instance.
 
+#aws configure set aws_access_key_id "" && \
+#aws configure set aws_secret_access_key "" && \
+aws configure set default.region us-east-1 && \
+aws configure set default.output json
+
 sudo su -
 apt-get update -y
 apt-get upgrade -y
@@ -20,12 +25,15 @@ import zipfile
 
 GBIF_BASE_URL = "https://api.gbif.org/v1/occurrence/download/request/"
 ZIP_EXT = ".zip"
+GBIF_OCC_FNAME = "occurrence.txt"
 FIELD_SUBSET = [
     "gbifID",
     "datasetKey",
     "occurrenceID",
     "date",
     "locality",
+    "decimalLongitude",
+    "decimalLatitude",
     "countryCode",
     "stateProvince",
     "acceptedScientificName",
@@ -102,7 +110,7 @@ def download_from_gbif(gbif_basename, logger):
 # ----------------------------------------------------
 def extract_occurrences_from_dwca(zip_filename, logger):
     local_path = os.path.dirname(zip_filename)
-    csv_filename = os.path.join(local_path, "occurrences.txt")
+    csv_filename = os.path.join(local_path, GBIF_OCC_FNAME)
     with zipfile.ZipFile(zip_filename, "r") as zfile:
         zfile.extractall(local_path)
     if os.path.exists(csv_filename):
@@ -114,9 +122,10 @@ def extract_occurrences_from_dwca(zip_filename, logger):
 
 
 # ----------------------------------------------------
-def trim_gbifcsv_to_parquet(csv_filename, parquet_basename, logger):
-    local_path = os.path.dirname(csv_filename)
-    parquet_filename = os.path.join(local_path, f"{parquet_basename}.parquet")
+def trim_gbifcsv_to_parquet(csv_filename, logger):
+    local_path, fname = os.path.split(csv_filename)
+    basename = os.path.splitext(fname)[0]
+    parquet_filename = os.path.join(local_path, f"{basename}.parquet")
     # Read into DataFrame
     gbif_dataframe = pandas.read_csv(
         csv_filename, delimiter="\t", encoding="utf-8", low_memory=False,
@@ -160,21 +169,32 @@ if __name__ == "__main__":
     logit(logger, "Got logger")
     # Download
     zip_filename = download_from_gbif(gbif_basename, logger)
-    if zip_filename is not None:
-        logit(logger, f"Succesfully downloaded {zip_filename}")
-        # Unzip
-        csv_filename = extract_occurrences_from_dwca(zip_filename, logger)
-        if csv_filename is not None:
-            # Trim and save
-            parquet_filename = trim_gbifcsv_to_parquet(csv_filename, logger)
-            if parquet_filename is not None:
-                # Upload to S3
-                s3_filename = upload_to_s3(parquet_filename, s3_dev_bucket, s3_bucket_path, logger)
-                # Delete old data
-                os.remove(zip_filename)
-                logit(logger, f"Removed {zip_filename}")
-                os.remove(csv_filename)
-                logit(logger, f"Removed {csv_filename}")
+    if zip_filename is None:
+        logit(logger, f"Failed to download {zip_filename}")
+        exit(-1)
+
+    logit(logger, f"Succesfully downloaded {zip_filename}")
+    # Unzip
+    csv_filename = extract_occurrences_from_dwca(zip_filename, logger)
+    if csv_filename is None:
+        logit(logger, f"Failed to extract csv {GBIF_OCC_FNAME}")
+        exit(-1)
+
+    logit(logger, f"Successfully extracted csv {GBIF_OCC_FNAME}")
+    # Trim and save
+    parquet_filename = trim_gbifcsv_to_parquet(csv_filename, logger)
+    if parquet_filename is None:
+        logit(logger, f"Failed to trim to parquet {GBIF_OCC_FNAME}")
+        exit(-1)
+
+    logit(logger, f"Successfully trimmed to parquet {parquet_filename}")
+    # Upload to S3
+    s3_filename = upload_to_s3(parquet_filename, s3_dev_bucket, s3_bucket_path, logger)
+    # Delete old data
+    os.remove(zip_filename)
+    logit(logger, f"Removed {zip_filename}")
+    os.remove(csv_filename)
+    logit(logger, f"Removed {csv_filename}")
 
 EOF
 

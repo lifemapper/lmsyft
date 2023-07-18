@@ -8,6 +8,16 @@ gbif_parquet_extract: 301669806
 
 Use python libs **awscli** and **boto3** to connect with AWS
 
+# Data, confined to Norway
+
+* query: 
+https://www.gbif.org/occurrence/download?basis_of_record=PRESERVED_SPECIMEN&basis_of_record=FOSSIL_SPECIMEN&basis_of_record=OCCURRENCE&country=NO&occurrence_status=present
+  * DwCA 9 GB data (2 GB zipped)
+  * 5,293,875 records
+  * download:
+  https://www.gbif.org/occurrence/download/0098682-230530130749713
+
+
 # Setup
 
 * install aws-cli
