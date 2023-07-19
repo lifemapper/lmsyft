@@ -161,21 +161,26 @@ a time. When it is time for a renewal (approx every 60 days), bring the docker
 containers down, renew the certificates, then bring the containers up again.
 
 ```zsh
-certbot certificates
-docker compose stop
-certbot renew
-docker compose up -d
+sudo certbot certificates
+sudo docker compose stop
+sudo certbot renew
+sudo docker compose up -d
 ```
 
 Copy the new certificates back to the certificates subdirectory of the home directory, 
-and change the owner.  The existing symlinks will now point to the updated certificates. 
+and change the owner.  Update the symlinks to point to the newest certificates. 
 
 ```commandline
 $ sudo su -
-# cp -rp /etc/letsencrypt/archive/broker-dev.spcoco.org/*  /home/ubuntu/certificates/
+# cp -p /etc/letsencrypt/archive/spcoco.org/*  /home/ubuntu/certificates/
 # chown ubuntu:ubuntu /home/ubuntu/certificates/*
 # exit
+$ cd ~/git/sp_network/config
+$ ln -s ~/certificates/fullchain2.pem fullchain.pem
+$ ln -s ~/certificates/privkey2.pem   privkey.pem
 ```
+
+### Add new domain to SSL certificates
 
 
 ### SSL through Amazon?
@@ -308,7 +313,7 @@ first on the command line.  It has elements that override those defined in the
 general compose file, docker-compose.yml. 
 
 ```zsh
-docker compose -f docker-compose.development.yml -f docker-compose.yml  up
+sudo docker compose -f docker-compose.development.yml -f docker-compose.yml  up
 ```
 
 Flask has hot-reload enabled.
@@ -320,19 +325,19 @@ To delete all containers, images, networks and volumes, stop any running
 containers:
 
 ```zsh
-docker compose stop
+sudo docker compose stop
 ```
 
 And run this command (which ignores running container):
 
 ```zsh
-docker system prune --all --volumes
+sudo docker system prune --all --volumes
 ```
 
 Then rebuild/restart:
 
 ```zsh
-docker compose up -d
+sudo docker compose up -d
 ```
 
 ## Examine container
@@ -340,7 +345,7 @@ docker compose up -d
 To examine containers at a shell prompt:
 
 ```zsh
-docker exec -it sp_network-nginx-1 /bin/sh
+sudo docker exec -it sp_network-nginx-1 /bin/sh
 ```
 
 Error port in use:
@@ -351,9 +356,9 @@ all docker containers, shut down httpd, bring up docker.
 
 ```zsh
 lsof -i -P -n | grep 443
-docker compose down
-systemctl stop httpd
-docker compose  up -d
+sudo docker compose down
+sudo systemctl stop httpd
+sudo docker compose  up -d
 ```
 
 # Dev Environment 
