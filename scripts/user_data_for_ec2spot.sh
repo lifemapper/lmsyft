@@ -54,6 +54,7 @@ LOG_DATE_FORMAT = '%d %b %Y %H:%M'
 LOGFILE_MAX_BYTES = 52000000
 LOGFILE_BACKUP_COUNT = 5
 
+
 # ----------------------------------------------------
 def get_logger(log_directory, log_name, log_level=logging.INFO):
     filename = f"{log_name}.log"

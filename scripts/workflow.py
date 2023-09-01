@@ -80,6 +80,7 @@ def logit(logger, msg, refname="", log_level=logging.INFO):
     if logger is not None:
         logger.log(log_level, refname + ": " + msg)
 
+
 # ----------------------------------------------------
 def get_client(profile, service):
     session = boto3.Session(profile_name=profile)
@@ -91,6 +92,7 @@ def get_client(profile, service):
 def create_token(type):
     token = f"{type}_{datetime.datetime.now().timestamp()}"
     return token
+
 
 # ----------------------------------------------------
 def get_user_data(script_filename):
@@ -104,6 +106,7 @@ def get_user_data(script_filename):
         text_base64_bytes = base64.b64encode(text_bytes)
         base64_script_text = text_base64_bytes.decode("ascii")
         return base64_script_text
+
 
 # ----------------------------------------------------
 def _define_spot_launch_template_data(
@@ -396,6 +399,7 @@ def write_dataframe_to_s3_parquet(df, bucket, parquet_path):
     parquet_buffer.seek(0)
     s3_client.upload_fileobj(parquet_buffer, bucket, parquet_path)
 
+
 # --------------------------------------------------------------------------------------
 # Run on EC2 or local: download from GBIF
 # --------------------------------------------------------------------------------------
@@ -407,6 +411,7 @@ def download_from_gbif(gbif_basename):
             if chunk:
                 zfile.write(chunk)
 
+
 # --------------------------------------------------------------------------------------
 # On local machine: Upload local file
 # --------------------------------------------------------------------------------------
@@ -415,6 +420,7 @@ def extract_occurrences_from_dwca(gbif_basename):
     zipfilename = os.path.join(local_path, f"{gbif_basename}{ZIP_EXT}")
     with zipfile.ZipFile(zipfilename, "r") as zfile:
         zfile.extractall(local_path)
+
 
 # --------------------------------------------------------------------------------------
 # On local machine: Upload local file
@@ -435,7 +441,6 @@ def upload_to_ec2(local_path, filename, ec2_key, ec2_user, ec2_ip):
 def upload_to_s3(local_path, filename, dev_bucket, s3_path):
     s3_client = boto3.client("s3")
     local_filename = os.path.join(local_path, filename)
-    # ec2_file = f"/home/{ec2_user}/{csv_fname}"
     s3_client.upload_file(local_filename, dev_bucket, s3_path)
     print(f"Successfully uploaded {filename} to s3://{dev_bucket}/{s3_path}")
 
@@ -451,6 +456,7 @@ def trim_gbifcsv_to_parquet(local_filename, parquet_filename):
     trimmed_gbif_dataframe = gbif_dataframe[FIELD_SUBSET]
     # Write the trimmed DataFrame to Parquet file format
     trimmed_gbif_dataframe.to_parquet(parquet_filename)
+
 
 def _print_inst_info(reservation):
     resid = reservation["ReservationId"]
@@ -471,6 +477,7 @@ def _print_inst_info(reservation):
     state = inst["State"]["Name"]
     print(f"Instance name: {name}, template: {temp_id}, IP: {ip}, state: {state}")
 
+
 # --------------------------------------------------------------------------------------
 # On EC2: Create a trimmed dataframe from CSV and save to S3 in parquet format
 # --------------------------------------------------------------------------------------
@@ -487,8 +494,10 @@ security_group_id = "sg-0b379fdb3e37389d1"
 local_ec2_key = f"/home/astewart/.ssh/{key_name}.pem"
 local_path = "/mnt/sata8/tank/testgbif/occ_2023_06_23"
 test_basename = "occurrence_100k"
-gbif_basename = "0042658-230530130749713"
 csv_fname = f"{test_basename}.csv"
+
+# DWCA data for download from GBIF
+gbif_basename = "0042658-230530130749713"
 
 # S3
 dev_bucket = "specify-network-dev"
@@ -505,7 +514,7 @@ iam_user = "arn:aws:iam::321942852011:user/aimee.stewart"
 spot_template_name = "specnet_launch_template"
 instance_basename = "specnet_analyst"
 
-script_filename = "tests/user_data_for_ec2spot.sh"
+script_filename = "scripts/user_data_for_ec2spot.sh"
 
 target_capactity_spec = {
     "TotalTargetCapacity": 1,
