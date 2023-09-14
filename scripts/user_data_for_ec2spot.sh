@@ -161,7 +161,7 @@ def upload_to_s3(filename, s3_bucket, s3_bucket_path, logger):
 # Main
 # --------------------------------------------------------------------------------------
 if __name__ == "__main__":
-    gbif_basename = "0146234-230224095556074"
+    gbif_basename = "0013468-230828120925497"
     s3_dev_bucket = "specify-network-dev"
     s3_bucket_path = "gbif_test/gbif_dwc_extract"
 

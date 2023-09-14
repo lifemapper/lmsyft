@@ -45,40 +45,32 @@ LOGFILE_MAX_BYTES = 52000000
 LOGFILE_BACKUP_COUNT = 5
 
 
+# --------------------------------------------------------------------------------------
+# Tools for experimentation
+# --------------------------------------------------------------------------------------
 # ----------------------------------------------------
-def get_logger(log_directory, log_name, log_level=logging.INFO):
-    filename = f"{log_name}.log"
-    if log_directory is not None:
-        filename = os.path.join(log_directory, f"{filename}")
-        os.makedirs(log_directory, exist_ok=True)
-    # create file handler
-    handler = RotatingFileHandler(
-        filename, mode="w", maxBytes=LOGFILE_MAX_BYTES, backupCount=10,
-        encoding="utf-8"
-    )
-    formatter = logging.Formatter(LOG_FORMAT, LOG_DATE_FORMAT)
-    handler.setLevel(log_level)
-    handler.setFormatter(formatter)
-    # Get logger
-    logger = logging.getLogger(log_name)
-    logger.setLevel(logging.DEBUG)
-    # Add handler to logger
-    logger.addHandler(handler)
-    logger.propagate = False
-    return logger
+def get_launch_template_from_instance(instance_id):
+    ec2_client = boto3.client("ec2")
+    launch_template_data = ec2_client.get_launch_template_data(InstanceId=instance_id)
+    return launch_template_data
 
 
-# ........................
-def logit(logger, msg, refname="", log_level=logging.INFO):
-    """Log a message.
+# ----------------------------------------------------
+def delete_instance(instance_id):
+    ec2_client = boto3.client("ec2")
+    response = ec2_client.delete_instance(InstanceId=instance_id)
+    return response
 
-    Args:
-        msg (str): A message to write to the logger.
-        refname (str): Class or function name to use in logging message.
-        log_level (int): A level to use when logging the message.
-    """
-    if logger is not None:
-        logger.log(log_level, refname + ": " + msg)
+
+# ----------------------------------------------------
+def create_dataframe_from_gbifcsv_s3_bucket(bucket, csv_path):
+    # Read CSV file from S3 into a pandas DataFrame
+    s3_client = boto3.client("s3")
+    s3_obj = s3_client.get_object(Bucket=bucket, Key=csv_path)
+    df = pandas.read_csv(
+        s3_obj["Body"], delimiter="\t", encoding="utf-8", low_memory=False,
+        quoting=csv.QUOTE_NONE)
+    return df
 
 
 # ----------------------------------------------------
@@ -88,14 +80,44 @@ def get_client(profile, service):
     return client
 
 
+# --------------------------------------------------------------------------------------
+# On local machine: Describe all instances with given key_name and/or launch_template_id
+def find_instances(key_name, launch_template_name):
+    ec2_client = boto3.client("ec2")
+    filters = []
+    if launch_template_name is not None:
+        filters.append({"Name": "tag:TemplateName", "Values": [launch_template_name]})
+    if key_name is not None:
+        filters.append({"Name": "key-name", "Values": [key_name]})
+    response = ec2_client.describe_instances(
+        Filters=filters,
+        DryRun=False,
+        MaxResults=123,
+        # NextToken="string"
+    )
+    instances = []
+    try:
+        ress = response["Reservations"]
+    except:
+        pass
+    else:
+        for res in ress:
+            _print_inst_info(res)
+            instances.extend(res["Instances"])
+    return instances
+
+
+# --------------------------------------------------------------------------------------
+# Hidden helper functions
+# --------------------------------------------------------------------------------------
 # ----------------------------------------------------
-def create_token(type):
+def _create_token(type):
     token = f"{type}_{datetime.datetime.now().timestamp()}"
     return token
 
 
 # ----------------------------------------------------
-def get_user_data(script_filename):
+def _get_user_data(script_filename):
     try:
         with open(script_filename, "r") as infile:
             script_text = infile.read()
@@ -109,9 +131,29 @@ def get_user_data(script_filename):
 
 
 # ----------------------------------------------------
+def _print_inst_info(reservation):
+    resid = reservation["ReservationId"]
+    inst = reservation["Instances"][0]
+    print(f"ReservationId: {resid}")
+    name = temp_id = None
+    try:
+        tags = inst["Tags"]
+    except:
+        pass
+    else:
+        for t in tags:
+            if t["Key"] == "Name":
+                name = t["Value"]
+            if t["Key"] == "aws:ec2launchtemplate:id":
+                temp_id = t["Value"]
+    ip = inst["PublicIpAddress"]
+    state = inst["State"]["Name"]
+    print(f"Instance name: {name}, template: {temp_id}, IP: {ip}, state: {state}")
+
+# ----------------------------------------------------
 def _define_spot_launch_template_data(
         spot_template_name, security_group_id, script_filename, key_name):
-    user_data_64 = get_user_data(script_filename)
+    user_data_64 = _get_user_data(script_filename)
     launch_template_data = {
         "EbsOptimized": True,
         "IamInstanceProfile":
@@ -191,75 +233,11 @@ def _define_spot_launch_template_data(
         "DisableApiStop": False
     }
     return launch_template_data
-    # spot_template_data = {
-    #     "IamInstanceProfile": {
-    #         "Arn": "customer-mc-ec2-instance-profile-s3",
-    #         "Name": "string"
-    #     },
-    #     "BlockDeviceMappings": [
-    #         {"DeviceName": "/dev/xvda",
-    #          "Ebs": {
-    #              "Encrypted": False,
-    #              "DeleteOnTermination": True,
-    #              "Iops": 3000,
-    #              "VolumeSize": 8,
-    #              "VolumeType": "gp3",
-    #              "Throughput": 125}
-    #          }
-    #     ],
-    #     "NetworkInterfaces": [
-    #         {"AssociatePublicIpAddress": True,
-    #          "DeleteOnTermination": True,
-    #          "DeviceIndex": 0,
-    #          "Groups": [security_group_id],
-    #          }
-    #     ],
-    #     "ImageId": "ami-06ca3ca175f37dd66",
-    #     "InstanceType": "t2.small",
-    #     "KeyName": "aimee-aws-key",
-    #     "Monitoring": {"Enabled": False},
-    #     # "Placement": {"AvailabilityZone": "us-east-1c", "GroupName": "", "Tenancy": "default"},
-    #     "DisableApiTermination": False,
-    #     "InstanceInitiatedShutdownBehavior": "terminate",
-    #     "UserData": user_data,
-    #     "TagSpecifications": [
-    #         {"ResourceType": "instance",
-    #          # Include this tag for query to return instances started with this template
-    #          "Tags": [
-    #              {"Key": "TemplateName", "Value": spot_template_name}
-    #          ]}
-    #     ],
-    #     "InstanceMarketOptions": {
-    #         "MarketType": "spot",
-    #         "SpotOptions": {
-    #             "MaxPrice": "0.083200",
-    #             "SpotInstanceType": "one-time",
-    #             "InstanceInterruptionBehavior": "terminate"
-    #         }
-    #     },
-    #     "CreditSpecification": {"CpuCredits": "unlimited"},
-    #     "CapacityReservationSpecification": {"CapacityReservationPreference": "open"},
-    #     "HibernationOptions": {"Configured": False},
-    #     "MetadataOptions": {
-    #         "HttpTokens": "required",
-    #         "HttpPutResponseHopLimit": 2,
-    #         "HttpEndpoint": "enabled",
-    #         "HttpProtocolIpv6": "disabled",
-    #         "InstanceMetadataTags": "disabled"},
-    #     "EnclaveOptions": {"Enabled": False},
-    #     "PrivateDnsNameOptions": {
-    #         "HostnameType": "ip-name",
-    #         "EnableResourceNameDnsARecord": True,
-    #         "EnableResourceNameDnsAAAARecord": False
-    #     },
-    #     "MaintenanceOptions": {"AutoRecovery": "default"},
-    # }
-    # return spot_template_data
 
 
 # --------------------------------------------------------------------------------------
 # On local machine: Describe the launch_template with the template_name
-def get_launch_template(template_name):
+def _get_launch_template(template_name):
     ec2_client = boto3.client("ec2")
     lnch_temp = None
     try:
@@ -279,13 +257,13 @@ def get_launch_template(template_name):
 # ----------------------------------------------------
 def create_spot_launch_template(
         spot_template_name, security_group_id, script_filename, key_name):
-    template = get_launch_template(spot_template_name)
+    template = _get_launch_template(spot_template_name)
     if template is not None:
         success = True
     else:
         spot_template_data = _define_spot_launch_template_data(
             spot_template_name, security_group_id, script_filename, key_name)
-        template_token = create_token("template")
+        template_token = _create_token("template")
         ec2_client = boto3.client("ec2")
         response = ec2_client.create_launch_template(
             DryRun = False,
@@ -298,54 +276,13 @@ def create_spot_launch_template(
     return success
 
 
-# --------------------------------------------------------------------------------------
-# On local machine: Describe all instances with given key_name and/or launch_template_id
-def find_instances(key_name, launch_template_name):
-    ec2_client = boto3.client("ec2")
-    filters = []
-    if launch_template_name is not None:
-        filters.append({"Name": "tag:TemplateName", "Values": [launch_template_name]})
-    if key_name is not None:
-        filters.append({"Name": "key-name", "Values": [key_name]})
-    response = ec2_client.describe_instances(
-        Filters=filters,
-        DryRun=False,
-        MaxResults=123,
-        # NextToken="string"
-    )
-    instances = []
-    try:
-        ress = response["Reservations"]
-    except:
-        pass
-    else:
-        for res in ress:
-            _print_inst_info(res)
-            instances.extend(res["Instances"])
-    return instances
-
-
-# --------------------------------------------------------------------------------------
-# On local machine: Describe the instance with the instance_id
-# --------------------------------------------------------------------------------------
-def get_instance(instance_id):
-    ec2_client = boto3.client("ec2")
-    response = ec2_client.describe_instances(
-        InstanceIds=[instance_id],
-        DryRun=False,
-    )
-    try:
-        instance = response["Reservations"][0]["Instances"][0]
-    except:
-        instance = None
-    return instance
 
 
 # ----------------------------------------------------
 def run_instance_spot(instance_basename, spot_template_name):
     ec2_client = boto3.client("ec2")
-    spot_token = create_token("spot")
-    instance_name = create_token(instance_basename)
+    spot_token = _create_token("spot")
+    instance_name = _create_token(instance_basename)
     response = ec2_client.run_instances(
         # KeyName=key_name,
         ClientToken=spot_token,
@@ -368,29 +305,6 @@ def run_instance_spot(instance_basename, spot_template_name):
 
 
 # ----------------------------------------------------
-def get_launch_template_from_instance(instance_id):
-    ec2_client = boto3.client("ec2")
-    launch_template_data = ec2_client.get_launch_template_data(InstanceId=instance_id)
-    return launch_template_data
-
-# ----------------------------------------------------
-def delete_instance(instance_id):
-    ec2_client = boto3.client("ec2")
-    response = ec2_client.delete_instance(InstanceId=instance_id)
-    return response
-
-# ----------------------------------------------------
-def create_dataframe_from_gbifcsv_s3_bucket(bucket, csv_path):
-    # Read CSV file from S3 into a pandas DataFrame
-    s3_client = boto3.client("s3")
-    s3_obj = s3_client.get_object(Bucket=bucket, Key=csv_path)
-    df = pandas.read_csv(
-        s3_obj["Body"], delimiter="\t", encoding="utf-8", low_memory=False,
-        quoting=csv.QUOTE_NONE)
-    return df
-
-
-# ----------------------------------------------------
 def write_dataframe_to_s3_parquet(df, bucket, parquet_path):
     # Write DataFrame to Parquet format and upload to S3
     s3_client = boto3.client("s3")
@@ -398,41 +312,6 @@ def write_dataframe_to_s3_parquet(df, bucket, parquet_path):
     df.to_parquet(parquet_buffer, engine="pyarrow")
     parquet_buffer.seek(0)
     s3_client.upload_fileobj(parquet_buffer, bucket, parquet_path)
-
-
-# --------------------------------------------------------------------------------------
-# Run on EC2 or local: download from GBIF
-# --------------------------------------------------------------------------------------
-def download_from_gbif(gbif_basename):
-    r = requests.get(f"{GBIF_BASE_URL}{gbif_basename}{ZIP_EXT}", stream=True)
-    with open(f"{gbif_basename}{ZIP_EXT}", "wb") as zfile:
-        for chunk in r.iter_content(chunk_size=1024):
-            # write one chunk at a time to zipfile
-            if chunk:
-                zfile.write(chunk)
-
-
-# --------------------------------------------------------------------------------------
-# On local machine: Upload local file
-# --------------------------------------------------------------------------------------
-def extract_occurrences_from_dwca(gbif_basename):
-    local_path = "~"
-    zipfilename = os.path.join(local_path, f"{gbif_basename}{ZIP_EXT}")
-    with zipfile.ZipFile(zipfilename, "r") as zfile:
-        zfile.extractall(local_path)
-
-
-# --------------------------------------------------------------------------------------
-# On local machine: Upload local file
-# --------------------------------------------------------------------------------------
-def upload_to_ec2(local_path, filename, ec2_key, ec2_user, ec2_ip):
-    local_filename = os.path.join(local_path, filename)
-    cmd = f"scp -i {ec2_key} {local_filename} {ec2_user}@{ec2_ip}:"
-    info, err = subprocess.Popen(
-        cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()
-    if not err:
-        ec2_file = f"/home/{ec2_user}/{filename}"
-        print(f"Successfully uploaded {ec2_file} to {ec2_ip}")
 
 
 # --------------------------------------------------------------------------------------
@@ -458,25 +337,20 @@ def trim_gbifcsv_to_parquet(local_filename, parquet_filename):
     trimmed_gbif_dataframe.to_parquet(parquet_filename)
 
 
-def _print_inst_info(reservation):
-    resid = reservation["ReservationId"]
-    inst = reservation["Instances"][0]
-    print(f"ReservationId: {resid}")
-    name = temp_id = None
+# --------------------------------------------------------------------------------------
+# On local machine: Describe the instance with the instance_id
+# --------------------------------------------------------------------------------------
+def get_instance(instance_id):
+    ec2_client = boto3.client("ec2")
+    response = ec2_client.describe_instances(
+        InstanceIds=[instance_id],
+        DryRun=False,
+    )
     try:
-        tags = inst["Tags"]
+        instance = response["Reservations"][0]["Instances"][0]
     except:
-        pass
-    else:
-        for t in tags:
-            if t["Key"] == "Name":
-                name = t["Value"]
-            if t["Key"] == "aws:ec2launchtemplate:id":
-                temp_id = t["Value"]
-    ip = inst["PublicIpAddress"]
-    state = inst["State"]["Name"]
-    print(f"Instance name: {name}, template: {temp_id}, IP: {ip}, state: {state}")
-
+        instance = None
+    return instance
 
 # --------------------------------------------------------------------------------------
 # On EC2: Create a trimmed dataframe from CSV and save to S3 in parquet format
@@ -533,10 +407,12 @@ launch_template_config = {
 }
 
 # -------  Find or create template -------
+# Adds the script to the spot template
 success = create_spot_launch_template(
         spot_template_name, security_group_id, script_filename, key_name)
 
 # -------  Run instance from template -------
+# Runs the script on instantiation
 instance_id = run_instance_spot(instance_basename, spot_template_name)
 
 instance = get_instance(instance_id)

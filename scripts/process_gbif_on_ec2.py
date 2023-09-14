@@ -1,5 +1,6 @@
 import boto3
 import csv
+import datetime as dt
 import logging
 from logging.handlers import RotatingFileHandler
 import os
@@ -37,6 +38,12 @@ LOG_FORMAT = " ".join(["%(asctime)s", "%(levelname)-8s", "%(message)s"])
 LOG_DATE_FORMAT = '%d %b %Y %H:%M'
 LOGFILE_MAX_BYTES = 52000000
 LOGFILE_BACKUP_COUNT = 5
+
+# TODO: Note that these constants are contained in the user_data script
+#       and should be updated concurrently
+gbif_basename = "0013468-230828120925497"
+s3_dev_bucket = "specify-network-dev"
+s3_bucket_path = "gbif_test/gbif_dwc_extract"
 
 # ----------------------------------------------------
 def get_logger(log_directory, log_name, log_level=logging.INFO):
@@ -94,14 +101,18 @@ def download_from_gbif(gbif_basename, logger):
 # ----------------------------------------------------
 def extract_occurrences_from_dwca(zip_filename, logger):
     local_path = os.path.dirname(zip_filename)
-    csv_filename = os.path.join(local_path, GBIF_OCC_FNAME)
+    orig_filename = os.path.join(local_path, GBIF_OCC_FNAME)
+    # Extracts to PWD aka local_path
     with zipfile.ZipFile(zip_filename, "r") as zfile:
-        zfile.extractall(local_path)
-    if os.path.exists(csv_filename):
-        logit(logger, f"Extracted {csv_filename}")
-        return csv_filename
+        zfile.extract(GBIF_OCC_FNAME)
+    if os.path.exists(orig_filename):
+        n = dt.datetime.now()
+        new_filename = os.path.join(local_path, f"gbif-{n.year}-{n.month}-{n.day}.csv")
+        os.rename(orig_filename, new_filename)
+        logit(logger, f"Extracted {orig_filename} to {new_filename}")
+        return new_filename
     else:
-        logit(logger, f"Failed to extract to {csv_filename}")
+        logit(logger, f"Failed to extract {orig_filename}")
         return None
 
 
@@ -144,34 +155,31 @@ def upload_to_s3(filename, s3_bucket, s3_bucket_path, logger):
 # Main
 # --------------------------------------------------------------------------------------
 if __name__ == "__main__":
-    gbif_basename = "0146234-230224095556074"
-    s3_dev_bucket = "specify-network-dev"
-    s3_bucket_path = "gbif_test/gbif_dwc_extract"
-
     # Get logger
     logger = get_logger("/tmp", "spot_user_data", log_level=logging.INFO)
     logit(logger, "Got logger")
+
     # Download
     zip_filename = download_from_gbif(gbif_basename, logger)
     if zip_filename is None:
         logit(logger, f"Failed to download {zip_filename}")
         exit(-1)
-
     logit(logger, f"Succesfully downloaded {zip_filename}")
-    # Unzip
+
+    # Unzip to dated filename
     csv_filename = extract_occurrences_from_dwca(zip_filename, logger)
     if csv_filename is None:
-        logit(logger, f"Failed to extract csv {GBIF_OCC_FNAME}")
+        logit(logger, f"Failed to extract {GBIF_OCC_FNAME}")
         exit(-1)
+    logit(logger, f"Successfully extracted csv {csv_filename}")
 
-    logit(logger, f"Successfully extracted csv {GBIF_OCC_FNAME}")
     # Trim and save
     parquet_filename = trim_gbifcsv_to_parquet(csv_filename, logger)
     if parquet_filename is None:
-        logit(logger, f"Failed to trim to parquet {GBIF_OCC_FNAME}")
+        logit(logger, f"Failed to trim {csv_filename} to parquet")
         exit(-1)
-
     logit(logger, f"Successfully trimmed to parquet {parquet_filename}")
+
     # Upload to S3
     s3_filename = upload_to_s3(parquet_filename, s3_dev_bucket, s3_bucket_path, logger)
     # Delete old data
