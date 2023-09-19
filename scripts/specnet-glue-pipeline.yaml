@@ -1,11 +1,18 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: | 
-  This is an example workflow created to pull a large dataset from a third-party. It uses an EventBridge schedule to launch an EC2 
-  spot instance to download the archive, extract the main data set and save it to S3. This triggers another EventBridge rule to have Glue crawl the new data file. 
-  Old data is deleted and the table dropped. In this example, the original data file has 250+ columns. An Athena query creates a new subset of the data using only 22 columns, and storing it in Parquet with snappy compression. The data catalog is now updated for the new data to be queried by Athena (and QuickSight, if desired).
+  This is an example workflow created to pull a large dataset from a third-party. It 
+  uses an EventBridge schedule to launch an EC2 spot instance to download the archive, 
+  extract the main data set and save it to S3. This triggers another EventBridge rule 
+  to have Glue crawl the new data file. Old data is deleted and the table dropped. In 
+  this example, the original data file has 250+ columns. An Athena query creates a 
+  new subset of the data using only 22 columns, and storing it in Parquet with snappy 
+  compression. The data catalog is now updated for the new data to be queried by Athena 
+  (and QuickSight, if desired).
 
-# IT WORKS WITH THE DEFAULT VPC BUT IF NOT USING THE DEFAULT VPC, A NEW VPC HAS TO BE CREATED AND CONFIGURED
-# The Mappings point to the Amazon Linux 2023 AMI with the unique resource id for each region
+# IT WORKS WITH THE DEFAULT VPC BUT IF NOT USING THE DEFAULT VPC, A NEW VPC HAS TO BE
+# CREATED AND CONFIGURED
+# The Mappings point to the Amazon Linux 2023 AMI with the unique resource id for each
+# region
 Mappings:
   RegionMap:
     us-east-1:
@@ -26,13 +33,15 @@ Parameters:
   
   CronExpression:
     Description: >
-      Enter a valid cron expression to specify the schedule for the eventbridge to trigger a lambda that will launch an EC2 instance.
+      Enter a valid cron expression to specify the schedule for the eventbridge to 
+      trigger a lambda that will launch an EC2 instance.
       Example: cron(0 12 * * ? *) to run every day at noon UTC.
     Type: String
 
   EnableScheduledEventState:
     Description: >
-      Set to 'true' to enable the rule and allow Eventbridge to schedule a trigger to invoke a Lambada function to launch the EC2 instance or 'false' to disable it.
+      Set to 'true' to enable the rule and allow Eventbridge to schedule a trigger to 
+      invoke a Lambada function to launch the EC2 instance or 'false' to disable it.
     Type: String
     AllowedValues:
       - "true"
@@ -41,7 +50,8 @@ Parameters:
 
   EnableBucketEventState:
     Description: >
-      Set to 'true' to enable the rule and allow Eventbridge to register S3 Put Events to trigger the step function workflow or 'false' to disable it.
+      Set to 'true' to enable the rule and allow Eventbridge to register S3 Put Events 
+      to trigger the step function workflow or 'false' to disable it.
     Type: String
     AllowedValues:
       - "true"
@@ -90,7 +100,7 @@ Resources:
               echo "Copied to S3!"
               shutdown now
 
-  # Security Group for Spot EC2 inatance
+  # Security Group for Spot EC2 instance
   SpecifyNoIngressSG:
     Type: AWS::EC2::SecurityGroup
     Properties:
