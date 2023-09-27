@@ -96,7 +96,7 @@ Resources:
               echo "retrieving data..."
               wget https://api.gbif.org/v1/occurrence/download/request/0042658-230530130749713.zip 
               unzip 0042658-230530130749713.zip occurrence.txt
-              aws s3 cp occurrence.txt s3://${DataIngestionBucket}/specifydata/
+              aws s3 cp occurrence.txt s3://${DataIngestionBucket}/
               echo "Copied to S3!"
               shutdown now
 
@@ -180,7 +180,7 @@ Resources:
             - CompleteMultipartUpload
           resources:
             ARN:
-              - prefix: !Sub arn:aws:s3:::${DataIngestionBucket}/specifydata/ 
+              - prefix: !Sub arn:aws:s3:::${DataIngestionBucket}/
       Targets:
         - Arn: !GetAtt SpecifyNewDataStateMachine.Arn
           Id: StartStepFunction
@@ -218,7 +218,7 @@ Resources:
   DataIngestionBucket:
     Type: AWS::S3::Bucket
     Properties: 
-      BucketName: !Sub  "data-ingestion-${AWS::AccountId}-${AWS::Region}"
+      BucketName: !Sub  "data-ingestion-${AWS::AccountId}-${AWS::Region}/specnet"
       NotificationConfiguration:
         EventBridgeConfiguration:
           EventBridgeEnabled: true
@@ -280,7 +280,7 @@ Resources:
                 - AWS::S3::Object
             - Field: "resources.ARN"
               StartsWith:
-                - !Sub arn:aws:s3:::${DataIngestionBucket}/
+                - !Sub arn:aws:s3:::${DataIngestionBucket}
 
   # Execution Role for SpecifyLaunchEC2 Lambda Function providing CloudWatch and EC2 Access
   SpecifyLambdaLaunchEC2FromTemplateRole:
@@ -396,7 +396,7 @@ Resources:
           def lambda_handler(event, context):
             s3 = boto3.client('s3')
             bucket_name = "${DataIngestionBucket}"
-            prefix = "specifysubset"
+            prefix = "subset"
             s3_result = s3.list_objects_v2(Bucket=bucket_name, Prefix=prefix)
             print(s3_result)
             
@@ -447,7 +447,7 @@ Resources:
                 Action:
                   - 's3:GetObject'
                   - 's3:PutObject'
-                Resource: !Sub arn:aws:s3:::${DataIngestionBucket}/specifydata/*
+                Resource: !Sub arn:aws:s3:::${DataIngestionBucket}/*
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole
 
@@ -470,7 +470,7 @@ Resources:
       Role: !Ref SpecifyGlueRole
       Targets:
         S3Targets:
-          - Path: !Sub 's3://${DataIngestionBucket}/specifydata'
+          - Path: !Sub 's3://${DataIngestionBucket}'
 
   # State Machine IAM Role that has access Lambda and Full Athena Access
   SpecifyNewDataStepFunctionRole:
@@ -511,7 +511,8 @@ Resources:
         - "arn:aws:iam::aws:policy/service-role/AWSLambdaRole"
         - "arn:aws:iam::aws:policy/AmazonAthenaFullAccess"
       
-  # Step Function State Machine to crawl the S3 Bucket, inovke a lambda function, and then run Athena Queries
+  # Step Function State Machine to crawl the S3 Bucket, invoke a lambda function, and
+  # then run Athena Queries
   SpecifyNewDataStateMachine:
     Type: AWS::StepFunctions::StateMachine
     Properties:
@@ -576,7 +577,7 @@ Resources:
                   "Type": "Task",
                   "Resource": "arn:aws:states:::athena:startQueryExecution.sync",
                   "Parameters": {
-                    "QueryString": "DROP TABLE IF EXISTS `${GlueDatabase}.specifysubset`",
+                    "QueryString": "DROP TABLE IF EXISTS `${GlueDatabase}.specnetsubset`",
                     "WorkGroup": "${AthenaWorkGroup}"
                   },
                   "Next": "Athena StartQueryExecution Create Table"
@@ -624,16 +625,16 @@ Resources:
       StatementName: SpecifySubsetQuery
       WorkGroup: !Ref AthenaWorkGroup
       QueryStatement: !Sub 
-        CREATE TABLE ${GlueDatabase}.specifysubset
+        CREATE TABLE ${GlueDatabase}.specnetsubset
         WITH
         (
-                external_location = 's3://${DataIngestionBucket}/specifysubset/',
+                external_location = 's3://${DataIngestionBucket}/subset/',
                 format = 'parquet',
                 parquet_compression = 'snappy'
         )
         AS SELECT gbifid, "date" as date_value, occurrenceid, countrycode, stateprovince, locality, decimallatitude, decimallongitude, 
         kingdom, phylum, class, "order" as order_value, family, taxonrank, vernacularname, taxonomicstatus, datasetkey, acceptedtaxonkey, acceptedscientificname 
-        FROM "${GlueDatabase}"."specifydata";
+        FROM "${GlueDatabase}"."specnetdata";
 
   # A workgroup to specify an S3 output for workgroup
   AthenaWorkGroup:
