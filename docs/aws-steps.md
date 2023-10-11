@@ -13,7 +13,7 @@
 * (opt) Request an Elastic IP and assign DNS to it
   * Register FQDN (GoDaddy) to IP for public access
 
-# Enable SSH access to EC2 
+# Enable SSH access to EC2
 
 ## AWS access: keypair
 
@@ -22,7 +22,7 @@
 * Set file permissions to 400
 
 
-## Set up local/client 
+## Set up local/client
 
 * Copy SSH private key to each machine used for AWS access
 * Extend the SSH timeout vim ~/.ssh/config
@@ -49,7 +49,7 @@ ClientAliveInterval 1200
 ClientAliveCountMax 3
 ```
 
-* Reload SSH with new configuration 
+* Reload SSH with new configuration
 
 ```commandline
 $ sudo systemctl reload sshd
@@ -57,7 +57,7 @@ $ sudo systemctl reload sshd
 
 # Install software on EC2
 
-## Base software 
+## Base software
 
 * update apt
 * install AWS client, awscli
@@ -109,7 +109,7 @@ $ sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugi
 
 # Add the Github repo to EC2 instance
 
-## Generate a local ssh key 
+## Generate a local ssh key
 
 ```commandline
 $ ssh-keygen -t ed25519 -C "aimee.stewart@ku.edu"
@@ -127,13 +127,13 @@ $ ssh-add ~/.ssh/id_ed25519
 ```commandline
 $ cat ~/.ssh/id_ed25519.pub
 ```
-* In the resulting text window, add your public key, and tie with your EC2 instance 
-  with a memorable name 
+* In the resulting text window, add your public key, and tie with your EC2 instance
+  with a memorable name
 
 ## Clone the repository to the EC2 instance
 
 ```commandline
-git clone git@github.com:specifysystems/sp_network 
+git clone git@github.com:specifysystems/sp_network
 ```
 
 # Enable S3 access from local machine and EC2
@@ -160,7 +160,7 @@ export AWS_ACCESS_KEY_ID=xxx
 export AWS_SECRET_ACCESS_KEY=xxx
 
 ```
-# Test access locally with 
+# Test access locally with
 
 ```commandline
 $ aws s3 ls
@@ -169,8 +169,8 @@ $ aws ec2 describe-instances
 
 ## Error: SSL
 ```
-SSL validation failed for https://ec2.us-east-1.amazonaws.com/ 
-[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer 
+SSL validation failed for https://ec2.us-east-1.amazonaws.com/
+[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer
 certificate (_ssl.c:1002)
 ```
 
@@ -186,15 +186,14 @@ $ aws ec2 describe-instances --no-verify-ssl
 * create request (console): https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/work-with-spot-fleets.html#create-spot-fleet
 * Local
   * Create an EC2 instance launch template
-  * Create a Spot EC2 instance 
-    * with create_fleet, prerequisites: 
+  * Create a Spot EC2 instance
+    * with create_fleet, prerequisites:
       https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/manage-ec2-fleet.html#ec2-fleet-prerequisites
     * send "UserData" with scripts on instantiation
 * On new Spot EC2 instance
   * UserData Script will run on startup
-    * Download from GBIF 
-    * Trim data and save as parquet format on Spot instance 
+    * Download from GBIF
+    * Trim data and save as parquet format on Spot instance
     * Upload data to S3, delete on Spot
 
 * template of common software configuration
-

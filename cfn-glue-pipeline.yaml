@@ -1,7 +1,7 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: | 
-  This is an example workflow created to pull a large dataset from a third-party. It uses an EventBridge schedule to launch an EC2 
-  spot instance to download the archive, extract the main data set and save it to S3. This triggers another EventBridge rule to have Glue crawl the new data file. 
+Description: |
+  This is an example workflow created to pull a large dataset from a third-party. It uses an EventBridge schedule to launch an EC2
+  spot instance to download the archive, extract the main data set and save it to S3. This triggers another EventBridge rule to have Glue crawl the new data file.
   Old data is deleted and the table dropped. In this example, the original data file has 250+ columns. An Athena query creates a new subset of the data using only 22 columns, and storing it in Parquet with snappy compression. The data catalog is now updated for the new data to be queried by Athena (and QuickSight, if desired).
 
 # IT WORKS WITH THE DEFAULT VPC BUT IF NOT USING THE DEFAULT VPC, A NEW VPC HAS TO BE CREATED AND CONFIGURED
@@ -21,9 +21,9 @@ Parameters:
   VpcID:
     Description: >
       Enter the ID of the VPC in which the EC2 Spot instance will deploy in.
-      Example: vpc-{alphanumericvalues} 
+      Example: vpc-{alphanumericvalues}
     Type: String
-  
+
   CronExpression:
     Description: >
       Enter a valid cron expression to specify the schedule for the eventbridge to trigger a lambda that will launch an EC2 instance.
@@ -84,7 +84,7 @@ Resources:
               yum update -y
               cd /root
               echo "retrieving data..."
-              wget https://api.gbif.org/v1/occurrence/download/request/0042658-230530130749713.zip 
+              wget https://api.gbif.org/v1/occurrence/download/request/0042658-230530130749713.zip
               unzip 0042658-230530130749713.zip occurrence.txt
               aws s3 cp occurrence.txt s3://${DataIngestionBucket}/specifydata/
               echo "Copied to S3!"
@@ -125,9 +125,9 @@ Resources:
   # Instance Profile which the EC2 instance will take on
   EC2InstanceProfile:
     Type: "AWS::IAM::InstanceProfile"
-    Properties: 
+    Properties:
       Path: "/"
-      Roles: 
+      Roles:
         - !Ref EC2SpecifyRole
 
   # EventBridge Rule to trigger the workflow
@@ -140,15 +140,15 @@ Resources:
       Targets:
         - Arn: !GetAtt SpecifyLaunchEC2Function.Arn
           Id: "MyLambdaTarget"
-  
+
   # Lambda Permissions to be invoked by EventBridge Rule
-  PermissionForEventsToInvokeLambda: 
+  PermissionForEventsToInvokeLambda:
     Type: AWS::Lambda::Permission
-    Properties: 
+    Properties:
       FunctionName: !Ref SpecifyLaunchEC2Function
       Action: "lambda:InvokeFunction"
       Principal: "events.amazonaws.com"
-      SourceArn: 
+      SourceArn:
         !GetAtt ScheduledEventRule.Arn
 
   # Event rule that triggers the Step Function workflow when new object placed in S3
@@ -160,7 +160,7 @@ Resources:
       EventPattern:
         source:
           - aws.s3
-        detail-type: 
+        detail-type:
           - AWS API Call via CloudTrail
         detail:
           eventSource:
@@ -170,7 +170,7 @@ Resources:
             - CompleteMultipartUpload
           resources:
             ARN:
-              - prefix: !Sub arn:aws:s3:::${DataIngestionBucket}/specifydata/ 
+              - prefix: !Sub arn:aws:s3:::${DataIngestionBucket}/specifydata/
       Targets:
         - Arn: !GetAtt SpecifyNewDataStateMachine.Arn
           Id: StartStepFunction
@@ -195,19 +195,19 @@ Resources:
               - Effect: Allow
                 Action:
                   - 'states:StartExecution'
-                Resource: 
+                Resource:
                   - !Sub ${SpecifyNewDataStateMachine}
 
   # S3 Bucket to log CloudTrail Data Events
   SpecifyCloudtrailBucket:
     Type: AWS::S3::Bucket
-    Properties: 
+    Properties:
       BucketName: !Sub "cloudtrail-logs-${AWS::AccountId}-${AWS::Region}"
 
   # An S3 Bucket to hold the Data Ingestion
   DataIngestionBucket:
     Type: AWS::S3::Bucket
-    Properties: 
+    Properties:
       BucketName: !Sub  "data-ingestion-${AWS::AccountId}-${AWS::Region}"
       NotificationConfiguration:
         EventBridgeConfiguration:
@@ -216,39 +216,39 @@ Resources:
   # An S3 Bucket where the query result will be saved as an object.
   WorkGroupQueryResultBucket:
     Type: AWS::S3::Bucket
-    Properties: 
+    Properties:
       BucketName: !Sub "athena-query-results-${AWS::AccountId}-${AWS::Region}"
 
-  # BucketPolicy to grant permissions for CloudTrail to write files to the logging bucket 
+  # BucketPolicy to grant permissions for CloudTrail to write files to the logging bucket
   LoggingBucketPolicy:
     Type: AWS::S3::BucketPolicy
-    Properties: 
+    Properties:
       Bucket: !Ref SpecifyCloudtrailBucket
-      PolicyDocument: 
+      PolicyDocument:
         Version: "2012-10-17"
-        Statement: 
-          - 
+        Statement:
+          -
             Sid: "AWSCloudTrailAclCheck"
             Effect: "Allow"
-            Principal: 
+            Principal:
               Service: cloudtrail.amazonaws.com
             Action: s3:GetBucketAcl
             Resource: !Sub arn:aws:s3:::${SpecifyCloudtrailBucket}
-          - 
+          -
             Sid: "AWSCloudTrailWrite"
             Effect: "Allow"
-            Principal: 
+            Principal:
               Service: "cloudtrail.amazonaws.com"
             Action: "s3:PutObject"
             Resource: !Sub arn:aws:s3:::${SpecifyCloudtrailBucket}/*
-            Condition: 
+            Condition:
               StringEquals:
                 s3:x-amz-acl: "bucket-owner-full-control"
-      
+
   # Cloudtrail to log S3 events for the Data Ingestion Bucket
   SpecifyTrail:
     Type: AWS::CloudTrail::Trail
-    DependsOn: 
+    DependsOn:
       - LoggingBucketPolicy
       - SpecifyCloudtrailBucket
     Properties:
@@ -263,7 +263,7 @@ Resources:
         - Name: Specify-data-testing
           FieldSelectors:
             - Field: "eventCategory"
-              Equals: 
+              Equals:
                 - "Data"
             - Field: "resources.type"
               Equals:
@@ -334,13 +334,13 @@ Resources:
                   Resource:
                     - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/SpecifyDeleteSubsetFromS3:*
 
-  
-  # Lambda Function to deploy a Spot instance using a launch template 
+
+  # Lambda Function to deploy a Spot instance using a launch template
   SpecifyLaunchEC2Function:
     Type: AWS::Lambda::Function
     Properties:
       FunctionName: SpecifyLaunchEC2FromTemplate
-      Code: 
+      Code:
         ZipFile: !Sub |
           import json
           import boto3
@@ -378,7 +378,7 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       FunctionName: SpecifyDeleteSubsetFromS3
-      Code: 
+      Code:
         ZipFile: !Sub |
           import json
           import boto3
@@ -389,19 +389,19 @@ Resources:
             prefix = "specifysubset"
             s3_result = s3.list_objects_v2(Bucket=bucket_name, Prefix=prefix)
             print(s3_result)
-            
+
             file_list = []
             if 'Contents' in s3_result and s3_result['Contents']:
-              # There are objects available in the specified prefix in S3 returned so their keys are stored 
+              # There are objects available in the specified prefix in S3 returned so their keys are stored
               # before proceeding to delete each object
-              for key in s3_result['Contents']:   
+              for key in s3_result['Contents']:
                 file_list.append(key['Key'])
 
                 print(len(file_list))
-    
+
               for key in file_list:
                 s3.delete_object(Bucket=bucket_name, Key=key)
-        
+
               return {
                   'statusCode': 200,
                   'body': json.dumps('Specify subset files deleted!')
@@ -493,21 +493,21 @@ Resources:
                 Action:
                   - 's3:*'
                   - 's3-object-lambda:*'
-                Resource: 
+                Resource:
                 - !Sub arn:aws:s3:::${DataIngestionBucket}/*
                 - !Sub arn:aws:s3:::${WorkGroupQueryResultBucket}/*
       Path: "/"
       ManagedPolicyArns:
         - "arn:aws:iam::aws:policy/service-role/AWSLambdaRole"
         - "arn:aws:iam::aws:policy/AmazonAthenaFullAccess"
-      
+
   # Step Function State Machine to crawl the S3 Bucket, inovke a lambda function, and then run Athena Queries
   SpecifyNewDataStateMachine:
     Type: AWS::StepFunctions::StateMachine
     Properties:
-      RoleArn: !GetAtt SpecifyNewDataStepFunctionRole.Arn 
-      DefinitionString: !Sub 
-        - | 
+      RoleArn: !GetAtt SpecifyNewDataStepFunctionRole.Arn
+      DefinitionString: !Sub
+        - |
             {
              "Comment": "Triggered by new Specify raw data, run a crawler, and then run a query to create Parquet data set.",
              "StartAt": "StartCrawler",
@@ -606,14 +606,14 @@ Resources:
                 - "|"
                 - !Ref PreparedQueryStatement
 
-  # Prepared Query Statement responsible for creating a table that represents the data in S3 
+  # Prepared Query Statement responsible for creating a table that represents the data in S3
   PreparedQueryStatement:
     Type: AWS::Athena::PreparedStatement
     Properties:
       Description: Retrieve data from specified subset
       StatementName: SpecifySubsetQuery
       WorkGroup: !Ref AthenaWorkGroup
-      QueryStatement: !Sub 
+      QueryStatement: !Sub
         CREATE TABLE ${GlueDatabase}.specifysubset
         WITH
         (
@@ -621,8 +621,8 @@ Resources:
                 format = 'parquet',
                 parquet_compression = 'snappy'
         )
-        AS SELECT gbifid, "date" as date_value, occurrenceid, countrycode, stateprovince, locality, decimallatitude, decimallongitude, 
-        kingdom, phylum, class, "order" as order_value, family, taxonrank, vernacularname, taxonomicstatus, datasetkey, acceptedtaxonkey, acceptedscientificname 
+        AS SELECT gbifid, "date" as date_value, occurrenceid, countrycode, stateprovince, locality, decimallatitude, decimallongitude,
+        kingdom, phylum, class, "order" as order_value, family, taxonrank, vernacularname, taxonomicstatus, datasetkey, acceptedtaxonkey, acceptedscientificname
         FROM "${GlueDatabase}"."specifydata";
 
   # A workgroup to specify an S3 output for workgroup
@@ -638,7 +638,7 @@ Resources:
         RequesterPaysEnabled: false
         ResultConfiguration:
           OutputLocation: !Sub s3://${WorkGroupQueryResultBucket}/athena-results/
-         
+
 Outputs:
   LaunchTemplate:
     Description: The launch template for lambda to deploy the EC2 instance
@@ -675,6 +675,3 @@ Outputs:
   AthenaPreparedQuery:
     Description: The prepared query statement for the glue database specify
     Value: !Ref PreparedQueryStatement
-    
-
-    

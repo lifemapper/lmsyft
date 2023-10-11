@@ -73,6 +73,7 @@ def logit(logger, msg, refname="", log_level=logging.INFO):
     """Log a message.
 
     Args:
+        logger (obj): A logger object for writing messages to file.
         msg (str): A message to write to the logger.
         refname (str): Class or function name to use in logging message.
         log_level (int): A level to use when logging the message.
@@ -140,10 +141,10 @@ def trim_gbifcsv_to_parquet(csv_filename, logger):
 
 
 # ----------------------------------------------------
-def upload_to_s3(filename, s3_bucket, s3_bucket_path, logger):
+def upload_to_s3(parquet_filename, s3_bucket, s3_bucket_path, logger):
     s3_client = boto3.client("s3")
     s3_client.upload_file(parquet_filename, s3_bucket, s3_bucket_path)
-    base_filename = os.path.basename(filename)
+    base_filename = os.path.basename(parquet_filename)
     logit(
         logger,
         f"Successfully uploaded {base_filename} to s3://{s3_bucket}/{s3_bucket_path}"
@@ -187,4 +188,3 @@ if __name__ == "__main__":
     logit(logger, f"Removed {zip_filename}")
     os.remove(csv_filename)
     logit(logger, f"Removed {csv_filename}")
-

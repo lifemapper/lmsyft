@@ -14,8 +14,6 @@ class _AnalystService:
     SERVICE_TYPE = APIService.AnalystRoot
 
     # ...............................................
-
-    # .............................................................................
     @classmethod
     def _get_valid_requested_params(cls, user_params_string, valid_params):
         """Return valid and invalid options for parameters that accept >1 values.
@@ -56,7 +54,6 @@ class _AnalystService:
                 valid_requested_params = []
 
         return valid_requested_params, invalid_params
-
 
     # .............................................................................
     @classmethod
@@ -106,7 +103,6 @@ class _AnalystService:
         output = AnalystOutput(
             svc, description=cls.SERVICE_TYPE["description"], errors=info)
         return output
-
 
     # ...............................................
     @classmethod

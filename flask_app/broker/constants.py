@@ -1,6 +1,6 @@
 """Constants for the Specify Network Broker API services."""
-from flask_app.common.s2n_type import APIEndpoint, S2nKey
 from flask_app.common.constants import STATIC_DIR
+
 
 # .............................................................................
 # CONFIG_DIR = "config"
@@ -12,13 +12,13 @@ JSON_HEADERS = {"Content-Type": "application/json"}
 SPECIFY7_SERVER_KEY = "specify7-server"
 SPECIFY7_RECORD_ENDPOINT = "export/record"
 
-
 DATA_DUMP_DELIMITER = "\t"
 GBIF_MISSING_KEY = "unmatched_gbif_ids"
 
 # VALID broker parameter options, must be list
 ICON_CONTENT = "image/png"
 ICON_DIR = "{}/icon".format(STATIC_DIR)
+
 
 # .............................................................................
 class DWC:

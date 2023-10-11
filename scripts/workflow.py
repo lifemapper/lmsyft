@@ -5,12 +5,12 @@ import boto3
 import csv
 import datetime
 import io
-import logging
-from logging.handlers import RotatingFileHandler
+# import logging
+# from logging.handlers import RotatingFileHandler
 import os
 import pandas
-import requests
-import subprocess
+# import requests
+# import subprocess
 
 # --------------------------------------------------------------------------------------
 # Constants for GBIF data, local dev machine, EC2, S3
@@ -254,6 +254,7 @@ def _get_launch_template(template_name):
             pass
     return lnch_temp
 
+
 # ----------------------------------------------------
 def create_spot_launch_template(
         spot_template_name, security_group_id, script_filename, key_name):
@@ -274,8 +275,6 @@ def create_spot_launch_template(
         )
         success = (response["ResponseMetadata"]["HTTPStatusCode"] == 200)
     return success
-
-
 
 
 # ----------------------------------------------------
@@ -351,6 +350,7 @@ def get_instance(instance_id):
     except:
         instance = None
     return instance
+
 
 # --------------------------------------------------------------------------------------
 # On EC2: Create a trimmed dataframe from CSV and save to S3 in parquet format

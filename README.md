@@ -23,7 +23,7 @@ Lifemapper backend.
 ## Specify Network Analyst (in development)
 
 The Specify Network Analyst is in development, and will be a set of specimen-based
-analytics assessing the composition of collection holdings and available species 
+analytics assessing the composition of collection holdings and available species
 information.
 
 Individual collections will be compared with data downloaded regularly from GBIF:
@@ -39,7 +39,7 @@ used by the community as a whole to identify gaps in species knowlege or redunda
 The Analyst presents this information in multivariate-, but subsettable, space
 to provide as much value and feedback to the community as possible.
 
-# Specify Network Deployment 
+# Specify Network Deployment
 
 
 ## SSL
@@ -68,14 +68,14 @@ $ ln -s ~/certificates/fullchain.pem
 To run either the production or the development containers with HTTPS
 support, generate `fullchain.pem` and `privkey.pem` (certificate and the private
 key) using Let's Encrypt, link these files in the `./config/` directory.
-Full instructions in the docs/aws-steps.rst page, under `Set up TLS/SSL` 
+Full instructions in the docs/aws-steps.rst page, under `Set up TLS/SSL`
 
 Modify the `FQDN` environment variable in `.env.conf` as needed.
 
 ###  TLS/SSL using Certificate Authority (CA)
 
 * Make sure that DNS has propogated for domain for SSL
-* Stop apache service 
+* Stop apache service
 * request a certificate for the domain
 
 ```commandline
@@ -110,7 +110,7 @@ If you like Certbot, please consider supporting our work by:
  * Donating to ISRG / Let's Encrypt:   https://letsencrypt.org/donate
  * Donating to EFF:                    https://eff.org/donate-le
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-ubuntu@ip-172-31-86-62:~$ 
+ubuntu@ip-172-31-86-62:~$
 ```
 
 * Create a certificates directory under the home directory
@@ -120,9 +120,9 @@ $ cd ~
 $ mkdir certificates
 ```
 
-* Login as superuser, then copy the certificates to the newly created certificates 
+* Login as superuser, then copy the certificates to the newly created certificates
   directory
-* Change the owner of the files in the certificates directory 
+* Change the owner of the files in the certificates directory
 * Exit superuser
 
 ```commandline
@@ -155,8 +155,8 @@ sudo certbot renew
 sudo docker compose up -d
 ```
 
-Copy the new certificates back to the certificates subdirectory of the home directory, 
-and change the owner.  Update the symlinks to point to the newest certificates. 
+Copy the new certificates back to the certificates subdirectory of the home directory,
+and change the owner.  Update the symlinks to point to the newest certificates.
 
 ```commandline
 $ sudo su -
@@ -179,11 +179,11 @@ $ ln -s ~/certificates/privkey2.pem   privkey.pem
   * Add tags sp_network, dev or prod, others
 
 
-## Install 
+## Install
 
 ### Install dependencies
 
-Certbot: 
+Certbot:
 
 ```commandline
 $ sudo apt update
@@ -192,7 +192,7 @@ $ sudo apt install certbot
 
 ### Install Docker
 
-Add docker repository, then use apt to install Docker: 
+Add docker repository, then use apt to install Docker:
 https://docs.docker.com/engine/install/ubuntu/
 
 ### Install repo from Github
@@ -204,13 +204,13 @@ https://docs.docker.com/engine/install/ubuntu/
 $ ssh-keygen -t rsa -b 4096 -C "aimee.stewart@ku.edu"
 $ eval "$(ssh-agent -s)"
 $ ssh-add ~/.ssh/id_rsa
-$ cat .ssh/id_rsa.pub 
+$ cat .ssh/id_rsa.pub
 ```
 * Add the SSH to Github by printing to console, copying, adding in Github profile
 * clone the repository
 
 ```commandline
-$ cat .ssh/id_rsa.pub 
+$ cat .ssh/id_rsa.pub
 $ # <copy to profile in github website>
 $ cd ~/git
 $ git clone git@github.com:specifysystems/sp_network.git
@@ -219,11 +219,11 @@ $ git checkout <branch>
 
 ### Install certificates into config directory
 
-* Link the certificates in the repo config directory 
+* Link the certificates in the repo config directory
 
 ```commandline
 $ cd ~/git/sp_network
-$ cd config 
+$ cd config
 $ ln -s ~/certificates/fullchain1.pem
 $ ln -s ~/certificates/privkey1.pem
 ```
@@ -240,12 +240,12 @@ On a development server, check the following URL endpoints:
     * https://localhost/api/v1/name/
     * https://localhost/api/v1/occ/
     * https://localhost/api/v1/frontend/
-  
+
   * https://localhost/api/v1/badge/gbif?icon_status=active
   * https://localhost/api/v1/occ/?occid=a7156437-55ec-4c6f-89de-938f9361753d
   * https://localhost/api/v1/name/Harengula%20jaguana
   * https://localhost/api/v1/frontend/?occid=a7156437-55ec-4c6f-89de-938f9361753d
-  
+
 For local testing in a development environment, tests in the tests directory
 require the lmtest module available at https://github.com/lifemapper/lmtest.
 
@@ -279,11 +279,11 @@ needed.
 ## Edit the docker environment files
 
 * Add the container domain name to the files .env.broker.conf and .env.analyst.conf
-* Change the FQDN value to the fully qualified domain name of the server.  
+* Change the FQDN value to the fully qualified domain name of the server.
   * If this is a local testing deployment, it will be "localhost"
-  * For a development or production server it will be the FQDN with correct subdomain 
-    for each container, i.e FQDN=broker.spcoco.org in .env.broker.conf and 
-    FQDN=analyst.spcoco.org in .env.analyst.conf    
+  * For a development or production server it will be the FQDN with correct subdomain
+    for each container, i.e FQDN=broker.spcoco.org in .env.broker.conf and
+    FQDN=analyst.spcoco.org in .env.analyst.conf
 
 ## Run the containers (production)
 
@@ -297,8 +297,8 @@ Specify Network is now available at [https://localhost/](https://localhost:443)
 ## Run the containers (development)
 
 Note that the development compose file, docker-compose.development.yml, is referenced
-first on the command line.  It has elements that override those defined in the 
-general compose file, docker-compose.yml. 
+first on the command line.  It has elements that override those defined in the
+general compose file, docker-compose.yml.
 
 ```zsh
 sudo docker compose -f docker-compose.development.yml -f docker-compose.yml  up
@@ -349,12 +349,12 @@ sudo systemctl stop httpd
 sudo docker compose  up -d
 ```
 
-# Dev Environment 
+# Dev Environment
 
 * Create a virtual environment and install python libs there
 
 ```commandline
-$ cd ~/git/sp_network 
+$ cd ~/git/sp_network
 $ python3 -m venv venv
 $ . venv/bin/activate
 $ pip install -r requirements.txt
@@ -368,9 +368,9 @@ $ pip install -r requirements.txt
 
 ## Debug
 
-To run flask in debug mode, first set up Flask environment, then start the flask 
-application (in this case, main in flask_app.broker.routes.py).  Only one resource 
-(aka broker or analyst) at a time can be tested in this way.  
+To run flask in debug mode, first set up Flask environment, then start the flask
+application (in this case, main in flask_app.broker.routes.py).  Only one resource
+(aka broker or analyst) at a time can be tested in this way.
 Reset the FLASK_APP variable to test an alternate resource.
 
 ** the broker frontend can NOT be tested this way, as it depends on a docker volume
@@ -378,14 +378,14 @@ Reset the FLASK_APP variable to test an alternate resource.
 ```zsh
 export FLASK_ENV=development
 export FLASK_APP=flask_app.broker.routes:app
-# or 
+# or
 # export FLASK_APP=flask_app.analyst.routes:app
 flask run
 ```
 
 * `broker` container is running `debugpy` on localhost, port `5000`
 * Test with http, no https!!
-  
+
   http://localhost:5000/api/v1/name?namestr=Notemigonus%20crysoleucas%20(Mitchill,%201814)
   http://localhost:5000/api/v1/occ?occid=01493b05-4310-4f28-9d81-ad20860311f3
 
@@ -435,7 +435,7 @@ git config --global http.sslVerify true
 # AWS setup
 
 * Add raw GBIF data to S3
-* 
+*
 
 # Misc
 

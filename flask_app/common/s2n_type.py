@@ -1,7 +1,6 @@
 """Class for the output formats and keys used by Specify Network Name API service."""
 from collections import OrderedDict
 import typing
-
 from flask_app.common.util import get_host_url
 
 RecordsList = typing.List[typing.Dict]
@@ -246,7 +245,8 @@ class APIService:
             ]
         }
 
-    # .............................................................................
+
+# .............................................................................
 class COMMUNITY_SCHEMA:
     """Codes and URLs for community schemas used by the Specify Network."""
     DWC = {"code": "dwc", "url": "http://rs.tdwg.org/dwc/terms"}
@@ -1024,6 +1024,7 @@ class AnalystOutput:
         """
         return self._response
 
+
 # .............................................................................
 class ServiceProvider:
     """Name and metadata for external Specify Network data providers."""
@@ -1211,4 +1212,3 @@ class ServiceProvider:
             if icon_status:
                 url = f"{url}&icon_status={icon_status}"
         return url
-
