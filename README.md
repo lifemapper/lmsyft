@@ -133,19 +133,22 @@ $ sudo chown ubuntu:ubuntu ~/certificates/*
 
 ### Renew Certbot SSL certificates
 
-SSL certificates are served from the base VM, and need apache to be renewed.
+SSL certificates are served from the instance (AWS EC2), and need port 80 to be renewed.
 These are administered by Letsencrypt using Certbot and are only valid for 90 days at
 a time. When it is time for a renewal (approx every 60 days), bring the docker
-containers down, and start apache. Renew the certificates, then stop apache,
-and bring the containers up again.
+containers down. Renew the certificates, then bring the containers up again.
+
+Amazon EC2 containers do not need apache running, certbot runs its own temp web server.
+
+Test with https://broker.spcoco.org/api/v1/frontend/?occid=01493b05-4310-4f28-9d81-ad20860311f3
 
 ```zsh
-certbot certificates
-docker compose stop
-systemctl start httpd
-certbot renew
-systemctl stop httpd
-docker compose up -d
+sudo certbot certificates
+sudo docker compose stop
+sudo systemctl start httpd
+sudo certbot renew
+sudo systemctl stop httpd
+sudo docker compose up -d
 ```
 
 ### SSL through Amazon?
