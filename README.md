@@ -121,16 +121,19 @@ If you like Certbot, please consider supporting our work by:
  * Donating to EFF:                    https://eff.org/donate-le
 ```
 
-* copy the newly created directory with certificates to the home directory
+* as superuser, link the newly created fullchain.pem and privkey.pem files from the 
+  letsencrypt live to the project/config directory
 * change the owner so that they can be used in Docker containers
 
 ```commandline
-$ cd
-$ mkdir certificates
-$ sudo cp -rp /etc/letsencrypt/archive/broker-dev.spcoco.org/*  ~/certificates
-$ sudo chown ubuntu:ubuntu ~/certificates/*
+$ sudo su -
+# cp -p /etc/letsencrypt/live/dev.spcoco.org/* /home/ubuntu/certificates/
+# chown ubuntu:ubuntu /home/ubuntu/certificates/*
+# exit
+$ cd ~/git/sp_network/config 
+$ ln -s ~/certificates/fullchain.pem
+$ ln -s ~/certificates/privkey.pem
 ```
-
 ### Renew Certbot SSL certificates
 
 SSL certificates are served from the instance (AWS EC2), and need port 80 to be renewed.
@@ -142,16 +145,21 @@ Amazon EC2 containers do not need apache running, certbot runs its own temp web 
 
 Test with https://broker.spcoco.org/api/v1/frontend/?occid=01493b05-4310-4f28-9d81-ad20860311f3
 
-```zsh
-sudo certbot certificates
-sudo docker compose stop
-sudo systemctl start httpd
-sudo certbot renew
-sudo systemctl stop httpd
-sudo docker compose up -d
+```commandline
+$ sudo certbot certificates
+$ sudo docker compose stop
+$ sudo su -
+# certbot renew
+# cp -p /etc/letsencrypt/live/dev.spcoco.org/* /home/ubuntu/certificates/
+# chown ubuntu:ubuntu /home/ubuntu/certificates/*
+# exit
+$ ls -lahtr ~/git/sp_network/config
+<check symlinks - should still be valid>
+$ sudo docker system prune --all --volumes
+$ sudo docker compose up -d
 ```
 
-### SSL through Amazon?
+### TODO: SSL through Amazon
 
 * Create Elastic IP address for EC2 instance
 * Request a public certificate through Certificate Manager (ACM)
@@ -253,6 +261,24 @@ needed.
 **Flask** is watching for back-end file changes and restarts the server when
 needed.
 
+## Troubleshooting
+
+For webserver errors, check logs of nginx container::
+
+```commandline
+$ sudo docker logs --tail 1000 sp_network-nginx-1
+$ sudo docker logs --tail 1000 sp_network-broker-1
+```
+
+Error: "... cannot import name 'url_quote' from 'werkzeug.urls'" in broker container
+Fix: Add Werkzeug==2.2.2 to requirements.txt to ensure it does not use 3.0+
+Then stop/rebuild/start:
+
+```commandline
+$ sudo docker compose stop
+$ sudo docker system prune --all --volumes
+$ sudo docker compose up -d
+```
 
 # Docker manipulation
 
