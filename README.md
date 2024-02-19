@@ -127,51 +127,40 @@ $ mkdir certificates
 
 ```commandline
 $ sudo su -
-# cp -rp /etc/letsencrypt/archive/broker-dev.spcoco.org/*  /home/ubuntu/certificates
+# cp -p /etc/letsencrypt/live/dev.spcoco.org/* /home/ubuntu/certificates/
 # chown ubuntu:ubuntu /home/ubuntu/certificates/*
 # exit
-```
-
-* link these copied certificates to the config directory in this project, as
-  names fullchain.pem and privkey.pem
-
-```commandline
-$ cd ~/git/sp_network/config
-$ ln -s ~/certificates/fullchain1.pem fullchain.pem
-$ ln -s ~/certificates/privkey1.pem   privkey.pem
+$ cd ~/git/sp_network/config 
+$ ln -s ~/certificates/fullchain.pem
+$ ln -s ~/certificates/privkey.pem
 ```
 ### Renew Certbot SSL certificates
 
-
-SSL certificates are served from the base VM, and need apache to be renewed.
+SSL certificates are served from the instance (AWS EC2), and need port 80 to be renewed.
 These are administered by Letsencrypt using Certbot and are only valid for 90 days at
 a time. When it is time for a renewal (approx every 60 days), bring the docker
-containers down, renew the certificates, then bring the containers up again.
+containers down. Renew the certificates, then bring the containers up again.
 
-```zsh
-sudo certbot certificates
-sudo docker compose stop
-sudo certbot renew
-sudo docker compose up -d
-```
+Amazon EC2 containers do not need apache running, certbot runs its own temp web server.
 
-Copy the new certificates back to the certificates subdirectory of the home directory,
-and change the owner.  Update the symlinks to point to the newest certificates.
+Test with https://broker.spcoco.org/api/v1/frontend/?occid=01493b05-4310-4f28-9d81-ad20860311f3
 
 ```commandline
+$ sudo certbot certificates
+$ sudo docker compose stop
 $ sudo su -
-# cp -p /etc/letsencrypt/archive/spcoco.org/*  /home/ubuntu/certificates/
+# certbot renew
+# cp -p /etc/letsencrypt/live/dev.spcoco.org/* /home/ubuntu/certificates/
 # chown ubuntu:ubuntu /home/ubuntu/certificates/*
 # exit
-$ cd ~/git/sp_network/config
-$ ln -s ~/certificates/fullchain2.pem fullchain.pem
-$ ln -s ~/certificates/privkey2.pem   privkey.pem
+$ ls -lahtr ~/git/sp_network/config
+<check symlinks - should still be valid>
+$ sudo docker system prune --all --volumes
+$ sudo docker compose up -d
 ```
 
-### Add new domain to SSL certificates
+### TODO: SSL through Amazon
 
-
-### SSL through Amazon?
 
 * Create Elastic IP address for EC2 instance
 * Request a public certificate through Certificate Manager (ACM)
