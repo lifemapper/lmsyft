@@ -30,6 +30,6 @@ Metadata: Data describing the attributes and combinations of biodiversity data.
 Data: Biodiversity data and metadata.
 Data provider: A custodian of data making it technically available. This may or may not be the data owner. If not they will have declared to GBIF that they have permission to make the data available.
 Data sharing: The process of and agreements for making data freely and universally available on the Internet.
-User: Anyone who uses the Internet to access data through the Lifemapper services.
+User: Anyone who uses the Internet to access data through the Specify Network services.
 Owner of data: The legal entity possessing the right resulting from the act of creating a digital record. The record may be a product derived from another, possibly non-digital product, which may affect the right.
 Sensitive data: Any data that the provider does not want to make available, e.g. precise localities of endangered species.

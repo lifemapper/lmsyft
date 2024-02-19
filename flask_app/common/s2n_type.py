@@ -720,12 +720,6 @@ class BrokerSchema:
 #             }
 #         return so
 
-# # .............................................................................
-# class S2n:
-#     RECORD_FORMAT = "Lifemapper service broker schema TBD"
-# provider element"s query_url replaces query_term
-
-
 # .............................................................................
 class BrokerOutput(object):
     """Format for all Specify Network query responses."""

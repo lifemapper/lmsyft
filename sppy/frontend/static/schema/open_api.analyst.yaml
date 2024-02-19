@@ -3,7 +3,6 @@ info:
   title: Specify Network services
   description: API services for returning statistical data about biological collections.
   version: 1.0.0
-#  termsOfService: 'https://lifemapper.ku.edu/?page_id=1096'
   contact:
     name: Aimee Stewart
     email: aimee.stewart@ku.edu

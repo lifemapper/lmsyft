@@ -15,11 +15,6 @@ primarily accessed through the Specify application.
 The Specify Broker houses objects and common tools used within a Broker installation
 that may also be useful for outside contributors and the community as a whole.
 
-Any community contributed tool through the
-[sp_network repository](https://github.com/specifysystems/sp_network/) should
-use these objects to ensure that new contributions are compatible with the
-Lifemapper backend.
-
 ## Specify Network Analyst (in development)
 
 The Specify Network Analyst is in development, and will be a set of specimen-based

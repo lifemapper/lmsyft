@@ -1,4 +1,4 @@
-"""Tools for local or remote Solr collections."""
+"""OBSOLETE: Tools for local or remote Solr collections."""
 import requests
 import subprocess
 
