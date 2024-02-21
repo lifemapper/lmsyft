@@ -1,7 +1,6 @@
 """Class for the output formats and keys used by Specify Network Name API service."""
 from collections import OrderedDict
 import typing
-
 from flask_app.common.util import get_host_url
 
 RecordsList = typing.List[typing.Dict]
@@ -105,33 +104,13 @@ class APIEndpoint:
         return cls.Resources()[cls.Analyst]
 
     @classmethod
-    def analyst_root(cls):
-        """Get the endpoints for all Specify Network API services.
-
-        Returns:
-            list of all BrokerEndpoints
-        """
-        return f"{cls.Analyst}/{cls.Root}"
-
-    @classmethod
-    def broker_root(cls):
-        """Get the endpoints for all Specify Network API services.
-
-        Returns:
-            list of all BrokerEndpoints
-        """
-        # TODO: when FQDN changes, add broker-prefix to URL
-        # return f"{cls.Broker}/{cls.Root}"
-        return cls.Root
-
-    @classmethod
     def get_analyst_endpoints(cls):
         """Get the endpoints for all Specify Network Analyst API services.
 
         Returns:
             list of all Endpoints
         """
-        return [f"{cls.analyst_root()}/{svc}" for svc in cls.AnalystServices()]
+        return [f"{cls.Root}/{svc}" for svc in cls.AnalystServices()]
 
     @classmethod
     def get_broker_endpoints(cls):
@@ -140,7 +119,7 @@ class APIEndpoint:
         Returns:
             list of all BrokerEndpoints
         """
-        return [f"{cls.broker_root()}/{svc}" for svc in cls.BrokerServices()]
+        return [f"{cls.Root}/{svc}" for svc in cls.BrokerServices()]
 
 
 # .............................................................................
@@ -148,14 +127,14 @@ class APIService:
     """Endpoint, parameters, output format for all Specify Network Broker APIs."""
     BrokerRoot = {
         "name": APIEndpoint.Broker,
-        "endpoint": APIEndpoint.broker_root(),
+        "endpoint": APIEndpoint.Root,
         "params": {},
         "description": "",
         S2nKey.RECORD_FORMAT: None
     }
     AnalystRoot = {
         "name": APIEndpoint.Analyst,
-        "endpoint": APIEndpoint.analyst_root(),
+        "endpoint": APIEndpoint.Root,
         "params": {},
         "description": "",
         S2nKey.RECORD_FORMAT: None
@@ -163,7 +142,7 @@ class APIService:
     # Icons for service providers
     Badge = {
         "name": APIEndpoint.Badge,
-        "endpoint": f"{APIEndpoint.broker_root()}/{APIEndpoint.Badge}",
+        "endpoint": f"{APIEndpoint.Root}/{APIEndpoint.Badge}",
         "params": {
             "provider": {
                 "type": "",
@@ -182,7 +161,7 @@ class APIService:
     # Counts
     Count = {
         "name": APIEndpoint.Count,
-        "endpoint": f"{APIEndpoint.analyst_root()}/{APIEndpoint.Count}",
+        "endpoint": f"{APIEndpoint.Root}/{APIEndpoint.Count}",
         "params": {
             "collection_id": {
                 "type": "",
@@ -201,7 +180,7 @@ class APIService:
     # Taxonomic Resolution
     Name = {
         "name": APIEndpoint.Name,
-        "endpoint": f"{APIEndpoint.broker_root()}/{APIEndpoint.Name}",
+        "endpoint": f"{APIEndpoint.Root}/{APIEndpoint.Name}",
         "params": {
             "provider": {
                 "type": "",
@@ -222,7 +201,7 @@ class APIService:
     # Specimen occurrence records
     Occurrence = {
         "name": APIEndpoint.Occurrence,
-        "endpoint": f"{APIEndpoint.broker_root()}/{APIEndpoint.Occurrence}",
+        "endpoint": f"{APIEndpoint.Root}/{APIEndpoint.Occurrence}",
         "params": {
             "provider": {
                 "type": "",
@@ -241,7 +220,7 @@ class APIService:
     }
     Frontend = {
         "name": APIEndpoint.Frontend,
-        "endpoint": f"{APIEndpoint.broker_root()}/{APIEndpoint.Frontend}",
+        "endpoint": f"{APIEndpoint.Root}/{APIEndpoint.Frontend}",
         "params": {
             "occid" : {"type": "", "default": None},
             "namestr": {"type": "", "default": None}
@@ -266,7 +245,8 @@ class APIService:
             ]
         }
 
-    # .............................................................................
+
+# .............................................................................
 class COMMUNITY_SCHEMA:
     """Codes and URLs for community schemas used by the Specify Network."""
     DWC = {"code": "dwc", "url": "http://rs.tdwg.org/dwc/terms"}
@@ -740,12 +720,6 @@ class BrokerSchema:
 #             }
 #         return so
 
-# # .............................................................................
-# class S2n:
-#     RECORD_FORMAT = "Lifemapper service broker schema TBD"
-# provider element"s query_url replaces query_term
-
-
 # .............................................................................
 class BrokerOutput(object):
     """Format for all Specify Network query responses."""
@@ -1023,7 +997,7 @@ class AnalystOutput:
         if errors is None:
             errors = {}
         if description is None:
-            description = {}
+            description = ""
         if records is None:
             records = []
         # Dictionary is json-serializable
@@ -1043,6 +1017,7 @@ class AnalystOutput:
             the response object
         """
         return self._response
+
 
 # .............................................................................
 class ServiceProvider:
@@ -1231,4 +1206,3 @@ class ServiceProvider:
             if icon_status:
                 url = f"{url}&icon_status={icon_status}"
         return url
-

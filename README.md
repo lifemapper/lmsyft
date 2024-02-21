@@ -15,15 +15,14 @@ primarily accessed through the Specify application.
 The Specify Broker houses objects and common tools used within a Broker installation
 that may also be useful for outside contributors and the community as a whole.
 
-Any community contributed tool through the
-[sp_network repository](https://github.com/specifysystems/sp_network/) should
-use these objects to ensure that new contributions are compatible with the
-Lifemapper backend.
-
 ## Specify Network Analyst (in development)
 
-The Specify Network Analyst is in development, and will be a collection of specimen-based analytics
-assessing the composition of collection holdings and available species information.
+The Specify Network Analyst is in development, and will be a set of specimen-based
+analytics assessing the composition of collection holdings and available species
+information.
+
+Individual collections will be compared with data downloaded regularly from GBIF:
+https://www.gbif.org/occurrence/download?basis_of_record=PRESERVED_SPECIMEN&basis_of_record=FOSSIL_SPECIMEN&basis_of_record=OCCURRENCE&advanced=1&occurrence_status=present
 
 These data are used to compare and assess collections against and among the collective
 holdings globally distributed data.  The analytics are then returned to the
@@ -35,7 +34,7 @@ used by the community as a whole to identify gaps in species knowlege or redunda
 The Analyst presents this information in multivariate-, but subsettable, space
 to provide as much value and feedback to the community as possible.
 
-# Specify Network Deployment 
+# Specify Network Deployment
 
 
 ## SSL
@@ -45,7 +44,7 @@ to provide as much value and feedback to the community as possible.
 To run the containers, generate `fullchain.pem` and `privkey.pem` (certificate
 and the private key) using Let's Encrypt and link these files in `./sp_network/config/`.
 
-While in development, you can generate self-signed certificates then link them in
+While in development, generate self-signed certificates then link them in
 ~/git/sp_network/config/ directory for this project:
 
 ```zsh
@@ -64,19 +63,19 @@ $ ln -s ~/certificates/fullchain.pem
 To run either the production or the development containers with HTTPS
 support, generate `fullchain.pem` and `privkey.pem` (certificate and the private
 key) using Let's Encrypt, link these files in the `./config/` directory.
-Full instructions in the docs/aws-steps.rst page, under `Set up TLS/SSL` 
+Full instructions in the docs/aws-steps.rst page, under `Set up TLS/SSL`
 
 Modify the `FQDN` environment variable in `.env.conf` as needed.
 
 ###  TLS/SSL using Certificate Authority (CA)
 
 * Make sure that DNS has propogated for domain for SSL
-* Stop apache service 
+* Stop apache service
 * request a certificate for the domain
 
 ```commandline
-ubuntu@ip-172-31-22-32:~$ sudo systemctl stop apache2
-ubuntu@ip-172-31-22-32:~$ sudo certbot certonly
+ubuntu@ip-172-31-86-62:~$ sudo systemctl stop apache2
+ubuntu@ip-172-31-86-62:~$ sudo certbot certonly -v
 Saving debug log to /var/log/letsencrypt/letsencrypt.log
 
 How would you like to authenticate with the ACME CA?
@@ -85,33 +84,19 @@ How would you like to authenticate with the ACME CA?
 2: Place files in webroot directory (webroot)
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 Select the appropriate number [1-2] then [enter] (press 'c' to cancel): 1
-Enter email address (used for urgent renewal and security notices)
- (Enter 'c' to cancel): aimee.stewart@ku.edu
-
-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-Please read the Terms of Service at
-https://letsencrypt.org/documents/LE-SA-v1.3-September-21-2022.pdf. You must
-agree in order to register with the ACME server. Do you agree?
-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-(Y)es/(N)o: Y
-
-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-Would you be willing, once your first certificate is successfully issued, to
-share your email address with the Electronic Frontier Foundation, a founding
-partner of the Let's Encrypt project and the non-profit organization that
-develops Certbot? We'd like to send you email about our work encrypting the web,
-EFF news, campaigns, and ways to support digital freedom.
-- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-(Y)es/(N)o: N
-Account registered.
+Plugins selected: Authenticator standalone, Installer None
 Please enter the domain name(s) you would like on your certificate (comma and/or
-space separated) (Enter 'c' to cancel): broker-dev.spcoco.org
-Requesting a certificate for broker-dev.spcoco.org
+space separated) (Enter 'c' to cancel): broker-dev.spcoco.org analyst-dev.spcoco.org
+Requesting a certificate for broker-dev.spcoco.org and analyst-dev.spcoco.org
+Performing the following challenges:
+http-01 challenge for broker-dev.spcoco.org
+Waiting for verification...
+Cleaning up challenges
 
 Successfully received certificate.
 Certificate is saved at: /etc/letsencrypt/live/broker-dev.spcoco.org/fullchain.pem
 Key is saved at:         /etc/letsencrypt/live/broker-dev.spcoco.org/privkey.pem
-This certificate expires on 2023-07-16.
+This certificate expires on 2023-10-18.
 These files will be updated when the certificate renews.
 Certbot has set up a scheduled task to automatically renew this certificate in the background.
 
@@ -119,6 +104,8 @@ Certbot has set up a scheduled task to automatically renew this certificate in t
 If you like Certbot, please consider supporting our work by:
  * Donating to ISRG / Let's Encrypt:   https://letsencrypt.org/donate
  * Donating to EFF:                    https://eff.org/donate-le
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+ubuntu@ip-172-31-86-62:~$
 ```
 
 * as superuser, link the newly created fullchain.pem and privkey.pem files from the 
@@ -134,6 +121,7 @@ $ cd ~/git/sp_network/config
 $ ln -s ~/certificates/fullchain.pem
 $ ln -s ~/certificates/privkey.pem
 ```
+
 ### Renew Certbot SSL certificates
 
 SSL certificates are served from the instance (AWS EC2), and need port 80 to be renewed.
@@ -167,11 +155,11 @@ $ sudo docker compose up -d
   * Add tags sp_network, dev or prod, others
 
 
-## Install 
+## Install
 
 ### Install dependencies
 
-Certbot: 
+Certbot:
 
 ```commandline
 $ sudo apt update
@@ -180,7 +168,7 @@ $ sudo apt install certbot
 
 ### Install Docker
 
-Add docker repository, then use apt to install Docker: 
+Add docker repository, then use apt to install Docker:
 https://docs.docker.com/engine/install/ubuntu/
 
 ### Install repo from Github
@@ -192,13 +180,13 @@ https://docs.docker.com/engine/install/ubuntu/
 $ ssh-keygen -t rsa -b 4096 -C "aimee.stewart@ku.edu"
 $ eval "$(ssh-agent -s)"
 $ ssh-add ~/.ssh/id_rsa
-$ cat .ssh/id_rsa.pub 
+$ cat .ssh/id_rsa.pub
 ```
 * Add the SSH to Github by printing to console, copying, adding in Github profile
 * clone the repository
 
 ```commandline
-$ cat .ssh/id_rsa.pub 
+$ cat .ssh/id_rsa.pub
 $ # <copy to profile in github website>
 $ cd ~/git
 $ git clone git@github.com:specifysystems/sp_network.git
@@ -207,11 +195,11 @@ $ git checkout <branch>
 
 ### Install certificates into config directory
 
-* Link the certificates in the repo config directory 
+* Link the certificates in the repo config directory
 
 ```commandline
 $ cd ~/git/sp_network
-$ cd config 
+$ cd config
 $ ln -s ~/certificates/fullchain1.pem
 $ ln -s ~/certificates/privkey1.pem
 ```
@@ -228,17 +216,17 @@ On a development server, check the following URL endpoints:
     * https://localhost/api/v1/name/
     * https://localhost/api/v1/occ/
     * https://localhost/api/v1/frontend/
-  
+
   * https://localhost/api/v1/badge/gbif?icon_status=active
   * https://localhost/api/v1/occ/?occid=a7156437-55ec-4c6f-89de-938f9361753d
   * https://localhost/api/v1/name/Harengula%20jaguana
   * https://localhost/api/v1/frontend/?occid=a7156437-55ec-4c6f-89de-938f9361753d
-  
+
 For local testing in a development environment, tests in the tests directory
 require the lmtest module available at https://github.com/lifemapper/lmtest.
 
-Environment variables set in the Docker containers from the .env.conf file are
-necessary to test containers from the host machine.
+Environment variables set in the Docker containers from the .env.broker.conf and
+.env.broker.conf files are necessary to inform the host machine/container of its FQDN.
 
 **Temp solution:** Export these variables to the local environment in the python
 virtual environment activation script (bin/activate) script.
@@ -282,10 +270,19 @@ $ sudo docker compose up -d
 
 # Docker manipulation
 
+## Edit the docker environment files
+
+* Add the container domain name to the files .env.broker.conf and .env.analyst.conf
+* Change the FQDN value to the fully qualified domain name of the server.
+  * If this is a local testing deployment, it will be "localhost"
+  * For a development or production server it will be the FQDN with correct subdomain
+    for each container, i.e FQDN=broker.spcoco.org in .env.broker.conf and
+    FQDN=analyst.spcoco.org in .env.analyst.conf
+
 ## Run the containers (production)
 
 ```zsh
-docker compose up -d
+sudo docker compose -f docker-compose.yml up -d
 ```
 
 Specify Network is now available at [https://localhost/](https://localhost:443)
@@ -294,11 +291,11 @@ Specify Network is now available at [https://localhost/](https://localhost:443)
 ## Run the containers (development)
 
 Note that the development compose file, docker-compose.development.yml, is referenced
-first on the command line.  It has elements that override those defined in the 
-general compose file, docker-compose.yml. 
+first on the command line.  It has elements that override those defined in the
+general compose file, docker-compose.yml.
 
 ```zsh
-docker compose -f docker-compose.development.yml -f docker-compose.yml  up
+sudo docker compose -f docker-compose.development.yml -f docker-compose.yml  up
 ```
 
 Flask has hot-reload enabled.
@@ -310,19 +307,19 @@ To delete all containers, images, networks and volumes, stop any running
 containers:
 
 ```zsh
-docker compose stop
+sudo docker compose stop
 ```
 
 And run this command (which ignores running container):
 
 ```zsh
-docker system prune --all --volumes
+sudo docker system prune --all --volumes
 ```
 
 Then rebuild/restart:
 
 ```zsh
-docker compose up -d
+sudo docker compose up -d
 ```
 
 ## Examine container
@@ -330,7 +327,7 @@ docker compose up -d
 To examine containers at a shell prompt:
 
 ```zsh
-docker exec -it sp_network-nginx-1 /bin/sh
+sudo docker exec -it sp_network-nginx-1 /bin/sh
 ```
 
 Error port in use:
@@ -341,17 +338,17 @@ all docker containers, shut down httpd, bring up docker.
 
 ```zsh
 lsof -i -P -n | grep 443
-docker compose down
-systemctl stop httpd
-docker compose  up -d
+sudo docker compose down
+sudo systemctl stop httpd
+sudo docker compose  up -d
 ```
 
-# Dev Environment 
+# Dev Environment
 
 * Create a virtual environment and install python libs there
 
 ```commandline
-$ cd ~/git/sp_network 
+$ cd ~/git/sp_network
 $ python3 -m venv venv
 $ . venv/bin/activate
 $ pip install -r requirements.txt
@@ -365,21 +362,26 @@ $ pip install -r requirements.txt
 
 ## Debug
 
-To run flask in debug mode, first set up Flask environment, then start the flask 
-application (in this case flask_app.broker.__init__).  Only one resource (aka broker or 
-analyst) at a time can be tested in this way.  Reset the FLASK_APP variable to test an
-alternate resource.
+To run flask in debug mode, first set up Flask environment, then start the flask
+application (in this case, main in flask_app.broker.routes.py).  Only one resource
+(aka broker or analyst) at a time can be tested in this way.
+Reset the FLASK_APP variable to test an alternate resource.
+
+** the broker frontend can NOT be tested this way, as it depends on a docker volume
 
 ```zsh
 export FLASK_ENV=development
 export FLASK_APP=flask_app.broker.routes:app
+# or
+# export FLASK_APP=flask_app.analyst.routes:app
 flask run
 ```
 
-`broker` container is running `debugpy` on port `5000`
+* `broker` container is running `debugpy` on localhost, port `5000`
+* Test with http, no https!!
 
-http://localhost:5000/api/v1/name?namestr=Notemigonus%20crysoleucas%20(Mitchill,%201814)
-http://localhost:5000/api/v1/occ?occid=01493b05-4310-4f28-9d81-ad20860311f3
+  http://localhost:5000/api/v1/name?namestr=Notemigonus%20crysoleucas%20(Mitchill,%201814)
+  http://localhost:5000/api/v1/occ?occid=01493b05-4310-4f28-9d81-ad20860311f3
 
 ## Troubleshooting
 
@@ -423,6 +425,11 @@ git config --global http.sslVerify true
 * Errors installing toml, Poetry, dependencies of isort.
   * Updated .pre-commit-config.yaml isort version to latest,
      https://github.com/PyCQA/isort, fixed build
+
+# AWS setup
+
+* Add raw GBIF data to S3
+*
 
 # Misc
 

@@ -10,7 +10,7 @@ services:
     environment:
       - FLASK_APP=flask_app.analyst.routes:app
     env_file:
-      ./.env.conf
+      ./.env.analyst.conf
     restart: unless-stopped
     volumes:
       - "scratch-path:/scratch-path"
@@ -26,7 +26,7 @@ services:
     environment:
       - FLASK_APP=flask_app.broker.routes:app
     env_file:
-      ./.env.conf
+      ./.env.broker.conf
     restart: unless-stopped
     volumes:
       - "scratch-path:/scratch-path"
@@ -39,6 +39,7 @@ services:
     restart: unless-stopped
     depends_on:
       - broker
+      - analyst
       - front-end
 
     networks:

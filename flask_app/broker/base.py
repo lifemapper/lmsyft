@@ -10,10 +10,11 @@ from sppy.tools.provider.itis import ItisAPI
 
 app = Flask(__name__)
 
+
+# .............................................................................
 @app.errorhandler(BadRequest)
 def handle_bad_request(e):
     return f"Bad request: {e}"
-
 
 @app.errorhandler(InternalServerError)
 def handle_bad_response(e):
@@ -133,7 +134,7 @@ class _BrokerService:
         Returns:
             URL endpoint for the service
         """
-        endpoint = f"{APIEndpoint.broker_root()}/{cls.SERVICE_TYPE['endpoint']}"
+        endpoint = f"{APIEndpoint.Root}/{cls.SERVICE_TYPE['endpoint']}"
         return endpoint
 
     # ...............................................

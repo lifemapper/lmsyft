@@ -1,6 +1,5 @@
 """Class for the Specify Network Name API service."""
 from http import HTTPStatus
-from werkzeug.exceptions import (BadRequest, InternalServerError)
 
 from flask_app.common.s2n_type import APIService, AnalystOutput
 from flask_app.common.util import print_analyst_output
@@ -70,7 +69,6 @@ class CountSvc(_AnalystService):
     def _get_records(cls, collection_id, organization_id):
         allrecs = []
         # for response metadata
-        query_term = ""
         if collection_id is not None:
             coll_data = cls._get_collection_counts(collection_id)
             allrecs.append(coll_data)
@@ -84,7 +82,6 @@ class CountSvc(_AnalystService):
             records=allrecs, errors={})
 
         return full_out
-
 
 
 # .............................................................................
@@ -114,7 +111,9 @@ if __name__ == "__main__":
     out = svc.get_endpoint()
     print_analyst_output(out, do_print_rec=True)
 
-    out = svc.get_occurrence_records(collection_id="a7156437-55ec-4c6f-89de-938f9361753d")
+    coll_id = "a7156437-55ec-4c6f-89de-938f9361753d"
+    org_id = None
+    out = svc.get_counts(coll_id, org_id)
     print_analyst_output(out, do_print_rec=True)
 
     # for occid in occids:

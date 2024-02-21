@@ -14,8 +14,6 @@ class _AnalystService:
     SERVICE_TYPE = APIService.AnalystRoot
 
     # ...............................................
-
-    # .............................................................................
     @classmethod
     def _get_valid_requested_params(cls, user_params_string, valid_params):
         """Return valid and invalid options for parameters that accept >1 values.
@@ -57,7 +55,6 @@ class _AnalystService:
 
         return valid_requested_params, invalid_params
 
-
     # .............................................................................
     @classmethod
     def endpoint(cls):
@@ -66,7 +63,7 @@ class _AnalystService:
         Returns:
             URL endpoint for the service
         """
-        endpoint = f"{APIEndpoint.analyst_root()}/{cls.SERVICE_TYPE['endpoint']}"
+        endpoint = f"{APIEndpoint.Root}/{cls.SERVICE_TYPE['endpoint']}"
         return endpoint
 
     # ...............................................
@@ -106,7 +103,6 @@ class _AnalystService:
         output = AnalystOutput(
             svc, description=cls.SERVICE_TYPE["description"], errors=info)
         return output
-
 
     # ...............................................
     @classmethod
