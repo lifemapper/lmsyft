@@ -179,6 +179,12 @@ $ aws s3 ls --no-verify-ssl
 $ aws ec2 describe-instances --no-verify-ssl
 ```
 
+# Configure Redshift for data acquisition and analyses
+
+* Create a new namespace and workgroup
+* Set up to work with Secret containing security key
+
+
 # Workflow for Specify Network Analyst pre-computations
 
 * Read https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/plan-spot-fleet.html
