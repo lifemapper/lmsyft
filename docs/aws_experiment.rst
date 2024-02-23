@@ -30,16 +30,12 @@ Setup
 
 Workflow
 ---------------------------
+* Reference scripts:
 
-* download GBIF data (~350 GB)
+  * Stored procedures in rs_stored_procedures.sql
 
-  * directly to EC2 instance using wget or script
 
-* upload to S3
-
-  * put-object with AWS CLI v2
-    https://awscli.amazonaws.com/v2/documentation/api/latest/reference/s3api/put-object.html
-  * AWS Python SDK put_object using Boto3
-    https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3/client/put_object.html#
-
-* pyspark
+* Redshift: Subset GBIF data from Amazon Registry of Open Data (AWS ODR) for processing
+    * Use rs_subset_gbif.sql
+    * Dynamically fill in current and previous dataset names using stored procedure
+      sp_get_current_gbif_date
