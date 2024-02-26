@@ -15,15 +15,15 @@ SELECT f_current_datestr();
 -- Python (2.7) User defined functions
 -- ----------------------------------------------------------------------------
 -- BAD, Get first day of current month for latest GBIF Data in AWS ODR
-CREATE OR REPLACE FUNCTION f_current_datestr_py()
-    RETURNS VARCHAR
-STABLE AS
-$$
-    import datetime
-    n = datetime.datetime.now()
-    date_str = "{}-{02d}-01".format(n.year, n.month)
-    return date_str
-$$ LANGUAGE plpythonu;
+--CREATE OR REPLACE FUNCTION f_current_datestr_py()
+--    RETURNS VARCHAR
+--STABLE AS
+--$$
+--    import datetime
+--    n = datetime.datetime.now()
+--    date_str = "{}-{02d}-01".format(n.year, n.month)
+--    return date_str
+--$$ LANGUAGE plpythonu;
 
 -- ----------------------------------------------------------------------------
 -- Stored Procedures
@@ -53,7 +53,7 @@ BEGIN
 END;
 $$
 
-CALL public.sp_get_previous_datestr();
+-- CALL public.sp_get_previous_datestr();
 
 -- -------------------------------------------------------
 -- Mount latest GBIF data in Amazon Registry of Open Data
