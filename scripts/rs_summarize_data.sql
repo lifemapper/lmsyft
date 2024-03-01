@@ -32,19 +32,33 @@ SELECT * from dataset_lists_2024_02_01 ORDER BY datasetkey, occ_count, species L
 --      files.  Default max filesize is 6.2 GB, can change with option, for example,
 --      "MAXFILESIZE 1 gb".
 
+--UNLOAD (
+--    'SELECT * FROM dataset_counts_2024_02_01 ORDER BY datasetkey, species_count, occ_count')
+--    TO 's3://specnet-us-east-1/summary/dataset_counts_2024_02_01_'
+--    IAM_role DEFAULT
+--    CSV DELIMITER AS '\t'
+--    HEADER
+--    PARALLEL OFF;
+--UNLOAD (
+--    'SELECT * FROM dataset_lists_2024_02_01 ORDER BY datasetkey, occ_count, species')
+--    TO 's3://specnet-us-east-1/summary/dataset_counts_2024_02_01_'
+--    IAM_role DEFAULT
+--    CSV DELIMITER AS '\t'
+--    HEADER
+--    PARALLEL OFF;
+
+-- Also write as Parquet for easy DataFrame loading
 UNLOAD (
     'SELECT * FROM dataset_counts_2024_02_01 ORDER BY datasetkey, species_count, occ_count')
     TO 's3://specnet-us-east-1/summary/dataset_counts_2024_02_01_'
     IAM_role DEFAULT
-    CSV DELIMITER AS '\t'
-    HEADER
+    FORMAT AS PARQUET
     PARALLEL OFF;
 UNLOAD (
     'SELECT * FROM dataset_lists_2024_02_01 ORDER BY datasetkey, occ_count, species')
-    TO 's3://specnet-us-east-1/summary/dataset_counts_2024_02_01_'
+    TO 's3://specnet-us-east-1/summary/dataset_lists_2024_02_01_'
     IAM_role DEFAULT
-    CSV DELIMITER AS '\t'
-    HEADER
+    FORMAT AS PARQUET
     PARALLEL OFF;
 
 -- Cleanup Redshift data summaries
