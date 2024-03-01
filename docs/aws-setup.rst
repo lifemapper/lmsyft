@@ -1,3 +1,14 @@
+Authentication
+####################
+
+For programmatic access to S3
+*******************************
+Configure AWS credentials either through
+    * environment variables
+    * AWS CLI configuration (for command line tools), or
+    * using an IAM role attached to your instance if running on AWS infrastructure.
+
+
 Redshift
 ###############################
 
@@ -47,8 +58,9 @@ Create a new workgroup (and namespace)
       box).  Check the the default Associated IAM role or create a new role.
       Leave Encryption and security settings unchanged.
         * Make sure that the Associated IAM role has permission to access the bucket
-          you will write to
-        *
+          you will write to (use Redshift-S3 created above)
+        * Make new Redshift-S3 Role the default for Redshift operations in this
+          namespace
     * Step 3, review and create workspace.  This will take some time.
 
 Connect to new namespace in Query Editor
@@ -282,10 +294,6 @@ certificate (_ssl.c:1002)
     $ aws s3 ls --no-verify-ssl
     $ aws ec2 describe-instances --no-verify-ssl
     ```
-
-
-
-
 
 * Set up to work with Secret containing security key
 

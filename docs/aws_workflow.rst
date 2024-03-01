@@ -25,10 +25,11 @@ Steps
 2. Summarize species and occurrence counts
 **********************
 
-* Redshift: Subset GBIF data from Amazon Registry of Open Data (AWS ODR) for processing
+* Redshift: Create summary tables on the subsetted GBIF data and write to S3
 
 3. Query counts for quantification and comparison
 **************************
 
-* Glue/RDS/Redshift???
+* using boto3, write an API that queries the summary tables in S3
+* deploy the API on EC2
 
