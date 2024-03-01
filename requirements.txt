@@ -7,3 +7,5 @@ rtree>=1.0.0
 awscli
 boto3
 pandas
+pyarrow
+s3fs
