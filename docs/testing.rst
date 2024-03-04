@@ -1,5 +1,9 @@
-
 Testing Specify Network elements
+############################
+
+**TODO**: update this document
+
+Obsolete: solr
 ----------------------
 
 * Solr commands at /opt/solr/bin/ (in PATH)

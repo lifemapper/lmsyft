@@ -214,7 +214,7 @@ Generate a local ssh key
 ***************************************
 
     ```commandline
-    $ ssh-keygen -t ed25519 -C "aimee.stewart@ku.edu"
+    $ ssh-keygen -t ed25519 -C "<your_email@address>"
     $ eval "$(ssh-agent -s)"
     $ ssh-add ~/.ssh/id_ed25519
     ```
@@ -267,7 +267,7 @@ or setting environment variables in ~/.bashrc
 
     ```commandline
     # AWS credentials and defaults
-    export AWS_DEFAULT_REGION=us-east-1
+    export AWS_DEFAULT_REGION=region
     export AWS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
     export AWS_ACCESS_KEY_ID=xxx
     export AWS_SECRET_ACCESS_KEY=xxx

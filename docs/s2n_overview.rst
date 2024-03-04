@@ -1,11 +1,14 @@
+Specify Network Overview
+############################
 
+**TODO**: update this document
 
-S-to-the-n services
+Specify Network Broker services
 ----------------------
 
 * map: <server>/api/v1/map::
-  return metadata, url endpoints, and layernames for predicted species distributions and
-  occurrence points
+  TODO: return metadata, url endpoints, and layernames for predicted species
+  distributions and occurrence points
 
 * name: <server>/api/v1/name::
   return metadata for taxonomic information on a string
@@ -14,25 +17,24 @@ S-to-the-n services
   return metadata for species occurrence points for a GUID, or for a GBIF dataset GUID
 
 * resolve: <server>/api/v1/resolve::
-  return unique identifier metadata including a direct URL for a data object.  Currently
-  implemented only for Specify GUIDs and endpoints
+  OBSOLETE: return unique identifier metadata including a direct URL for a data object.
 
 Code resources
 --------------------
 
-* The core APIs are defined in the directory: src/LmRex/services/api/v1 .
-  There are currently 4 files (categories) that organize them:
-  map, name, occ, resolve, and I will add a 5th - heartbeat.
+* The core APIs are defined in the directory: flask_app/broker .
+  There are currently 3 files (categories) that organize them:
+  badge, name, occ.  TODO: add map and heartbeat.
 
-* The classes in these files all inherit from _S2nService in the base.py file,
+* The classes in these files all inherit from BrokerOutput in the
+  flask_app/broker/common/s2n_type.py file,
   which implements some methods to ensure they all behave consistently and use a
-  subset of the same parameters and defaults.  The _standardize_params method
-  contains defaults for url keyword parameters.
+  subset of the same parameters and defaults.
 
-* The root.py file contains the cherrypy commands and configuration to expose
-  the services.
+* The flask_app/broker/base.py file contains the flask definitions and configuration to
+  expose the services.
 
-* In the src/LmRex/common/lmconstants.py file are the constants that are used in
+* In the flask_app/broker/common/constants.py file are constants that are used in
   multiple places.
 
   * **TST_VALUES** contains names and guids that can be used for testing
@@ -51,9 +53,5 @@ Code resources
     (example: /api/v1/name).
 
   * All service endpoints accept a query parameter "provider" for the providers
-    available for that service, listed in ServiceProvider class.  The values may be one or
-    more of the following: bison, gbif, idb, itis, lm, mopho, specify.
-
-TODO
-----------------------
-*
+    available for that service, listed in ServiceProvider class.  The values may be one
+    or more of the following: gbif, idb, itis, mopho, worms.
