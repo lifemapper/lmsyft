@@ -1,11 +1,14 @@
-# Debugging Flask and Docker instances
+Debugging Flask and Docker instances
+###########################################################
 
-## IDE debugging of functions
+IDE debugging of functions
+=============================================
 
 * Set up python virtual environment for the project
 * Connect IDE to venv python interpreter
 
-## Local debugging of flask app
+Local debugging of flask app
+=============================================
 
 * Run flask at command prompt
 
