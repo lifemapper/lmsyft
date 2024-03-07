@@ -165,3 +165,4 @@ node_modules
 # Let's Encrypt
 privkey.pem
 fullchain.pem
+sphinx/_build
