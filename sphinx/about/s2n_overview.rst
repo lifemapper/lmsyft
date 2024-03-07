@@ -19,6 +19,21 @@ Specify Network Broker services
 * resolve: <server>/api/v1/resolve::
   OBSOLETE: return unique identifier metadata including a direct URL for a data object.
 
+Specify Network Analyst services
+---------------------------------
+
+The Analyst data products are created by an automated workflow which
+
+* queries the AWS Open Data Repository for the most recent GBIF dataset, updated on the
+  first of every month.
+* mounts the data in Redshift,
+* Summarizes the data into tables of relevant information in Redshift
+* Writes them to S3
+* Creates or updates an EC2 instance with a flask application to expose an API which
+  responds to queries about the S3 data
+
+The work
+
 Code resources
 --------------------
 

@@ -23,7 +23,7 @@ jobs:
     - name: Build and Commit
       uses: sphinx-notes/pages@2.0
       with:
-        documentation_path: _sphinx_config/
+        documentation_path: sphinx/
     - name: Push changes to GH Pages branch
       uses: ad-m/github-push-action@master
       with:
