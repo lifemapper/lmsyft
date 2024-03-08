@@ -81,7 +81,7 @@ instance/
 .scrapy
 
 # Sphinx documentation
-docs/_build/
+swagger/_build/
 
 # PyBuilder
 target/
@@ -165,3 +165,5 @@ node_modules
 # Let's Encrypt
 privkey.pem
 fullchain.pem
+sphinx/_build
+sphinx/_build/

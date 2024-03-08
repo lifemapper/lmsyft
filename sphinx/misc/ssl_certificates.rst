@@ -1,8 +1,15 @@
-Docker and SSL certificates
-===============================
+Specify Network SSL certificates
+######################################
+
 
 SSL certificates are served from the host machine, and are administered by
 Letsencrypt using Certbot.  They are only valid for 90 days at a time.
+
+TODO: move administration to AWS, and script renewal if necessary
+
+
+Renewal procedure
+=============================================
 
 * Change to superuser, then check the validity of your certificates::
 
