@@ -12,7 +12,7 @@ from logging.handlers import RotatingFileHandler
 import pandas as pd
 import os
 
-from sppy.tools.aws.aws_constants import (
+from sppy.aws.aws_constants import (
     INSTANCE_TYPE, KEY_NAME, LOGFILE_MAX_BYTES, LOG_FORMAT, LOG_DATE_FORMAT, PROJ_NAME,
     REGION, SECURITY_GROUP_ID, SPOT_TEMPLATE_BASENAME, USER_DATA_TOKEN)
 

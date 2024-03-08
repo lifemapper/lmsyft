@@ -1,7 +1,7 @@
 """Script to run locally or from an EC2 instance to query stats from S3 datafiles."""
-from sppy.tools.aws.aws_constants import (
+from sppy.aws.aws_constants import (
     BUCKET, INPUT_PATH)
-from sppy.tools.aws.aws_tools import (
+from sppy.aws.aws_tools import (
     create_dataframe_from_s3obj, get_current_datadate_str, get_today_str)
 
 LOCAL_OUTDIR = "/tmp"
