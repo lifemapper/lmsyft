@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Overview &mdash; Specify Network  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Install/Run Notes" href="install_run_notes.html" />
+    <link rel="prev" title="Welcome to Specify Network’s documentation!" href="../index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Specify Network
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Overview:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Overview</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#specify-network-broker-services">Specify Network Broker services</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#specify-network-analyst-services">Specify Network Analyst services</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#code-resources">Code resources</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="install_run_notes.html">Install/Run Notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tos.html">Terms of Service</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">AWS:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../aws/aws-setup.html">Authentication</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../aws/aws_workflow.html">AWS Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../aws/aws_experiment.html">AWS strategy</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Misc:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../misc/debugging.html">Debugging Flask and Docker instances</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../misc/example_sp6_export.html">Example Specify 6 Export</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../misc/ssl_certificates.html">Specify Network SSL certificates</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../misc/taxonomy_tools.html">GBIF Backbone Taxonomy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../misc/testing.html">Testing Specify Network elements</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Specify Network</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Overview</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/about/s2n_overview.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="overview">
+<h1>Overview<a class="headerlink" href="#overview" title="Link to this heading"></a></h1>
+<p><strong>TODO</strong>: update this document</p>
+<section id="specify-network-broker-services">
+<h2>Specify Network Broker services<a class="headerlink" href="#specify-network-broker-services" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>map: &lt;server&gt;/api/v1/map::
+TODO: return metadata, url endpoints, and layernames for predicted species
+distributions and occurrence points</p></li>
+<li><p>name: &lt;server&gt;/api/v1/name::
+return metadata for taxonomic information on a string</p></li>
+<li><p>occ: &lt;server&gt;/api/v1/occ::
+return metadata for species occurrence points for a GUID, or for a GBIF dataset GUID</p></li>
+<li><p>resolve: &lt;server&gt;/api/v1/resolve::
+OBSOLETE: return unique identifier metadata including a direct URL for a data object.</p></li>
+</ul>
+</section>
+<section id="specify-network-analyst-services">
+<h2>Specify Network Analyst services<a class="headerlink" href="#specify-network-analyst-services" title="Link to this heading"></a></h2>
+<p>The Analyst data products are created by an automated workflow which</p>
+<ul class="simple">
+<li><p>queries the AWS Open Data Repository for the most recent GBIF dataset, updated on the
+first of every month.</p></li>
+<li><p>mounts the data in Redshift,</p></li>
+<li><p>Summarizes the data into tables of relevant information in Redshift</p></li>
+<li><p>Writes them to S3</p></li>
+<li><p>Creates or updates an EC2 instance with a flask application to expose an API which
+responds to queries about the S3 data</p></li>
+</ul>
+<p>The work</p>
+</section>
+<section id="code-resources">
+<h2>Code resources<a class="headerlink" href="#code-resources" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>The core APIs are defined in the directory: flask_app/broker .
+There are currently 3 files (categories) that organize them:
+badge, name, occ.  TODO: add map and heartbeat.</p></li>
+<li><p>The classes in these files all inherit from BrokerOutput in the
+flask_app/broker/common/s2n_type.py file,
+which implements some methods to ensure they all behave consistently and use a
+subset of the same parameters and defaults.</p></li>
+<li><p>The flask_app/broker/base.py file contains the flask definitions and configuration to
+expose the services.</p></li>
+<li><p>In the flask_app/broker/common/constants.py file are constants that are used in
+multiple places.</p>
+<ul>
+<li><p><strong>TST_VALUES</strong> contains names and guids that can be used for testing
+services, some will return data, some will not, but none should return
+errors.</p></li>
+<li><p><strong>APIService</strong> contains the URL service endpoints for the different
+categories of services.</p></li>
+<li><p><strong>ServiceProvider</strong> contains the name, and service categories
+available for that provider.</p></li>
+<li><p>All service endpoints (following the server url) will start the
+root (/api/v1), then category.  The “tentacles” service that queries all
+available providers for that category will be at that endpoint
+(example: /api/v1/name).</p></li>
+<li><p>All service endpoints accept a query parameter “provider” for the providers
+available for that service, listed in ServiceProvider class.  The values may be one
+or more of the following: gbif, idb, itis, mopho, worms.</p></li>
+</ul>
+</li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../index.html" class="btn btn-neutral float-left" title="Welcome to Specify Network’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="install_run_notes.html" class="btn btn-neutral float-right" title="Install/Run Notes" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Specify Team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
