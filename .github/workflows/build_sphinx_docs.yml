@@ -4,8 +4,9 @@ on:
   push:
     tags:
       - '*.*.*' # Tag events matching {major}.{minor}.{patch}{whatever}
+    # Change to whatever branch contains up-to-date documentation
     branches:
-      - main
+      - 75-subset-gbif
 jobs:
   build:
     runs-on: ubuntu-latest
