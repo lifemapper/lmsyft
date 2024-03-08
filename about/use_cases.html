@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Use Cases &mdash; Specify Network  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Specify Network
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Overview:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="s2n_overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install_run_notes.html">Install/Run Notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tos.html">Terms of Service</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">AWS:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../aws/aws-setup.html">Authentication</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../aws/aws_workflow.html">AWS Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../aws/aws_experiment.html">AWS strategy</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Misc:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../misc/debugging.html">Debugging Flask and Docker instances</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../misc/example_sp6_export.html">Example Specify 6 Export</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../misc/ssl_certificates.html">Specify Network SSL certificates</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../misc/taxonomy_tools.html">GBIF Backbone Taxonomy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../misc/testing.html">Testing Specify Network elements</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Specify Network</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Use Cases</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/about/use_cases.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="use-cases">
+<h1>Use Cases<a class="headerlink" href="#use-cases" title="Link to this heading"></a></h1>
+<section id="data-cleaning">
+<h2>Data Cleaning<a class="headerlink" href="#data-cleaning" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Users upload occurrence data for cleaning using a number of filters / modifiers / wranglers to produce a dataset suitable for modeling</p></li>
+</ul>
+</section>
+<section id="specify-export-storage">
+<h2>Specify Export Storage<a class="headerlink" href="#specify-export-storage" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Specify collections upload some or all of their collection holdings as Darwin Core Archives</p></li>
+<li><p>Specify collections delete records from their holdings (Specify may have trouble doing this)</p></li>
+<li><p>Specify collections update their metadata</p></li>
+<li><p>Aggregators consume Specify archives?</p></li>
+<li><p>We provide aggregator services on Specify data?</p>
+<ul>
+<li><p>Query</p></li>
+<li><p>Download</p></li>
+<li><p>Standardization</p></li>
+</ul>
+</li>
+<li><p>General public can get an individual record (GUID may resolve to our URL)</p></li>
+</ul>
+</section>
+<section id="resolver-interaction">
+<h2>Resolver Interaction<a class="headerlink" href="#resolver-interaction" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>If GUID is not resolvable yet, add entry pointing at our cache</p></li>
+<li><p>If GUID is present, add to ID mapper?</p></li>
+<li><p>If they have direct access to data for GUID, can we add / update resolver with that info?  Where does it come from?  Collection metadata?  Does it update when collection metadata is updated?</p></li>
+</ul>
+</section>
+<section id="syfting">
+<h2>Syfting<a class="headerlink" href="#syfting" title="Link to this heading"></a></h2>
+<section id="syft-ed-data-retrieval">
+<h3>Syft-ed Data Retrieval<a class="headerlink" href="#syft-ed-data-retrieval" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Users request information about their collection</p>
+<ul>
+<li><p>Aggregated statistics</p></li>
+<li><p>Graphics about collection holdings</p></li>
+<li><p>Collection strengths and weaknesses</p></li>
+<li><p>Requests may filter on a variety of parameters like geography, taxonomy, phylogenetics, temporal, etc</p></li>
+<li><p>Maps and rankings</p></li>
+</ul>
+</li>
+<li><p>Users request information about a species</p>
+<ul>
+<li><p>Statistics and images about species distribution in a variety of data spaces</p></li>
+<li><p>Individual specimen information with respect to species distribution</p></li>
+<li><p>Images and statistics for species and specimen</p></li>
+<li><p>Requests may filter on a variety of parameters like geography, temporal, etc</p></li>
+<li><p>Maps and rankings</p></li>
+</ul>
+</li>
+<li><p>Users request information about occurrences with filters</p>
+<ul>
+<li><p>Spatial, temporal, taxonomic, phylogenetic, climate, etc</p></li>
+<li><p>The goal is to let them explore the data to find unique values</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="syft-new-data">
+<h3>Syft new data<a class="headerlink" href="#syft-new-data" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Users upload collection data to update their collection holdings and get new syft statistics</p></li>
+<li><p>Users check where a point would fall among similar occurrences (uniqueness / correctness / representation / etc)</p></li>
+</ul>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Specify Team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -49,6 +49,45 @@
 <li class="toctree-l1"><a class="reference internal" href="s2n_overview.html">Overview</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Install/Run Notes</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#contains">Contains</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#deployment">Deployment</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#ssl">SSL</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#local-self-signed-certificates">Local self-signed certificates</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#tls-ssl-using-certificate-authority-ca">TLS/SSL using Certificate Authority (CA)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#renew-certbot-ssl-certificates">Renew Certbot SSL certificates</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#todo-ssl-through-amazon">TODO: SSL through Amazon</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#install">Install</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#install-dependencies">Install dependencies</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#install-docker">Install Docker</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#install-repo-from-github">Install repo from Github</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#install-certificates-into-config-directory">Install certificates into config directory</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#testing">Testing</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#troubleshooting">Troubleshooting</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#docker-manipulation">Docker manipulation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#edit-the-docker-environment-files">Edit the docker environment files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#run-the-containers-production">Run the containers (production)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#run-the-containers-development">Run the containers (development)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rebuild-restart">Rebuild/restart</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#examine-container">Examine container</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#dev-environment">Dev Environment</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#configure-debugger-in-local-ide">Configure Debugger in local IDE</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#debug">Debug</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#id21">Troubleshooting</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#pip-errors-with-ssl">pip errors with SSL</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pre-commit-errors-with-self-signed-certificate">pre-commit errors with self-signed certificate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pre-commit-build-errors">pre-commit build errors</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#aws-setup">AWS setup</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#dependencies">Dependencies:</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#todo">TODO:</a></li>
 </ul>
@@ -130,6 +169,647 @@
 </ul>
 </div></blockquote>
 </li>
+</ul>
+</section>
+<section id="deployment">
+<h2>Deployment<a class="headerlink" href="#deployment" title="Link to this heading"></a></h2>
+<section id="ssl">
+<h3>SSL<a class="headerlink" href="#ssl" title="Link to this heading"></a></h3>
+<section id="local-self-signed-certificates">
+<h4>Local self-signed certificates<a class="headerlink" href="#local-self-signed-certificates" title="Link to this heading"></a></h4>
+<p>To run the containers, generate <cite>fullchain.pem</cite> and <cite>privkey.pem</cite> (certificate
+and the private key) using Let’s Encrypt and link these files in <cite>./sp_network/config/</cite>.</p>
+<p>While in development, generate self-signed certificates then link them in
+~/git/sp_network/config/ directory for this project:</p>
+<p><a href="#id1"><span class="problematic" id="id2">``</span></a><a href="#id3"><span class="problematic" id="id4">`</span></a>zsh
+$ mkdir ~/certificates</p>
+<dl class="simple">
+<dt>openssl req </dt><dd><p>-x509 -sha256 -nodes -newkey rsa:2048 -days 365 -keyout ~/certificates/privkey.pem -out ~/certificates/fullchain.pem</p>
+</dd>
+</dl>
+<p>$ cd ~/git/sp_network/config
+$ ln -s ~/certificates/privkey.pem
+$ ln -s ~/certificates/fullchain.pem
+<a href="#id5"><span class="problematic" id="id6">``</span></a><a href="#id7"><span class="problematic" id="id8">`</span></a></p>
+<p>To run either the production or the development containers with HTTPS
+support, generate <cite>fullchain.pem</cite> and <cite>privkey.pem</cite> (certificate and the private
+key) using Let’s Encrypt, link these files in the <cite>./config/</cite> directory.
+Full instructions in the docs/aws-steps.rst page, under <cite>Set up TLS/SSL</cite></p>
+<p>Modify the <cite>FQDN</cite> environment variable in <cite>.env.conf</cite> as needed.</p>
+</section>
+<section id="tls-ssl-using-certificate-authority-ca">
+<h4>TLS/SSL using Certificate Authority (CA)<a class="headerlink" href="#tls-ssl-using-certificate-authority-ca" title="Link to this heading"></a></h4>
+<ul class="simple">
+<li><p>Make sure that DNS has propogated for domain for SSL</p></li>
+<li><p>Stop apache service</p></li>
+<li><p>request a certificate for the domain</p></li>
+</ul>
+<p><a href="#id9"><span class="problematic" id="id10">``</span></a><a href="#id11"><span class="problematic" id="id12">`</span></a>commandline
+<a class="reference external" href="mailto:ubuntu&#37;&#52;&#48;ip-172-31-86-62">ubuntu<span>&#64;</span>ip-172-31-86-62</a>:~$ sudo systemctl stop apache2
+<a class="reference external" href="mailto:ubuntu&#37;&#52;&#48;ip-172-31-86-62">ubuntu<span>&#64;</span>ip-172-31-86-62</a>:~$ sudo certbot certonly -v
+Saving debug log to /var/log/letsencrypt/letsencrypt.log</p>
+<p>How would you like to authenticate with the ACME CA?
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+1: Spin up a temporary webserver (standalone)
+2: Place files in webroot directory (webroot)
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+Select the appropriate number [1-2] then [enter] (press ‘c’ to cancel): 1
+Plugins selected: Authenticator standalone, Installer None
+Please enter the domain name(s) you would like on your certificate (comma and/or
+space separated) (Enter ‘c’ to cancel): broker-dev.spcoco.org analyst-dev.spcoco.org
+Requesting a certificate for broker-dev.spcoco.org and analyst-dev.spcoco.org
+Performing the following challenges:
+http-01 challenge for broker-dev.spcoco.org
+Waiting for verification…
+Cleaning up challenges</p>
+<p>Successfully received certificate.
+Certificate is saved at: /etc/letsencrypt/live/broker-dev.spcoco.org/fullchain.pem
+Key is saved at:         /etc/letsencrypt/live/broker-dev.spcoco.org/privkey.pem
+This certificate expires on 2023-10-18.
+These files will be updated when the certificate renews.
+Certbot has set up a scheduled task to automatically renew this certificate in the background.</p>
+<ul class="simple">
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<dl class="simple">
+<dt>If you like Certbot, please consider supporting our work by:</dt><dd><ul class="simple">
+<li><p>Donating to ISRG / Let’s Encrypt:   <a class="reference external" href="https://letsencrypt.org/donate">https://letsencrypt.org/donate</a></p></li>
+<li><p>Donating to EFF:                    <a class="reference external" href="https://eff.org/donate-le">https://eff.org/donate-le</a></p></li>
+</ul>
+</dd>
+</dl>
+<ul class="simple">
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li><ul>
+<li></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p><a class="reference external" href="mailto:ubuntu&#37;&#52;&#48;ip-172-31-86-62">ubuntu<span>&#64;</span>ip-172-31-86-62</a>:~$
+<a href="#id13"><span class="problematic" id="id14">``</span></a><a href="#id15"><span class="problematic" id="id16">`</span></a></p>
+<ul class="simple">
+<li><p>as superuser, link the newly created fullchain.pem and privkey.pem files from the
+letsencrypt live to the project/config directory</p></li>
+<li><p>change the owner so that they can be used in Docker containers</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">`commandline</span>
+<span class="pre">$</span> <span class="pre">sudo</span> <span class="pre">su</span> <span class="pre">-</span>
+<span class="pre">#</span> <span class="pre">cp</span> <span class="pre">-p</span> <span class="pre">/etc/letsencrypt/live/dev.spcoco.org/*</span> <span class="pre">/home/ubuntu/certificates/</span>
+<span class="pre">#</span> <span class="pre">chown</span> <span class="pre">ubuntu:ubuntu</span> <span class="pre">/home/ubuntu/certificates/*</span>
+<span class="pre">#</span> <span class="pre">exit</span>
+<span class="pre">$</span> <span class="pre">cd</span> <span class="pre">~/git/sp_network/config</span>
+<span class="pre">$</span> <span class="pre">ln</span> <span class="pre">-s</span> <span class="pre">~/certificates/fullchain.pem</span>
+<span class="pre">$</span> <span class="pre">ln</span> <span class="pre">-s</span> <span class="pre">~/certificates/privkey.pem</span>
+<span class="pre">`</span></code></p>
+</section>
+<section id="renew-certbot-ssl-certificates">
+<h4>Renew Certbot SSL certificates<a class="headerlink" href="#renew-certbot-ssl-certificates" title="Link to this heading"></a></h4>
+<p>SSL certificates are served from the instance (AWS EC2), and need port 80 to be renewed.
+These are administered by Letsencrypt using Certbot and are only valid for 90 days at
+a time. When it is time for a renewal (approx every 60 days), bring the docker
+containers down. Renew the certificates, then bring the containers up again.</p>
+<p>Amazon EC2 containers do not need apache running, certbot runs its own temp web server.</p>
+<p>Test with <a class="reference external" href="https://broker.spcoco.org/api/v1/frontend/?occid=01493b05-4310-4f28-9d81-ad20860311f3">https://broker.spcoco.org/api/v1/frontend/?occid=01493b05-4310-4f28-9d81-ad20860311f3</a></p>
+<p><code class="docutils literal notranslate"><span class="pre">`commandline</span>
+<span class="pre">$</span> <span class="pre">sudo</span> <span class="pre">certbot</span> <span class="pre">certificates</span>
+<span class="pre">$</span> <span class="pre">sudo</span> <span class="pre">docker</span> <span class="pre">compose</span> <span class="pre">stop</span>
+<span class="pre">$</span> <span class="pre">sudo</span> <span class="pre">su</span> <span class="pre">-</span>
+<span class="pre">#</span> <span class="pre">certbot</span> <span class="pre">renew</span>
+<span class="pre">#</span> <span class="pre">cp</span> <span class="pre">-p</span> <span class="pre">/etc/letsencrypt/live/dev.spcoco.org/*</span> <span class="pre">/home/ubuntu/certificates/</span>
+<span class="pre">#</span> <span class="pre">chown</span> <span class="pre">ubuntu:ubuntu</span> <span class="pre">/home/ubuntu/certificates/*</span>
+<span class="pre">#</span> <span class="pre">exit</span>
+<span class="pre">$</span> <span class="pre">ls</span> <span class="pre">-lahtr</span> <span class="pre">~/git/sp_network/config</span>
+<span class="pre">&lt;check</span> <span class="pre">symlinks</span> <span class="pre">-</span> <span class="pre">should</span> <span class="pre">still</span> <span class="pre">be</span> <span class="pre">valid&gt;</span>
+<span class="pre">$</span> <span class="pre">sudo</span> <span class="pre">docker</span> <span class="pre">system</span> <span class="pre">prune</span> <span class="pre">--all</span> <span class="pre">--volumes</span>
+<span class="pre">$</span> <span class="pre">sudo</span> <span class="pre">docker</span> <span class="pre">compose</span> <span class="pre">up</span> <span class="pre">-d</span>
+<span class="pre">`</span></code></p>
+</section>
+<section id="todo-ssl-through-amazon">
+<h4>TODO: SSL through Amazon<a class="headerlink" href="#todo-ssl-through-amazon" title="Link to this heading"></a></h4>
+<ul class="simple">
+<li><p>Create Elastic IP address for EC2 instance</p></li>
+<li><p>Request a public certificate through Certificate Manager (ACM)
+* Choose DNS validation
+* Add tags sp_network, dev or prod, others</p></li>
+</ul>
+</section>
+</section>
+</section>
+<section id="install">
+<h2>Install<a class="headerlink" href="#install" title="Link to this heading"></a></h2>
+<section id="install-dependencies">
+<h3>Install dependencies<a class="headerlink" href="#install-dependencies" title="Link to this heading"></a></h3>
+<p>Certbot:</p>
+<p><code class="docutils literal notranslate"><span class="pre">`commandline</span>
+<span class="pre">$</span> <span class="pre">sudo</span> <span class="pre">apt</span> <span class="pre">update</span>
+<span class="pre">$</span> <span class="pre">sudo</span> <span class="pre">apt</span> <span class="pre">install</span> <span class="pre">certbot</span>
+<span class="pre">`</span></code></p>
+</section>
+<section id="install-docker">
+<h3>Install Docker<a class="headerlink" href="#install-docker" title="Link to this heading"></a></h3>
+<p>Add docker repository, then use apt to install Docker:
+<a class="reference external" href="https://docs.docker.com/engine/install/ubuntu/">https://docs.docker.com/engine/install/ubuntu/</a></p>
+</section>
+<section id="install-repo-from-github">
+<h3>Install repo from Github<a class="headerlink" href="#install-repo-from-github" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>generate an SSH key for communicating with Github</p></li>
+<li><p>Add SSH key to agent on local machine</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">`commandline</span>
+<span class="pre">$</span> <span class="pre">ssh-keygen</span> <span class="pre">-t</span> <span class="pre">rsa</span> <span class="pre">-b</span> <span class="pre">4096</span> <span class="pre">-C</span> <span class="pre">&quot;aimee.stewart&#64;ku.edu&quot;</span>
+<span class="pre">$</span> <span class="pre">eval</span> <span class="pre">&quot;$(ssh-agent</span> <span class="pre">-s)&quot;</span>
+<span class="pre">$</span> <span class="pre">ssh-add</span> <span class="pre">~/.ssh/id_rsa</span>
+<span class="pre">$</span> <span class="pre">cat</span> <span class="pre">.ssh/id_rsa.pub</span>
+<span class="pre">`</span></code>
+* Add the SSH to Github by printing to console, copying, adding in Github profile
+* clone the repository</p>
+<p><code class="docutils literal notranslate"><span class="pre">`commandline</span>
+<span class="pre">$</span> <span class="pre">cat</span> <span class="pre">.ssh/id_rsa.pub</span>
+<span class="pre">$</span> <span class="pre">#</span> <span class="pre">&lt;copy</span> <span class="pre">to</span> <span class="pre">profile</span> <span class="pre">in</span> <span class="pre">github</span> <span class="pre">website&gt;</span>
+<span class="pre">$</span> <span class="pre">cd</span> <span class="pre">~/git</span>
+<span class="pre">$</span> <span class="pre">git</span> <span class="pre">clone</span> <span class="pre">git&#64;github.com:specifysystems/sp_network.git</span>
+<span class="pre">$</span> <span class="pre">git</span> <span class="pre">checkout</span> <span class="pre">&lt;branch&gt;</span>
+<span class="pre">`</span></code></p>
+</section>
+<section id="install-certificates-into-config-directory">
+<h3>Install certificates into config directory<a class="headerlink" href="#install-certificates-into-config-directory" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Link the certificates in the repo config directory</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">`commandline</span>
+<span class="pre">$</span> <span class="pre">cd</span> <span class="pre">~/git/sp_network</span>
+<span class="pre">$</span> <span class="pre">cd</span> <span class="pre">config</span>
+<span class="pre">$</span> <span class="pre">ln</span> <span class="pre">-s</span> <span class="pre">~/certificates/fullchain1.pem</span>
+<span class="pre">$</span> <span class="pre">ln</span> <span class="pre">-s</span> <span class="pre">~/certificates/privkey1.pem</span>
+<span class="pre">`</span></code></p>
+</section>
+<section id="testing">
+<h3>Testing<a class="headerlink" href="#testing" title="Link to this heading"></a></h3>
+<p>On a development server, check the following URL endpoints:</p>
+<ul>
+<li><p>Index page: <a class="reference external" href="https://localhost">https://localhost</a></p></li>
+<li><p>Broker:
+* <a class="reference external" href="https://localhost/api/v1/">https://localhost/api/v1/</a></p>
+<blockquote>
+<div><ul class="simple">
+<li><p><a class="reference external" href="https://localhost/api/v1/badge/">https://localhost/api/v1/badge/</a></p></li>
+<li><p><a class="reference external" href="https://localhost/api/v1/name/">https://localhost/api/v1/name/</a></p></li>
+<li><p><a class="reference external" href="https://localhost/api/v1/occ/">https://localhost/api/v1/occ/</a></p></li>
+<li><p><a class="reference external" href="https://localhost/api/v1/frontend/">https://localhost/api/v1/frontend/</a></p></li>
+</ul>
+</div></blockquote>
+<ul class="simple">
+<li><p><a class="reference external" href="https://localhost/api/v1/badge/gbif?icon_status=active">https://localhost/api/v1/badge/gbif?icon_status=active</a></p></li>
+<li><p><a class="reference external" href="https://localhost/api/v1/occ/?occid=a7156437-55ec-4c6f-89de-938f9361753d">https://localhost/api/v1/occ/?occid=a7156437-55ec-4c6f-89de-938f9361753d</a></p></li>
+<li><p><a class="reference external" href="https://localhost/api/v1/name/Harengula%20jaguana">https://localhost/api/v1/name/Harengula%20jaguana</a></p></li>
+<li><p><a class="reference external" href="https://localhost/api/v1/frontend/?occid=a7156437-55ec-4c6f-89de-938f9361753d">https://localhost/api/v1/frontend/?occid=a7156437-55ec-4c6f-89de-938f9361753d</a></p></li>
+</ul>
+</li>
+</ul>
+<p>For local testing in a development environment, tests in the tests directory
+require the lmtest module available at <a class="reference external" href="https://github.com/lifemapper/lmtest">https://github.com/lifemapper/lmtest</a>.</p>
+<p>Environment variables set in the Docker containers from the .env.broker.conf and
+.env.broker.conf files are necessary to inform the host machine/container of its FQDN.</p>
+<p><strong>Temp solution:</strong> Export these variables to the local environment in the python
+virtual environment activation script (bin/activate) script.</p>
+<p><code class="docutils literal notranslate"><span class="pre">`zsh</span>
+<span class="pre">export</span> <span class="pre">SECRET_KEY=&quot;dev&quot;</span>
+<span class="pre">export</span> <span class="pre">WORKING_DIRECTORY=&quot;scratch-path&quot;</span>
+<span class="pre">`</span></code></p>
+<p><strong>Specify Network</strong> homepage is now available at <a class="reference external" href="https://localhost/">https://localhost/</a> and <a class="reference external" href="http://localhost">http://localhost</a>.</p>
+<p><strong>Broker</strong> (aka back-end):</p>
+<blockquote>
+<div><ul class="simple">
+<li><p><a class="reference external" href="https://localhost/api/v1/name?namestr=Notemigonus%20crysoleucas%20(Mitchill,%201814">https://localhost/api/v1/name?namestr=Notemigonus%20crysoleucas%20(Mitchill,%201814</a>)</p></li>
+<li><p><a class="reference external" href="https://localhost/api/v1/occ?occid=01493b05-4310-4f28-9d81-ad20860311f3">https://localhost/api/v1/occ?occid=01493b05-4310-4f28-9d81-ad20860311f3</a></p></li>
+</ul>
+</div></blockquote>
+<p><strong>Webpack</strong> is watching for front-end file changes and rebuilds the bundle when
+needed.</p>
+<p><strong>Flask</strong> is watching for back-end file changes and restarts the server when
+needed.</p>
+</section>
+</section>
+<section id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading"></a></h2>
+<p>For webserver errors, check logs of nginx container:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>```commandline
+</pre></div>
+</div>
+<p>$ sudo docker logs –tail 1000 sp_network-nginx-1
+$ sudo docker logs –tail 1000 sp_network-broker-1
+<a href="#id17"><span class="problematic" id="id18">``</span></a><a href="#id19"><span class="problematic" id="id20">`</span></a></p>
+<p>Error: “… cannot import name ‘url_quote’ from ‘werkzeug.urls’” in broker container
+Fix: Add Werkzeug==2.2.2 to requirements.txt to ensure it does not use 3.0+
+Then stop/rebuild/start:</p>
+<p><code class="docutils literal notranslate"><span class="pre">`commandline</span>
+<span class="pre">$</span> <span class="pre">sudo</span> <span class="pre">docker</span> <span class="pre">compose</span> <span class="pre">stop</span>
+<span class="pre">$</span> <span class="pre">sudo</span> <span class="pre">docker</span> <span class="pre">system</span> <span class="pre">prune</span> <span class="pre">--all</span> <span class="pre">--volumes</span>
+<span class="pre">$</span> <span class="pre">sudo</span> <span class="pre">docker</span> <span class="pre">compose</span> <span class="pre">up</span> <span class="pre">-d</span>
+<span class="pre">`</span></code></p>
+</section>
+<section id="docker-manipulation">
+<h2>Docker manipulation<a class="headerlink" href="#docker-manipulation" title="Link to this heading"></a></h2>
+<section id="edit-the-docker-environment-files">
+<h3>Edit the docker environment files<a class="headerlink" href="#edit-the-docker-environment-files" title="Link to this heading"></a></h3>
+<ul>
+<li><p>Add the container domain name to the files .env.broker.conf and .env.analyst.conf</p></li>
+<li><p>Change the FQDN value to the fully qualified domain name of the server.
+* If this is a local testing deployment, it will be “localhost”
+* For a development or production server it will be the FQDN with correct subdomain</p>
+<blockquote>
+<div><p>for each container, i.e FQDN=broker.spcoco.org in .env.broker.conf and
+FQDN=analyst.spcoco.org in .env.analyst.conf</p>
+</div></blockquote>
+</li>
+</ul>
+</section>
+<section id="run-the-containers-production">
+<h3>Run the containers (production)<a class="headerlink" href="#run-the-containers-production" title="Link to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">`zsh</span>
+<span class="pre">sudo</span> <span class="pre">docker</span> <span class="pre">compose</span> <span class="pre">-f</span> <span class="pre">docker-compose.yml</span> <span class="pre">up</span> <span class="pre">-d</span>
+<span class="pre">`</span></code></p>
+<p>Specify Network is now available at [<a class="reference external" href="https://localhost/](https://localhost:443">https://localhost/](https://localhost:443</a>)</p>
+</section>
+<section id="run-the-containers-development">
+<h3>Run the containers (development)<a class="headerlink" href="#run-the-containers-development" title="Link to this heading"></a></h3>
+<p>Note that the development compose file, docker-compose.development.yml, is referenced
+first on the command line.  It has elements that override those defined in the
+general compose file, docker-compose.yml.</p>
+<p><code class="docutils literal notranslate"><span class="pre">`zsh</span>
+<span class="pre">sudo</span> <span class="pre">docker</span> <span class="pre">compose</span> <span class="pre">-f</span> <span class="pre">docker-compose.development.yml</span> <span class="pre">-f</span> <span class="pre">docker-compose.yml</span>&#160; <span class="pre">up</span>
+<span class="pre">`</span></code></p>
+<p>Flask has hot-reload enabled.</p>
+</section>
+<section id="rebuild-restart">
+<h3>Rebuild/restart<a class="headerlink" href="#rebuild-restart" title="Link to this heading"></a></h3>
+<p>To delete all containers, images, networks and volumes, stop any running
+containers:</p>
+<p><code class="docutils literal notranslate"><span class="pre">`zsh</span>
+<span class="pre">sudo</span> <span class="pre">docker</span> <span class="pre">compose</span> <span class="pre">stop</span>
+<span class="pre">`</span></code></p>
+<p>And run this command (which ignores running container):</p>
+<p><code class="docutils literal notranslate"><span class="pre">`zsh</span>
+<span class="pre">sudo</span> <span class="pre">docker</span> <span class="pre">system</span> <span class="pre">prune</span> <span class="pre">--all</span> <span class="pre">--volumes</span>
+<span class="pre">`</span></code></p>
+<p>Then rebuild/restart:</p>
+<p><code class="docutils literal notranslate"><span class="pre">`zsh</span>
+<span class="pre">sudo</span> <span class="pre">docker</span> <span class="pre">compose</span> <span class="pre">up</span> <span class="pre">-d</span>
+<span class="pre">`</span></code></p>
+</section>
+<section id="examine-container">
+<h3>Examine container<a class="headerlink" href="#examine-container" title="Link to this heading"></a></h3>
+<p>To examine containers at a shell prompt:</p>
+<p><code class="docutils literal notranslate"><span class="pre">`zsh</span>
+<span class="pre">sudo</span> <span class="pre">docker</span> <span class="pre">exec</span> <span class="pre">-it</span> <span class="pre">sp_network-nginx-1</span> <span class="pre">/bin/sh</span>
+<span class="pre">`</span></code></p>
+<p>Error port in use:
+“Error starting userland proxy: listen tcp4 0.0.0.0:443: bind: address already in use”</p>
+<p>See what else is using the port.  In my case apache was started on reboot.  Bring down
+all docker containers, shut down httpd, bring up docker.</p>
+<p><code class="docutils literal notranslate"><span class="pre">`zsh</span>
+<span class="pre">lsof</span> <span class="pre">-i</span> <span class="pre">-P</span> <span class="pre">-n</span> <span class="pre">|</span> <span class="pre">grep</span> <span class="pre">443</span>
+<span class="pre">sudo</span> <span class="pre">docker</span> <span class="pre">compose</span> <span class="pre">down</span>
+<span class="pre">sudo</span> <span class="pre">systemctl</span> <span class="pre">stop</span> <span class="pre">httpd</span>
+<span class="pre">sudo</span> <span class="pre">docker</span> <span class="pre">compose</span>&#160; <span class="pre">up</span> <span class="pre">-d</span>
+<span class="pre">`</span></code></p>
+</section>
+</section>
+<section id="dev-environment">
+<h2>Dev Environment<a class="headerlink" href="#dev-environment" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Create a virtual environment and install python libs there</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">`commandline</span>
+<span class="pre">$</span> <span class="pre">cd</span> <span class="pre">~/git/sp_network</span>
+<span class="pre">$</span> <span class="pre">python3</span> <span class="pre">-m</span> <span class="pre">venv</span> <span class="pre">venv</span>
+<span class="pre">$</span> <span class="pre">.</span> <span class="pre">venv/bin/activate</span>
+<span class="pre">$</span> <span class="pre">pip</span> <span class="pre">install</span> <span class="pre">-r</span> <span class="pre">requirements.txt</span>
+<span class="pre">`</span></code></p>
+</section>
+<section id="configure-debugger-in-local-ide">
+<h2>Configure Debugger in local IDE<a class="headerlink" href="#configure-debugger-in-local-ide" title="Link to this heading"></a></h2>
+<p>[Instructions for PyCharm]
+(<a class="reference external" href="https://kartoza.com/en/blog/using-docker-compose-based-python-interpreter-in-pycharm/">https://kartoza.com/en/blog/using-docker-compose-based-python-interpreter-in-pycharm/</a>)</p>
+<section id="debug">
+<h3>Debug<a class="headerlink" href="#debug" title="Link to this heading"></a></h3>
+<p>To run flask in debug mode, first set up Flask environment, then start the flask
+application (in this case, main in flask_app.broker.routes.py).  Only one resource
+(aka broker or analyst) at a time can be tested in this way.
+Reset the FLASK_APP variable to test an alternate resource.</p>
+<p>** the broker frontend can NOT be tested this way, as it depends on a docker volume</p>
+<p><code class="docutils literal notranslate"><span class="pre">`zsh</span>
+<span class="pre">export</span> <span class="pre">FLASK_ENV=development</span>
+<span class="pre">export</span> <span class="pre">FLASK_APP=flask_app.broker.routes:app</span>
+<span class="pre">#</span> <span class="pre">or</span>
+<span class="pre">#</span> <span class="pre">export</span> <span class="pre">FLASK_APP=flask_app.analyst.routes:app</span>
+<span class="pre">flask</span> <span class="pre">run</span>
+<span class="pre">`</span></code></p>
+<ul>
+<li><p><cite>broker</cite> container is running <cite>debugpy</cite> on localhost, port <cite>5000</cite></p></li>
+<li><p>Test with http, no https!!</p>
+<p><a class="reference external" href="http://localhost:5000/api/v1/name?namestr=Notemigonus%20crysoleucas%20(Mitchill,%201814">http://localhost:5000/api/v1/name?namestr=Notemigonus%20crysoleucas%20(Mitchill,%201814</a>)
+<a class="reference external" href="http://localhost:5000/api/v1/occ?occid=01493b05-4310-4f28-9d81-ad20860311f3">http://localhost:5000/api/v1/occ?occid=01493b05-4310-4f28-9d81-ad20860311f3</a></p>
+</li>
+</ul>
+</section>
+</section>
+<section id="id21">
+<h2>Troubleshooting<a class="headerlink" href="#id21" title="Link to this heading"></a></h2>
+<section id="pip-errors-with-ssl">
+<h3>pip errors with SSL<a class="headerlink" href="#pip-errors-with-ssl" title="Link to this heading"></a></h3>
+<blockquote>
+<div><ul class="simple">
+<li><p>add trusted-host option at command line</p></li>
+</ul>
+</div></blockquote>
+<p><code class="docutils literal notranslate"><span class="pre">`commandline</span>
+<span class="pre">pip</span> <span class="pre">install</span> <span class="pre">--trusted-host</span> <span class="pre">pypi.org</span> <span class="pre">--trusted-host</span> <span class="pre">pypi.python.org</span> <span class="pre">--trusted-host</span> <span class="pre">files.pythonhosted.org</span> <span class="pre">~/git/lmpy</span>
+<span class="pre">`</span></code></p>
+<blockquote>
+<div><ul class="simple">
+<li><p>for processes that call pip, create a pip configuration file , then export as
+PIP_CONFIG_FILE environment variable in .bashrc</p></li>
+</ul>
+</div></blockquote>
+<p><a href="#id22"><span class="problematic" id="id23">``</span></a><a href="#id24"><span class="problematic" id="id25">`</span></a>commandline
+# ~/pip.conf
+[install]
+trusted-host = pypi.python.org</p>
+<blockquote>
+<div><p>pypi.org
+files.pythonhosted.org</p>
+</div></blockquote>
+<p># ~/.bashrc
+export PIP_CONFIG_FILE ~/pip.conf
+<a href="#id26"><span class="problematic" id="id27">``</span></a><a href="#id28"><span class="problematic" id="id29">`</span></a></p>
+</section>
+<section id="pre-commit-errors-with-self-signed-certificate">
+<h3>pre-commit errors with self-signed certificate<a class="headerlink" href="#pre-commit-errors-with-self-signed-certificate" title="Link to this heading"></a></h3>
+<blockquote>
+<div><ul class="simple">
+<li><p>turn off verification (but this leaves you open to man-in-the-middle attacks)</p></li>
+</ul>
+</div></blockquote>
+<p><code class="docutils literal notranslate"><span class="pre">`commandline</span>
+<span class="pre">git</span> <span class="pre">config</span> <span class="pre">--global</span> <span class="pre">http.sslVerify</span> <span class="pre">false</span>
+<span class="pre">`</span></code></p>
+<blockquote>
+<div><ul class="simple">
+<li><p>turn on again with</p></li>
+</ul>
+</div></blockquote>
+<p><a href="#id30"><span class="problematic" id="id31">``</span></a><a href="#id32"><span class="problematic" id="id33">`</span></a>commandline
+git config –global http.sslVerify true</p>
+<p><a href="#id34"><span class="problematic" id="id35">``</span></a><a href="#id36"><span class="problematic" id="id37">`</span></a></p>
+</section>
+<section id="pre-commit-build-errors">
+<h3>pre-commit build errors<a class="headerlink" href="#pre-commit-build-errors" title="Link to this heading"></a></h3>
+<ul>
+<li><p>Errors installing toml, Poetry, dependencies of isort.
+* Updated .pre-commit-config.yaml isort version to latest,</p>
+<blockquote>
+<div><p><a class="reference external" href="https://github.com/PyCQA/isort">https://github.com/PyCQA/isort</a>, fixed build</p>
+</div></blockquote>
+</li>
+</ul>
+</section>
+</section>
+<section id="aws-setup">
+<h2>AWS setup<a class="headerlink" href="#aws-setup" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Add raw GBIF data to S3</p></li>
 </ul>
 </section>
 <section id="dependencies">
