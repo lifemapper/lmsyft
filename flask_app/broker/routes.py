@@ -68,7 +68,7 @@ def swagger_ui():
     Returns:
         a webpage UI of the Specify Network schema.
     """
-    return render_template("swagger_ui.html")
+    return render_template("swagger_ui.broker.html")
 
 
 # .....................................................................................
