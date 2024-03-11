@@ -69,6 +69,19 @@ class GbifAPI(APIQuery):
             return None
         return val
 
+    # ...............................................
+    @classmethod
+    def _get_nested_output_val(cls, output, key_list):
+        while key_list:
+            key = key_list[0]
+            key_list = key_list[1:]
+            try:
+                output = output[key]
+                if not key_list:
+                    return str(output).encode(ENCODING)
+            except Exception:
+                return None
+
     # # ...............................................
     # @classmethod
     # def get_taxonomy(cls, taxon_key, logger=None):
@@ -647,12 +660,67 @@ class GbifAPI(APIQuery):
         return pub_org_name
 
     # ...............................................
+    @classmethod
+    def get_dataset(cls, dataset_key, logger=None):
+        """Return title from one dataset record with this key.
+
+        Args:
+            dataset_key: GBIF identifier for this dataset
+            logger: object for logging messages and errors.
+
+        Returns:
+            dataset_name: the name of the dataset.
+            citation: the preferred citation for the dataset.
+
+        Raises:
+            Exception: on query failure.
+        """
+        ds_api = GbifAPI(
+            service=GBIF.DATASET_SERVICE, key=dataset_key, logger=logger)
+        try:
+            ds_api.query()
+            dataset_name = ds_api._get_output_val(ds_api.output, "title")
+        except Exception as e:
+            logit(logger, str(e), refname=cls.__name__)
+            raise
+        try:
+            citation = ds_api._get_nested_output_val(
+                ds_api.output, ["citation", "text"])
+        except Exception as e:
+            citation = None
+        return dataset_name, citation
+
+    # ...............................................
     def query(self):
         """Query the API and set "output" attribute to a ElementTree object."""
         APIQuery.query_by_get(self, output_type="json", verify=False)
+
+
+
 
 
 # .............................................................................
 if __name__ == "__main__":
     # test
     pass
+
+"""
+from sppy.tools.provider.gbif import GbifAPI
+
+dataset_key = 'e9d1c589-5df6-4bd8-aead-c09e2d8630e4'
+ds_api = GbifAPI(service='dataset', key=dataset_key)
+try:
+    ds_api.query()
+    dataset_name = ds_api._get_output_val(ds_api.output, "title")
+except Exception as e:
+    logit(logger, str(e), refname=cls.__name__)
+    raise
+try:
+    citation = ds_api._get_nested_output_val(
+        ds_api.output, ["citation", "text"])
+except Exception as e:
+    logit(logger, str(e), refname=cls.__name__)
+    raise
+return dataset_name, citation
+
+"""

@@ -1,10 +1,12 @@
 """Class for the Specify Network Name API service."""
+import boto3
 from http import HTTPStatus
 
 from flask_app.common.s2n_type import APIService, AnalystOutput
 from flask_app.common.util import print_analyst_output
 from flask_app.analyst.base import _AnalystService
 
+from sppy.aws.aws_tools import query_s3_table
 from sppy.tools.s2n.utils import get_traceback
 
 
@@ -16,9 +18,21 @@ class CountSvc(_AnalystService):
 
     # ...............................................
     @classmethod
-    def get_counts(cls, collection_id, organization_id):
+    def get_counts(cls, dataset_key):
+        """Get counts for datasetKey.
+
+        Args:
+            dataset_key: Unique identifier for GBIF datasets.
+
+        Returns:
+            a flask_app.broker.s2n_type.BrokerOutput object with optional records as a
+            list of dictionaries of records corresponding to specimen occurrences in
+            the provider database.
+
+        Todo: Consider adding publishing organization queries with pub_org_key
+        """
         try:
-            output = cls._get_records(collection_id, organization_id)
+            output = cls._get_records(dataset_key, )
         except Exception:
             traceback = get_traceback()
             output = AnalystOutput(
@@ -29,15 +43,15 @@ class CountSvc(_AnalystService):
 
     # ...............................................
     @classmethod
-    def _get_organization_counts(cls, organization_id):
+    def _get_organization_counts(cls, pub_org_key):
         return {
             "Organization Raw Counts":
                 {
-                    organization_id: 1,
+                    pub_org_key: 1,
                     "org_id_2": 2,
                     "org_id_3": 3
                 },
-            f"{organization_id} to other orgs":
+            f"{pub_org_key} to other orgs":
                 {
                     "to total": "0.5",
                     "org_id_2": "1.2",
@@ -47,33 +61,41 @@ class CountSvc(_AnalystService):
 
     # ...............................................
     @classmethod
-    def _get_collection_counts(cls, collection_id):
-        return {
-            "Collection Raw Counts":
-                {
-                    collection_id: 1,
-                    "coll_id_2": 2,
-                    "coll_id_3": 3
-                },
-            f"{collection_id} Ratios":
-                {
-                    collection_id: "0.5",
-                    "coll_id_2": "0.5",
-                    "coll_id_3": "0.5",
-                    "to total": "0.5"
-                }
-        }
+    def _get_dataset_counts(cls, dataset_key):
+        s3 = boto3.client('s3')
+
+        resp = s3.select_object_content(
+            Bucket=PROJ_,
+            Key='sample_data.csv',
+            ExpressionType='SQL',
+            Expression="SELECT * FROM s3object s where s.\"Name\" = 'Jane'",
+            InputSerialization={'CSV': {"FileHeaderInfo": "Use"}, 'CompressionType': 'NONE'},
+            OutputSerialization={'CSV': {}},
+        )
+
+        for event in resp['Payload']:
+            if 'Records' in event:
+                records = event['Records']['Payload'].decode('utf-8')
+                print(records)
+            elif 'Stats' in event:
+                statsDetails = event['Stats']['Details']
+                print("Stats details bytesScanned: ")
+                print(statsDetails['BytesScanned'])
+                print("Stats details bytesProcessed: ")
+                print(statsDetails['BytesProcessed'])
+                print("Stats details bytesReturned: ")
+                print(statsDetails['BytesReturned'])
 
     # ...............................................
     @classmethod
-    def _get_records(cls, collection_id, organization_id):
+    def _get_records(cls, dataset_key, pub_org_key):
         allrecs = []
         # for response metadata
-        if collection_id is not None:
-            coll_data = cls._get_collection_counts(collection_id)
+        if dataset_key is not None:
+            coll_data = cls._get_collection_counts(dataset_key)
             allrecs.append(coll_data)
-        if organization_id is not None:
-            org_data = cls._get_organization_counts(organization_id)
+        if pub_org_key is not None:
+            org_data = cls._get_organization_counts(pub_org_key)
             allrecs.append(org_data)
 
         # Assemble
