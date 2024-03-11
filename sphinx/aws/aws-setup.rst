@@ -9,6 +9,13 @@ Configure AWS credentials either through
 * AWS CLI configuration (for command line tools), or
 * using an IAM role attached to your instance if running on AWS infrastructure.
 
+The AWS cli depends on boto3, so both must be up to date.  In my testing, awscli
+1.27.118 (with requirement botocore==1.29.118) and boto3 1.28.1, failed on
+S3 Select access.
+
+I upgraded awscli (sudo apt install awscli), then upgraded boto3
+(pip install --upgrade boto3) , which installed 1.34.60.  Success
+
 
 Redshift
 ===========================================================
