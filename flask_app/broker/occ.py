@@ -157,12 +157,11 @@ class OccurrenceSvc(_BrokerService):
         if occid is None and gbif_dataset_key is None:
             return cls.get_endpoint()
         else:
-            # No filter_params defined for Name service yet
             try:
                 good_params, errinfo = cls._standardize_params(
                     occid=occid, provider=provider, gbif_dataset_key=gbif_dataset_key,
                     count_only=count_only)
-                # Bad parameters
+                # errinfo indicates bad parameters
                 try:
                     error_description = "; ".join(errinfo["error"])
                     raise BadRequest(error_description)

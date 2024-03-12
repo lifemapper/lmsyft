@@ -163,18 +163,20 @@ class APIService:
         "name": APIEndpoint.Count,
         "endpoint": f"{APIEndpoint.Root}/{APIEndpoint.Count}",
         "params": {
-            "collection_id": {
+            "dataset_key": {
                 "type": "",
-                "description": "Collection identifier",
+                "description": "GBIF Dataset Key",
                 "default": None
             },
-            "organization_id": {
+            "pub_org_key": {
                 "type": "",
-                "description": "Organization identifier",
+                "description": "GBIF Publishing Organization Key",
                 "default": None
             }
         },
-        "description": "Return record count for the given collection or organization.",
+        "description":
+            "Return occurrence and species counts for the given dataset or "
+            "publishing organization.",
         S2nKey.RECORD_FORMAT: ""
     }
     # Taxonomic Resolution
