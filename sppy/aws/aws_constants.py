@@ -2,6 +2,7 @@
 PROJ_NAME = "specnet"
 REGION = "us-east-1"
 PROJ_BUCKET = f"{PROJ_NAME}-{REGION}"
+ENCODING = "utf-8"
 
 INPUT_PATH = "summary"
 LOG_PATH = "log"
