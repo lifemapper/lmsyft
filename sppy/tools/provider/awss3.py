@@ -1,26 +1,17 @@
 """Class to query tabular summary Specify Network data in S3"""
-import base64
 import boto3
-from botocore.exceptions import ClientError
-import csv
-import datetime
-import logging
-from logging.handlers import RotatingFileHandler
 import pandas as pd
-import os
+from pandassql import sqldf
 
 from sppy.aws.aws_tools import get_current_datadate_str
 
-from sppy.aws.aws_constants import (
-    INSTANCE_TYPE, KEY_NAME, LOGFILE_MAX_BYTES, LOG_FORMAT, LOG_DATE_FORMAT,
-    PROJ_BUCKET, PROJ_NAME, REGION, SECURITY_GROUP_ID, SPOT_TEMPLATE_BASENAME,
-    USER_DATA_TOKEN)
+from sppy.aws.aws_constants import (REGION, SUMMARY_FOLDER)
 
 
 
 # .............................................................................
 class S3Query():
-    """Specify Network API service for retrieving taxonomic information."""
+    """Specify Network API service for retrieving tabular parquet data from AWS S3."""
 
     # ...............................................
     @classmethod
@@ -43,7 +34,7 @@ class S3Query():
         self.exp_type = 'SQL'
 
     # ----------------------------------------------------
-    def query_s3_table(self, s3_path, query_str):
+    def _query_s3_table(self, s3_path, query_str):
         """Query the S3 resource defined for this class.
 
         Args:
@@ -68,6 +59,42 @@ class S3Query():
         return recs
 
     # ----------------------------------------------------
+    def _create_dataframe_from_s3obj(self, s3_path):
+        """Read CSV data from S3 into a pandas DataFrame.
+
+        Args:
+            s3_path: the object name with enclosing S3 bucket folders.
+
+        Returns:
+            df: pandas DataFrame containing the CSV data.
+        """
+        # import pyarrow.parquet as pq
+        # import s3fs
+        s3_uri = f"s3://{self.bucket}/{s3_path}"
+        # s3_fs = s3fs.S3FileSystem
+        df = pd.read_parquet(s3_uri)
+        return df
+
+    # ----------------------------------------------------
+    def _query_order_s3_table(self, s3_path, sort_field, descending, limit):
+        """Query the S3 resource defined for this class.
+
+        Args:
+            query_str: a SQL query for S3 select.
+
+        Returns:
+             list of records matching the query
+        """
+        recs = []
+        df = self._create_dataframe_from_s3obj(s3_path)
+        df.sort_values(by=sort_field, ascending=(not descending))
+        for event in resp["Payload"]:
+            if "Records" in event:
+                records = event["Records"]["Payload"].decode(self.encoding)
+                recs.append(records)
+        return recs
+
+    # ----------------------------------------------------
     def get_dataset_counts(self, dataset_key):
         """Query the S3 resource for occurrence and species counts for this dataset.
 
@@ -80,12 +107,12 @@ class S3Query():
         (occ_count, species_count) = (0,0)
         datestr = get_current_datadate_str()
         datestr = "2024_02_01"
-        s3_path = f"summary/dataset_counts_{datestr}_000.parquet"
+        s3_path = f"{SUMMARY_FOLDER}/dataset_counts_{datestr}_000.parquet"
         query_str = (f"SELECT occ_count, species_count "
                      f"FROM s3object s "
                      f"WHERE s.datasetkey = {dataset_key}")
         # Returns empty list or list of 1 record with [(occ_count, species_count)]
-        records = self.query_s3_table(s3_path, query_str)
+        records = self._query_s3_table(s3_path, query_str)
         if records:
             (occ_count, species_count) = records[0]
         return (occ_count, species_count)
@@ -106,35 +133,29 @@ class S3Query():
         return (occ_count, species_count)
 
     # ----------------------------------------------------
-    def rank_datasets_by_species(self, order="descending", limit=10):
+    def rank_datasets_by_species(self, descending=True, limit=10):
         """Return the top or bottom datasets, with counts, ranked by number of species.
 
         Args:
-            order: ascending (bottom up) or descending (top down).
-                descending = return top X datasets in descending order
-                ascending = return bottom X datasets in ascending order
+            descending: boolean value, if true return top X datasets in descending
+                order, if false, return bottom X datasets in ascending order
             limit: number of datasets to return, no more than 300.
 
         Returns:
-             records: empty list or list of 1 record containing occ_count, species_count
+             records: list of limit records containing dataset_key, occ_count, species_count
         """
-        (occ_count, species_count) = (0,0)
+        records = []
         datestr = get_current_datadate_str()
         datestr = "2024_02_01"
-        s3_path = f"summary/dataset_counts_{datestr}_000.parquet"
-        query_str = (f"SELECT occ_count, species_count "
-                     f"FROM s3object s "
-                     f"WHERE s.datasetkey = {dataset_key}")
-        # Returns empty list or list of 1 record with [(occ_count, species_count)]
-        records = self.query_s3_table(s3_path, query_str)
-        if records:
-            (occ_count, species_count) = records[0]
-        return (occ_count, species_count)
+        s3_path = f"{SUMMARY_FOLDER}/dataset_counts_{datestr}_000.parquet"
+        records = self._query_order_s3_table(
+            s3_path, "species_count", descending, limit)
+        return records
 
 
 """
 import boto3
-
+SELECT s.datasetkey, s.occ_count, s.species_count FROM s3object s ORDER BY s.species_count DESC LIMIT 5
 from sppy.aws.aws_constants import (
     INSTANCE_TYPE, KEY_NAME, LOGFILE_MAX_BYTES, LOG_FORMAT, LOG_DATE_FORMAT,
     PROJ_BUCKET, PROJ_NAME, REGION, SECURITY_GROUP_ID, SPOT_TEMPLATE_BASENAME,
