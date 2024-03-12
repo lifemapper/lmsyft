@@ -131,12 +131,6 @@ class _SpecifyNetworkService:
             if isinstance(type_val, str) and not options:
                 usr_val = str(provided_val)
 
-            elif isinstance(type_val, float):
-                try:
-                    usr_val = float(provided_val)
-                except ValueError:
-                    usr_val = default_val
-
             # Boolean also tests as int, so try boolean first
             elif isinstance(type_val, bool):
                 if provided_val in (0, "0", "n", "no", "f", "false"):
@@ -146,17 +140,54 @@ class _SpecifyNetworkService:
                 else:
                     valid_options = (True, False)
                     usr_val = default_val
-
-            elif isinstance(type_val, int):
-                try:
-                    usr_val = int(provided_val)
-                except ValueError:
-                    usr_val = default_val
-
             else:
-                usr_val = provided_val
+                usr_val = cls._test_numbers(provided_val, param_meta)
 
         return usr_val, valid_options
+
+
+    # ...............................................
+    @classmethod
+    def _test_numbers(cls, provided_val, param_meta):
+        default_val = param_meta["default"]
+        type_val = param_meta["type"]
+        # If restricted numeric values, check
+        try:
+            min_val = param_meta["min"]
+        except KeyError:
+            min_val = None
+        # If restricted numeric values, check
+        try:
+            max_val = param_meta["min"]
+        except KeyError:
+            max_val = None
+
+        if isinstance(type_val, float):
+            try:
+                usr_val = float(provided_val)
+            except ValueError:
+                usr_val = default_val
+            else:
+                if min_val and usr_val < min_val:
+                    usr_val = min_val
+                if max_val and usr_val > max_val:
+                    usr_val = max_val
+
+        elif isinstance(type_val, int):
+            try:
+                usr_val = int(provided_val)
+            except ValueError:
+                usr_val = default_val
+            else:
+                if min_val and usr_val < min_val:
+                    usr_val = min_val
+                if max_val and usr_val > max_val:
+                    usr_val = max_val
+
+        else:
+            usr_val = provided_val
+
+        return usr_val
 
     # ...............................................
     @classmethod

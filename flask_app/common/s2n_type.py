@@ -172,7 +172,9 @@ class APIService:
                 "type": "",
                 "description": "GBIF Publishing Organization Key",
                 "default": None
-            }
+            },
+            "descending": { "type": True, "default": True},
+            "limit": {"type": 2, "default": 10, "min": 1, "max": 500},
         },
         "description":
             "Return occurrence and species counts for the given dataset or "
