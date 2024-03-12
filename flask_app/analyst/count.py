@@ -1,12 +1,14 @@
 """Class for the Specify Network Name API service."""
 import boto3
 from http import HTTPStatus
+from werkzeug.exceptions import (BadRequest, InternalServerError)
 
 from flask_app.common.s2n_type import APIService, AnalystOutput
 from flask_app.common.util import print_analyst_output
 from flask_app.analyst.base import _AnalystService
 
-from sppy.aws.aws_tools import query_s3_table
+from sppy.aws.aws_constants import ENCODING, PROJ_BUCKET, REGION
+from sppy.tools.provider.awss3 import S3Query
 from sppy.tools.s2n.utils import get_traceback
 
 
@@ -18,92 +20,163 @@ class CountSvc(_AnalystService):
 
     # ...............................................
     @classmethod
-    def get_counts(cls, dataset_key):
+    def _get_params_errors(cls, *kwargs):
+        try:
+            good_params, errinfo = cls._standardize_params(cls, kwargs)
+            # errinfo indicates bad parameters
+            try:
+                error_description = "; ".join(errinfo["error"])
+                raise BadRequest(error_description)
+            except KeyError:
+                pass
+
+        except Exception:
+            error_description = get_traceback()
+            raise BadRequest(error_description)
+
+        return good_params, errinfo
+
+    # ...............................................
+    @classmethod
+    def get_counts(cls, dataset_key=None, pub_org_key=None):
+        if dataset_key is None and pub_org_key is None:
+            return cls.get_endpoint()
+        else:
+            try:
+                good_params, errinfo = cls._standardize_params(
+                    cls, dataset_key=dataset_key, pub_org_key=pub_org_key)
+                # errinfo indicates bad parameters
+                try:
+                    error_description = "; ".join(errinfo["error"])
+                    raise BadRequest(error_description)
+                except KeyError:
+                    pass
+
+            except Exception:
+                error_description = get_traceback()
+                raise BadRequest(error_description)
+
+            # Do Query!
+            try:
+                allrecs = []
+                errors = {}
+                # for response metadata
+                if dataset_key is not None:
+                    records, errors = cls._get_dataset_counts(dataset_key)
+                    allrecs.append(records)
+                if pub_org_key is not None:
+                    errors["warning"] = \
+                        "Count by Publishing Organization is not implemented"
+                    # records, errors = cls._get_organization_counts(pub_org_key)
+                    # allrecs.append(records)
+
+                # Assemble
+                full_out = AnalystOutput(
+                    cls.SERVICE_TYPE["name"], description=cls.SERVICE_TYPE["description"],
+                    records=allrecs, errors=errors)
+
+                # Add message on invalid parameters to output
+                try:
+                    for err in errinfo["warning"]:
+                        full_out.append_error("warning", err)
+                except KeyError:
+                    pass
+
+            except Exception:
+                error_description = get_traceback()
+                raise InternalServerError(error_description)
+
+        return full_out.response
+
+    # ...............................................
+    @classmethod
+    def get_ranked_counts(cls, descending=True, limit=10):
+            try:
+                good_params, errinfo = cls._standardize_params(
+                    cls, descending=descending, limit=limit)
+                # errinfo indicates bad parameters
+                try:
+                    error_description = "; ".join(errinfo["error"])
+                    raise BadRequest(error_description)
+                except KeyError:
+                    pass
+
+            except Exception:
+                error_description = get_traceback()
+                raise BadRequest(error_description)
+
+            # Do Query!
+            try:
+                s3 = S3Query(PROJ_BUCKET, region=REGION, encoding=ENCODING)
+                records = s3.rank_datasets_by_species(descending=True, limit=limit)
+
+    # ...............................................
+    @classmethod
+    def _get_dataset_counts(cls, dataset_key):
         """Get counts for datasetKey.
 
         Args:
             dataset_key: Unique identifier for GBIF datasets.
 
         Returns:
-            a flask_app.broker.s2n_type.BrokerOutput object with optional records as a
-            list of dictionaries of records corresponding to specimen occurrences in
-            the provider database.
-
-        Todo: Consider adding publishing organization queries with pub_org_key
+            a flask_app.analyst.s2n_type.AnalystOutput object with optional records as a
+            list of records corresponding to occurrence and counts for the dataset.
         """
+        records = []
+        errors = {}
+        s3 = S3Query(PROJ_BUCKET, region=REGION, encoding=ENCODING)
         try:
-            output = cls._get_records(dataset_key, )
+            (occ_count, species_count) = s3.get_dataset_counts(dataset_key)
         except Exception:
             traceback = get_traceback()
-            output = AnalystOutput(
-                cls.SERVICE_TYPE["name"],
-                description=cls.SERVICE_TYPE["description"],
-                errors={"error": [HTTPStatus.INTERNAL_SERVER_ERROR, traceback]})
-        return output.response
+            errors["error"] = [HTTPStatus.INTERNAL_SERVER_ERROR, traceback]
+        else:
+            records.append((occ_count, species_count))
+        return records, errors
 
     # ...............................................
     @classmethod
     def _get_organization_counts(cls, pub_org_key):
-        return {
-            "Organization Raw Counts":
-                {
-                    pub_org_key: 1,
-                    "org_id_2": 2,
-                    "org_id_3": 3
-                },
-            f"{pub_org_key} to other orgs":
-                {
-                    "to total": "0.5",
-                    "org_id_2": "1.2",
-                    "org_id_3": "1.2"
-                }
-        }
+        """Get counts for publishingOrganizationKey.
 
-    # ...............................................
-    @classmethod
-    def _get_dataset_counts(cls, dataset_key):
-        s3 = boto3.client('s3')
+        Args:
+            pub_org_key: Unique identifier for GBIF publishing organizations.
 
-        resp = s3.select_object_content(
-            Bucket=PROJ_,
-            Key='sample_data.csv',
-            ExpressionType='SQL',
-            Expression="SELECT * FROM s3object s where s.\"Name\" = 'Jane'",
-            InputSerialization={'CSV': {"FileHeaderInfo": "Use"}, 'CompressionType': 'NONE'},
-            OutputSerialization={'CSV': {}},
-        )
+        Returns:
+            a flask_app.analyst.s2n_type.AnalystOutput object with optional records as a
+            list of records corresponding to occurrence and counts for the organization.
+        """
+        records = []
+        errors = {}
+        s3 = S3Query(PROJ_BUCKET, region=REGION, encoding=ENCODING)
+        try:
+            (occ_count, species_count) = s3.get_org_counts(pub_org_key)
+        except Exception:
+            traceback = get_traceback()
+            errors["error"] = [HTTPStatus.INTERNAL_SERVER_ERROR, traceback]
+        else:
+            records.append((occ_count, species_count))
+        return records, errors
 
-        for event in resp['Payload']:
-            if 'Records' in event:
-                records = event['Records']['Payload'].decode('utf-8')
-                print(records)
-            elif 'Stats' in event:
-                statsDetails = event['Stats']['Details']
-                print("Stats details bytesScanned: ")
-                print(statsDetails['BytesScanned'])
-                print("Stats details bytesProcessed: ")
-                print(statsDetails['BytesProcessed'])
-                print("Stats details bytesReturned: ")
-                print(statsDetails['BytesReturned'])
 
-    # ...............................................
-    @classmethod
-    def _get_records(cls, dataset_key, pub_org_key):
-        allrecs = []
-        # for response metadata
-        if dataset_key is not None:
-            coll_data = cls._get_collection_counts(dataset_key)
-            allrecs.append(coll_data)
-        if pub_org_key is not None:
-            org_data = cls._get_organization_counts(pub_org_key)
-            allrecs.append(org_data)
-
-        # Assemble
-        full_out = AnalystOutput(
-            cls.SERVICE_TYPE["name"], description=cls.SERVICE_TYPE["description"],
-            records=allrecs, errors={})
-
-        return full_out
+    # # ...............................................
+    # @classmethod
+    # def _get_records(cls, dataset_key, pub_org_key):
+    #     allrecs = []
+    #     # for response metadata
+    #     if dataset_key is not None:
+    #         records, errors = cls._get_dataset_counts(dataset_key)
+    #         allrecs.append(records)
+    #     if pub_org_key is not None:
+    #         records, errors = cls._get_organization_counts(pub_org_key)
+    #         allrecs.append(records)
+    #
+    #     # Assemble
+    #     full_out = AnalystOutput(
+    #         cls.SERVICE_TYPE["name"], description=cls.SERVICE_TYPE["description"],
+    #         records=allrecs, errors={})
+    #
+    #     return full_out
 
 
 # .............................................................................

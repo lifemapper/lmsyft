@@ -2,6 +2,7 @@
 from flask import Flask
 from werkzeug.exceptions import (BadRequest, InternalServerError)
 
+from flask_app.analyst.constants import QUERY_LIMIT
 from flask_app.common.base import _SpecifyNetworkService
 from sppy.tools.s2n.utils import add_errinfo, get_traceback
 from flask_app.common.s2n_type import AnalystOutput, APIEndpoint, APIService
@@ -56,12 +57,16 @@ class _AnalystService(_SpecifyNetworkService):
     # ...............................................
     @classmethod
     def _standardize_params(
-            cls, dataset_key=None, pub_org_key=None, order="descending", limit=10):
+            cls, dataset_key=None, pub_org_key=None, descending=True, limit=10):
         """Standardize query parameters to send to appropriate service.
 
         Args:
             dataset_key: unique GBIF dataset identifier for comparisons
             pub_org_key: unique publishing organization identifier for comparisons
+            descending: boolean value indicating whether to sort records descending
+                (True) or ascending (False)
+            limit: integer indicating how many ranked records to return, value must
+                be less than QUERY_LIMIT.
 
         Returns:
             a dictionary containing keys and properly formatted values for the
@@ -70,7 +75,7 @@ class _AnalystService(_SpecifyNetworkService):
         user_kwargs = {
             "collection_id": dataset_key,
             "organization_id": pub_org_key,
-            "order": order,
+            "descending": descending,
             "limit": limit
         }
 
