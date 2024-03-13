@@ -77,8 +77,8 @@ class _AnalystService(_SpecifyNetworkService):
                 user specified parameters.
         """
         user_kwargs = {
-            "collection_id": dataset_key,
-            "organization_id": pub_org_key,
+            "dataset_key": dataset_key,
+            "pub_org_key": pub_org_key,
             "descending": descending,
             "limit": limit
         }

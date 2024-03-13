@@ -27,13 +27,12 @@ class CountSvc(_AnalystService):
         allrecs = []
         try:
             good_params, errinfo = cls._standardize_params(
-                cls, dataset_key=dataset_key, pub_org_key=pub_org_key)
+                dataset_key=dataset_key, pub_org_key=pub_org_key)
 
         except BadRequest as e:
-            errinfo = combine_errinfo(errinfo, {"error": e.description})
+            errinfo = {"error": e.description}
 
         else:
-
             # Query dataset counts
             if dataset_key is not None:
                 try:
@@ -47,7 +46,8 @@ class CountSvc(_AnalystService):
 
             # Query organization counts
             if pub_org_key is not None:
-                errors = {"warning": "Count by Publishing Organization is not implemented"}
+                errors = {
+                    "warning": "Count by Publishing Organization is not implemented"}
                 errinfo = combine_errinfo(errinfo, errors)
 
         # Assemble
@@ -98,12 +98,11 @@ class CountSvc(_AnalystService):
         errors = {}
         s3 = S3Query(PROJ_BUCKET, region=REGION, encoding=ENCODING)
         try:
-            (occ_count, species_count) = s3.get_dataset_counts(dataset_key)
+            records = s3.get_dataset_counts(dataset_key)
         except Exception:
             traceback = get_traceback()
             errors["error"] = [HTTPStatus.INTERNAL_SERVER_ERROR, traceback]
-        else:
-            records.append((occ_count, species_count))
+
         return records, errors
 
     # ...............................................
@@ -157,7 +156,7 @@ if __name__ == "__main__":
     out = svc.get_endpoint()
     print_analyst_output(out, do_print_rec=True)
 
-    coll_id = "a7156437-55ec-4c6f-89de-938f9361753d"
-    org_id = None
-    out = svc.get_counts(coll_id, org_id)
+    ds_key = "a7156437-55ec-4c6f-89de-938f9361753d"
+    org_key = None
+    out = svc.get_counts(dataset_key=ds_key, pub_org_key=org_key)
     print_analyst_output(out, do_print_rec=True)

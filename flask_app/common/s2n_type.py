@@ -824,6 +824,19 @@ class BrokerOutput(object):
             self._response[S2nKey.ERRORS][error_type] = [error_desc]
 
     # ...............................................
+    def combine_errors(self, errinfo):
+        """Combine a dictionary of errors to the errors in a S2nOutput query response.
+
+        Args:
+            errinfo: dictionary of errors, with error level, and list of descriptions.
+        """
+        for err_type, err_desc in errinfo.items():
+            try:
+                self._response[S2nKey.ERRORS][err_type].append(err_desc)
+            except KeyError:
+                self._response[S2nKey.ERRORS][err_type] = [err_desc]
+
+    # ...............................................
     @property
     def response(self):
         """Return the S2nOutput query response.

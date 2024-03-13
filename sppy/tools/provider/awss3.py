@@ -1,5 +1,6 @@
 """Class to query tabular summary Specify Network data in S3"""
 import boto3
+import json
 import pandas as pd
 
 from sppy.aws.aws_tools import get_current_datadate_str
@@ -33,7 +34,7 @@ class S3Query():
         self.exp_type = 'SQL'
 
     # ----------------------------------------------------
-    def _query_s3_table(self, s3_path, query_str):
+    def _query_s3_table(self, s3_path, query_str, format="JSON"):
         """Query the S3 resource defined for this class.
 
         Args:
@@ -43,18 +44,36 @@ class S3Query():
              list of records matching the query
         """
         recs = []
+        if format not in ("JSON", "CSV"):
+            format = "JSON"
+        if format == "JSON":
+            out_serialization = {"JSON": {}}
+        elif format == "CSV":
+            out_serialization = {
+                "CSV": {
+                    "QuoteFields": "ASNEEDED",
+                    "FieldDelimiter": ",",
+                    "QuoteCharacter": '"'}
+            }
         resp = self.s3.select_object_content(
             Bucket=self.bucket,
-            Key=self.s3_path,
+            Key=s3_path,
             ExpressionType='SQL',
             Expression=query_str,
             InputSerialization={"Parquet": {}},
-            OutputSerialization={"JSON": {}}
+            OutputSerialization=out_serialization
         )
         for event in resp["Payload"]:
             if "Records" in event:
-                records = event["Records"]["Payload"].decode(self.encoding)
-                recs.append(records)
+                recs_str = event["Records"]["Payload"].decode(ENCODING)
+                rec_strings = recs_str.split("\n")
+                for rs in rec_strings:
+                    if rs:
+                        if format == "JSON":
+                            rec = json.loads(rs)
+                        else:
+                            rec = rs.split(",")
+                        recs.append(rec)
         return recs
 
     # ----------------------------------------------------
@@ -108,14 +127,13 @@ class S3Query():
         datestr = get_current_datadate_str()
         datestr = "2024_02_01"
         s3_path = f"{SUMMARY_FOLDER}/dataset_counts_{datestr}_000.parquet"
-        query_str = (f"SELECT occ_count, species_count "
+        query_str = (f"SELECT datasetkey, occ_count, species_count "
                      f"FROM s3object s "
-                     f"WHERE s.datasetkey = {dataset_key}")
+                     f"WHERE s.datasetkey = '{dataset_key}'")
+        print(query_str)
         # Returns empty list or list of 1 record with [(occ_count, species_count)]
-        records = self._query_s3_table(s3_path, query_str)
-        if records:
-            (occ_count, species_count) = records[0]
-        return (occ_count, species_count)
+        records = self._query_s3_table(s3_path, query_str, format="JSON")
+        return records
 
     # ----------------------------------------------------
     def get_org_counts(self, pub_org_key):
@@ -155,39 +173,56 @@ class S3Query():
             errors = {"error": get_traceback()}
         return records, errors
 
+# .............................................................................
+if __name__ == "__main__":
+    from sppy.aws.aws_constants import ENCODING, PROJ_BUCKET, REGION
 
+    datestr = "2024_02_01"
+    dataset_key = "0000e36f-d0e9-46b0-aa23-cc1980f00515"
+    s3 = boto3.client('s3')
+
+    s3_path = f"{SUMMARY_FOLDER}/dataset_counts_{datestr}_000.parquet"
+    query_str = (f"SELECT datasetkey, occ_count, species_count "
+                 f"FROM s3object s "
+                 f"WHERE s.datasetkey = '{dataset_key}'")
+    query_str = f"SELECT datasetkey, occ_count, species_count FROM s3object s LIMIT 5"
+
+    format = "CSV"
+    if format == "JSON":
+        out_serialization = {"JSON": {}}
+    elif format == "CSV":
+        out_serialization = {
+            "CSV": {
+                "QuoteFields": "ASNEEDED",
+                "FieldDelimiter": ",",
+                "QuoteCharacter": '"'}
+        }
+    resp = s3.select_object_content(
+        Bucket=PROJ_BUCKET,
+        Key=s3_path,
+        ExpressionType="SQL",
+        Expression=query_str,
+        InputSerialization={"Parquet": {}},
+        OutputSerialization=out_serialization
+    )
+
+    for event in resp["Payload"]:
+        print(event)
+        if "Records" in event:
+            recs_str = event["Records"]["Payload"].decode(ENCODING)
+            rec_strings = recs_str.split("\n")
+            for rs in rec_strings:
+                if rs:
+                    if format == "JSON":
+                        rec = json.loads(rs)
+                    else:
+                        rec = rs.split(",")
+                    print(rec)
+
+
+
+
+    # records = self._query_s3_table(s3_path, query_str)
 """
-import boto3
-SELECT s.datasetkey, s.occ_count, s.species_count FROM s3object s ORDER BY s.species_count DESC LIMIT 5
-from sppy.aws.aws_constants import (
-    INSTANCE_TYPE, KEY_NAME, LOGFILE_MAX_BYTES, LOG_FORMAT, LOG_DATE_FORMAT,
-    PROJ_BUCKET, PROJ_NAME, REGION, SECURITY_GROUP_ID, SPOT_TEMPLATE_BASENAME,
-    USER_DATA_TOKEN)
-
-ctable = "dataset_counts_2024_02_01_000.parquet"
-ltable = "dataset_lists_2024_02_01_000.parquet"
-s3_path = f"summary/{ctable}"
-dataset_key = "0000e36f-d0e9-46b0-aa23-cc1980f00515"
-
-s3 = boto3.client('s3')
-query_str = (f"SELECT occ_count, species_count "
-             f"FROM s3object s "
-             f"WHERE s.datasetkey = '{dataset_key}'")
-
-SELECT * FROM s3object WHERE datasetkey = '0000e36f-d0e9-46b0-aa23-cc1980f00515'
-
-resp = s3.select_object_content(
-            Bucket=PROJ_BUCKET,
-            Key=s3_path,
-            ExpressionType='SQL',
-            Expression=query_str,
-            InputSerialization={"Parquet": {}},
-            OutputSerialization={"CSV": {}}
-            )
-
-for event in resp["Payload"]:
-    if "Records" in event:
-        records = event["Records"]["Payload"].decode('utf-8')
-        print(records)
 
 """

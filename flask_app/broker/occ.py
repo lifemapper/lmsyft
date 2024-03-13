@@ -161,36 +161,24 @@ class OccurrenceSvc(_BrokerService):
                 good_params, errinfo = cls._standardize_params(
                     occid=occid, provider=provider, gbif_dataset_key=gbif_dataset_key,
                     count_only=count_only)
-                # errinfo indicates bad parameters
+
+            except BadRequest as e:
+                full_output = cls._get_badquery_output(e.description)
+
+            else:
                 try:
-                    error_description = "; ".join(errinfo["error"])
-                    raise BadRequest(error_description)
-                except KeyError:
-                    pass
+                    # Do Query!, returns BrokerOutput
+                    full_output = cls._get_records(
+                        good_params["occid"], good_params["provider"],
+                        good_params["count_only"],
+                        gbif_dataset_key=good_params["gbif_dataset_key"])
+                except Exception:
+                    full_output = cls._get_badquery_output(get_traceback())
 
-            except Exception:
-                error_description = get_traceback()
-                raise BadRequest(error_description)
+                # Combine with errors from parameters
+                full_output.combine_errors(errinfo)
 
-            # Do Query!
-            try:
-                output = cls._get_records(
-                    good_params["occid"], good_params["provider"],
-                    good_params["count_only"],
-                    gbif_dataset_key=good_params["gbif_dataset_key"])
-
-                # Add message on invalid parameters to output
-                try:
-                    for err in errinfo["warning"]:
-                        output.append_error("warning", err)
-                except KeyError:
-                    pass
-
-            except Exception:
-                error_description = get_traceback()
-                raise InternalServerError(error_description)
-
-        return output.response
+        return full_output.response
 
 
 # .............................................................................

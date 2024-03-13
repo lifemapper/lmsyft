@@ -72,13 +72,13 @@ def count_endpoint():
         response: A flask_app.analyst API response object containing the count
             API response.
     """
-    coll_arg = request.args.get("collection_id", default=None, type=str)
+    ds_arg = request.args.get("dataset_key", default=None, type=str)
     # org_arg = request.args.get("organization_id", default=None, type=str)
     # if coll_arg is None and org_arg is None:
-    if coll_arg is None:
+    if ds_arg is None:
         response = CountSvc.get_endpoint()
     else:
-        response = CountSvc.get_counts(coll_arg)
+        response = CountSvc.get_counts(ds_arg)
     return response
 
 

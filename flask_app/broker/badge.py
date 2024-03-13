@@ -6,7 +6,7 @@ from werkzeug.exceptions import (BadRequest, InternalServerError)
 from flask_app.broker.constants import (ICON_CONTENT, ICON_DIR)
 from flask_app.common.s2n_type import APIService, S2nKey, ServiceProvider
 
-from sppy.tools.s2n.utils import get_traceback
+from sppy.tools.s2n.utils import combine_errinfo, get_traceback
 
 from flask_app.broker.base import _BrokerService
 
@@ -82,34 +82,27 @@ class BadgeSvc(_BrokerService):
         try:
             good_params, errinfo = cls._standardize_params(
                 provider=provider, icon_status=icon_status)
-            # Bad parameters
-            try:
-                error_description = "; ".join(errinfo["error"])
-                raise BadRequest(error_description)
-            except Exception:
-                pass
 
-        except Exception:
-            # Unknown error
-            error_description = get_traceback()
-            raise BadRequest(error_description)
-
-        icon_basename = cls._get_icon_filename(
-            good_params["provider"][0], good_params["icon_status"])
-        icon_fname = os.path.join(app_path, ICON_DIR, icon_basename)
-
-        if icon_fname is not None:
-            if stream:
-                return send_file(
-                    icon_fname, mimetype=ICON_CONTENT, as_attachment=False)
-            else:
-                return send_file(
-                    icon_fname, mimetype=ICON_CONTENT, as_attachment=True,
-                    attachment_filename=icon_fname)
+        except BadRequest as e:
+            raise
 
         else:
-            raise NotImplementedError(
-                f"Badge {icon_status} not implemented for provider {provider}")
+            icon_basename = cls._get_icon_filename(
+                good_params["provider"][0], good_params["icon_status"])
+            icon_fname = os.path.join(app_path, ICON_DIR, icon_basename)
+
+            if icon_fname is not None:
+                if stream:
+                    return send_file(
+                        icon_fname, mimetype=ICON_CONTENT, as_attachment=False)
+                else:
+                    return send_file(
+                        icon_fname, mimetype=ICON_CONTENT, as_attachment=True,
+                        attachment_filename=icon_fname)
+
+            else:
+                raise NotImplementedError(
+                    f"Badge {icon_status} not implemented for provider {provider}")
 
 
 # .............................................................................

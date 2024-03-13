@@ -9,7 +9,7 @@ from flask_app.common.util import print_broker_output
 from sppy.tools.provider.gbif import GbifAPI
 from sppy.tools.provider.itis import ItisAPI
 from sppy.tools.provider.worms import WormsAPI
-from sppy.tools.s2n.utils import get_traceback
+from sppy.tools.s2n.utils import combine_errinfo, get_traceback
 
 
 # .............................................................................
@@ -156,35 +156,24 @@ class NameSvc(_BrokerService):
                 good_params, errinfo = cls._standardize_params(
                     namestr=namestr, provider=provider, is_accepted=is_accepted,
                     gbif_parse=gbif_parse, gbif_count=gbif_count, kingdom=kingdom)
-                # Bad parameters
+
+            except BadRequest as e:
+                full_output = cls._get_badquery_output(e.description)
+
+            else:
                 try:
-                    error_description = "; ".join(errinfo["error"])
-                    raise BadRequest(error_description)
-                except KeyError:
-                    pass
-            except Exception:
-                error_description = get_traceback()
-                raise BadRequest(error_description)
+                    # Do Query!, returns BrokerOutput
+                    full_output = cls._get_records(
+                        good_params["namestr"], good_params["provider"],
+                        good_params["is_accepted"], good_params["gbif_count"],
+                        good_params["kingdom"])
+                except Exception:
+                    full_output = cls._get_badquery_output(get_traceback())
 
-            try:
-                # Do Query!
-                output = cls._get_records(
-                    good_params["namestr"], good_params["provider"],
-                    good_params["is_accepted"], good_params["gbif_count"],
-                    good_params["kingdom"])
+                # Combine with errors from parameters
+                full_output.combine_errors(errinfo)
 
-                # Add message on invalid parameters to output
-                try:
-                    for err in errinfo["warning"]:
-                        output.append_error("warning", err)
-                except KeyError:
-                    pass
-
-            except Exception:
-                error_description = get_traceback()
-                raise InternalServerError(error_description)
-
-        return output.response
+        return full_output.response
 
 
 # .............................................................................
