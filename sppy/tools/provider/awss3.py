@@ -1,11 +1,10 @@
 """Class to query tabular summary Specify Network data in S3"""
 import boto3
 import pandas as pd
-from pandassql import sqldf
 
 from sppy.aws.aws_tools import get_current_datadate_str
-
 from sppy.aws.aws_constants import (REGION, SUMMARY_FOLDER)
+from sppy.tools.s2n.utils import get_traceback
 
 
 
@@ -86,13 +85,14 @@ class S3Query():
              list of records matching the query
         """
         recs = []
+        errors = {}
         df = self._create_dataframe_from_s3obj(s3_path)
         df.sort_values(by=sort_field, ascending=(not descending))
         for event in resp["Payload"]:
             if "Records" in event:
                 records = event["Records"]["Payload"].decode(self.encoding)
                 recs.append(records)
-        return recs
+        return recs, errors
 
     # ----------------------------------------------------
     def get_dataset_counts(self, dataset_key):
@@ -148,9 +148,12 @@ class S3Query():
         datestr = get_current_datadate_str()
         datestr = "2024_02_01"
         s3_path = f"{SUMMARY_FOLDER}/dataset_counts_{datestr}_000.parquet"
-        records = self._query_order_s3_table(
-            s3_path, "species_count", descending, limit)
-        return records
+        try:
+            records, errors = self._query_order_s3_table(
+                s3_path, "species_count", descending, limit)
+        except Exception as e:
+            errors = {"error": get_traceback()}
+        return records, errors
 
 
 """

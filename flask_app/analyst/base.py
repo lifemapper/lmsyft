@@ -68,6 +68,10 @@ class _AnalystService(_SpecifyNetworkService):
             limit: integer indicating how many ranked records to return, value must
                 be less than QUERY_LIMIT.
 
+        Raises:
+            BadRequest: on invalid query parameters.
+            BadRequest: on unknown exception parsing parameters.
+
         Returns:
             a dictionary containing keys and properly formatted values for the
                 user specified parameters.
@@ -81,17 +85,16 @@ class _AnalystService(_SpecifyNetworkService):
 
         try:
             usr_params, errinfo = cls._process_params(user_kwargs)
-
-            # errinfo indicates bad parameters
-            try:
-                error_description = "; ".join(errinfo["error"])
-                raise BadRequest(error_description)
-            except KeyError:
-                pass
-
         except Exception:
             error_description = get_traceback()
             raise BadRequest(error_description)
+
+        # errinfo["error"] indicates bad parameters, throws exception
+        try:
+            error_description = "; ".join(errinfo["error"])
+            raise BadRequest(error_description)
+        except KeyError:
+            pass
 
         return usr_params, errinfo
 

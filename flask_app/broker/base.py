@@ -2,7 +2,7 @@
 from flask import Flask
 from werkzeug.exceptions import BadRequest, InternalServerError
 
-import sppy.tools.s2n.utils as lmutil
+from sppy.tools.s2n.utils import add_errinfo, combine_errinfo, get_traceback
 from flask_app.common.base import _SpecifyNetworkService
 from flask_app.common.s2n_type import (
     APIEndpoint, APIService, BrokerOutput, get_host_url, S2nKey, ServiceProvider)
@@ -204,14 +204,14 @@ class _BrokerService(_SpecifyNetworkService):
                 providers = valid_requested_providers[0]
             else:
                 providers = None
-                errinfo = lmutil.add_errinfo(
+                errinfo = add_errinfo(
                     errinfo, "error",
                     f"Parameter provider containing exactly one of {valid_providers} "
                     f"options is required")
 
         if invalid_providers:
             for ip in invalid_providers:
-                errinfo = lmutil.add_errinfo(
+                errinfo = add_errinfo(
                     errinfo, "warning",
                     f"Value {ip} for parameter provider not in valid options "
                     f"{valid_providers}")
@@ -249,6 +249,9 @@ class _BrokerService(_SpecifyNetworkService):
             a dictionary containing keys and properly formatted values for the
                 user specified parameters.
 
+        Raises:
+            BadRequest on invalid query parameters
+
         Note:
             filter_params is present to distinguish between providers for occ service by
             occurrence_id or by dataset_id.
@@ -275,12 +278,25 @@ class _BrokerService(_SpecifyNetworkService):
             # "width": width,
             "icon_status": icon_status}
 
-        providers, prov_errinfo = cls._get_providers_from_string(
+        providers, errinfo = cls._get_providers_from_string(
             provider, filter_params=filter_params)
-        usr_params, errinfo = cls._process_params(user_kwargs)
+
+        try:
+            usr_params, param_errinfo = cls._process_params(user_kwargs)
+        except Exception:
+            error_description = get_traceback()
+            raise BadRequest(error_description)
+
         # consolidate parameters and errors
         usr_params["provider"] = providers
-        errinfo = lmutil.combine_errinfo(errinfo, prov_errinfo)
+        errinfo = combine_errinfo(errinfo, param_errinfo)
+
+        # errinfo["error"] indicates bad parameters, throws exception
+        try:
+            error_description = "; ".join(errinfo["error"])
+            raise BadRequest(error_description)
+        except KeyError:
+            pass
 
         # Remove gbif_parse and itis_match flags
         gbif_parse = itis_match = False
@@ -292,6 +308,7 @@ class _BrokerService(_SpecifyNetworkService):
             itis_match = usr_params.pop("itis_match")
         except Exception:
             pass
+
         # Replace namestr with GBIF-parsed namestr
         if namestr and (gbif_parse or itis_match):
             usr_params["namestr"] = cls.parse_name_with_gbif(namestr)
