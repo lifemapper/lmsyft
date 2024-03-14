@@ -143,15 +143,10 @@ class OccurrenceSvc(_BrokerService):
                 a count and records
             kwargs: any additional keyword arguments are ignored
 
-        Raises:
-            BadRequest: on invalid query parameters.
-            BadRequest: on unknown exception parsing parameters.
-            InternalServerError: on unknown exception when executing request
-
         Returns:
-            a flask_app.broker.s2n_type.BrokerOutput object with optional records as a
-            list of dictionaries of records corresponding to specimen occurrences in
-            the provider database.
+            full_output (flask_app.common.s2n_type.BrokerOutput): including records
+                as a list of dictionaries of records corresponding to specimen
+                occurrences in the provider database.
         """
         if occid is None and gbif_dataset_key is None:
             return cls.get_endpoint()

@@ -27,6 +27,10 @@ class CountSvc(_AnalystService):
                 publishingOrganization.
             format: output format, options "CSV" or "JSON"
 
+        Returns:
+            full_output (flask_app.common.s2n_type.AnalystOutput): including records
+                as a list of one list (CSV) or dictionary (JSON) of a record
+                containing dataset_key,  occurrence count, and species count.
         """
         if dataset_key is None and pub_org_key is None:
             return cls.get_endpoint()

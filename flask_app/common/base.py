@@ -155,7 +155,7 @@ class _SpecifyNetworkService:
             min_val = None
         # If restricted numeric values, check
         try:
-            max_val = param_meta["min"]
+            max_val = param_meta["max"]
         except KeyError:
             max_val = None
 
