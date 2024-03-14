@@ -11,15 +11,6 @@ from sppy.tools.provider.itis import ItisAPI
 
 
 # .............................................................................
-@app.errorhandler(BadRequest)
-def handle_bad_request(e):
-    return f"Bad request: {e}"
-
-@app.errorhandler(InternalServerError)
-def handle_bad_response(e):
-    return f"Internal Server Error: {e}"
-
-# .............................................................................
 class _BrokerService(_SpecifyNetworkService):
     """Base S-to-the-N service, handles parameter names and acceptable values."""
     # overridden by subclasses
