@@ -4,7 +4,6 @@ from werkzeug.exceptions import BadRequest
 from flask_app.broker.base import _BrokerService
 from flask_app.common.s2n_type import (
     APIEndpoint, APIService, BrokerOutput, BrokerSchema, S2nKey, ServiceProvider)
-from flask_app.common.util import print_broker_output
 
 from sppy.tools.provider.gbif import GbifAPI
 from sppy.tools.provider.itis import ItisAPI
@@ -195,7 +194,7 @@ if __name__ == "__main__":
 
     svc = NameSvc()
     for namestr in test_names:
-        out = svc.get_name_records(
+        response = svc.get_name_records(
             namestr=namestr, provider=None, is_accepted=False,
             gbif_parse=True, gbif_count=True, kingdom=None)
-        print_broker_output(out, do_print_rec=True)
+        BrokerOutput.print_output(response, do_print_rec=True)

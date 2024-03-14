@@ -129,11 +129,11 @@ class S3Query():
         Returns:
              records: empty list or list of 1 record (list)
         """
-        query_str = (f"SELECT datasetkey, occ_count, species_count FROM s3object s "
-                     f"WHERE s.datasetkey = '{dataset_key}'")
-        query_str = "SELECT * FROM s3object s LIMIT 5"
-        print(query_str)
-        # Returns empty list or list of 1 record with [(occ_count, species_count)]
+        query_str = (
+            "SELECT datasetkey, occ_count, species_count FROM s3object s "
+            f"WHERE s.datasetkey = '{dataset_key}'"
+        )
+        # Returns empty list or list of 1 record
         records = self._query_table(self._dataset_counts_path, query_str, format=format)
         return records
 

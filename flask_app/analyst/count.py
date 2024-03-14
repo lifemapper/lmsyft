@@ -3,7 +3,6 @@ from http import HTTPStatus
 from werkzeug.exceptions import BadRequest
 
 from flask_app.common.s2n_type import APIService, AnalystOutput
-from flask_app.common.util import print_analyst_output
 from flask_app.analyst.base import _AnalystService
 
 from sppy.aws.aws_constants import PROJ_BUCKET
@@ -19,7 +18,7 @@ class CountSvc(_AnalystService):
 
     # ...............................................
     @classmethod
-    def get_counts(cls, dataset_key=None, pub_org_key=None, format="CSV"):
+    def get_counts(cls, dataset_key=None, pub_org_key=None, format="JSON"):
         """Return occurrence and species counts for dataset/organization identifiers.
 
         Args:
@@ -163,11 +162,14 @@ class CountSvc(_AnalystService):
 
 # .............................................................................
 if __name__ == "__main__":
-    svc = CountSvc()
-    out = svc.get_endpoint()
-    print_analyst_output(out, do_print_rec=True)
-    format = "CSV"
+    format = "JSON"
     dataset_key = "0000e36f-d0e9-46b0-aa23-cc1980f00515"
-    out = svc.get_counts(dataset_key=dataset_key, pub_org_key=None, format="CSV")
-    print_analyst_output(out, do_print_rec=True)
+
+    svc = CountSvc()
+    response = svc.get_endpoint()
+    AnalystOutput.print_output(response, do_print_rec=True)
+    # print(response)
+    response = svc.get_counts(dataset_key=dataset_key, pub_org_key=None, format=format)
+    AnalystOutput.print_output(response, do_print_rec=True)
+    # print(response)
 

@@ -992,13 +992,65 @@ class BrokerOutput(object):
                 ordered_recs.append(ordrec)
         self._response[S2nKey.RECORDS] = ordered_recs
 
+    # .............................................................................
+    @classmethod
+    def _print_sub_output(cls, oneelt, do_print_rec):
+        print("* One record of Specify Network Outputs *")
+        for name, attelt in oneelt.items():
+            try:
+                if name == "records":
+                    print("   records")
+                    if do_print_rec is False:
+                        print(f"      {name}: {len(attelt)} returned records")
+                    else:
+                        for rec in attelt:
+                            print("      record")
+                            for k, v in rec.items():
+                                print("         {}: {}".format(k, v))
+                else:
+                    print("   {}: {}".format(name, attelt))
+            except Exception:
+                pass
+
+    # ....................................
+    @classmethod
+    def print_output(cls, response_dict, do_print_rec=False):
+        """Print a formatted string of the elements in an S2nOutput query response.
+
+        Args:
+            response_dict: flask_app.broker.s2n_type.S2nOutput._response dictionary
+            do_print_rec: True to print each record in the response.
+
+        TODO: move to a class method
+        """
+        print("*** Broker output ***")
+        for name, attelt in response_dict.items():
+            try:
+                if name == "records":
+                    print("records: ")
+                    for respdict in attelt:
+                        cls._print_sub_output(respdict, do_print_rec)
+                else:
+                    print(f"{name}: {attelt}")
+            except Exception:
+                pass
+        # outelts = set(response_dict.keys())
+        # missing = S2nKey.broker_response_keys().difference(outelts)
+        # extras = outelts.difference(S2nKey.broker_response_keys())
+        # if missing:
+        #     print(f"Missing elements: {missing}")
+        # if extras:
+        #     print(f"Extra elements: {extras}")
+        print("")
+
 
 # .............................................................................
 class AnalystOutput:
     """Response type for a Specify Network Analyst query."""
     service: str
     description: str = ""
-    records: typing.List[dict] = []
+    # records: typing.List[dict] = []
+    records: typing.List = []
     errors: dict = {}
 
     # ...............................................
@@ -1008,7 +1060,7 @@ class AnalystOutput:
         Args:
             service: API Service this object is responding to.
             description: Description of the computation in this response.
-            records: Records in this response.
+            records: Records (lists or dictionaries) in this response.
             errors: Errors encountered when generating this response.
         """
         if errors is None:
@@ -1034,6 +1086,27 @@ class AnalystOutput:
             the response object
         """
         return self._response
+
+    # ....................................
+    @classmethod
+    def print_output(cls, response_dict, do_print_rec=False):
+        """Print a formatted string of the elements in an S2nOutput query response.
+
+        Args:
+            response_dict: flask_app.broker.s2n_type.S2nOutput._response dictionary
+            do_print_rec: True to print each record in the response.
+        """
+        print("*** Analyst output ***")
+        for name, attelt in response_dict.items():
+            try:
+                if name == "records" and do_print_rec:
+                    print("records: ")
+                    for rec in attelt:
+                        print(rec)
+                else:
+                    print(f"{name}: {attelt}")
+            except Exception:
+                pass
 
 
 # .............................................................................

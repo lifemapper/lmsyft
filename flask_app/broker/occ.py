@@ -4,7 +4,6 @@ from werkzeug.exceptions import (BadRequest, InternalServerError)
 from flask_app.broker.base import _BrokerService
 from flask_app.common.s2n_type import (
     APIEndpoint, APIService, BrokerOutput, BrokerSchema, S2nKey, ServiceProvider)
-from flask_app.common.util import print_broker_output
 
 from sppy.tools.provider.gbif import GbifAPI
 from sppy.tools.provider.idigbio import IdigbioAPI
@@ -206,11 +205,11 @@ if __name__ == "__main__":
 
     svc = OccurrenceSvc()
     out = svc.get_endpoint()
-    out = svc.get_occurrence_records(occid="a7156437-55ec-4c6f-89de-938f9361753d")
+    response = svc.get_occurrence_records(occid="a7156437-55ec-4c6f-89de-938f9361753d")
 
-    print_broker_output(out, do_print_rec=True)
+    BrokerOutput.print_output(response, do_print_rec=True)
 
     # for occid in occids:
-    #     out = svc.get_occurrence_records(occid=occid, provider=None, count_only=False)
-    #     outputs = out["records"]
-    #     print_broker_output(out, do_print_rec=True)
+    #     response = svc.get_occurrence_records(occid=occid, provider=None, count_only=False)
+    #     recs = response["records"]
+    #     BrokerOutput.print_output(response, do_print_rec=True)
