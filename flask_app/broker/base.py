@@ -9,8 +9,6 @@ from flask_app.common.s2n_type import (
 from sppy.tools.provider.gbif import GbifAPI
 from sppy.tools.provider.itis import ItisAPI
 
-app = Flask(__name__)
-
 
 # .............................................................................
 @app.errorhandler(BadRequest)
@@ -268,14 +266,6 @@ class _BrokerService(_SpecifyNetworkService):
             "gbif_dataset_key": gbif_dataset_key,
             "count_only": count_only,
             "url": url,
-            # "bbox": bbox,
-            # "exceptions": exceptions,
-            # "height": height,
-            # "layers": layers,
-            # "request": request,
-            # "format": frmat,
-            # "srs": srs,
-            # "width": width,
             "icon_status": icon_status}
 
         providers, errinfo = cls._get_providers_from_string(

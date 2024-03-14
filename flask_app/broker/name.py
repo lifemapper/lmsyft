@@ -1,5 +1,5 @@
 """Class for the Specify Network Name API service."""
-from werkzeug.exceptions import (BadRequest, InternalServerError)
+from werkzeug.exceptions import BadRequest
 
 from flask_app.broker.base import _BrokerService
 from flask_app.common.s2n_type import (
@@ -9,7 +9,7 @@ from flask_app.common.util import print_broker_output
 from sppy.tools.provider.gbif import GbifAPI
 from sppy.tools.provider.itis import ItisAPI
 from sppy.tools.provider.worms import WormsAPI
-from sppy.tools.s2n.utils import combine_errinfo, get_traceback
+from sppy.tools.s2n.utils import get_traceback
 
 
 # .............................................................................

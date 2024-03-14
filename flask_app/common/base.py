@@ -2,11 +2,8 @@
 from flask import Flask
 from werkzeug.exceptions import BadRequest, InternalServerError
 
-import sppy.tools.s2n.utils as lmutil
-from flask_app.common.s2n_type import (
-    APIEndpoint, APIService, BrokerOutput, get_host_url, S2nKey, ServiceProvider)
-from sppy.tools.provider.gbif import GbifAPI
-from sppy.tools.provider.itis import ItisAPI
+from sppy.tools.s2n.utils import add_errinfo
+from flask_app.common.s2n_type import APIEndpoint
 
 app = Flask(__name__)
 
@@ -226,12 +223,12 @@ class _SpecifyNetworkService:
             elif key == "icon_status":
                 valid_stat = param_meta["options"]
                 if val is None:
-                    errinfo = lmutil.add_errinfo(
+                    errinfo = add_errinfo(
                         errinfo, "error",
                         f"Parameter {key} containing one of {valid_stat} options is "
                         f"required")
                 elif val not in valid_stat:
-                    errinfo = lmutil.add_errinfo(
+                    errinfo = add_errinfo(
                         errinfo, "error",
                         f"Value {val} for parameter {key} not in valid options "
                         f"{valid_stat}")
@@ -241,7 +238,7 @@ class _SpecifyNetworkService:
             elif val is not None:
                 usr_val, valid_options = cls._fix_type_new(key, val)
                 if valid_options is not None and val not in valid_options:
-                    errinfo = lmutil.add_errinfo(
+                    errinfo = add_errinfo(
                         errinfo, "error",
                         f"Value {val} for parameter {key} is not in valid options "
                         f"{param_meta['options']}")
