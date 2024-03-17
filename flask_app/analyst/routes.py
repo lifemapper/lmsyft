@@ -3,6 +3,7 @@ from flask import Blueprint, Flask, render_template, request
 import os
 
 from flask_app.analyst.count import CountSvc
+from flask_app.analyst.rank import RankSvc
 from flask_app.common.constants import (
     STATIC_DIR, TEMPLATE_DIR, SCHEMA_DIR, SCHEMA_ANALYST_FNAME)
 from flask_app.common.s2n_type import APIEndpoint
@@ -81,6 +82,25 @@ def count_endpoint():
         response = CountSvc.get_counts(ds_arg)
     return response
 
+
+# .....................................................................................
+@app.route("/api/v1/rank/")
+def rank_endpoint():
+    """Get the available counts.
+
+    Returns:
+        response: A flask_app.analyst API response object containing the count
+            API response.
+    """
+    by_species_arg = request.args.get("by_species", default=None, type=bool)
+    descending_arg = request.args.get("descending", default=True, type=bool)
+    limit_arg = request.args.get("limit", default=10, type=int)
+    # if coll_arg is None and org_arg is None:
+    if by_species_arg is None:
+        response = RankSvc.get_endpoint()
+    else:
+        response = RankSvc.rank_counts(by_species_arg, descending_arg, limit_arg)
+    return response
 
 # # .....................................................................................
 # @app.route("/api/v1/collection/<string:collection_id>", methods=["GET"])
