@@ -102,6 +102,7 @@ class _AnalystService(_SpecifyNetworkService):
     def _add_dataset_names_to_records(
             cls, records, dataset_key_field="datasetkey",
             dataset_name_field="dataset_name"):
+        # TODO: change this to a call to an S3 table with all dataset keys/names
         # if import is at top level, causes recursion error in awss3.count_datasets
         from sppy.tools.provider.gbif import GbifAPI
         gbif = GbifAPI(service="dataset")
