@@ -63,10 +63,11 @@ class GbifAPI(APIQuery):
     @classmethod
     def _get_output_val(cls, out_dict, name):
         try:
-            tmp = out_dict[name]
-            val = str(tmp).encode(ENCODING)
+            val = out_dict[name]
         except Exception:
             return None
+        if type(val) is bytes:
+            val = str(val).encode(ENCODING)
         return val
 
     # ...............................................
