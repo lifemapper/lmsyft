@@ -4,7 +4,7 @@ AWS Workflow
 Reference
 ===========================================================
 
-  * Stored procedures in rs_stored_procedures.sql
+* Stored procedures in rs_stored_procedures.sql
 
 
 Steps
@@ -14,9 +14,9 @@ Steps
 ***********************************************************
 
 * Redshift: Subset GBIF data from Amazon Registry of Open Data (AWS ODR) for processing
-    * First run rs_create_stored_procedures.sql to create procedures for the subset script.
-    * Next run rs_subset_gbif.sql to subset the data
-    *
+
+  * First run rs_create_stored_procedures.sql to create procedures for the subset script.
+  * Next run rs_subset_gbif.sql to subset the data
 
 1.5 TODO
 ***********************************************************
