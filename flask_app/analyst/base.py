@@ -55,15 +55,15 @@ class _AnalystService(_SpecifyNetworkService):
     # ...............................................
     @classmethod
     def _standardize_params(
-            cls, dataset_key=None, pub_org_key=None, by_species=True, descending=True,
+            cls, dataset_key=None, pub_org_key=None, count_by=None, order=None,
             limit=10):
         """Standardize query parameters to send to appropriate service.
 
         Args:
             dataset_key: unique GBIF dataset identifier for comparisons
             pub_org_key: unique publishing organization identifier for comparisons
-            descending: boolean value indicating whether to sort records descending
-                (True) or ascending (False)
+            count_by: counts of "occurrence" or "species"
+            order: sort records "descending" or "ascending"
             limit: integer indicating how many ranked records to return, value must
                 be less than QUERY_LIMIT.
 
@@ -78,8 +78,8 @@ class _AnalystService(_SpecifyNetworkService):
         user_kwargs = {
             "dataset_key": dataset_key,
             "pub_org_key": pub_org_key,
-            "by_species": by_species,
-            "descending": descending,
+            "count_by": count_by,
+            "order": order,
             "limit": limit
         }
 

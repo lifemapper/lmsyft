@@ -95,13 +95,13 @@ class S3Query():
 
     # ----------------------------------------------------
     def _query_order_s3_table(
-            self, s3_path, sort_field, descending, limit, format="CSV"):
+            self, s3_path, sort_field, order, limit, format="CSV"):
         """Query the S3 resource defined for this class.
 
         Args:
             s3_path: S3 folder and filename within the bucket
             sort_field: fieldname (column) to sort records on
-            descending: boolean flag indicating to sort ascending or descending
+            order: boolean flag indicating to sort ascending or descending
             limit: number of records to return, limit is 500
             format: output format, options "CSV" or "JSON"
 
@@ -112,7 +112,8 @@ class S3Query():
         errors = {}
         df = self._create_dataframe_from_s3obj(s3_path)
         # Sort rows (Axis 0/index) by values in sort_field (column)
-        sorted_df = df.sort_values(by=sort_field, axis=0, ascending=(not descending))
+        sorted_df = df.sort_values(
+            by=sort_field, axis=0, ascending=(order == "ascending"))
         rec_df = sorted_df.head(limit)
 
         for row in rec_df.itertuples():
@@ -157,14 +158,14 @@ class S3Query():
         return (occ_count, species_count)
 
     # ----------------------------------------------------
-    def rank_datasets(self, by_species, descending, limit, format="JSON"):
+    def rank_datasets(self, count_by, order, limit, format="JSON"):
         """Return the top or bottom datasets, with counts, ranked by number of species.
 
         Args:
-            by_species: boolean flag indicating whether to rank datasets by
-                species count (True) or occurrence count (False).
-            descending: boolean value, if true return top X datasets in descending
-                order, if false, return bottom X datasets in ascending order
+            count_by: string indicating rank datasets by counts of "species" or
+                "occurrence" .
+            order: string indicating whether to rank in "descending" or
+                "ascending" order.
             limit: number of datasets to return, no more than 300.
             format: output format, options "CSV" or "JSON"
 
@@ -172,13 +173,13 @@ class S3Query():
              records: list of limit records containing dataset_key, occ_count, species_count
         """
         records = []
-        if by_species:
+        if count_by == "species":
             sort_field = "species_count"
         else:
             sort_field = "occ_count"
         try:
             records, errors = self._query_order_s3_table(
-                self._dataset_counts_path, sort_field, descending, limit)
+                self._dataset_counts_path, sort_field, order, limit)
         except Exception as e:
             errors = {"error": get_traceback()}
         return records, errors

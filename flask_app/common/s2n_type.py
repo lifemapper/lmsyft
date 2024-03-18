@@ -174,8 +174,6 @@ class APIService:
                 "description": "GBIF Publishing Organization Key",
                 "default": None
             },
-            "descending": { "type": True, "default": True},
-            "limit": {"type": 2, "default": 10, "min": 1, "max": 500},
         },
         "description":
             "Return occurrence and species counts for the given dataset or "
@@ -187,8 +185,16 @@ class APIService:
         "name": APIEndpoint.Rank,
         "endpoint": f"{APIEndpoint.Root}/{APIEndpoint.Rank}",
         "params": {
-            "by_species":{ "type": True, "default": True},
-            "descending": { "type": True, "default": True},
+            "count_by": {
+                "type": "",
+                "options": ["occurrence", "species"],
+                "default": None
+            },
+            "order": {
+                "type": "",
+                "options": ["ascending", "descending"],
+                "default": None
+            },
             "limit": {"type": 2, "default": 10, "min": 1, "max": 500},
         },
         "description":

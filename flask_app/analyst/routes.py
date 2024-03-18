@@ -92,14 +92,18 @@ def rank_endpoint():
         response: A flask_app.analyst API response object containing the count
             API response.
     """
-    by_species_arg = request.args.get("by_species", default=None, type=bool)
-    descending_arg = request.args.get("descending", default=True, type=bool)
+    count_by_arg = request.args.get("count_by", default=None, type=str)
+    order_arg = request.args.get("order", default=None, type=str)
     limit_arg = request.args.get("limit", default=10, type=int)
+    print(
+        f"*** count_by_arg={count_by_arg}, order_arg={order_arg}, "
+        f"limit_arg={limit_arg} ***")
     # if coll_arg is None and org_arg is None:
-    if by_species_arg is None:
+    if count_by_arg is None:
         response = RankSvc.get_endpoint()
     else:
-        response = RankSvc.rank_counts(by_species_arg, descending_arg, limit_arg)
+        response = RankSvc.rank_counts(
+            count_by_arg, order=order_arg, limit=limit_arg)
     return response
 
 # # .....................................................................................

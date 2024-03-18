@@ -18,14 +18,14 @@ class RankSvc(_AnalystService):
 
     # ...............................................
     @classmethod
-    def rank_counts(cls, by_species, descending=True, limit=1, format="JSON"):
+    def rank_counts(cls, count_by, order=None, limit=1, format="JSON"):
         """Return occurrence and species counts for dataset/organization identifiers.
 
         Args:
-            by_species: boolean URL parameter indicating whether to rank datasets by
-                species count (True) or occurrence count (False).
-            descending: boolean URL parameter indicating whether to rank top down (True)
-                or bottom up (False).
+            count_by: URL parameter indicating rank datasets by counts of "species" or
+                "occurrence" .
+            order: URL parameter indicating whether to rank in "descending" or
+                "ascending" order.
             limit: integer URL parameter specifying the number of ordered records to
                 return.
             format: output format, options "CSV" or "JSON"
@@ -34,13 +34,13 @@ class RankSvc(_AnalystService):
                 as a list of lists (CSV) or dictionaries (JSON) of records
                 containing dataset_key,  occurrence count, and species count.
         """
-        if by_species is None:
+        if count_by is None:
             return cls.get_endpoint()
 
         records = []
         try:
             good_params, errinfo = cls._standardize_params(
-                by_species=by_species, descending=descending, limit=limit)
+                count_by=count_by, order=order, limit=limit)
 
         except BadRequest as e:
             errinfo = {"error": e.description}
@@ -49,7 +49,7 @@ class RankSvc(_AnalystService):
             # Query for ordered dataset counts
             try:
                 records, errors = cls._get_ordered_counts(
-                    good_params["by_species"], good_params["descending"],
+                    good_params["count_by"], good_params["order"],
                     good_params["limit"], format)
             except Exception:
                 errors = {"error": get_traceback()}
@@ -66,12 +66,11 @@ class RankSvc(_AnalystService):
 
     # ...............................................
     @classmethod
-    def _get_ordered_counts(cls, by_species, descending, limit, format):
+    def _get_ordered_counts(cls, count_by, order, limit, format):
         records = []
         s3 = S3Query(PROJ_BUCKET)
         try:
-            records, errinfo = s3.rank_datasets(
-                by_species, descending=descending, limit=limit)
+            records, errinfo = s3.rank_datasets(count_by, order, limit)
 
         except Exception:
             errinfo = {"error": get_traceback()}
@@ -87,11 +86,11 @@ if __name__ == "__main__":
     response = svc.get_endpoint()
     AnalystOutput.print_output(response, do_print_rec=True)
     # print(response)
-    by_species = True
-    descending = True
+    count_by = "species"
+    order = "ascending"
     limit = 5
     response = svc.rank_counts(
-        by_species, descending=descending, limit=limit, format=format)
+        count_by, order=order, limit=limit, format=format)
     AnalystOutput.print_output(response, do_print_rec=True)
     # print(response)
 
