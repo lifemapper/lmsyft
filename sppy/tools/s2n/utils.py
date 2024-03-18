@@ -3,9 +3,6 @@ import sys
 import traceback
 from uuid import UUID
 
-# from flask_app.broker.constants import ICON_API, ServiceProvider
-# from flask_app.common.s2n_type import APIEndpoint
-
 
 # ......................................................
 def is_valid_uuid(uuid_to_test, version=4):
