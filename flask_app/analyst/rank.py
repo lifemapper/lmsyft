@@ -18,7 +18,7 @@ class RankSvc(_AnalystService):
 
     # ...............................................
     @classmethod
-    def rank_counts(cls, count_by, order=None, limit=1, format="JSON"):
+    def rank_counts(cls, count_by, order=None, limit=1):
         """Return occurrence and species counts for dataset/organization identifiers.
 
         Args:
@@ -28,7 +28,6 @@ class RankSvc(_AnalystService):
                 "ascending" order.
             limit: integer URL parameter specifying the number of ordered records to
                 return.
-            format: output format, options "CSV" or "JSON"
 
             full_output (flask_app.common.s2n_type.AnalystOutput): including records
                 as a list of lists (CSV) or dictionaries (JSON) of records
@@ -50,7 +49,7 @@ class RankSvc(_AnalystService):
             try:
                 records, errors = cls._get_ordered_counts(
                     good_params["count_by"], good_params["order"],
-                    good_params["limit"], format)
+                    good_params["limit"])
             except Exception:
                 errors = {"error": get_traceback()}
 
@@ -66,7 +65,7 @@ class RankSvc(_AnalystService):
 
     # ...............................................
     @classmethod
-    def _get_ordered_counts(cls, count_by, order, limit, format):
+    def _get_ordered_counts(cls, count_by, order, limit):
         records = []
         s3 = S3Query(PROJ_BUCKET)
         try:
@@ -79,7 +78,6 @@ class RankSvc(_AnalystService):
 
 # .............................................................................
 if __name__ == "__main__":
-    format = "CSV"
     dataset_key = "0000e36f-d0e9-46b0-aa23-cc1980f00515"
 
     svc = RankSvc()
@@ -90,7 +88,7 @@ if __name__ == "__main__":
     order = "ascending"
     limit = 5
     response = svc.rank_counts(
-        count_by, order=order, limit=limit, format=format)
+        count_by, order=order, limit=limit)
     AnalystOutput.print_output(response, do_print_rec=True)
     # print(response)
 
