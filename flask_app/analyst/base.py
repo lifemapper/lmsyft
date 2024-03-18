@@ -2,10 +2,9 @@
 from werkzeug.exceptions import BadRequest
 
 from flask_app.common.base import _SpecifyNetworkService
-from sppy.tools.s2n.utils import get_traceback
 from flask_app.common.s2n_type import AnalystOutput, APIService
 
-# app = Flask(__name__)
+from sppy.tools.s2n.utils import get_traceback
 
 
 # .............................................................................
@@ -97,6 +96,18 @@ class _AnalystService(_SpecifyNetworkService):
             pass
 
         return usr_params, errinfo
+
+    # ...............................................
+    @classmethod
+    def _add_dataset_names_to_records(
+            cls, records, dataset_key_field="datasetkey",
+            dataset_name_field="dataset_name"):
+        # if import is at top level, causes recursion error in awss3.count_datasets
+        from sppy.tools.provider.gbif import GbifAPI
+        gbif = GbifAPI(service="dataset")
+        for rec in records:
+            dataset_name, _ = gbif.get_dataset(rec[dataset_key_field])
+            rec[dataset_name_field] = dataset_name
 
 
 # .............................................................................

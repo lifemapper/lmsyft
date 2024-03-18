@@ -51,6 +51,9 @@ class CountSvc(_AnalystService):
                 except Exception:
                     errors = {"error": get_traceback()}
                 else:
+                    cls._add_dataset_names_to_records(
+                        records, dataset_key_field="datasetkey",
+                        dataset_name_field="dataset_name")
                     if records:
                         allrecs.append(records)
                 # Combine errors from success or failure
