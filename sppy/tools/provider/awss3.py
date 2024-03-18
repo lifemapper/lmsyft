@@ -128,7 +128,7 @@ class S3Query():
         return recs, errors
 
     # ----------------------------------------------------
-    def get_dataset_counts(self, dataset_key, format="CSV"):
+    def get_dataset_counts(self, dataset_key, format="JSON"):
         """Query the S3 resource for occurrence and species counts for this dataset.
 
         Args:
@@ -162,7 +162,7 @@ class S3Query():
         return (occ_count, species_count)
 
     # ----------------------------------------------------
-    def rank_datasets(self, by_species, descending, limit, format="CSV"):
+    def rank_datasets(self, by_species, descending, limit, format="JSON"):
         """Return the top or bottom datasets, with counts, ranked by number of species.
 
         Args:
@@ -190,7 +190,7 @@ class S3Query():
 
 # .............................................................................
 if __name__ == "__main__":
-    format = "CSV"
+    format = "JSON"
     dataset_key = "0000e36f-d0e9-46b0-aa23-cc1980f00515"
     s3q = S3Query(PROJ_BUCKET)
     recs = s3q.get_dataset_counts(dataset_key, format=format)
