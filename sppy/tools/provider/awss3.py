@@ -69,14 +69,13 @@ class S3Query():
         for event in resp["Payload"]:
             if "Records" in event:
                 recs_str = event["Records"]["Payload"].decode(ENCODING)
-                rec_strings = recs_str.split("\n")
+                rec_strings = recs_str.strip().split("\n")
                 for rs in rec_strings:
-                    if rs:
-                        if format == "JSON":
-                            rec = json.loads(rs)
-                        else:
-                            rec = rs.split(",")
-                        recs.append(rec)
+                    if format == "JSON":
+                        rec = json.loads(rs)
+                    else:
+                        rec = rs.split(",")
+                    recs.append(rec)
         return recs
 
     # ----------------------------------------------------
@@ -90,9 +89,7 @@ class S3Query():
             df: pandas DataFrame containing the CSV data.
         """
         # import pyarrow.parquet as pq
-        # import s3fs
         s3_uri = f"s3://{self.bucket}/{s3_path}"
-        # s3_fs = s3fs.S3FileSystem
         df = pd.read_parquet(s3_uri)
         return df
 
@@ -123,8 +120,6 @@ class S3Query():
                    "species_count": row.species_count,
                    "occ_count": row.occ_count}
             recs.append(rec)
-            print(row)
-            print(rec)
         return recs, errors
 
     # ----------------------------------------------------
