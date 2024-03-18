@@ -74,8 +74,6 @@ def count_endpoint():
             API response.
     """
     ds_arg = request.args.get("dataset_key", default=None, type=str)
-    # org_arg = request.args.get("organization_id", default=None, type=str)
-    # if coll_arg is None and org_arg is None:
     if ds_arg is None:
         response = CountSvc.get_endpoint()
     else:
