@@ -69,30 +69,6 @@ class CountSvc(_AnalystService):
 
         return full_out.response
 
-    # ...............................................
-    @classmethod
-    def get_ranked_counts(cls, by_species=True, descending=True, limit=10):
-        allrecs = []
-        try:
-            good_params, errinfo = cls._standardize_params(
-                cls, by_species=by_species, descending=descending, limit=limit)
-
-        except BadRequest as e:
-            errinfo = combine_errinfo(errinfo, {"error": e.description})
-
-        else:
-            # Do Query!
-            try:
-                s3 = S3Query(PROJ_BUCKET)
-                records, errors = s3.rank_datasets(by_species, descending, limit)
-            except Exception:
-                errors = {"error": get_traceback()}
-            else:
-                allrecs.append(records)
-            # Combine errors from success or failure
-            errinfo = combine_errinfo(errinfo, errors)
-        return allrecs, errinfo
-
 # ...............................................
     @classmethod
     def _get_dataset_counts(cls, dataset_key):
@@ -116,49 +92,6 @@ class CountSvc(_AnalystService):
 
         return records, errors
 
-    # ...............................................
-    @classmethod
-    def _get_organization_counts(cls, pub_org_key):
-        """Get counts for publishingOrganizationKey.
-
-        Args:
-            pub_org_key: Unique identifier for GBIF publishing organizations.
-
-        Returns:
-            a flask_app.analyst.s2n_type.AnalystOutput object with optional records as a
-            list of records corresponding to occurrence and counts for the organization.
-        """
-        records = []
-        errors = {}
-        s3 = S3Query(PROJ_BUCKET)
-        try:
-            (occ_count, species_count) = s3.get_org_counts(pub_org_key)
-        except Exception:
-            traceback = get_traceback()
-            errors["error"] = [HTTPStatus.INTERNAL_SERVER_ERROR, traceback]
-        else:
-            records.append((occ_count, species_count))
-        return records, errors
-
-
-    # # ...............................................
-    # @classmethod
-    # def _get_records(cls, dataset_key, pub_org_key):
-    #     allrecs = []
-    #     # for response metadata
-    #     if dataset_key is not None:
-    #         records, errors = cls._get_dataset_counts(dataset_key)
-    #         allrecs.append(records)
-    #     if pub_org_key is not None:
-    #         records, errors = cls._get_organization_counts(pub_org_key)
-    #         allrecs.append(records)
-    #
-    #     # Assemble
-    #     full_out = AnalystOutput(
-    #         cls.SERVICE_TYPE["name"], description=cls.SERVICE_TYPE["description"],
-    #         records=allrecs, errors={})
-    #
-    #     return full_out
 
 
 # .............................................................................
