@@ -18,14 +18,13 @@ class CountSvc(_AnalystService):
 
     # ...............................................
     @classmethod
-    def get_counts(cls, dataset_key=None, pub_org_key=None, format="JSON"):
+    def get_counts(cls, dataset_key=None, pub_org_key=None):
         """Return occurrence and species counts for dataset/organization identifiers.
 
         Args:
             dataset_key: URL parameter for unique GBIF identifier of dataset.
             pub_org_key: URL parameter for unique GBIF identifier of
                 publishingOrganization.
-            format: output format, options "CSV" or "JSON"
 
         Returns:
             full_output (flask_app.common.s2n_type.AnalystOutput): including records
@@ -48,7 +47,7 @@ class CountSvc(_AnalystService):
             if good_params["dataset_key"] is not None:
                 try:
                     records, errors = cls._get_dataset_counts(
-                        good_params["dataset_key"], format)
+                        good_params["dataset_key"])
                 except Exception:
                     errors = {"error": get_traceback()}
                 else:
@@ -72,11 +71,11 @@ class CountSvc(_AnalystService):
 
     # ...............................................
     @classmethod
-    def get_ranked_counts(cls, descending=True, limit=10):
+    def get_ranked_counts(cls, by_species=True, descending=True, limit=10):
         allrecs = []
         try:
             good_params, errinfo = cls._standardize_params(
-                cls, descending=descending, limit=limit)
+                cls, by_species=by_species, descending=descending, limit=limit)
 
         except BadRequest as e:
             errinfo = combine_errinfo(errinfo, {"error": e.description})
@@ -85,8 +84,7 @@ class CountSvc(_AnalystService):
             # Do Query!
             try:
                 s3 = S3Query(PROJ_BUCKET)
-                records, errors = s3.rank_datasets_by_species(
-                    descending=True, limit=limit)
+                records, errors = s3.rank_datasets(by_species, descending, limit)
             except Exception:
                 errors = {"error": get_traceback()}
             else:
@@ -97,12 +95,11 @@ class CountSvc(_AnalystService):
 
 # ...............................................
     @classmethod
-    def _get_dataset_counts(cls, dataset_key, format):
+    def _get_dataset_counts(cls, dataset_key):
         """Get counts for datasetKey.
 
         Args:
             dataset_key: unique GBIF identifier for dataset of interest.
-            format: output format, options "CSV" or "JSON"
 
         Returns:
             a flask_app.analyst.s2n_type.AnalystOutput object with optional records as a
@@ -112,7 +109,7 @@ class CountSvc(_AnalystService):
         errors = {}
         s3 = S3Query(PROJ_BUCKET)
         try:
-            records = s3.get_dataset_counts(dataset_key, format=format)
+            records = s3.get_dataset_counts(dataset_key)
         except Exception:
             traceback = get_traceback()
             errors["error"] = [HTTPStatus.INTERNAL_SERVER_ERROR, traceback]
@@ -166,14 +163,13 @@ class CountSvc(_AnalystService):
 
 # .............................................................................
 if __name__ == "__main__":
-    format = "JSON"
     dataset_key = "0000e36f-d0e9-46b0-aa23-cc1980f00515"
 
     svc = CountSvc()
     response = svc.get_endpoint()
     AnalystOutput.print_output(response, do_print_rec=True)
     # print(response)
-    response = svc.get_counts(dataset_key=dataset_key, pub_org_key=None, format=format)
+    response = svc.get_counts(dataset_key=dataset_key, pub_org_key=None)
     AnalystOutput.print_output(response, do_print_rec=True)
     # print(response)
 
