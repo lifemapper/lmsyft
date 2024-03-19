@@ -196,6 +196,12 @@ Install certificates into config directory
     $ ln -s ~/certificates/fullchain1.pem
     $ ln -s ~/certificates/privkey1.pem
 
+Direct Docker to correct FQDN
+------------------------------------
+
+Edit FQDN value in env.conf (or .env.analyst.conf and .env.broker.conf) to actual FQDN
+
+
 Testing
 ---------------------------------------
 On a development server, check the following URL endpoints:
