@@ -21,7 +21,7 @@ services:
     ports:
       - "5002:5002"
     environment:
-      - FLASK_APP=flask_app.analyst:app
+      - FLASK_APP=flask_app.analyst.routes:app
       - FLASK_MANAGE=flask_app.analyst.manage
       - DEBUG_PORT=5002
     volumes:
