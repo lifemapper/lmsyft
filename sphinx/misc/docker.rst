@@ -1,10 +1,85 @@
-Docker Troubleshooting
+Docker
 ##############################
 
-Out of space error
-************************
+Standard manipulation
+=================================
 
-Problem
+Edit the docker environment files
+-------------------------------------------
+
+* Add the container domain name to the files .env.broker.conf and .env.analyst.conf
+* Change the FQDN value to the fully qualified domain name of the server.
+
+  * If this is a local testing deployment, it will be "localhost"
+  * For a development or production server it will be the FQDN with correct subdomain
+    for each container, i.e FQDN=broker.spcoco.org in .env.broker.conf and
+    FQDN=analyst.spcoco.org in .env.analyst.conf
+
+Run the containers (production)
+-------------------------------------------
+
+Start the containers with the Docker composition file::
+
+    sudo docker compose -f docker-compose.yml up -d
+
+Specify Network is now available at [https://localhost/](https://localhost:443)
+
+
+Run the containers (development)
+-------------------------------------------
+
+Note that the development compose file, docker-compose.development.yml, is referenced
+first on the command line.  It has elements that override those defined in the
+general compose file, docker-compose.yml::
+
+    sudo docker compose -f docker-compose.development.yml -f docker-compose.yml  up
+
+Flask has hot-reload enabled.
+
+
+Rebuild/restart
+-------------------------------------------
+
+To delete all containers, images, networks and volumes, stop any running
+containers::
+
+    sudo docker compose stop
+
+
+And run this command (which ignores running container)::
+
+    sudo docker system prune --all --volumes
+
+Then rebuild/restart::
+
+    sudo docker compose up -d
+    # or
+    sudo docker compose -f docker-compose.development.yml -f docker-compose.yml  up
+
+Examine container
+-------------------------------------------
+
+To examine containers at a shell prompt::
+
+    sudo docker exec -it sp_network-nginx-1 /bin/sh
+
+Error port in use:
+"Error starting userland proxy: listen tcp4 0.0.0.0:443: bind: address already in use"
+
+See what else is using the port.  In my case apache was started on reboot.  Bring down
+all docker containers, shut down httpd, bring up docker.
+
+::
+    lsof -i -P -n | grep 443
+    sudo docker compose down
+    sudo systemctl stop httpd
+    sudo docker compose  up -d
+
+
+Troubleshooting
+=================================
+
+Out of Space Problem
 ------------------
 
 Running `certbot certificates` failed because the EC2 instance running Docker
@@ -22,86 +97,98 @@ containers for Specify Network development shows disk full::
     overlay         7.6G  7.6G     0 100% /var/lib/docker/overlay2/3bd6d12b36e746f9c74227b6ac9d928a3179d8b604a9dea4fd88625eab84be1f/merged
     tmpfs            97M  4.0K   97M   1% /run/user/1000
 
-
-Research
-------------------
-
 The disk is small, but the culprit is /var/lib/docker/overlay2
 
 Some strategies at:
 https://forums.docker.com/t/some-way-to-clean-up-identify-contents-of-var-lib-docker-overlay/30604/19
 
-Actual disk usage is correctly reported here (unlike some of the use cases above), so
-for now, clean it all out by stopping, pruning, removing images, killing the overlay2
-directory, recreating the overlay2 directory, changing permissions, then rebuilding
-and restarting the docker image::
+Solution:
+-------------------
 
-    $ sudo docker compose stop
-    $ sudo docker system prune --all --volumes
-    $ sudo docker image ls
-    REPOSITORY   TAG       IMAGE ID       CREATED        SIZE
-    <none>       <none>    e6bf776fc762   2 months ago   1.43GB
-    <none>       <none>    0ece9b23b9b3   2 months ago   108MB
-    <none>       <none>    23e4dc1f7809   2 months ago   108MB
-    <none>       <none>    529b5644c430   4 months ago   42.6MB
+* The instance was created with a volume of an 8gb default size.
+* Stop the instance
+* Modify the volume.
+* Restart the EC2 instance - ok while the volume is in the optimizing state.
+* If the instance does not recognize the extended volume immediately::
 
-    $ sudo docker image rm <each image id>
-    $ sudo du -skh /var/lib/docker/overlay2
-    1.2G	/var/lib/docker/overlay2
-
-    $ sudo rm -rf  /var/lib/docker/overlay2
-    $ df -h
+    ubuntu@ip-172-31-91-57:~$ df -h
     Filesystem      Size  Used Avail Use% Mounted on
-    /dev/root       7.6G  4.9G  2.8G  65% /
-    tmpfs           483M     0  483M   0% /dev/shm
-    tmpfs           194M  884K  193M   1% /run
+    /dev/root       7.6G  7.6G     0 100% /
+    tmpfs           475M     0  475M   0% /dev/shm
+    tmpfs           190M   11M  180M   6% /run
     tmpfs           5.0M     0  5.0M   0% /run/lock
     /dev/xvda15     105M  6.1M   99M   6% /boot/efi
-    tmpfs            97M  4.0K   97M   1% /run/user/1000
+    tmpfs            95M  4.0K   95M   1% /run/user/1000
+    ubuntu@ip-172-31-91-57:~$ sudo lsblk
+    sudo: unable to resolve host ip-172-31-91-57: Temporary failure in name resolution
+    NAME     MAJ:MIN RM  SIZE RO TYPE MOUNTPOINTS
+    loop0      7:0    0 24.9M  1 loop /snap/amazon-ssm-agent/7628
+    loop1      7:1    0 25.2M  1 loop /snap/amazon-ssm-agent/7983
+    loop2      7:2    0 55.7M  1 loop /snap/core18/2796
+    loop3      7:3    0 55.7M  1 loop /snap/core18/2812
+    loop4      7:4    0 63.9M  1 loop /snap/core20/2105
+    loop5      7:5    0 63.9M  1 loop /snap/core20/2182
+    loop6      7:6    0   87M  1 loop /snap/lxd/27037
+    loop7      7:7    0   87M  1 loop /snap/lxd/27428
+    loop8      7:8    0 40.4M  1 loop /snap/snapd/20671
+    loop9      7:9    0 39.1M  1 loop /snap/snapd/21184
+    xvda     202:0    0   30G  0 disk
+    ├─xvda1  202:1    0  7.9G  0 part /
+    ├─xvda14 202:14   0    4M  0 part
+    └─xvda15 202:15   0  106M  0 part /boot/efi
 
-    $ sudo mkdir  /var/lib/docker/overlay2
-    $ sudo ls -lahtr /var/lib/docker/overlay2
-    total 8.0K
-    drwx--x--- 12 root root 4.0K Mar 19 20:20 ..
-    drwxr-xr-x  2 root root 4.0K Mar 19 20:20 .
+* extend the filesystem:
+  https://docs.aws.amazon.com/ebs/latest/userguide/recognize-expanded-volume-linux.html
+* In this case we want to extend xvda1, so::
 
-    $ sudo chmod 710 /var/lib/docker/overlay2
-    total 8.0K
-    drwx--x--- 12 root root 4.0K Mar 19 20:20 ..
-    drwx--x---  2 root root 4.0K Mar 19 20:20 .
+    $ sudo growpart /dev/xvda 1
+    sudo: unable to resolve host ip-172-31-91-57: Temporary failure in name resolution
+    mkdir: cannot create directory ‘/tmp/growpart.1496’: No space left on device
+    FAILED: failed to make temp dir
 
+* We must free up space to allow extension::
 
+    $ sudo docker system prune --all --volumes
+    sudo: unable to resolve host ip-172-31-91-57: Temporary failure in name resolution
+    WARNING! This will remove:
+      - all stopped containers
+      - all networks not used by at least one container
+      - all volumes not used by at least one container
+      - all images without at least one container associated to them
+      - all build cache
 
+    Are you sure you want to continue? [y/N] y
+    Deleted Containers:
+    24768ca767d37f248eff173f13556007468330298329200d533dfa9ca011e409
+    809709d6f8bfa8575009a0d07df16ee78852e9ab3735aa19561ac0dbc0313123
+    64591ed14ecae60721ea367af650683f738636167162f6ed577063582c210aa9
 
-Then uninstall docker (previously installed from docker repository noted in
-about/install_run_notes), update apt repositories, re-install, reboot::
+    Deleted Networks:
+    sp_network_nginx
 
-    $ sudo apt list docker --installed
-    Listing... Done
-    docker/jammy 1.5-2 all
-    $ sudo apt-get update
-    $ sudo apt remove docker
+    Deleted Images:
+    untagged: nginx:alpine
+    untagged: nginx@sha256:a59278fd22a9d411121e190b8cec8aa57b306aa3332459197777583beb728f59
+    deleted: sha256:529b5644c430c06553d2e8082c6713fe19a4169c9dc2369cbb960081f52924ff
     ...
-    $ sudo apt install docker
-    ...
-    $ sudo shutdown -r now
+    deleted: sha256:e74dab46dbca98b4be75dfbda3608cd857914b750ecd251c4f1bdbb4ef623c8c
 
-Apparently, ubuntu comes with a docker install, not removed by apt::
+    Total reclaimed space: 1.536GB
 
-    $ dpkg -l | grep -i docker
-    ii  docker-buildx-plugin               0.10.4-1~ubuntu.22.04~jammy             amd64        Docker Buildx cli plugin.
-    ii  docker-ce                          5:23.0.4-1~ubuntu.22.04~jammy           amd64        Docker: the open-source application container engine
-    ii  docker-ce-cli                      5:23.0.4-1~ubuntu.22.04~jammy           amd64        Docker CLI: the open-source application container engine
-    ii  docker-ce-rootless-extras          5:23.0.4-1~ubuntu.22.04~jammy           amd64        Rootless support for Docker.
-    ii  docker-compose-plugin              2.17.2-1~ubuntu.22.04~jammy             amd64        Docker Compose (V2) plugin for the Docker CLI.
-    ii  wmdocker                           1.5-2                                   amd64        System tray for KDE3/GNOME2 docklet applications
+* Extend filesystem::
 
-    $ sudo sudo apt-get purge -y docker-buildx-plugin docker-ce docker-ce-cli docker-compose-plugin docker-ce-rootless-extras
-    $ sudo apt-get autoremove -y --purge docker-buildx-plugin docker-ce docker-ce-cli docker-compose-plugin docker-ce-rootless-extras
-    $ sudo rm -rf /var/lib/docker
-    $ sudo groupdel docker
-    $ sudo rm -rf /var/run/docker.sock
+    $ sudo growpart /dev/xvda 1
+    sudo: unable to resolve host ip-172-31-91-57: Temporary failure in name resolution
+    CHANGED: partition=1 start=227328 old: size=16549855 end=16777183 new: size=62687199 end=62914527
+    $ df -h
+    Filesystem      Size  Used Avail Use% Mounted on
+    /dev/root       7.6G  5.7G  2.0G  75% /
+    tmpfs           475M     0  475M   0% /dev/shm
+    tmpfs           190M   18M  173M  10% /run
+    tmpfs           5.0M     0  5.0M   0% /run/lock
+    /dev/xvda15     105M  6.1M   99M   6% /boot/efi
+    tmpfs            95M  4.0K   95M   1% /run/user/1000
 
-Then rebuild/restart docker::
 
-    $ sudo docker compose -f docker-compose.development.yml -f docker-compose.yml  up
+* Stop apache2 if running
+* Rebuild the docker containers
