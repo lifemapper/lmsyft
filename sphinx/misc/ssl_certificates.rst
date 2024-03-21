@@ -42,8 +42,8 @@ TLS/SSL using Certificate Authority (CA)
 
 ::
 
-    ubuntu@ip-172-31-86-62:~$ sudo systemctl stop apache2
-    ubuntu@ip-172-31-86-62:~$ sudo certbot certonly -v
+    $ sudo systemctl stop apache2
+    $ sudo certbot certonly -v
     Saving debug log to /var/log/letsencrypt/letsencrypt.log
 
     How would you like to authenticate with the ACME CA?
@@ -53,18 +53,39 @@ TLS/SSL using Certificate Authority (CA)
     - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     Select the appropriate number [1-2] then [enter] (press 'c' to cancel): 1
     Plugins selected: Authenticator standalone, Installer None
+    Enter email address (used for urgent renewal and security notices)
+     (Enter 'c' to cancel): aimee.stewart@ku.edu
+
+    - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    Please read the Terms of Service at
+    https://letsencrypt.org/documents/LE-SA-v1.3-September-21-2022.pdf. You must
+    agree in order to register with the ACME server. Do you agree?
+    - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    (Y)es/(N)o: Y
+
+    - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    Would you be willing, once your first certificate is successfully issued, to
+    share your email address with the Electronic Frontier Foundation, a founding
+    partner of the Let's Encrypt project and the non-profit organization that
+    develops Certbot? We'd like to send you email about our work encrypting the web,
+    EFF news, campaigns, and ways to support digital freedom.
+    - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    (Y)es/(N)o: N
+    Account registered.
     Please enter the domain name(s) you would like on your certificate (comma and/or
-    space separated) (Enter 'c' to cancel): broker-dev.spcoco.org analyst-dev.spcoco.org
-    Requesting a certificate for broker-dev.spcoco.org and analyst-dev.spcoco.org
+    space separated) (Enter 'c' to cancel): dev.spcoco.org, analyst-dev.spcoco.org, broker-dev.spcoco.org
+    Requesting a certificate for dev.spcoco.org and 2 more domains
     Performing the following challenges:
+    http-01 challenge for analyst-dev.spcoco.org
     http-01 challenge for broker-dev.spcoco.org
+    http-01 challenge for dev.spcoco.org
     Waiting for verification...
     Cleaning up challenges
 
     Successfully received certificate.
-    Certificate is saved at: /etc/letsencrypt/live/broker-dev.spcoco.org/fullchain.pem
-    Key is saved at:         /etc/letsencrypt/live/broker-dev.spcoco.org/privkey.pem
-    This certificate expires on 2023-10-18.
+    Certificate is saved at: /etc/letsencrypt/live/dev.spcoco.org/fullchain.pem
+    Key is saved at:         /etc/letsencrypt/live/dev.spcoco.org/privkey.pem
+    This certificate expires on 2024-06-19.
     These files will be updated when the certificate renews.
     Certbot has set up a scheduled task to automatically renew this certificate in the background.
 
@@ -73,7 +94,6 @@ TLS/SSL using Certificate Authority (CA)
      * Donating to ISRG / Let's Encrypt:   https://letsencrypt.org/donate
      * Donating to EFF:                    https://eff.org/donate-le
     - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    ubuntu@ip-172-31-86-62:~$
 
 
 Install certificates into config directory

@@ -1,6 +1,15 @@
 Authentication
 ####################
 
+EC2 instance creation
+===========================================================
+
+* Instance type t3.small (2gb RAM).
+* Ubuntu Server 22.04 LTS, SSD Volume Type (free tier eligible), x86 architecture
+* Security Group: launch-wizard-1
+* 30 Gb General Purpose SSD (gp2)
+* For dev, Spot instance (in Advanced options)
+
 For programmatic access to S3
 ===========================================================
 Configure AWS credentials either through

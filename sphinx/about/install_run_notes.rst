@@ -41,7 +41,7 @@ Install Docker
 Add docker repository, then use apt to install Docker:
 https://docs.docker.com/engine/install/ubuntu/
 
-Install repo from Github
+Install/Update repo from Github
 ---------------------------------------
 
 * generate an SSH key for communicating with Github
@@ -72,7 +72,8 @@ SSL
 Direct Docker to correct FQDN
 ------------------------------------
 
-Edit FQDN value in env.conf (or .env.analyst.conf and .env.broker.conf) to actual FQDN
+Edit FQDN value in .env.analyst.conf and .env.broker.conf (referenced by the docker
+compose file) and server_name in config/nginx.conf to actual FQDN.
 
 
 Testing
