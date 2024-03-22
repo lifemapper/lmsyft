@@ -790,3 +790,34 @@ def create_dataset_name_lookup(
     tmp_filename = f"/tmp/{lookup_name}"
     ds_table.to_csv(path_or_buf=tmp_filename, sep='\t', header=True, encoding=ENCODING)
     upload_to_s3(tmp_filename, bucket, output_path, region=region)
+    
+    
+# .............................................................................
+if __name__ == "__main__":
+    from sppy.aws.aws_tools  import *
+    from sppy.aws.aws_constants import *
+
+    bucket=PROJ_BUCKET
+    s3_folders="summary"
+    s3_fname="dataset_counts_2024_02_01_000.parquet"
+    lookup_name = "dataset_name_citation"
+    input_path = f"{s3_folders}/{s3_fname}"
+    output_path = f"{s3_folders}/{lookup_name}"
+
+    ds_table: object = create_dataframe_from_s3obj(
+        bucket, input_path, datatype="parquet", region=REGION, encoding=ENCODING)
+
+    i = 0
+    for rec in ds_table.itertuples():
+        print(i)
+        print(rec)
+        i = i + 1
+        if i == 5:
+            break
+
+    dataset_key = rec.datasetkey
+
+    url = f"https://api.gbif.org/v1/dataset/{dataset_key}"
+    response = requests.get(url)
+
+
