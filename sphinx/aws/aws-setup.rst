@@ -272,6 +272,8 @@ Enable S3 access from local machine and EC2
 Error: SSL
 ***************************************
 
+First time:
+
 Error message ::
 
     SSL validation failed for https://ec2.us-east-1.amazonaws.com/
@@ -284,6 +286,38 @@ Test with::
     $ aws ec2 describe-instances --no-verify-ssl
 
 Fix: Set up to work with Secret containing security key
+
+Second time (in python code):
+>>> response = requests.get(url)
+Traceback (most recent call last):
+  File "/home/astewart/git/sp_network/venv/lib/python3.8/site-packages/urllib3/connectionpool.py", line 703, in urlopen
+    httplib_response = self._make_request(
+  File "/home/astewart/git/sp_network/venv/lib/python3.8/site-packages/urllib3/connectionpool.py", line 386, in _make_request
+    self._validate_conn(conn)
+  File "/home/astewart/git/sp_network/venv/lib/python3.8/site-packages/urllib3/connectionpool.py", line 1042, in _validate_conn
+    conn.connect()
+  File "/home/astewart/git/sp_network/venv/lib/python3.8/site-packages/urllib3/connection.py", line 419, in connect
+    self.sock = ssl_wrap_socket(
+  File "/home/astewart/git/sp_network/venv/lib/python3.8/site-packages/urllib3/util/ssl_.py", line 449, in ssl_wrap_socket
+    ssl_sock = _ssl_wrap_socket_impl(
+  File "/home/astewart/git/sp_network/venv/lib/python3.8/site-packages/urllib3/util/ssl_.py", line 493, in _ssl_wrap_socket_impl
+    return ssl_context.wrap_socket(sock, server_hostname=server_hostname)
+  File "/usr/lib/python3.8/ssl.py", line 500, in wrap_socket
+    return self.sslsocket_class._create(
+  File "/usr/lib/python3.8/ssl.py", line 1069, in _create
+    self.do_handshake()
+  File "/usr/lib/python3.8/ssl.py", line 1338, in do_handshake
+    self._sslobj.do_handshake()
+ssl.SSLCertVerificationError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1131)
+
+
+https://stackoverflow.com/questions/51925384/unable-to-get-local-issuer-certificate-when-using-requests
+
+pip install certifi
+
+import certifi
+certifi.where()
+
 
 
 Workflow for Specify Network Analyst pre-computations
