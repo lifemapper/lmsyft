@@ -181,7 +181,7 @@ class S3Query():
             records, errors = self._query_order_s3_table(
                 self._dataset_counts_path, sort_field, order, limit)
         except Exception as e:
-            errors = {"error": get_traceback()}
+            errors = {"error": [get_traceback()]}
         return records, errors
 
 # .............................................................................
