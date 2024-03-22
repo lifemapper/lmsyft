@@ -1,14 +1,34 @@
 Authentication
 ####################
 
+Create an IAM role for the EC2/Redshift/S3 interaction
+***********************************************************
+
+* Create a Role (Redshift-S3) for service Redshift to read/write to S3
+
+  * Add a policy allowing read and write access to the specnet S3 bucket
+  * Step 1: Trusted entity type = AWS service, Use Case = Redshift - Customizable.
+
+    * TODO: change to Redshift - Scheduler when we automate the workflow
+
+  * Step 2: Add permissions
+
+    * AmazonRedshiftAllCommandsFullAccess (AWS managed)
+    * AmazonS3FullAccess (AWS managed)
+
 EC2 instance creation
 ===========================================================
 
-* Instance type t3.small (2gb RAM).
+* Instance type t3.small
+
+  * Build fails with t2.micro or t3.micro with 1gb RAM
+  * t3.small is 2gb RAM
+
 * Ubuntu Server 22.04 LTS, SSD Volume Type (free tier eligible), x86 architecture
 * Security Group: launch-wizard-1
 * 30 Gb General Purpose SSD (gp2)
 * For dev, Spot instance (in Advanced options)
+* Modify IAM role - for role created above (i.e. specnet_ec2_role)
 
 For programmatic access to S3
 ===========================================================
@@ -46,21 +66,6 @@ Overview
   species level, and records with a basis of record that is not observation, occurrence,
   or preserved specimen.  This brings the full dataset from about 2.6 billion down to
   2.3 billion.
-
-Create an IAM role for the Redshift/S3 interaction
-***********************************************************
-
-* Create a Role (Redshift-S3) for service Redshift to read/write to S3
-
-  * Add a policy allowing read and write access to the specnet S3 bucket
-  * Step 1: Trusted entity type = AWS service, Use Case = Redshift - Customizable.
-
-    * TODO: change to Redshift - Scheduler when we automate the workflow
-
-  * Step 2: Add permissions
-
-    * AmazonRedshiftAllCommandsFullAccess (AWS managed)
-    * AmazonS3FullAccess (AWS managed)
 
 
 Create a new workgroup (and namespace)

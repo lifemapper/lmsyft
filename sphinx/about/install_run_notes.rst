@@ -29,10 +29,10 @@ Install
 Install dependencies
 ---------------------------------------
 
-Certbot::
+AWS Client, Certbot::
 
     $ sudo apt update
-    $ sudo apt install certbot
+    $ sudo apt install awscli, certbot
 
 
 Install Docker
@@ -93,6 +93,12 @@ Docker
 
 More info at :ref:`Docker`
 
+AWS Config
+================
+
+Boto3 getting Error "botocore.exceptions.NoCredentialsError
+
+Create credentials file on host EC2 instance
 
 Test
 ===========================
@@ -152,6 +158,11 @@ needed.
 
 Dev Environment
 ==========================
+
+* Base system libraries::
+
+    sudo apt get update
+    sudo apt install awscli, certbot, apt install python3.10-venv
 
 * Create a virtual environment and install python libs there::
 
