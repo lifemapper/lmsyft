@@ -42,7 +42,7 @@ class RankSvc(_AnalystService):
                 count_by=count_by, order=order, limit=limit)
 
         except BadRequest as e:
-            errinfo = {"error": e.description}
+            errinfo = {"error": [e.description]}
 
         else:
             # Query for ordered dataset counts
@@ -51,7 +51,7 @@ class RankSvc(_AnalystService):
                     good_params["count_by"], good_params["order"],
                     good_params["limit"])
             except Exception:
-                errors = {"error": get_traceback()}
+                errors = {"error": [get_traceback()]}
 
             # Combine errors from success or failure
             errinfo = combine_errinfo(errinfo, errors)
@@ -72,7 +72,7 @@ class RankSvc(_AnalystService):
             records, errinfo = s3.rank_datasets(count_by, order, limit)
 
         except Exception:
-            errinfo = {"error": get_traceback()}
+            errinfo = {"error": [get_traceback()]}
 
         cls._add_dataset_names_to_records(
             records, dataset_key_field="datasetkey",
@@ -89,10 +89,9 @@ if __name__ == "__main__":
     AnalystOutput.print_output(response, do_print_rec=True)
     # print(response)
     count_by = "species"
-    order = "ascending"
+    order = "descending"
     limit = 5
-    response = svc.rank_counts(
-        count_by, order=order, limit=limit)
+    response = svc.rank_counts(count_by)
     AnalystOutput.print_output(response, do_print_rec=True)
     # print(response)
 

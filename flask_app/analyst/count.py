@@ -40,7 +40,7 @@ class CountSvc(_AnalystService):
                 dataset_key=dataset_key, pub_org_key=pub_org_key)
 
         except BadRequest as e:
-            errinfo = {"error": e.description}
+            errinfo = {"error": [e.description]}
 
         else:
             # Query dataset counts
@@ -49,7 +49,7 @@ class CountSvc(_AnalystService):
                     records, errors = cls._get_dataset_counts(
                         good_params["dataset_key"])
                 except Exception:
-                    errors = {"error": get_traceback()}
+                    errors = {"error": [get_traceback()]}
                 else:
                     cls._add_dataset_names_to_records(
                         records, dataset_key_field="datasetkey",
