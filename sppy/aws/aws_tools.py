@@ -7,13 +7,16 @@ import boto3
 from botocore.exceptions import ClientError
 import csv
 import datetime
+from http import HTTPStatus
 import logging
 from logging.handlers import RotatingFileHandler
 import pandas as pd
 import os
+import requests
+import xml.etree.ElementTree as ET
 
 from sppy.aws.aws_constants import (
-    INSTANCE_TYPE, KEY_NAME, LOGFILE_MAX_BYTES, LOG_FORMAT, LOG_DATE_FORMAT,
+    ENCODING, INSTANCE_TYPE, KEY_NAME, LOGFILE_MAX_BYTES, LOG_FORMAT, LOG_DATE_FORMAT,
     PROJ_NAME, REGION, SECURITY_GROUP_ID, SPOT_TEMPLATE_BASENAME,
     USER_DATA_TOKEN)
 
@@ -674,4 +677,116 @@ def create_dataframe_from_s3obj(
         df = pd.read_parquet(s3_uri)
     return df
 
+# ...............................................
+def _get_nested_output_val(output, key_list):
+    while key_list:
+        key = key_list[0]
+        key_list = key_list[1:]
+        try:
+            output = output[key]
+            if not key_list:
+                val = output
+                if type(val) is bytes:
+                    val = str(val).encode(ENCODING)
+                return str(output).encode(ENCODING)
+        except Exception:
+            return None
 
+# ...............................................
+def _get_values_for_keys(output, keys):
+    values = []
+    # Get values from JSON response
+    for key in keys:
+        if type(key) is list or type(key) is tuple:
+            val = _get_nested_output_val(output, key)
+        else:
+            try:
+                val = output[key]
+            except Exception:
+                val = None
+            if type(val) is bytes:
+                val = str(val).encode(ENCODING)
+        values.append(val)
+    return values
+
+
+# ...............................................
+def _get_api_response_vals(url, keys):
+    values = []
+    output = {}
+    try:
+        response = requests.get(url)
+    except Exception as e:
+        errmsg = str(e)
+    else:
+        try:
+            status_code = response.status_code
+            reason = response.reason
+        except Exception:
+            status_code = HTTPStatus.INTERNAL_SERVER_ERROR
+            reason = "Unknown API status_code/reason"
+        if status_code == HTTPStatus.OK:
+            # Parse response
+            try:
+                output = response.json()
+            except Exception:
+                output = response.content
+                if type(output) is bytes:
+                    output = ET.fromstring(str(output))
+                try:
+                    output = ET.parse(output)
+                except Exception as e:
+                    errmsg = f"Provider error: Invalid JSON response ({output})"
+            # Get values from JSON response
+            _get_values_for_keys(output, keys)
+    return values
+
+# ...............................................
+def get_dataset(dataset_key):
+    """Return title from one dataset record with this key.
+
+    Args:
+        dataset_key: GBIF identifier for this dataset
+
+    Returns:
+        dataset_name: the name of the dataset.
+        citation: the preferred citation for the dataset.
+
+    Raises:
+        Exception: on query failure.
+    """
+    url = f"https://api.gbif.org/v1/dataset/{dataset_key}"
+    title, citation = _get_api_response_vals(url, ["title", ["citation", "text"]])
+    return title, citation
+
+# ----------------------------------------------------
+def create_dataset_name_lookup(
+        bucket, s3_folders, s3_fname, ds_key_fieldname, datatype="parquet", region=REGION, encoding="utf-8"):
+    """Read CSV data from S3 into a pandas DataFrame.
+
+    Args:
+        bucket: name of the bucket containing the CSV data.
+        s3_path: the object name with enclosing S3 bucket folders.
+        ds_key_fieldname: fieldname of the column with GBIF datasetKey
+        region: AWS region to query.
+        datatype: tabular datatype, options are "csv", "parquet"
+
+    Returns:
+        df: pandas DataFrame containing the CSV data.
+    """
+    lookup_name = "dataset_name_citation"
+    input_path = f"{s3_folders}/{s3_fname}"
+    output_path = f"{s3_folders}/{lookup_name}"
+    ds_table = create_dataframe_from_s3obj(
+        bucket, input_path, datatype="parquet", region=REGION, encoding=ENCODING)
+    ds_names = []
+    ds_citations = []
+    for rec in ds_table.itertuples():
+        title, citation = get_dataset(rec.datasetkey)
+        ds_names.append(title)
+        ds_citations.append(citation)
+    # dataset_name and dataset_citation are the new fieldnames to be assigned
+    ds_table.assign(dataset_name=ds_names, dataset_citation=ds_citations)
+    tmp_filename = f"/tmp/{lookup_name}"
+    ds_table.to_csv(path_or_buf=tmp_filename, sep='\t', header=True, encoding=ENCODING)
+    upload_to_s3(tmp_filename, bucket, output_path, region=region)
