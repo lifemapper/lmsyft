@@ -64,6 +64,18 @@ Install/Update repo from Github
     $ git clone git@github.com:specifysystems/sp_network.git
     $ git checkout <branch>
 
+DNS
+----------------------
+
+If this is a development or production server with an actual domain, first point the
+DNS record (through whatever service is managing the domain, GoDaddy in the case of
+spcoco.org) to the static IP address for the server.
+
+For AWS, create (or modify) an Elastic IP address to point to the EC2 instance.
+
+If replacing an EC2 instance, disassociate the Elastic IP address from the old EC2
+instance, and associate it with the new instance.
+
 SSL
 -----------------------------------
 :ref:`Specify Network SSL certificates`
@@ -76,25 +88,41 @@ Edit FQDN value in .env.analyst.conf and .env.broker.conf (referenced by the doc
 compose file) and server_name in config/nginx.conf to actual FQDN.
 
 
-Testing
----------------------------------------
-On a development server, check the following URL endpoints:
+Docker
+=================================
 
-* Index page: https://localhost
+More info at :ref:`Docker`
+
+
+Test
+===========================
+On a development server, check the following URL endpoints:
 
 * Broker:
 
-  * https://localhost/api/v1/
+  * https://localhost.broker
+  * https://localhost.broker/api/v1/
 
-    * https://localhost/api/v1/badge/
-    * https://localhost/api/v1/name/
-    * https://localhost/api/v1/occ/
-    * https://localhost/api/v1/frontend/
+  * https://localhost.broker/api/v1/badge/
+  * https://localhost.broker/api/v1/name/
+  * https://localhost.broker/api/v1/occ/
+  * https://localhost.broker/api/v1/frontend/
 
-  * https://localhost/api/v1/badge/gbif?icon_status=active
-  * https://localhost/api/v1/occ/?occid=a7156437-55ec-4c6f-89de-938f9361753d
-  * https://localhost/api/v1/name/Harengula%20jaguana
-  * https://localhost/api/v1/frontend/?occid=a7156437-55ec-4c6f-89de-938f9361753d
+  * https://localhost.broker/api/v1/badge/gbif?icon_status=active
+  * https://localhost.broker/api/v1/occ/?occid=a7156437-55ec-4c6f-89de-938f9361753d
+  * https://localhost.broker/api/v1/name/Harengula%20jaguana
+  * https://localhost.broker/api/v1/frontend/?occid=a7156437-55ec-4c6f-89de-938f9361753d
+
+* Analyst:
+
+  * https://localhost.analyst
+  * https://localhost.analyst/api/v1/
+
+  * https://localhost.analyst/api/v1/count/
+  * https://localhost.analyst/api/v1/rank/
+
+  * http://localhost.analyst/api/v1/count/?dataset_key=0000e36f-d0e9-46b0-aa23-cc1980f00515
+  * http://localhost.analyst/api/v1/rank/?by_species=true
 
 For local testing in a development environment, tests in the tests directory
 require the lmtest module available at https://github.com/lifemapper/lmtest.
@@ -109,7 +137,7 @@ virtual environment activation script (bin/activate) script::
     export WORKING_DIRECTORY="scratch-path"
 
 
-**Specify Network** homepage is now available at https://localhost/ and http://localhost.
+**Specify Network** homepage is now available at https://localhost/
 
 **Broker** (aka back-end):
 
@@ -122,29 +150,6 @@ needed.
 **Flask** is watching for back-end file changes and restarts the server when
 needed.
 
-Troubleshooting
-===========================================
-
-For webserver errors, check logs of nginx container::
-
-    $ sudo docker logs --tail 1000 sp_network-nginx-1
-    $ sudo docker logs --tail 1000 sp_network-broker-1
-
-
-Error: "... cannot import name 'url_quote' from 'werkzeug.urls'" in broker container
-Fix: Add Werkzeug==2.2.2 to requirements.txt to ensure it does not use 3.0+
-Then stop/rebuild/start::
-
-    $ sudo docker compose stop
-    $ sudo docker system prune --all --volumes
-    $ sudo docker compose up -d
-
-Docker
-=================================
-
-More info at :ref:`Docker`
-
-
 Dev Environment
 ==========================
 
@@ -156,13 +161,15 @@ Dev Environment
     $ pip install -r requirements.txt
 
 
-Configure Debugger in local IDE
+Configure Debugger
 ========================================
 
+Pycharm
+------------------
 [Instructions for PyCharm]
 (https://kartoza.com/en/blog/using-docker-compose-based-python-interpreter-in-pycharm/)
 
-Debug
+Flask
 -------------------------------------------
 
 To run flask in debug mode, first set up Flask environment, then start the flask
@@ -186,6 +193,28 @@ Reset the FLASK_APP variable to test an alternate resource::
 
 Troubleshooting
 ======================================
+
+
+For webserver errors
+-----------------------
+
+Check logs of nginx container::
+
+    $ sudo docker logs --tail 1000 sp_network-nginx-1
+    $ sudo docker logs --tail 1000 sp_network-broker-1
+
+
+Import error from werkzeug.urls
+--------------------------------------
+
+Error: "... cannot import name 'url_quote' from 'werkzeug.urls'" in broker container
+Fix: Add Werkzeug==2.2.2 to requirements.txt to ensure it does not use 3.0+
+Then stop/rebuild/start::
+
+    $ sudo docker compose stop
+    $ sudo docker system prune --all --volumes
+    $ sudo docker compose up -d
+
 
 pip errors with SSL
 -------------------------------------------
@@ -224,13 +253,6 @@ pre-commit build errors
 * Errors installing toml, Poetry, dependencies of isort.
   * Updated .pre-commit-config.yaml isort version to latest,
      https://github.com/PyCQA/isort, fixed build
-
-AWS setup
-===================================
-
-* Add raw GBIF data to S3
-
-
 
 
 Dependencies:
