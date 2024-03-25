@@ -686,9 +686,9 @@ def _get_nested_output_val(output, key_list):
             output = output[key]
             if not key_list:
                 val = output
-                if type(val) is bytes:
-                    val = str(val).encode(ENCODING)
-                return str(output).encode(ENCODING)
+                # if type(val) is bytes:
+                #     val = val.decode(ENCODING)
+                return val
         except Exception:
             return None
 
@@ -704,8 +704,8 @@ def _get_values_for_keys(output, keys):
                 val = output[key]
             except Exception:
                 val = None
-            if type(val) is bytes:
-                val = str(val).encode(ENCODING)
+            # if type(val) is bytes:
+            #     val = val.decode(ENCODING)
         values.append(val)
     return values
 
@@ -713,7 +713,6 @@ def _get_values_for_keys(output, keys):
 # ...............................................
 def _get_api_response_vals(url, keys):
     values = []
-    output = {}
     try:
         response = requests.get(url)
     except Exception as e:
@@ -738,11 +737,11 @@ def _get_api_response_vals(url, keys):
                 except Exception as e:
                     errmsg = f"Provider error: Invalid JSON response ({output})"
             # Get values from JSON response
-            _get_values_for_keys(output, keys)
+            values = _get_values_for_keys(output, keys)
     return values
 
 # ...............................................
-def get_dataset(dataset_key):
+def get_dataset_name_citation(dataset_key):
     """Return title from one dataset record with this key.
 
     Args:
@@ -756,55 +755,168 @@ def get_dataset(dataset_key):
         Exception: on query failure.
     """
     url = f"https://api.gbif.org/v1/dataset/{dataset_key}"
-    title, citation = _get_api_response_vals(url, ["title", ["citation", "text"]])
-    return title, citation
+    name, citation = _get_api_response_vals(url, ["title", ["citation", "text"]])
+    return name, citation
+
+
+# ...............................................
+def _parse_records(ret_records, keys):
+    small_recs = []
+    for rec in ret_records:
+        values = _get_values_for_keys(rec, keys)
+        small_recs.append(values)
+    return small_recs
+
+# ...............................................
+def _get_records(url, keys):
+    small_recs = []
+    is_end = True
+    try:
+        response = requests.get(url)
+    except Exception as e:
+        errmsg = str(e)
+    else:
+        try:
+            status_code = response.status_code
+            reason = response.reason
+        except Exception as e:
+            status_code = HTTPStatus.INTERNAL_SERVER_ERROR
+            reason = str(e)
+        if status_code == HTTPStatus.OK:
+            # Parse response
+            try:
+                output = response.json()
+            except Exception:
+                output = response.content
+                if type(output) is bytes:
+                    output = ET.fromstring(str(output))
+                try:
+                    output = ET.parse(output)
+                except Exception:
+                    reason = f"Provider error: Invalid JSON response ({output})"
+            # Last query?
+            try:
+                is_end = output["endOfRecords"]
+            except KeyError:
+                print("Missing endOfRecords flag")
+            # Get values from JSON response
+            try:
+                ret_records = output["results"]
+            except KeyError:
+                reason = "No results returned"
+            else:
+                small_recs = _parse_records(ret_records, keys)
+    return small_recs, is_end
+
+
+# ...............................................
+def create_dataset_lookup():
+    """Return title from one dataset record with this key.
+
+    Returns:
+        dataframe of records containing GBIF dataset key, title, and citation
+
+    Raises:
+        Exception: on query failure.
+    """
+    all_recs = []
+    is_end = False
+    keys = ["key", "publishingOrganizationKey", "title", ["citation", "text"]]
+    offset = 0
+    limit = 100
+    while is_end is False:
+        url = f"https://api.gbif.org/v1/dataset?offset={offset}&limit={limit}"
+        small_recs, is_end = _get_records(url, keys)
+        all_recs.append(small_recs)
+    lookup_df = pd.DataFrame(
+        all_recs,
+        columns=["datasetKey", "publishingOrganizationKey", "title", "citation"])
+    return lookup_df
 
 # ----------------------------------------------------
-def create_dataset_name_lookup(
-        bucket, s3_folders, s3_fname, ds_key_fieldname, datatype="parquet", region=REGION, encoding="utf-8"):
+def create_dataset_lookup(
+        bucket, s3_folders, lookup_fname, region=REGION, encoding="utf-8"):
     """Read CSV data from S3 into a pandas DataFrame.
 
     Args:
         bucket: name of the bucket containing the CSV data.
-        s3_path: the object name with enclosing S3 bucket folders.
-        ds_key_fieldname: fieldname of the column with GBIF datasetKey
+        s3_folders: S3 bucket folders for output lookup table
+        lookup_fname: output table for looking up dataset name and citation
         region: AWS region to query.
-        datatype: tabular datatype, options are "csv", "parquet"
+        encoding: encoding of the input data
 
     Returns:
         df: pandas DataFrame containing the CSV data.
     """
-    lookup_name = "dataset_name_citation"
-    input_path = f"{s3_folders}/{s3_fname}"
-    output_path = f"{s3_folders}/{lookup_name}"
-    ds_table = create_dataframe_from_s3obj(
-        bucket, input_path, datatype="parquet", region=REGION, encoding=ENCODING)
-    ds_names = []
-    ds_citations = []
-    for rec in ds_table.itertuples():
-        title, citation = get_dataset(rec.datasetkey)
-        ds_names.append(title)
-        ds_citations.append(citation)
-    # dataset_name and dataset_citation are the new fieldnames to be assigned
-    ds_table.assign(dataset_name=ds_names, dataset_citation=ds_citations)
-    tmp_filename = f"/tmp/{lookup_name}"
-    ds_table.to_csv(path_or_buf=tmp_filename, sep='\t', header=True, encoding=ENCODING)
+    all_recs = []
+    is_end = False
+    keys = ["key", "publishingOrganizationKey", "title", ["citation", "text"]]
+    offset = 0
+    limit = 100
+    while is_end is False:
+        url = f"https://api.gbif.org/v1/dataset?offset={offset}&limit={limit}"
+        small_recs, is_end = _get_records(url, keys)
+        all_recs.append(small_recs)
+    lookup_df = pd.DataFrame(
+        all_recs,
+        columns=["datasetKey", "publishingOrganizationKey", "title", "citation"])
+
+    output_path = f"{s3_folders}/{lookup_fname}"
+    tmp_filename = f"/tmp/{lookup_fname}"
+    # Output data written as CSV
+    lookup_df.to_csv(path_or_buf=tmp_filename, sep='\t', header=True, encoding=encoding)
     upload_to_s3(tmp_filename, bucket, output_path, region=region)
-    
-    
+
+
+# ----------------------------------------------------
+def create_puborg_lookup(
+        bucket, s3_folders, lookup_fname, region=REGION, encoding="utf-8"):
+    """Read CSV data from S3 into a pandas DataFrame.
+
+    Args:
+        bucket: name of the bucket containing the CSV data.
+        s3_folders: S3 bucket folders for output lookup table
+        lookup_fname: output table for looking up dataset name and citation
+        region: AWS region to query.
+        encoding: encoding of the input data
+
+    Returns:
+        df: pandas DataFrame containing the CSV data.
+    """
+    all_recs = []
+    is_end = False
+    keys = ["key", "title"]
+    offset = 0
+    limit = 100
+    while is_end is False:
+        url = f"https://api.gbif.org/v1/organization?offset={offset}&limit={limit}"
+        small_recs, is_end = _get_records(url, keys)
+        all_recs.append(small_recs)
+    lookup_df = pd.DataFrame(all_recs, columns=["publishingOrganizationKey", "title"])
+
+    output_path = f"{s3_folders}/{lookup_fname}"
+    tmp_filename = f"/tmp/{lookup_fname}"
+    # Output data written as CSV
+    lookup_df.to_csv(path_or_buf=tmp_filename, sep='\t', header=True, encoding=encoding)
+    upload_to_s3(tmp_filename, bucket, output_path, region=region)
+
 # .............................................................................
 if __name__ == "__main__":
     from sppy.aws.aws_tools  import *
     from sppy.aws.aws_constants import *
 
+    import certifi
+
+    cert = certifi.where()
+
     bucket=PROJ_BUCKET
     s3_folders="summary"
     s3_fname="dataset_counts_2024_02_01_000.parquet"
-    lookup_name = "dataset_name_citation"
+    lookup_name = "dataset_name_2024_02_01_"
     input_path = f"{s3_folders}/{s3_fname}"
     output_path = f"{s3_folders}/{lookup_name}"
 
-    ds_table: object = create_dataframe_from_s3obj(
+    ds_table = create_dataframe_from_s3obj(
         bucket, input_path, datatype="parquet", region=REGION, encoding=ENCODING)
 
     i = 0
@@ -818,6 +930,38 @@ if __name__ == "__main__":
     dataset_key = rec.datasetkey
 
     url = f"https://api.gbif.org/v1/dataset/{dataset_key}"
-    response = requests.get(url)
+    # response = requests.get(url)
+    r = requests.get(url, cert=cert)
 
+"""
+from sppy.aws.aws_tools  import *
+from sppy.aws.aws_constants import *
 
+import certifi
+cert = certifi.where()
+
+bucket=PROJ_BUCKET
+s3_folders="summary"
+s3_fname="dataset_counts_2024_02_01_000.parquet"
+lookup_name = "dataset_name_2024_02_01_"
+input_path = f"{s3_folders}/{s3_fname}"
+output_path = f"{s3_folders}/{lookup_name}"
+
+ds_table = create_dataframe_from_s3obj(
+    bucket, input_path, datatype="parquet", region=REGION, encoding=ENCODING)
+
+i = 0
+for rec in ds_table.itertuples():
+    print(i)
+    print(rec)
+    i = i + 1
+    if i == 5:
+        break
+
+dataset_key = rec.datasetkey
+
+url = f"https://api.gbif.org/v1/dataset/{dataset_key}"
+# response = requests.get(url)
+r = requests.get(url, cert=cert)
+
+"""
