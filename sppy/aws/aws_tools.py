@@ -809,66 +809,86 @@ def _get_records(url, keys):
     return small_recs, is_end
 
 
-# ...............................................
-def create_dataset_lookup():
-    """Return title from one dataset record with this key.
-
-    Returns:
-        dataframe of records containing GBIF dataset key, GBIF publishingOrg key,
-            dataset title, and dataset citation
-
-    Raises:
-        Exception: on query failure.
-    """
-    all_recs = []
-    is_end = False
-    keys = ["key", "publishingOrganizationKey", "title", ["citation", "text"]]
-    offset = 0
-    limit = 100
-    while is_end is False:
-        url = f"https://api.gbif.org/v1/dataset?offset={offset}&limit={limit}"
-        small_recs, is_end = _get_records(url, keys)
-        all_recs.append(small_recs)
-        offset += limit
-    lookup_df = pd.DataFrame(
-        all_recs,
-        columns=["datasetKey", "publishingOrganizationKey", "title", "citation"])
-    return lookup_df
-
 # ----------------------------------------------------
-def create_s3_dataset_lookup(
-        bucket, s3_folders, lookup_fname, region=REGION, encoding="utf-8"):
-    """Read CSV data from S3 into a pandas DataFrame.
+def create_s3_lookup(
+        bucket, s3_folders, base_url, response_keys, output_fname, output_columns,
+        region=REGION, encoding="utf-8"):
+    """Query an API, read the data and write a subset to a table in S3.
 
     Args:
         bucket: name of the bucket containing the CSV data.
         s3_folders: S3 bucket folders for output lookup table
-        lookup_fname: output table for looking up dataset name and citation
-        region: AWS region to query.
+        base_url: API URL without any key value pairs for the data service
+        response_keys: list of keys within the API response to pull values from.  A key
+            can be an ordered list of keys nested within several elements of the tree,
+            from outermost to innermost.
+        output_columns: list of column headings for output lookup table
+        output_fname: output table for looking up dataset name and citation
+        region: AWS region containing the destination bucket.
+        encoding: encoding of the input data
+
+    Postcondition:
+        CSV table with output_columns and values for each written to the named S3 object
+            in bucket and folders
+    """
+    all_recs = []
+    is_end = False
+    offset = 0
+    limit = 100
+
+    while is_end is False:
+        url = f"{base_url}?offset={offset}&limit={limit}"
+        small_recs, is_end = _get_records(url, response_keys)
+        all_recs.append(small_recs)
+        offset += limit
+        if offset % 1000 == 0:
+            print(f"Offset = {offset}")
+
+    lookup_df = pd.DataFrame(
+        all_recs,
+        columns=output_columns)
+    print(f"Lookup table contains {lookup_df.shape[0]} rows")
+
+    output_path = f"{s3_folders}/{output_fname}"
+    tmp_filename = f"/tmp/{output_fname}"
+    # Output data written as CSV
+    lookup_df.to_csv(path_or_buf=tmp_filename, sep='\t', header=True, encoding=encoding)
+    print(f"Wrote {tmp_filename}")
+    upload_to_s3(tmp_filename, bucket, output_path, region=region)
+    print(f"Uploaded to s3://{bucket}/{output_path}")
+
+
+# ----------------------------------------------------
+def create_s3_dataset_lookup(bucket, s3_folders, region=REGION, encoding="utf-8"):
+    """Query the GBIF Dataset API, write a subset of the response to a table in S3.
+
+    Args:
+        bucket: name of the bucket containing the CSV data.
+        s3_folders: S3 bucket folders for output lookup table
+        region: AWS region containing the destination bucket.
         encoding: encoding of the input data
 
     Postcondition:
         CSV table with dataset key, pubOrgKey, dataset name, dataset citation written
             to the named S3 object in bucket and folders
     """
-    lookup_df = create_dataset_lookup()
-
-    output_path = f"{s3_folders}/{lookup_fname}"
-    tmp_filename = f"/tmp/{lookup_fname}"
-    # Output data written as CSV
-    lookup_df.to_csv(path_or_buf=tmp_filename, sep='\t', header=True, encoding=encoding)
-    upload_to_s3(tmp_filename, bucket, output_path, region=region)
-
+    base_url = "https://api.gbif.org/v1/dataset"
+    response_keys = ["key", "publishingOrganizationKey", "title", ["citation", "text"]]
+    data_date = get_current_datadate_str()
+    output_fname = f"dataset_name_{data_date}_"
+    output_fname = "dataset_name_2024_02_01_"
+    output_columns = ["datasetKey", "publishingOrganizationKey", "title", "citation"]
+    create_s3_lookup(
+        bucket, s3_folders, base_url, response_keys, output_fname, output_columns,
+        region=region, encoding=encoding)
 
 # ----------------------------------------------------
-def create_s3_puborg_lookup(
-        bucket, s3_folders, lookup_fname, region=REGION, encoding="utf-8"):
-    """Read CSV data from S3 into a pandas DataFrame.
+def create_s3_organization_lookup(bucket, s3_folders, region=REGION, encoding="utf-8"):
+    """Query the GBIF Organization API, write a subset of the response to a table in S3.
 
     Args:
         bucket: name of the bucket containing the CSV data.
         s3_folders: S3 bucket folders for output lookup table
-        lookup_fname: output table for looking up organization name
         region: AWS region to query.
         encoding: encoding of the input data
 
@@ -876,52 +896,27 @@ def create_s3_puborg_lookup(
         CSV table with pubOrgKey, pubOrg name written to the named S3 object in
             bucket and folders
     """
-    all_recs = []
-    is_end = False
-    keys = ["key", "title"]
-    offset = 0
-    limit = 100
-    while is_end is False:
-        url = f"https://api.gbif.org/v1/organization?offset={offset}&limit={limit}"
-        small_recs, is_end = _get_records(url, keys)
-        all_recs.append(small_recs)
-        offset += limit
-    lookup_df = pd.DataFrame(all_recs, columns=["publishingOrganizationKey", "title"])
-
-    output_path = f"{s3_folders}/{lookup_fname}"
-    tmp_filename = f"/tmp/{lookup_fname}"
-    # Output data written as CSV
-    lookup_df.to_csv(path_or_buf=tmp_filename, sep='\t', header=True, encoding=encoding)
-    upload_to_s3(tmp_filename, bucket, output_path, region=region)
+    base_url = "https://api.gbif.org/v1/dataset"
+    response_keys = ["key", "title"]
+    data_date = get_current_datadate_str()
+    output_fname = f"organization_name_{data_date}_"
+    output_fname = "organization_name_2024_02_01_"
+    output_columns = ["publishingOrganizationKey", "title"]
+    create_s3_lookup(
+        bucket, s3_folders, base_url, response_keys, output_fname, output_columns,
+        region=region, encoding=encoding)
 
 
 # .............................................................................
 if __name__ == "__main__":
     bucket=PROJ_BUCKET
     s3_folders="summary"
-    s3_fname="dataset_counts_2024_02_01_000.parquet"
-    lookup_name = "dataset_name_2024_02_01_"
-    input_path = f"{s3_folders}/{s3_fname}"
-    output_path = f"{s3_folders}/{lookup_name}"
 
-    ds_table = create_dataframe_from_s3obj(
-        bucket, input_path, datatype="parquet", region=REGION, encoding=ENCODING)
+    create_s3_dataset_lookup(
+        bucket, s3_folders, region=REGION, encoding="utf-8")
+    create_s3_organization_lookup(
+        bucket, s3_folders, region=REGION, encoding="utf-8")
 
-    i = 0
-    for rec in ds_table.itertuples():
-        print(i)
-        print(rec)
-        i = i + 1
-        if i == 5:
-            break
-
-    dataset_key = rec.datasetkey
-
-    url = f"https://api.gbif.org/v1/dataset/{dataset_key}"
-    response = requests.get(url)
-    # import certifi
-    # cert = certifi.where()
-    # r = requests.get(url, cert=cert)
 
 """
 from sppy.aws.aws_tools  import *
@@ -929,10 +924,9 @@ from sppy.aws.aws_constants import *
 
 bucket=PROJ_BUCKET
 s3_folders="summary"
-lookup_fname = "dataset_name_2024_02_01_"
 
 create_s3_dataset_lookup(
-        bucket, s3_folders, lookup_fname, region=REGION, encoding="utf-8")
+        bucket, s3_folders, region=REGION, encoding="utf-8")
 
 # ds_table = create_dataframe_from_s3obj(
 #     bucket, input_path, datatype="parquet", region=REGION, encoding=ENCODING)
