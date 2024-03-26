@@ -31,7 +31,8 @@ class S3Query():
         datestr = get_current_datadate_str()
         datestr = "2024_02_01"
         self._dataset_counts_path = f"{SUMMARY_FOLDER}/dataset_counts_{datestr}_000.parquet"
-        self._dataset_lists_path = f"{SUMMARY_FOLDER}/dataset_counts_{datestr}_000.parquet"
+        self._dataset_lists_path = f"{SUMMARY_FOLDER}/dataset_lists_{datestr}_000.parquet"
+        self._dataset_names_path = f"{SUMMARY_FOLDER}/dataset_names_{datestr}_000.csv"
 
     # ----------------------------------------------------
     def _query_table(self, s3_path, query_str, format="CSV"):
