@@ -74,10 +74,6 @@ class RankSvc(_AnalystService):
         except Exception:
             errinfo = {"error": [get_traceback()]}
 
-        cls._add_dataset_names_to_records(
-            records, dataset_key_field="datasetkey",
-            dataset_name_field="dataset_name")
-
         return records, errinfo
 
 # .............................................................................

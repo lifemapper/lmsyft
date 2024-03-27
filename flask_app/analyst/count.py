@@ -34,7 +34,7 @@ class CountSvc(_AnalystService):
         if dataset_key is None and pub_org_key is None:
             return cls.get_endpoint()
 
-        allrecs = []
+        records = []
         try:
             good_params, errinfo = cls._standardize_params(
                 dataset_key=dataset_key, pub_org_key=pub_org_key)
@@ -50,25 +50,14 @@ class CountSvc(_AnalystService):
                         good_params["dataset_key"])
                 except Exception:
                     errors = {"error": [get_traceback()]}
-                else:
-                    cls._add_dataset_names_to_records(
-                        records, dataset_key_field="datasetkey",
-                        dataset_name_field="dataset_name")
-                    if records:
-                        allrecs.append(records)
-                # Combine errors from success or failure
-                errinfo = combine_errinfo(errinfo, errors)
 
-            # Query organization counts
-            if good_params["pub_org_key"] is not None:
-                errors = {
-                    "warning": "Count by Publishing Organization is not implemented"}
+                # Combine errors from success or failure
                 errinfo = combine_errinfo(errinfo, errors)
 
         # Assemble
         full_out = AnalystOutput(
             cls.SERVICE_TYPE["name"], description=cls.SERVICE_TYPE["description"],
-            records=allrecs, errors=errinfo)
+            records=records, errors=errinfo)
 
         return full_out.response
 
