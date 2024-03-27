@@ -6,7 +6,7 @@ from flask_app.common.s2n_type import APIService, AnalystOutput
 from flask_app.analyst.base import _AnalystService
 
 from sppy.aws.aws_constants import PROJ_BUCKET
-from sppy.tools.provider.awss3 import S3Query
+from sppy.tools.provider.awss3 import SpNetAnalyses
 from sppy.tools.s2n.utils import (combine_errinfo, get_traceback)
 
 
@@ -67,7 +67,7 @@ class RankSvc(_AnalystService):
     @classmethod
     def _get_ordered_counts(cls, count_by, order, limit):
         records = []
-        s3 = S3Query(PROJ_BUCKET)
+        s3 = SpNetAnalyses(PROJ_BUCKET)
         try:
             records, errinfo = s3.rank_datasets(count_by, order, limit)
 
