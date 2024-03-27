@@ -166,7 +166,7 @@ class SpNetAnalyses():
         )
         # Returns empty list or list of 1 record
         records = self._query_table(table_path, query_str, format=format)
-        self.add_dataset_lookup_vals(records, key_idx=key_idx)
+        # self.add_dataset_lookup_vals(records, key_idx=key_idx)
         return records
 
     # ----------------------------------------------------
@@ -253,7 +253,7 @@ class SpNetAnalyses():
         except Exception as e:
             errors = {"error": [get_traceback()]}
 
-        self.add_dataset_lookup_vals(records, key_idx=key_idx)
+        # self.add_dataset_lookup_vals(records, key_idx=key_idx)
         return records, errors
 
 # .............................................................................
