@@ -835,17 +835,93 @@ def create_dataframe_from_api(base_url, response_keys, output_columns):
     all_recs = []
     is_end = False
     offset = 0
-    limit = 100
+    limit = 1000
     while is_end is False:
         url = f"{base_url}?offset={offset}&limit={limit}"
         small_recs, is_end = _get_records(url, response_keys)
         all_recs.append(small_recs)
         offset += limit
-        if offset % 1000 == 0:
+        if offset % 5000 == 0:
             print(f"Offset = {offset}")
     dataframe = pd.DataFrame(all_recs, columns=output_columns)
     print(f"Lookup table contains {dataframe.shape[0]} rows")
     return dataframe
+
+
+# ----------------------------------------------------
+def create_csvfiles_from_api(base_url, response_keys, output_columns, output_fname):
+    """Query an API, read the data and write a subset to a table in S3.
+
+    Args:
+        base_url: API URL without any key value pairs for the data service
+        response_keys: list of keys within the API response to pull values from.  A key
+            can be an ordered list of keys nested within several elements of the tree,
+            from outermost to innermost.
+        output_columns: list of column headings for output lookup table
+        output_fname: base output filename for temporary CSV files
+
+    Returns:
+        csv_files: Local CSV files with records.  The first file in the list will have
+            a header, the rest will not.
+    """
+    csv_files = []
+    records = []
+    is_end = False
+    offset = 0
+    read_limit = 1000
+    write_limit = 5000
+    write_header = True
+    while is_end is False:
+        url = f"{base_url}?offset={offset}&limit={read_limit}"
+        small_recs, is_end = _get_records(url, response_keys)
+        records.append(small_recs)
+        offset += read_limit
+        # Write to tempfile every 5000
+        if offset % write_limit == 0:
+            print(f"Offset = {offset}")
+            dataframe = pd.DataFrame(records, columns=output_columns)
+            tmp_filename = f"/tmp/{output_fname}_{offset}_"
+            dataframe.to_csv(
+                path_or_buf=tmp_filename, sep='\t', header=write_header,
+                encoding=encoding)
+            # Only write header to first file, others will be appended
+            write_header = False
+            csv_files.append(tmp_filename)
+            print(f"Wrote {tmp_filename} with {dataframe.shape[0]} rows")
+            # reset records in memory
+            records = []
+    return csv_files
+
+
+# ----------------------------------------------------
+def write_csvfiles_to_s3(
+        csv_fnames, bucket, s3_folders, output_fname, region=REGION, encoding="utf-8"):
+    """Query an API, read the data and write a subset to a table in S3.
+
+    Args:
+        csvfiles: input CSV files for S3 table. The first file in the list will have
+            a header, the rest will not.
+        bucket: name of the bucket containing the CSV data.
+        s3_folders: S3 bucket folders for output lookup table
+        output_fname: output table for looking up dataset name and citation
+        region: AWS region containing the destination bucket.
+        encoding: encoding of the input data
+
+    Postcondition:
+        CSV table with output_columns and values for each written to the named S3 object
+            in bucket and folders
+    """
+    output_path = f"{s3_folders}/{output_fname}"
+    combined_fname = f"/tmp/{output_fname}"
+    with open(combined_fname, "a") as outf:
+        # Output data written as CSV
+        for fname in csv_fnames:
+            with open(fname, "r") as inf:
+                data = inf.read()
+                outf.write(data)
+    print(f"Wrote {combined_fname}")
+    upload_to_s3(combined_fname, bucket, output_path, region=region)
+    print(f"Uploaded to s3://{bucket}/{output_path}")
 
 
 # ----------------------------------------------------
@@ -884,6 +960,11 @@ def create_s3_dataset_lookup(bucket, s3_folders, region=REGION, encoding="utf-8"
         region: AWS region containing the destination bucket.
         encoding: encoding of the input data
 
+    Note:
+        There are >100k records for datasets and limited memory on this EC2 instance,
+        so we write them as temporary CSV files, then combine them, then create a
+        dataframe and upload.
+
     Postcondition:
         CSV table with dataset key, pubOrgKey, dataset name, dataset citation written
             to the named S3 object in bucket and folders
@@ -894,9 +975,10 @@ def create_s3_dataset_lookup(bucket, s3_folders, region=REGION, encoding="utf-8"
     output_fname = f"dataset_name_{data_date}_"
     output_fname = "dataset_name_2024_02_01_"
     output_columns = ["datasetKey", "publishingOrganizationKey", "title", "citation"]
-    lookup_df = create_dataframe_from_api(base_url, response_keys, output_columns)
-    write_dataframe_to_s3(
-        lookup_df, bucket, s3_folders, output_fname, region=region, encoding=encoding)
+    csv_fnames = create_csvfiles_from_api(
+        base_url, response_keys, output_columns, output_fname)
+    write_csvfiles_to_s3(
+        csv_fnames, bucket, s3_folders, output_fname, region=region, encoding=encoding)
 
 
 # ----------------------------------------------------
@@ -931,11 +1013,6 @@ if __name__ == "__main__":
     encoding=ENCODING
     s3_folders="summary"
 
-    base_url = "https://api.gbif.org/v1/dataset"
-    response_keys = ["key", "publishingOrganizationKey", "title", ["citation", "text"]]
-    output_fname = "dataset_name_2024_02_01_"
-    output_columns = ["datasetKey", "publishingOrganizationKey", "title", "citation"]
-
     create_s3_dataset_lookup(
         bucket, s3_folders, region=REGION, encoding="utf-8")
     # create_s3_organization_lookup(
@@ -949,11 +1026,6 @@ bucket=PROJ_BUCKET
 region=REGION
 encoding=ENCODING
 s3_folders="summary"
-
-base_url = "https://api.gbif.org/v1/dataset"
-response_keys = ["key", "publishingOrganizationKey", "title", ["citation", "text"]]
-output_fname = "dataset_name_2024_02_01_"
-output_columns = ["datasetKey", "publishingOrganizationKey", "title", "citation"]
 
 create_s3_dataset_lookup(
     bucket, s3_folders, region=REGION, encoding="utf-8")
