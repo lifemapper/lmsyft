@@ -10,7 +10,7 @@ from sppy.tools.s2n.utils import get_traceback
 
 
 # .............................................................................
-class S3Query():
+class SpNetAnalyses():
     """Class for retrieving SpecifyNetwork summary data from AWS S3."""
 
     # ...............................................
@@ -30,9 +30,30 @@ class S3Query():
         self.exp_type = 'SQL'
         datestr = get_current_datadate_str()
         datestr = "2024_02_01"
-        self._dataset_counts_path = f"{SUMMARY_FOLDER}/dataset_counts_{datestr}_000.parquet"
-        self._dataset_lists_path = f"{SUMMARY_FOLDER}/dataset_lists_{datestr}_000.parquet"
-        self._dataset_names_path = f"{SUMMARY_FOLDER}/dataset_names_{datestr}_000.csv"
+        self._summary_path = "summary"
+        self._summary_tables = {
+            "dataset_counts": {
+                "fname": f"dataset_counts_{datestr}_000.parquet",
+                "fields": ["datasetkey", "occ_count", "species_count"],
+                "key": "datasetkey"
+            },
+            "dataset_species_lists": {
+                "fname": f"dataset_lists_{datestr}_000.parquet",
+                "fields": ["datasetkey", "taxonkey", "species", "occ_count"],
+                "key": "datasetkey"
+            },
+            "dataset_meta": {
+                "fname": f"dataset_names_{datestr}_000.csv",
+                "fields": [
+                    "datasetKey", "publishingOrganizationKey", "title", "citation"],
+                "key": "datasetKey"
+            },
+            "organization_meta": {
+                "fname": f"organization_names_{datestr}_000.csv",
+                "fields": ["publishingOrganizationKey", "title"],
+                "key": "publishingOrganizationKey"
+            }
+        }
 
     # ----------------------------------------------------
     def _query_table(self, s3_path, query_str, format="CSV"):
@@ -135,31 +156,75 @@ class S3Query():
         Returns:
              records: empty list or list of 1 record (list)
         """
+        fields = self._summary_tables["dataset_counts"]["fields"]
+        key_idx = fields.index(self._summary_tables["dataset_counts"]["key"])
+
+        table_path = \
+            f"{self._summary_path}/{self._summary_tables['dataset_counts']['fname']}"
         query_str = (
-            "SELECT datasetkey, occ_count, species_count FROM s3object s "
-            f"WHERE s.datasetkey = '{dataset_key}'"
+            f"SELECT * FROM s3object s WHERE s.datasetkey = '{dataset_key}'"
         )
         # Returns empty list or list of 1 record
-        records = self._query_table(self._dataset_counts_path, query_str, format=format)
+        records = self._query_table(table_path, query_str, format=format)
+        self.add_dataset_lookup_vals(records, key_idx=key_idx)
         return records
 
     # ----------------------------------------------------
-    def get_org_counts(self, pub_org_key):
-        """Query S3 for occurrence and species counts for this organization.
+    def add_dataset_lookup_vals(self, records, key_idx=0, format="JSON"):
+        """Query the S3 resource for occurrence and species counts for this dataset.
 
         Args:
-            pub_org_key: unique GBIF identifier for organization of interest.
+            key: unique GBIF identifier for object of interest.
+            format: output format, options "CSV" or "JSON"
 
         Returns:
-             records: empty list or list of 1 record containing occ_count, species_count
-
-        TODO: implement this?
+             records: empty list or list of 1 record (list)
         """
-        (occ_count, species_count) = (0,0)
-        return (occ_count, species_count)
+        table_path = \
+            f"{self._summary_path}/{self._summary_tables['dataset_meta']['fname']}"
+        fields = self._summary_tables["dataset_meta"]["fields"]
+        key_fld = fields[0]
+        new_flds = fields[1:]
+        qry_flds = " ".join(new_flds)
+
+        for rec in records:
+            query_str = (
+                f"SELECT {qry_flds} FROM s3object s WHERE s.{key_fld} = "
+                f"'{rec[key_idx]}'"
+            )
+            # Returns empty list or list of 1 record
+            meta_recs = self._query_table(table_path, query_str, format=format)
+            try:
+                meta = meta_recs[0]
+            except IndexError:
+                if format == "CSV":
+                    # Add placeholders for empty values
+                    rec.extend(["" for f in new_flds])
+            else:
+                for fld in new_flds:
+                    if format == "JSON":
+                        rec.update(meta)
+                    else:
+                        rec.extend(meta)
+        return records
+
+    # # ----------------------------------------------------
+    # def get_org_counts(self, pub_org_key):
+    #     """Query S3 for occurrence and species counts for this organization.
+    #
+    #     Args:
+    #         pub_org_key: unique GBIF identifier for organization of interest.
+    #
+    #     Returns:
+    #          records: empty list or list of 1 record containing occ_count, species_count
+    #
+    #     TODO: implement this?
+    #     """
+    #     (occ_count, species_count) = (0,0)
+    #     return (occ_count, species_count)
 
     # ----------------------------------------------------
-    def rank_datasets(self, count_by, order, limit, format="JSON"):
+    def rank_dataset_counts(self, count_by, order, limit, format="JSON"):
         """Return the top or bottom datasets, with counts, ranked by number of species.
 
         Args:
@@ -174,22 +239,28 @@ class S3Query():
              records: list of limit records containing dataset_key, occ_count, species_count
         """
         records = []
+        table_path = \
+            f"{self._summary_path}/{self._summary_tables['dataset_counts']['fname']}"
+        fields = self._summary_tables["dataset_counts"]["fields"]
+        key_idx = fields.index(self._summary_tables["dataset_counts"]["key"])
         if count_by == "species":
             sort_field = "species_count"
         else:
             sort_field = "occ_count"
         try:
             records, errors = self._query_order_s3_table(
-                self._dataset_counts_path, sort_field, order, limit)
+                table_path, sort_field, order, limit)
         except Exception as e:
             errors = {"error": [get_traceback()]}
+
+        self.add_dataset_lookup_vals(records, key_idx=key_idx)
         return records, errors
 
 # .............................................................................
 if __name__ == "__main__":
     format = "JSON"
     dataset_key = "0000e36f-d0e9-46b0-aa23-cc1980f00515"
-    s3q = S3Query(PROJ_BUCKET)
+    s3q = SpNetAnalyses(PROJ_BUCKET)
     recs = s3q.get_dataset_counts(dataset_key, format=format)
     for r in recs:
         print(r)

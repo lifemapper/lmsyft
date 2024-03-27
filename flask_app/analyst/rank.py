@@ -69,7 +69,7 @@ class RankSvc(_AnalystService):
         records = []
         s3 = SpNetAnalyses(PROJ_BUCKET)
         try:
-            records, errinfo = s3.rank_datasets(count_by, order, limit)
+            records, errinfo = s3.rank_dataset_counts(count_by, order, limit)
 
         except Exception:
             errinfo = {"error": [get_traceback()]}
