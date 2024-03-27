@@ -677,20 +677,22 @@ def create_dataframe_from_s3obj(
         df = pd.read_parquet(s3_uri)
     return df
 
-# ...............................................
-def _get_nested_output_val(output, key_list):
-    while key_list:
-        key = key_list[0]
-        key_list = key_list[1:]
-        try:
-            output = output[key]
-            if not key_list:
-                val = output
-                # if type(val) is bytes:
-                #     val = val.decode(ENCODING)
-                return val
-        except Exception:
-            return None
+
+# # ...............................................
+# def _get_nested_output_val(output, key_list):
+#     while key_list:
+#         key = key_list[0]
+#         key_list = key_list[1:]
+#         try:
+#             output = output[key]
+#             if not key_list:
+#                 val = output
+#                 # if type(val) is bytes:
+#                 #     val = val.decode(ENCODING)
+#                 return val
+#         except Exception:
+#             return None
+
 
 # ...............................................
 def _get_values_for_keys(output, keys):
@@ -698,14 +700,21 @@ def _get_values_for_keys(output, keys):
     # Get values from JSON response
     for key in keys:
         if type(key) is list or type(key) is tuple:
-            val = _get_nested_output_val(output, key)
+            key_list = key
+            while key_list:
+                key = key_list[0]
+                key_list = key_list[1:]
+                try:
+                    output = output[key]
+                    if not key_list:
+                        val = output
+                except Exception:
+                    val = None
         else:
             try:
                 val = output[key]
             except Exception:
                 val = None
-            # if type(val) is bytes:
-            #     val = val.decode(ENCODING)
         values.append(val)
     return values
 
@@ -810,19 +819,44 @@ def _get_records(url, keys):
 
 
 # ----------------------------------------------------
-def create_s3_lookup(
-        bucket, s3_folders, base_url, response_keys, output_fname, output_columns,
-        region=REGION, encoding="utf-8"):
+def create_dataframe_from_api(base_url, response_keys, output_columns):
     """Query an API, read the data and write a subset to a table in S3.
 
     Args:
-        bucket: name of the bucket containing the CSV data.
-        s3_folders: S3 bucket folders for output lookup table
         base_url: API URL without any key value pairs for the data service
         response_keys: list of keys within the API response to pull values from.  A key
             can be an ordered list of keys nested within several elements of the tree,
             from outermost to innermost.
         output_columns: list of column headings for output lookup table
+
+    Returns:
+        dataframe: Pandas dataframe with rows of data for the output_columns
+    """
+    all_recs = []
+    is_end = False
+    offset = 0
+    limit = 100
+    while is_end is False:
+        url = f"{base_url}?offset={offset}&limit={limit}"
+        small_recs, is_end = _get_records(url, response_keys)
+        all_recs.append(small_recs)
+        offset += limit
+        if offset % 1000 == 0:
+            print(f"Offset = {offset}")
+    dataframe = pd.DataFrame(all_recs, columns=output_columns)
+    print(f"Lookup table contains {dataframe.shape[0]} rows")
+    return dataframe
+
+
+# ----------------------------------------------------
+def write_dataframe_to_s3(
+        dataframe, bucket, s3_folders, output_fname, region=REGION, encoding="utf-8"):
+    """Query an API, read the data and write a subset to a table in S3.
+
+    Args:
+        dataframe: Pandas dataframe with rows of data
+        bucket: name of the bucket containing the CSV data.
+        s3_folders: S3 bucket folders for output lookup table
         output_fname: output table for looking up dataset name and citation
         region: AWS region containing the destination bucket.
         encoding: encoding of the input data
@@ -831,28 +865,10 @@ def create_s3_lookup(
         CSV table with output_columns and values for each written to the named S3 object
             in bucket and folders
     """
-    all_recs = []
-    is_end = False
-    offset = 0
-    limit = 100
-
-    while is_end is False:
-        url = f"{base_url}?offset={offset}&limit={limit}"
-        small_recs, is_end = _get_records(url, response_keys)
-        all_recs.append(small_recs)
-        offset += limit
-        if offset % 1000 == 0:
-            print(f"Offset = {offset}")
-
-    lookup_df = pd.DataFrame(
-        all_recs,
-        columns=output_columns)
-    print(f"Lookup table contains {lookup_df.shape[0]} rows")
-
     output_path = f"{s3_folders}/{output_fname}"
     tmp_filename = f"/tmp/{output_fname}"
     # Output data written as CSV
-    lookup_df.to_csv(path_or_buf=tmp_filename, sep='\t', header=True, encoding=encoding)
+    dataframe.to_csv(path_or_buf=tmp_filename, sep='\t', header=True, encoding=encoding)
     print(f"Wrote {tmp_filename}")
     upload_to_s3(tmp_filename, bucket, output_path, region=region)
     print(f"Uploaded to s3://{bucket}/{output_path}")
@@ -878,9 +894,10 @@ def create_s3_dataset_lookup(bucket, s3_folders, region=REGION, encoding="utf-8"
     output_fname = f"dataset_name_{data_date}_"
     output_fname = "dataset_name_2024_02_01_"
     output_columns = ["datasetKey", "publishingOrganizationKey", "title", "citation"]
-    create_s3_lookup(
-        bucket, s3_folders, base_url, response_keys, output_fname, output_columns,
-        region=region, encoding=encoding)
+    lookup_df = create_dataframe_from_api(base_url, response_keys, output_columns)
+    write_dataframe_to_s3(
+        lookup_df, bucket, s3_folders, output_fname, region=region, encoding=encoding)
+
 
 # ----------------------------------------------------
 def create_s3_organization_lookup(bucket, s3_folders, region=REGION, encoding="utf-8"):
@@ -902,25 +919,31 @@ def create_s3_organization_lookup(bucket, s3_folders, region=REGION, encoding="u
     output_fname = f"organization_name_{data_date}_"
     output_fname = "organization_name_2024_02_01_"
     output_columns = ["publishingOrganizationKey", "title"]
-    create_s3_lookup(
-        bucket, s3_folders, base_url, response_keys, output_fname, output_columns,
-        region=region, encoding=encoding)
+    lookup_df = create_dataframe_from_api(base_url, response_keys, output_columns)
+    write_dataframe_to_s3(
+        lookup_df, bucket, s3_folders, output_fname, region=region, encoding=encoding)
 
 
 # .............................................................................
 if __name__ == "__main__":
     bucket=PROJ_BUCKET
+    region=REGION
+    encoding=ENCODING
     s3_folders="summary"
+
+    base_url = "https://api.gbif.org/v1/dataset"
+    response_keys = ["key", "publishingOrganizationKey", "title", ["citation", "text"]]
+    output_fname = "dataset_name_2024_02_01_"
+    output_columns = ["datasetKey", "publishingOrganizationKey", "title", "citation"]
 
     create_s3_dataset_lookup(
         bucket, s3_folders, region=REGION, encoding="utf-8")
-    create_s3_organization_lookup(
-        bucket, s3_folders, region=REGION, encoding="utf-8")
+    # create_s3_organization_lookup(
+    #     bucket, s3_folders, region=REGION, encoding="utf-8")
 
 
 """
 from sppy.aws.aws_tools  import *
-from sppy.aws.aws_constants import *
 
 bucket=PROJ_BUCKET
 s3_folders="summary"
