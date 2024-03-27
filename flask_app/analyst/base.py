@@ -5,7 +5,7 @@ from flask_app.common.base import _SpecifyNetworkService
 from flask_app.common.s2n_type import AnalystOutput, APIService
 
 from sppy.tools.s2n.utils import get_traceback
-from sppy.tools.provider.awss3 import SpNetAnalyses
+from sppy.tools.provider.spnet import SpNetAnalyses
 
 
 # .............................................................................
