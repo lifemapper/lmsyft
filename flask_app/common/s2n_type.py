@@ -193,7 +193,7 @@ class APIService:
             "order": {
                 "type": "",
                 "options": ["ascending", "descending"],
-                "default": None
+                "default": "descending"
             },
             "limit": {"type": 2, "default": 10, "min": 1, "max": 500},
         },
