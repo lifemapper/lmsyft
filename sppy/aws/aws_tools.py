@@ -946,29 +946,15 @@ if __name__ == "__main__":
 from sppy.aws.aws_tools  import *
 
 bucket=PROJ_BUCKET
+region=REGION
+encoding=ENCODING
 s3_folders="summary"
 
+base_url = "https://api.gbif.org/v1/dataset"
+response_keys = ["key", "publishingOrganizationKey", "title", ["citation", "text"]]
+output_fname = "dataset_name_2024_02_01_"
+output_columns = ["datasetKey", "publishingOrganizationKey", "title", "citation"]
+
 create_s3_dataset_lookup(
-        bucket, s3_folders, region=REGION, encoding="utf-8")
-
-# ds_table = create_dataframe_from_s3obj(
-#     bucket, input_path, datatype="parquet", region=REGION, encoding=ENCODING)
-# 
-# i = 0
-# for rec in ds_table.itertuples():
-#     print(i)
-#     print(rec)
-#     i = i + 1
-#     if i == 5:
-#         break
-# 
-# dataset_key = rec.datasetkey
-# 
-# url = f"https://api.gbif.org/v1/dataset/{dataset_key}"
-
-# import certifi
-# cert = certifi.where()
-# r = requests.get(url, cert=cert)
-
-# response = requests.get(url)
+    bucket, s3_folders, region=REGION, encoding="utf-8")
 """
