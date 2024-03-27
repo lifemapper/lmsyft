@@ -839,7 +839,7 @@ def create_dataframe_from_api(base_url, response_keys, output_columns):
     while is_end is False:
         url = f"{base_url}?offset={offset}&limit={limit}"
         small_recs, is_end = _get_records(url, response_keys)
-        all_recs.append(small_recs)
+        all_recs.extend(small_recs)
         offset += limit
         if offset % 5000 == 0:
             print(f"Offset = {offset}")
@@ -874,7 +874,7 @@ def create_csvfiles_from_api(base_url, response_keys, output_columns, output_fna
     while is_end is False:
         url = f"{base_url}?offset={offset}&limit={read_limit}"
         small_recs, is_end = _get_records(url, response_keys)
-        records.append(small_recs)
+        records.extend(small_recs)
         offset += read_limit
         # Write to tempfile every 5000
         if offset % write_limit == 0:
