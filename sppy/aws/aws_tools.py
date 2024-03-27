@@ -849,7 +849,8 @@ def create_dataframe_from_api(base_url, response_keys, output_columns):
 
 
 # ----------------------------------------------------
-def create_csvfiles_from_api(base_url, response_keys, output_columns, output_fname):
+def create_csvfiles_from_api(
+        base_url, response_keys, output_columns, output_fname, encoding="utf-8"):
     """Query an API, read the data and write a subset to a table in S3.
 
     Args:
@@ -859,6 +860,7 @@ def create_csvfiles_from_api(base_url, response_keys, output_columns, output_fna
             from outermost to innermost.
         output_columns: list of column headings for output lookup table
         output_fname: base output filename for temporary CSV files
+        encoding: encoding of the input data
 
     Returns:
         csv_files: Local CSV files with records.  The first file in the list will have
@@ -880,7 +882,7 @@ def create_csvfiles_from_api(base_url, response_keys, output_columns, output_fna
         if offset % write_limit == 0:
             print(f"Offset = {offset}")
             dataframe = pd.DataFrame(records, columns=output_columns)
-            tmp_filename = f"/tmp/{output_fname}_{offset}_"
+            tmp_filename = f"/tmp/{output_fname}{offset}.csv"
             dataframe.to_csv(
                 path_or_buf=tmp_filename, sep='\t', header=write_header,
                 encoding=encoding)
