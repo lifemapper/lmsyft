@@ -199,8 +199,8 @@ Reset the FLASK_APP variable to test an alternate resource::
 
 * Test with http, no https!!
 
-  http://localhost:5000/api/v1/name?namestr=Notemigonus%20crysoleucas%20(Mitchill,%201814)
-  http://localhost:5000/api/v1/occ?occid=01493b05-4310-4f28-9d81-ad20860311f3
+  http://broker.localhost:5000/api/v1/name?namestr=Notemigonus%20crysoleucas%20(Mitchill,%201814)
+  http://broker.localhost:5000/api/v1/occ?occid=01493b05-4310-4f28-9d81-ad20860311f3
 
 Troubleshooting
 ======================================

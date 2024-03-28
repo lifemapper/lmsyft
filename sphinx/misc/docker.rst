@@ -75,6 +75,19 @@ all docker containers, shut down httpd, bring up docker.
     sudo systemctl stop httpd
     sudo docker compose  up -d
 
+Run Docker on OSX
+=================================
+
+Need to bind server to 0.0.0.0 instead of 127.0.0.1
+
+Test by getting internal IP, using ifconfig, then command to see if connects successfully::
+
+    nc -v x.x.x.x 443
+
+Then can use same IP in browser, i.e. https://x.x.x.x/api/v1/name/
+This only exposes the broker, not the analyst services.
+
+
 
 Troubleshooting
 =================================
