@@ -6,6 +6,7 @@ import base64
 import boto3
 from botocore.exceptions import ClientError
 import csv
+import certifi
 import datetime
 from http import HTTPStatus
 import logging
@@ -704,10 +705,10 @@ def _get_values_for_keys(output, keys):
 
 
 # ...............................................
-def _get_api_response_vals(url, keys):
+def _get_api_response_vals(url, keys, certificate=None):
     values = []
     try:
-        response = requests.get(url)
+        response = requests.get(url, verify=certificate)
     except Exception as e:
         errmsg = str(e)
     else:
@@ -734,7 +735,7 @@ def _get_api_response_vals(url, keys):
     return values
 
 # ...............................................
-def get_dataset_name_citation(dataset_key):
+def get_dataset_name_citation(dataset_key, certificate=None):
     """Return title from one dataset record with this key.
 
     Args:
@@ -748,7 +749,8 @@ def get_dataset_name_citation(dataset_key):
         Exception: on query failure.
     """
     url = f"https://api.gbif.org/v1/dataset/{dataset_key}"
-    name, citation = _get_api_response_vals(url, ["title", ["citation", "text"]])
+    name, citation = _get_api_response_vals(
+        url, ["title", ["citation", "text"]], certificate=certificate)
     return name, citation
 
 
@@ -761,10 +763,13 @@ def _parse_records(ret_records, keys):
     return small_recs
 
 # ...............................................
-def _get_single_record(url, keys):
+def _get_single_record(url, keys, certificate=None):
     rec = None
     try:
-        response = requests.get(url)
+        if certificate:
+            response = requests.get(url, verify=certificate)
+        else:
+            response = requests.get(url)
     except Exception as e:
         errmsg = str(e)
     else:
@@ -798,11 +803,16 @@ def _get_single_record(url, keys):
 
 
 # ...............................................
-def _get_records(url, keys):
+def _get_records(url, keys, certificate=None):
+    small_recs = []
+    status_code = 0
     try:
-        response = requests.get(url)
+        if certificate:
+            response = requests.get(url, verify=certificate)
+        else:
+            response = requests.get(url)
     except Exception as e:
-        errmsg = str(e)
+        reason = str(e)
     else:
         try:
             status_code = response.status_code
@@ -834,6 +844,8 @@ def _get_records(url, keys):
                 reason = "No results returned"
             else:
                 small_recs = _parse_records(ret_records, keys)
+    if not small_recs:
+        print(f"No records returned, status {status_code}, reason {reason}")
     return small_recs, is_end
 
 # ----------------------------------------------------
@@ -854,9 +866,10 @@ def create_dataframe_from_api(base_url, response_keys, output_columns):
     is_end = False
     offset = 0
     limit = 1000
+    certificate = certifi.where()
     while is_end is False:
         url = f"{base_url}?offset={offset}&limit={limit}"
-        small_recs, is_end = _get_records(url, response_keys)
+        small_recs, is_end = _get_records(url, response_keys, certificate=certificate)
         all_recs.extend(small_recs)
         offset += limit
         if offset % 5000 == 0:
@@ -888,17 +901,19 @@ def create_csvfiles_from_api(
     records = []
     is_end = False
     offset = 0
-    read_limit = 1000
+    read_limit = 500
     write_limit = 5000
     write_header = True
+    certificate = certifi.where()
     while is_end is False:
         url = f"{base_url}?offset={offset}&limit={read_limit}"
-        small_recs, is_end = _get_records(url, response_keys)
-        records.extend(small_recs)
+        print(url)
+        small_recs, is_end = _get_records(url, response_keys, certificate=certificate)
+        if small_recs:
+            records.extend(small_recs)
         offset += read_limit
         # Write to tempfile every 5000
         if offset % write_limit == 0:
-            print(f"Offset = {offset}")
             dataframe = pd.DataFrame(records, columns=output_columns)
             tmp_filename = f"/tmp/{output_fname}_{offset}.csv"
             dataframe.to_csv(
@@ -1031,7 +1046,7 @@ def create_s3_organization_lookup(bucket, s3_folders, region=REGION, encoding=EN
 
 # ----------------------------------------------------
 def create_csvfile_from_api(
-        base_url, keys, response_keys, output_columns, output_fname, encoding=ENCODING):
+    base_url, keys, response_keys, output_columns, output_fname, encoding=ENCODING):
     """Query an API, read the data and write a subset to a table in S3.
 
     Args:
@@ -1049,9 +1064,10 @@ def create_csvfile_from_api(
             a header, the rest will not.
     """
     records = []
+    certificate = certifi.where()
     for key in keys:
         url = f"{base_url}/{key}"
-        rec = _get_single_record(url, response_keys)
+        rec = _get_single_record(url, response_keys, certificate=certificate)
         records.append(rec)
     dataframe = pd.DataFrame(records, columns=output_columns)
     tmp_filename = f"/tmp/{output_fname}.csv"
@@ -1088,8 +1104,10 @@ def create_test_s3_dataset_lookup(bucket, s3_folders, keys, region=REGION, encod
     output_fname = f"dataset_name_{data_date}_"
     output_fname = "dataset_name_test_2024_02_01_"
     output_columns = ["datasetKey", "publishingOrganizationKey", "title", "citation"]
+    certificate = certifi.where()
     csv_fname = create_csvfile_from_api(
-        base_url, keys, response_keys, output_columns, output_fname, encoding=ENCODING)
+        base_url, keys, response_keys, output_columns, output_fname, encoding=ENCODING,
+        certificate=certificate)
     write_csvfiles_to_s3(
         [csv_fname], bucket, s3_folders, output_fname, region=region, encoding=encoding)
 
@@ -1106,8 +1124,8 @@ if __name__ == "__main__":
         "3c83d5da-822a-439c-897a-7569e82c4ebc"
     ]
 
-
-    create_test_s3_dataset_lookup(bucket, s3_folders, keys)
+    create_s3_dataset_lookup(bucket, s3_folders)
+    # create_test_s3_dataset_lookup(bucket, s3_folders, keys)
     # create_s3_organization_lookup(
     #     bucket, s3_folders, region=REGION, encoding=ENCODING)
 
@@ -1121,26 +1139,7 @@ bucket=PROJ_BUCKET
 region=REGION
 encoding=ENCODING
 s3_folders="summary"
-keys = [
-        "5a95fa0a-5ef3-432a-b95b-816cd85b2f9b",
-        "ee789ae4-ef51-4ff2-931b-bc61b2dbe40e",
-        "c8fded56-3ddb-4e26-8863-ba8d55862689",
-        "3c83d5da-822a-439c-897a-7569e82c4ebc"
-    ]
 
-base_url = "https://api.gbif.org/v1/dataset"
-response_keys = ["key", "publishingOrganizationKey", "title", ["citation", "text"]]
-data_date = get_current_datadate_str()
-output_fname = f"dataset_name_{data_date}_"
-output_fname = "dataset_name_test_2024_02_01_"
-output_columns = ["datasetKey", "publishingOrganizationKey", "title", "citation"]
     
-    
-csv_fname = create_csvfile_from_api(
-    base_url, keys, response_keys, output_columns, output_fname, encoding=ENCODING)
-write_csvfiles_to_s3(
-    [csv_fname], bucket, s3_folders, output_fname, region=region, encoding=encoding)
-
-
-create_test_s3_dataset_lookup(bucket, s3_folders, keys)
+create_s3_dataset_lookup(bucket, s3_folders)
 """
