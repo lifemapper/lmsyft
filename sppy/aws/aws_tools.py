@@ -777,9 +777,43 @@ def _parse_records(ret_records, keys):
     return small_recs
 
 # ...............................................
+def _get_single_record(url, keys):
+    rec = None
+    try:
+        response = requests.get(url)
+    except Exception as e:
+        errmsg = str(e)
+    else:
+        try:
+            status_code = response.status_code
+            reason = response.reason
+        except Exception as e:
+            status_code = HTTPStatus.INTERNAL_SERVER_ERROR
+            reason = str(e)
+        if status_code == HTTPStatus.OK:
+            # Parse response
+            try:
+                output = response.json()
+            except Exception:
+                output = response.content
+                if type(output) is bytes:
+                    output = ET.fromstring(str(output))
+                try:
+                    output = ET.parse(output)
+                except Exception:
+                    reason = f"Provider error: Invalid JSON response ({output})"
+                else:
+                    # Output is only one record
+                    small_recs = _parse_records([output], keys)
+                    try:
+                        rec = small_recs[0]
+                    except Exception as e:
+                        print(f"Error: no output record ({e})")
+    return rec
+
+
+# ...............................................
 def _get_records(url, keys):
-    small_recs = []
-    is_end = True
     try:
         response = requests.get(url)
     except Exception as e:
@@ -816,7 +850,6 @@ def _get_records(url, keys):
             else:
                 small_recs = _parse_records(ret_records, keys)
     return small_recs, is_end
-
 
 # ----------------------------------------------------
 def create_dataframe_from_api(base_url, response_keys, output_columns):
@@ -885,6 +918,7 @@ def create_csvfiles_from_api(
             tmp_filename = f"/tmp/{output_fname}{offset}.csv"
             dataframe.to_csv(
                 path_or_buf=tmp_filename, sep='\t', header=write_header,
+                columns=output_columns, doublequote=False, escapechar="\\",
                 encoding=encoding)
             # Only write header to first file, others will be appended
             write_header = False
@@ -1008,12 +1042,81 @@ def create_s3_organization_lookup(bucket, s3_folders, region=REGION, encoding="u
         lookup_df, bucket, s3_folders, output_fname, region=region, encoding=encoding)
 
 
+# ----------------------------------------------------
+def create_csvfile_from_api(
+        base_url, keys, response_keys, output_columns, output_fname, encoding="utf-8"):
+    """Query an API, read the data and write a subset to a table in S3.
+
+    Args:
+        base_url: API URL without any key value pairs for the data service
+        keys: unique identifiers to query the API for
+        response_keys: list of keys within the API response to pull values from.  A key
+            can be an ordered list of keys nested within several elements of the tree,
+            from outermost to innermost.
+        output_columns: list of column headings for output lookup table
+        output_fname: base output filename for temporary CSV files
+        encoding: encoding of the input data
+
+    Returns:
+        csv_files: Local CSV files with records.  The first file in the list will have
+            a header, the rest will not.
+    """
+    records = []
+    for key in keys:
+        url = f"{base_url}/{key}"
+        rec = _get_single_record(url, response_keys)
+        records.append(rec)
+    dataframe = pd.DataFrame(records, columns=output_columns)
+    tmp_filename = f"/tmp/{output_fname}.csv"
+    dataframe.to_csv(
+        path_or_buf=tmp_filename, sep='\t', header=True,
+        columns=output_columns, doublequote=False, escapechar="\\",
+        encoding=encoding)
+    print(f"Wrote {tmp_filename} with {dataframe.shape[0]} rows")
+    return tmp_filename
+
+# ----------------------------------------------------
+def create_test_s3_dataset_lookup(bucket, s3_folders, region=REGION, encoding="utf-8"):
+    """Query the GBIF Dataset API, write a subset of the response to a table in S3.
+
+    Args:
+        bucket: name of the bucket containing the CSV data.
+        s3_folders: S3 bucket folders for output lookup table
+        region: AWS region containing the destination bucket.
+        encoding: encoding of the input data
+
+    Note:
+        There are >100k records for datasets and limited memory on this EC2 instance,
+        so we write them as temporary CSV files, then combine them, then create a
+        dataframe and upload.
+
+    Postcondition:
+        CSV table with dataset key, pubOrgKey, dataset name, dataset citation written
+            to the named S3 object in bucket and folders
+    """
+    base_url = "https://api.gbif.org/v1/dataset"
+    response_keys = ["key", "publishingOrganizationKey", "title", ["citation", "text"]]
+    data_date = get_current_datadate_str()
+    output_fname = f"dataset_name_{data_date}_"
+    output_fname = "dataset_name_test_2024_02_01_"
+    output_columns = ["datasetKey", "publishingOrganizationKey", "title", "citation"]
+    csv_fname = create_csvfile_from_api(
+        base_url, keys, response_keys, output_columns, output_fname, encoding="utf-8")
+    write_csvfiles_to_s3(
+        [csv_fname], bucket, s3_folders, output_fname, region=region, encoding=encoding)
+
 # .............................................................................
 if __name__ == "__main__":
     bucket=PROJ_BUCKET
     region=REGION
     encoding=ENCODING
     s3_folders="summary"
+    keys = [
+        "5a95fa0a-5ef3-432a-b95b-816cd85b2f9b",
+        "ee789ae4-ef51-4ff2-931b-bc61b2dbe40e",
+        "c8fded56-3ddb-4e26-8863-ba8d55862689",
+        "3c83d5da-822a-439c-897a-7569e82c4ebc"
+    ]
 
     create_s3_dataset_lookup(
         bucket, s3_folders, region=REGION, encoding="utf-8")
@@ -1022,6 +1125,8 @@ if __name__ == "__main__":
 
 
 """
+# Note: Test with quoted data such as: 
+# http://api.gbif.org/v1/dataset/3c83d5da-822a-439c-897a-7569e82c4ebc
 from sppy.aws.aws_tools  import *
 
 bucket=PROJ_BUCKET
