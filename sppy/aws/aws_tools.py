@@ -7,8 +7,9 @@ import boto3
 from botocore.exceptions import ClientError
 import csv
 import certifi
-import datetime
+import datetime as DT
 from http import HTTPStatus
+import json
 import logging
 from logging.handlers import RotatingFileHandler
 import pandas as pd
@@ -241,7 +242,7 @@ def create_token(type=None):
     """
     if type is None:
         type = PROJ_NAME
-    token = f"{type}_{datetime.datetime.now().timestamp()}"
+    token = f"{type}_{DT.datetime.now().timestamp()}"
     return token
 
 
@@ -252,7 +253,7 @@ def get_today_str():
     Returns:
         date_str(str): string representing date in YYYY-MM-DD format.
     """
-    n = datetime.datetime.now()
+    n = DT.datetime.now()
     date_str = f"{n.year}_{n.month:02d}_{n.day:02d}"
     return date_str
 
@@ -264,7 +265,7 @@ def get_current_datadate_str():
     Returns:
         date_str(str): string representing date in YYYY-MM-DD format.
     """
-    n = datetime.datetime.now()
+    n = DT.datetime.now()
     date_str = f"{n.year}_{n.month:02d}_01"
     return date_str
 
@@ -276,7 +277,7 @@ def get_previous_datadate_str():
     Returns:
         date_str(str): string representing date in YYYY-MM-DD format.
     """
-    n = datetime.datetime.now()
+    n = DT.datetime.now()
     yr = n.year
     mo = n.month - 1
     if n.month == 0:
@@ -754,6 +755,54 @@ def get_dataset_name_citation(dataset_key, certificate=None):
     return name, citation
 
 
+# ----------------------------------------------------
+def _query_table(bucket, s3_path, query_str, region=REGION, format="CSV"):
+    """Query the S3 resource defined for this class.
+
+    Args:
+        bucket:
+        s3_path: S3 folder and filename within the bucket
+        query_str: a SQL query for S3 select.
+        region:
+        format: output format, options "CSV" or "JSON"
+
+    Returns:
+         list of records matching the query
+    """
+    recs = []
+    if format not in ("JSON", "CSV"):
+        format = "JSON"
+    if format == "JSON":
+        out_serialization = {"JSON": {}}
+    elif format == "CSV":
+        out_serialization = {
+            "CSV": {
+                "QuoteFields": "ASNEEDED",
+                "FieldDelimiter": ",",
+                "QuoteCharacter": '"'}
+        }
+    s3 = boto3.client("s3", region_name=region)
+    resp = s3.select_object_content(
+        Bucket=bucket,
+        Key=s3_path,
+        ExpressionType="SQL",
+        Expression=query_str,
+        InputSerialization={"Parquet": {}},
+        OutputSerialization=out_serialization
+    )
+    for event in resp["Payload"]:
+        if "Records" in event:
+            recs_str = event["Records"]["Payload"].decode(ENCODING)
+            rec_strings = recs_str.strip().split("\n")
+            for rs in rec_strings:
+                if format == "JSON":
+                    rec = json.loads(rs)
+                else:
+                    rec = rs.split(",")
+                recs.append(rec)
+    return recs
+
+
 # ...............................................
 def _parse_records(ret_records, keys):
     small_recs = []
@@ -805,7 +854,8 @@ def _get_single_record(url, keys, certificate=None):
 # ...............................................
 def _get_records(url, keys, certificate=None):
     small_recs = []
-    status_code = 0
+    status_code = None
+    is_end = count = None
     try:
         if certificate:
             response = requests.get(url, verify=certificate)
@@ -837,6 +887,11 @@ def _get_records(url, keys, certificate=None):
                 is_end = output["endOfRecords"]
             except KeyError:
                 print("Missing endOfRecords flag")
+            # Expected count
+            try:
+                is_end = output["count"]
+            except KeyError:
+                print("Missing count")
             # Get values from JSON response
             try:
                 ret_records = output["results"]
@@ -846,7 +901,7 @@ def _get_records(url, keys, certificate=None):
                 small_recs = _parse_records(ret_records, keys)
     if not small_recs:
         print(f"No records returned, status {status_code}, reason {reason}")
-    return small_recs, is_end
+    return small_recs, is_end, count
 
 # ----------------------------------------------------
 def create_dataframe_from_api(base_url, response_keys, output_columns):
@@ -869,7 +924,8 @@ def create_dataframe_from_api(base_url, response_keys, output_columns):
     certificate = certifi.where()
     while is_end is False:
         url = f"{base_url}?offset={offset}&limit={limit}"
-        small_recs, is_end = _get_records(url, response_keys, certificate=certificate)
+        small_recs, is_end, count = _get_records(
+            url, response_keys, certificate=certificate)
         all_recs.extend(small_recs)
         offset += limit
         if offset % 5000 == 0:
@@ -900,15 +956,15 @@ def create_csvfiles_from_api(
     csv_files = []
     records = []
     is_end = False
-    offset = 0
+    offset = 7000
     read_limit = 500
     write_limit = 5000
-    write_header = True
     certificate = certifi.where()
     while is_end is False:
         url = f"{base_url}?offset={offset}&limit={read_limit}"
         print(url)
-        small_recs, is_end = _get_records(url, response_keys, certificate=certificate)
+        small_recs, is_end, count = _get_records(
+            url, response_keys, certificate=certificate)
         if small_recs:
             records.extend(small_recs)
         offset += read_limit
@@ -916,12 +972,11 @@ def create_csvfiles_from_api(
         if offset % write_limit == 0:
             dataframe = pd.DataFrame(records, columns=output_columns)
             tmp_filename = f"/tmp/{output_fname}_{offset}.csv"
+            # Only write header to first file (offset == 0), others will be appended
             dataframe.to_csv(
-                path_or_buf=tmp_filename, sep='\t', header=write_header,
+                path_or_buf=tmp_filename, sep='\t', header=(offset == 0),
                 columns=output_columns, doublequote=False, escapechar="\\",
                 encoding=encoding)
-            # Only write header to first file, others will be appended
-            write_header = False
             csv_files.append(tmp_filename)
             print(f"Wrote {tmp_filename} with {dataframe.shape[0]} rows")
             # reset records in memory
@@ -988,35 +1043,35 @@ def write_dataframe_to_s3(
     print(f"Uploaded to s3://{bucket}/{output_path}")
 
 
-# ----------------------------------------------------
-def create_s3_dataset_lookup(bucket, s3_folders, region=REGION, encoding=ENCODING):
-    """Query the GBIF Dataset API, write a subset of the response to a table in S3.
-
-    Args:
-        bucket: name of the bucket containing the CSV data.
-        s3_folders: S3 bucket folders for output lookup table
-        region: AWS region containing the destination bucket.
-        encoding: encoding of the input data
-
-    Note:
-        There are >100k records for datasets and limited memory on this EC2 instance,
-        so we write them as temporary CSV files, then combine them, then create a
-        dataframe and upload.
-
-    Postcondition:
-        CSV table with dataset key, pubOrgKey, dataset name, dataset citation written
-            to the named S3 object in bucket and folders
-    """
-    base_url = "https://api.gbif.org/v1/dataset"
-    response_keys = ["key", "publishingOrganizationKey", "title", ["citation", "text"]]
-    data_date = get_current_datadate_str()
-    output_fname = f"dataset_name_{data_date}"
-    output_fname = "dataset_name_2024_02_01"
-    output_columns = ["datasetKey", "publishingOrganizationKey", "title", "citation"]
-    csv_fnames = create_csvfiles_from_api(
-        base_url, response_keys, output_columns, output_fname)
-    write_csvfiles_to_s3(
-        csv_fnames, bucket, s3_folders, output_fname, region=region, encoding=encoding)
+# # ----------------------------------------------------
+# def create_s3_dataset_lookup(bucket, s3_folders, region=REGION, encoding=ENCODING):
+#     """Query the GBIF Dataset API, write a subset of the response to a table in S3.
+#
+#     Args:
+#         bucket: name of the bucket containing the CSV data.
+#         s3_folders: S3 bucket folders for output lookup table
+#         region: AWS region containing the destination bucket.
+#         encoding: encoding of the input data
+#
+#     Note:
+#         There are >100k records for datasets and limited memory on this EC2 instance,
+#         so we write them as temporary CSV files, then combine them, then create a
+#         dataframe and upload.
+#
+#     Postcondition:
+#         CSV table with dataset key, pubOrgKey, dataset name, dataset citation written
+#             to the named S3 object in bucket and folders
+#     """
+#     base_url = "https://api.gbif.org/v1/dataset"
+#     response_keys = ["key", "publishingOrganizationKey", "title", ["citation", "text"]]
+#     data_date = get_current_datadate_str()
+#     output_fname = f"dataset_name_{data_date}"
+#     output_fname = "dataset_name_2024_02_01"
+#     output_columns = ["datasetKey", "publishingOrganizationKey", "title", "citation"]
+#     csv_fnames = create_csvfiles_from_api(
+#         base_url, response_keys, output_columns, output_fname)
+#     write_csvfiles_to_s3(
+#         csv_fnames, bucket, s3_folders, output_fname, region=region, encoding=encoding)
 
 
 # ----------------------------------------------------
@@ -1045,8 +1100,9 @@ def create_s3_organization_lookup(bucket, s3_folders, region=REGION, encoding=EN
 
 
 # ----------------------------------------------------
-def create_csvfile_from_api(
-    base_url, keys, response_keys, output_columns, output_fname, encoding=ENCODING):
+def create_csvfiles_from_apiqueries(
+    base_url, keys, response_keys, output_columns, output_fname, encoding=ENCODING,
+    certificate=None):
     """Query an API, read the data and write a subset to a table in S3.
 
     Args:
@@ -1058,28 +1114,37 @@ def create_csvfile_from_api(
         output_columns: list of column headings for output lookup table
         output_fname: base output filename for temporary CSV files
         encoding: encoding of the input data
+        certificate: local SSL certificate required by some APIs
 
     Returns:
         csv_files: Local CSV files with records.  The first file in the list will have
             a header, the rest will not.
     """
+    tmp_filenames = []
     records = []
-    certificate = certifi.where()
-    for key in keys:
-        url = f"{base_url}/{key}"
+    write_chunk = 1000
+    for i in range(len(keys)):
+        url = f"{base_url}/{keys[i]}"
         rec = _get_single_record(url, response_keys, certificate=certificate)
         records.append(rec)
-    dataframe = pd.DataFrame(records, columns=output_columns)
-    tmp_filename = f"/tmp/{output_fname}.csv"
-    dataframe.to_csv(
-        path_or_buf=tmp_filename, sep='\t', header=True,
-        columns=output_columns, doublequote=False, escapechar="\\",
-        encoding=encoding)
-    print(f"Wrote {tmp_filename} with {dataframe.shape[0]} rows")
-    return tmp_filename
+        if i % 100 == 0:
+            print(f"{DT.datetime.now().isoformat()} Queried key {i} of {len(keys)}")
+        if i % write_chunk == 0 and i > 0:
+            print(f"{DT.datetime.now().isoformat()} Queried key {i} of {len(keys)}")
+            dataframe = pd.DataFrame(records, columns=output_columns)
+            tmp_filename = f"/tmp/{output_fname}_{i}.csv"
+            dataframe.to_csv(
+                path_or_buf=tmp_filename, sep='\t', header=True,
+                columns=output_columns, doublequote=False, escapechar="\\",
+                encoding=encoding)
+            print(f"Wrote {tmp_filename} with {dataframe.shape[0]} rows")
+            records = []
+            tmp_filenames.append(tmp_filename)
+    return tmp_filenames
 
 # ----------------------------------------------------
-def create_test_s3_dataset_lookup(bucket, s3_folders, keys, region=REGION, encoding=ENCODING):
+def create_s3_dataset_lookup_by_keys(
+        bucket, s3_folders, region=REGION, encoding=ENCODING):
     """Query the GBIF Dataset API, write a subset of the response to a table in S3.
 
     Args:
@@ -1098,18 +1163,24 @@ def create_test_s3_dataset_lookup(bucket, s3_folders, keys, region=REGION, encod
         CSV table with dataset key, pubOrgKey, dataset name, dataset citation written
             to the named S3 object in bucket and folders
     """
+    input_fname = "dataset_counts_2024_02_01_000.parquet"
+    s3_path = f"{s3_folders}/{input_fname}"
+    query_str = "SELECT datasetkey from s3object s"
+    key_records = _query_table(bucket, s3_path, query_str, format="CSV")
+    keys = [r[0] for r in key_records]
+
     base_url = "https://api.gbif.org/v1/dataset"
     response_keys = ["key", "publishingOrganizationKey", "title", ["citation", "text"]]
     data_date = get_current_datadate_str()
-    output_fname = f"dataset_name_{data_date}_"
-    output_fname = "dataset_name_test_2024_02_01_"
+    output_fname = f"dataset_name_{data_date}"
+    output_fname = "dataset_name_test_2024_02_01"
     output_columns = ["datasetKey", "publishingOrganizationKey", "title", "citation"]
     certificate = certifi.where()
-    csv_fname = create_csvfile_from_api(
+    csv_fnames = create_csvfiles_from_apiqueries(
         base_url, keys, response_keys, output_columns, output_fname, encoding=ENCODING,
         certificate=certificate)
     write_csvfiles_to_s3(
-        [csv_fname], bucket, s3_folders, output_fname, region=region, encoding=encoding)
+        csv_fnames, bucket, s3_folders, output_fname, region=region, encoding=encoding)
 
 # .............................................................................
 if __name__ == "__main__":
@@ -1117,14 +1188,15 @@ if __name__ == "__main__":
     region=REGION
     encoding=ENCODING
     s3_folders="summary"
-    keys = [
-        "5a95fa0a-5ef3-432a-b95b-816cd85b2f9b",
-        "ee789ae4-ef51-4ff2-931b-bc61b2dbe40e",
-        "c8fded56-3ddb-4e26-8863-ba8d55862689",
-        "3c83d5da-822a-439c-897a-7569e82c4ebc"
-    ]
-
-    create_s3_dataset_lookup(bucket, s3_folders)
+    # keys = [
+    #     "5a95fa0a-5ef3-432a-b95b-816cd85b2f9b",
+    #     "ee789ae4-ef51-4ff2-931b-bc61b2dbe40e",
+    #     "c8fded56-3ddb-4e26-8863-ba8d55862689",
+    #     "3c83d5da-822a-439c-897a-7569e82c4ebc"
+    # ]
+    create_s3_dataset_lookup_by_keys(
+        bucket, s3_folders, region=REGION, encoding=ENCODING)
+    # create_s3_dataset_lookup(bucket, s3_folders)
     # create_test_s3_dataset_lookup(bucket, s3_folders, keys)
     # create_s3_organization_lookup(
     #     bucket, s3_folders, region=REGION, encoding=ENCODING)
@@ -1140,6 +1212,6 @@ region=REGION
 encoding=ENCODING
 s3_folders="summary"
 
-    
-create_s3_dataset_lookup(bucket, s3_folders)
+create_s3_dataset_lookup_by_keys(
+        bucket, s3_folders, region=REGION, encoding=ENCODING)
 """
