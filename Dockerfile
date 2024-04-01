@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 # ........................................................
 # Backend base image
-FROM python:3.10.0rc2-alpine3.14 as base
+FROM python:3.12.2-alpine3.19 as base
 
 LABEL maintainer="Specify Collections Consortium <github.com/specify>"
 
@@ -19,8 +19,6 @@ WORKDIR /home/specify
 USER specify
 
 COPY --chown=specify:specify ./requirements.txt .
-
-RUN pip3 install --upgrade pip
 
 RUN python3 -m venv venv \
  && venv/bin/pip install --upgrade pip \
