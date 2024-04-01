@@ -1126,20 +1126,24 @@ def create_csvfiles_from_apiqueries(
     for i in range(len(keys)):
         url = f"{base_url}/{keys[i]}"
         rec = _get_single_record(url, response_keys, certificate=certificate)
-        records.append(rec)
-        if i % 100 == 0:
-            print(f"{DT.datetime.now().isoformat()} Queried key {i} of {len(keys)}")
+        if rec:
+            records.append(rec)
         if i % write_chunk == 0 and i > 0:
-            print(f"{DT.datetime.now().isoformat()} Queried key {i} of {len(keys)}")
-            dataframe = pd.DataFrame(records, columns=output_columns)
-            tmp_filename = f"/tmp/{output_fname}_{i}.csv"
-            dataframe.to_csv(
-                path_or_buf=tmp_filename, sep='\t', header=True,
-                columns=output_columns, doublequote=False, escapechar="\\",
-                encoding=encoding)
-            print(f"Wrote {tmp_filename} with {dataframe.shape[0]} rows")
-            records = []
-            tmp_filenames.append(tmp_filename)
+            print(
+                f"{DT.datetime.now().isoformat()} Create dataframe for {len(records)} "
+                f"records; key {i} of {len(keys)}")
+            if records:
+                dataframe = pd.DataFrame(records, columns=output_columns)
+                tmp_filename = f"/tmp/{output_fname}_{i}.csv"
+                dataframe.to_csv(
+                    path_or_buf=tmp_filename, sep='\t', header=(i < write_chunk+1),
+                    columns=output_columns, doublequote=False, escapechar="\\",
+                    encoding=encoding)
+                print(
+                    f"Wrote {tmp_filename} with {len(records)} records and "
+                    f"{dataframe.shape[0]} rows")
+                records = []
+                tmp_filenames.append(tmp_filename)
     return tmp_filenames
 
 # ----------------------------------------------------
