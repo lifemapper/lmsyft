@@ -20,7 +20,10 @@ USER specify
 
 COPY --chown=specify:specify ./requirements.txt .
 
+RUN pip3 install --upgrade pip
+
 RUN python3 -m venv venv \
+ && venv/bin/pip install --upgrade pip \
  && venv/bin/pip install --no-cache-dir -r ./requirements.txt
 
 COPY --chown=specify:specify ./sppy ./sppy
