@@ -1065,8 +1065,8 @@ def write_dataframe_to_s3(
 #     base_url = "https://api.gbif.org/v1/dataset"
 #     response_keys = ["key", "publishingOrganizationKey", "title", ["citation", "text"]]
 #     data_date = get_current_datadate_str()
-#     output_fname = f"dataset_name_{data_date}"
-#     output_fname = "dataset_name_2024_02_01"
+#     output_fname = f"dataset_meta_{data_date}"
+#     output_fname = "dataset_meta_2024_02_01"
 #     output_columns = ["datasetKey", "publishingOrganizationKey", "title", "citation"]
 #     csv_fnames = create_csvfiles_from_api(
 #         base_url, response_keys, output_columns, output_fname)
@@ -1176,8 +1176,8 @@ def create_s3_dataset_lookup_by_keys(
     base_url = "https://api.gbif.org/v1/dataset"
     response_keys = ["key", "publishingOrganizationKey", "title", ["citation", "text"]]
     data_date = get_current_datadate_str()
-    output_fname = f"dataset_name_{data_date}"
-    output_fname = "dataset_name_test_2024_02_01"
+    output_fname = f"dataset_meta_{data_date}"
+    output_fname = "dataset_meta_test_2024_02_01"
     output_columns = ["datasetKey", "publishingOrganizationKey", "title", "citation"]
     certificate = certifi.where()
     csv_fnames = create_csvfiles_from_apiqueries(

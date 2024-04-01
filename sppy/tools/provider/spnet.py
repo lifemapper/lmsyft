@@ -28,32 +28,56 @@ class SpNetAnalyses():
         self.region = region
         self.encoding = encoding
         self.exp_type = 'SQL'
-        datestr = get_current_datadate_str()
-        datestr = "2024_02_01"
+        self.datestr = get_current_datadate_str()
+        self.datestr = "2024_02_01"
         self._summary_path = "summary"
         self._summary_tables = {
             "dataset_counts": {
-                "fname": f"dataset_counts_{datestr}_000.parquet",
+                "fname": f"dataset_counts_{self.datestr}_000.parquet",
                 "fields": ["datasetkey", "occ_count", "species_count"],
                 "key": "datasetkey"
             },
             "dataset_species_lists": {
-                "fname": f"dataset_lists_{datestr}_000.parquet",
+                "fname": f"dataset_lists_{self.datestr}_000.parquet",
                 "fields": ["datasetkey", "taxonkey", "species", "occ_count"],
                 "key": "datasetkey"
             },
             "dataset_meta": {
-                "fname": f"dataset_names_{datestr}_000.csv",
+                "fname": f"dataset_meta_{self.datestr}.csv",
                 "fields": [
                     "datasetKey", "publishingOrganizationKey", "title", "citation"],
                 "key": "datasetKey"
             },
             "organization_meta": {
-                "fname": f"organization_names_{datestr}_000.csv",
+                "fname": f"organization_meta_{self.datestr}.csv",
                 "fields": ["publishingOrganizationKey", "title"],
                 "key": "publishingOrganizationKey"
             }
         }
+
+    # ----------------------------------------------------
+    def _list_summaries(self):
+        summary_objs = []
+        s3 = boto3.client("s3", region_name=self.region)
+        summ_objs = s3.list_objects_v2(Bucket=self.bucket, Prefix=self._summary_path)
+        prefix = f"{self._summary_path}/"
+        try:
+            contents = summ_objs["Contents"]
+        except KeyError:
+            pass
+        else:
+            for item in contents:
+                fname = item["Key"].strip(prefix)
+                if len(fname) > 1:
+                    summary_objs.append(fname)
+        return summary_objs
+
+    # ----------------------------------------------------
+    def _dataset_metadata_exists(self):
+        fnames = self._list_summaries()
+        if self._summary_tables["dataset_meta"]["fname"] in fnames:
+            return True
+        return False
 
     # ----------------------------------------------------
     def _query_table(self, s3_path, query_str, format="CSV"):
@@ -166,7 +190,8 @@ class SpNetAnalyses():
         )
         # Returns empty list or list of 1 record
         records = self._query_table(table_path, query_str, format=format)
-        # self.add_dataset_lookup_vals(records, key_idx=key_idx)
+        if self._dataset_metadata_exists():
+            self.add_dataset_lookup_vals(records, key_idx=key_idx)
         return records
 
     # ----------------------------------------------------
@@ -206,7 +231,6 @@ class SpNetAnalyses():
                         rec.update(meta)
                     else:
                         rec.extend(meta)
-        return records
 
     # # ----------------------------------------------------
     # def get_org_counts(self, pub_org_key):
@@ -253,7 +277,8 @@ class SpNetAnalyses():
         except Exception as e:
             errors = {"error": [get_traceback()]}
 
-        # self.add_dataset_lookup_vals(records, key_idx=key_idx)
+        if self._dataset_metadata_exists():
+            self.add_dataset_lookup_vals(records, key_idx=key_idx)
         return records, errors
 
 # .............................................................................
