@@ -1148,13 +1148,12 @@ def create_csvfiles_from_apiqueries(
 
 # ----------------------------------------------------
 def create_s3_dataset_lookup_by_keys(
-        bucket, s3_folders, region=REGION, encoding=ENCODING):
+        bucket, s3_folders, region=REGION, encoding=ENCODING, is_test=False):
     """Query the GBIF Dataset API, write a subset of the response to a table in S3.
 
     Args:
         bucket: name of the bucket containing the CSV data.
         s3_folders: S3 bucket folders for output lookup table
-        keys: unique identifiers to query the API for
         region: AWS region containing the destination bucket.
         encoding: encoding of the input data
 
@@ -1167,22 +1166,33 @@ def create_s3_dataset_lookup_by_keys(
         CSV table with dataset key, pubOrgKey, dataset name, dataset citation written
             to the named S3 object in bucket and folders
     """
-    input_fname = "dataset_counts_2024_02_01_000.parquet"
+    # Current filenames
+    data_date = get_current_datadate_str()
+    data_date = "2024_02_01"
+    input_fname = f"dataset_counts_{data_date}_000.parquet"
+    output_fname = f"dataset_meta_{data_date}"
+
+    # Data and query parameters
+    base_url = "https://api.gbif.org/v1/dataset"
+    response_keys = ["key", "publishingOrganizationKey", "title", ["citation", "text"]]
+    output_columns = ["datasetKey", "publishingOrganizationKey", "title", "citation"]
+    certificate = certifi.where()
+
+    # Get keys for dataset resolution
     s3_path = f"{s3_folders}/{input_fname}"
     query_str = "SELECT datasetkey from s3object s"
     key_records = _query_table(bucket, s3_path, query_str, format="CSV")
     keys = [r[0] for r in key_records]
+    if is_test:
+        keys = keys[:2100]
+        output_fname = f"dataset_meta_test_{data_date}"
 
-    base_url = "https://api.gbif.org/v1/dataset"
-    response_keys = ["key", "publishingOrganizationKey", "title", ["citation", "text"]]
-    data_date = get_current_datadate_str()
-    output_fname = f"dataset_meta_{data_date}"
-    output_fname = "dataset_meta_test_2024_02_01"
-    output_columns = ["datasetKey", "publishingOrganizationKey", "title", "citation"]
-    certificate = certifi.where()
+    # Write tempfiles locally
     csv_fnames = create_csvfiles_from_apiqueries(
         base_url, keys, response_keys, output_columns, output_fname, encoding=ENCODING,
         certificate=certificate)
+
+    # Aggregate and write all records to S3
     write_csvfiles_to_s3(
         csv_fnames, bucket, s3_folders, output_fname, region=region, encoding=encoding)
 
@@ -1210,6 +1220,7 @@ if __name__ == "__main__":
 # Note: Test with quoted data such as: 
 # http://api.gbif.org/v1/dataset/3c83d5da-822a-439c-897a-7569e82c4ebc
 from sppy.aws.aws_tools  import *
+from sppy.aws.aws_tools  import _query_table
 
 bucket=PROJ_BUCKET
 region=REGION
@@ -1217,5 +1228,7 @@ encoding=ENCODING
 s3_folders="summary"
 
 create_s3_dataset_lookup_by_keys(
-        bucket, s3_folders, region=REGION, encoding=ENCODING)
+        bucket, s3_folders, region=REGION, encoding=ENCODING, is_test=False)
+
+
 """
