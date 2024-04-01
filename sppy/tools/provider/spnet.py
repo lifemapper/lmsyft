@@ -163,6 +163,7 @@ class SpNetAnalyses():
         rec_df = sorted_df.head(limit)
 
         for row in rec_df.itertuples():
+            # TODO: Construct these from the summary_table fields
             rec = {"datasetkey": row.datasetkey,
                    "species_count": row.species_count,
                    "occ_count": row.occ_count}
@@ -280,6 +281,40 @@ class SpNetAnalyses():
         if self._dataset_metadata_exists():
             self.add_dataset_lookup_vals(records, key_idx=key_idx)
         return records, errors
+
+
+# ----------------------------------------------------
+def rank_species_counts(self, count_by, order, limit):
+    """Return the top or bottom datasets, with counts, ranked by number of species.
+
+    Args:
+        count_by: string indicating rank datasets by counts of "species" or
+            "occurrence" .
+        order: string indicating whether to rank in "descending" or
+            "ascending" order.
+        limit: number of datasets to return, no more than 300.
+        format: output format, options "CSV" or "JSON"
+
+    Returns:
+         records: list of limit records containing dataset_key, occ_count, species_count
+    """
+    records = []
+    table_path = \
+        f"{self._summary_path}/{self._summary_tables['dataset_lists']['fname']}"
+    fields = self._summary_tables["dataset_lists"]["fields"]
+    key_idx = fields.index(self._summary_tables["dataset_lists"]["key"])
+    sort_fields = ["occ_count", "species"]
+    try:
+        records, errors = self._query_order_s3_table(
+            table_path, sort_fields, order, limit)
+    except Exception as e:
+        errors = {"error": [get_traceback()]}
+
+    if self._dataset_metadata_exists():
+        self.add_dataset_lookup_vals(records, key_idx=key_idx)
+    return records, errors
+
+
 
 # .............................................................................
 if __name__ == "__main__":

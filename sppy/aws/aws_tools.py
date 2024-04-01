@@ -267,6 +267,8 @@ def get_current_datadate_str():
     """
     n = DT.datetime.now()
     date_str = f"{n.year}_{n.month:02d}_01"
+    # TODO: delete this testing-only value
+    date_str = "2024_02_01"
     return date_str
 
 
@@ -1168,7 +1170,6 @@ def create_s3_dataset_lookup_by_keys(
     """
     # Current filenames
     data_date = get_current_datadate_str()
-    data_date = "2024_02_01"
     input_fname = f"dataset_counts_{data_date}_000.parquet"
     output_fname = f"dataset_meta_{data_date}"
 
@@ -1226,6 +1227,13 @@ bucket=PROJ_BUCKET
 region=REGION
 encoding=ENCODING
 s3_folders="summary"
+data_date = get_current_datadate_str()
+input_fname = f"dataset_counts_{data_date}_000.parquet"
+
+s3_path = f"{s3_folders}/{input_fname}"
+query_str = "SELECT datasetkey from s3object s"
+key_records = _query_table(bucket, s3_path, query_str, format="CSV")
+
 
 create_s3_dataset_lookup_by_keys(
         bucket, s3_folders, region=REGION, encoding=ENCODING, is_test=False)
