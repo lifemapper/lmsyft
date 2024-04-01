@@ -81,11 +81,12 @@ class APIEndpoint:
     Occurrence = "occ"
     Frontend = "frontend"
     Count = "count"
+    Rank = "rank"
 
     @classmethod
     def Resources(cls):
         return {
-            cls.Analyst: [cls.Count],
+            cls.Analyst: [cls.Count, cls.Rank],
             cls.Broker:
                 [
                     cls.Badge,
@@ -163,18 +164,43 @@ class APIService:
         "name": APIEndpoint.Count,
         "endpoint": f"{APIEndpoint.Root}/{APIEndpoint.Count}",
         "params": {
-            "collection_id": {
+            "dataset_key": {
                 "type": "",
-                "description": "Collection identifier",
+                "description": "GBIF Dataset Key",
                 "default": None
             },
-            "organization_id": {
+            "pub_org_key": {
                 "type": "",
-                "description": "Organization identifier",
+                "description": "GBIF Publishing Organization Key",
                 "default": None
-            }
+            },
         },
-        "description": "Return record count for the given collection or organization.",
+        "description":
+            "Return occurrence and species counts for the given dataset or "
+            "publishing organization.",
+        S2nKey.RECORD_FORMAT: ""
+    }
+    # Rankings
+    Rank = {
+        "name": APIEndpoint.Rank,
+        "endpoint": f"{APIEndpoint.Root}/{APIEndpoint.Rank}",
+        "params": {
+            "count_by": {
+                "type": "",
+                "options": ["occurrence", "species"],
+                "default": None
+            },
+            "order": {
+                "type": "",
+                "options": ["ascending", "descending"],
+                "default": "descending"
+            },
+            "limit": {"type": 2, "default": 10, "min": 1, "max": 500},
+        },
+        "description":
+            "Return an ordered list of datasets with occurrence and species counts "
+            "ranked by occurrence or species counts for the top X (descending) "
+            "or bottom X (ascending) datasets",
         S2nKey.RECORD_FORMAT: ""
     }
     # Taxonomic Resolution
@@ -820,6 +846,19 @@ class BrokerOutput(object):
             self._response[S2nKey.ERRORS][error_type] = [error_desc]
 
     # ...............................................
+    def combine_errors(self, errinfo):
+        """Combine a dictionary of errors to the errors in a S2nOutput query response.
+
+        Args:
+            errinfo: dictionary of errors, with error level, and list of descriptions.
+        """
+        for err_type, err_desc in errinfo.items():
+            try:
+                self._response[S2nKey.ERRORS][err_type].append(err_desc)
+            except KeyError:
+                self._response[S2nKey.ERRORS][err_type] = [err_desc]
+
+    # ...............................................
     @property
     def response(self):
         """Return the S2nOutput query response.
@@ -975,13 +1014,65 @@ class BrokerOutput(object):
                 ordered_recs.append(ordrec)
         self._response[S2nKey.RECORDS] = ordered_recs
 
+    # .............................................................................
+    @classmethod
+    def _print_sub_output(cls, oneelt, do_print_rec):
+        print("* One record of Specify Network Outputs *")
+        for name, attelt in oneelt.items():
+            try:
+                if name == "records":
+                    print("   records")
+                    if do_print_rec is False:
+                        print(f"      {name}: {len(attelt)} returned records")
+                    else:
+                        for rec in attelt:
+                            print("      record")
+                            for k, v in rec.items():
+                                print("         {}: {}".format(k, v))
+                else:
+                    print("   {}: {}".format(name, attelt))
+            except Exception:
+                pass
+
+    # ....................................
+    @classmethod
+    def print_output(cls, response_dict, do_print_rec=False):
+        """Print a formatted string of the elements in an S2nOutput query response.
+
+        Args:
+            response_dict: flask_app.broker.s2n_type.S2nOutput._response dictionary
+            do_print_rec: True to print each record in the response.
+
+        TODO: move to a class method
+        """
+        print("*** Broker output ***")
+        for name, attelt in response_dict.items():
+            try:
+                if name == "records":
+                    print("records: ")
+                    for respdict in attelt:
+                        cls._print_sub_output(respdict, do_print_rec)
+                else:
+                    print(f"{name}: {attelt}")
+            except Exception:
+                pass
+        # outelts = set(response_dict.keys())
+        # missing = S2nKey.broker_response_keys().difference(outelts)
+        # extras = outelts.difference(S2nKey.broker_response_keys())
+        # if missing:
+        #     print(f"Missing elements: {missing}")
+        # if extras:
+        #     print(f"Extra elements: {extras}")
+        print("")
+
 
 # .............................................................................
 class AnalystOutput:
     """Response type for a Specify Network Analyst query."""
     service: str
     description: str = ""
-    records: typing.List[dict] = []
+    # records: typing.List[dict] = []
+    records: typing.List = []
     errors: dict = {}
 
     # ...............................................
@@ -991,7 +1082,7 @@ class AnalystOutput:
         Args:
             service: API Service this object is responding to.
             description: Description of the computation in this response.
-            records: Records in this response.
+            records: Records (lists or dictionaries) in this response.
             errors: Errors encountered when generating this response.
         """
         if errors is None:
@@ -1017,6 +1108,27 @@ class AnalystOutput:
             the response object
         """
         return self._response
+
+    # ....................................
+    @classmethod
+    def print_output(cls, response_dict, do_print_rec=False):
+        """Print a formatted string of the elements in an S2nOutput query response.
+
+        Args:
+            response_dict: flask_app.broker.s2n_type.S2nOutput._response dictionary
+            do_print_rec: True to print each record in the response.
+        """
+        print("*** Analyst output ***")
+        for name, attelt in response_dict.items():
+            try:
+                if name == "records" and do_print_rec:
+                    print("records: ")
+                    for rec in attelt:
+                        print(rec)
+                else:
+                    print(f"{name}: {attelt}")
+            except Exception:
+                pass
 
 
 # .............................................................................

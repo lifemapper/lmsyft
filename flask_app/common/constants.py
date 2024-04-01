@@ -8,4 +8,5 @@ ICON_DIR = f"{STATIC_DIR}/icon"
 SCHEMA_DIR = f"{STATIC_DIR}/schema"
 
 TEMPLATE_DIR = "../templates"
-SCHEMA_FNAME = "open_api.yaml"
+SCHEMA_ANALYST_FNAME = "open_api.analyst.yaml"
+SCHEMA_BROKER_FNAME = "open_api.broker.yaml"

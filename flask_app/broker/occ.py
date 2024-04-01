@@ -4,7 +4,6 @@ from werkzeug.exceptions import (BadRequest, InternalServerError)
 from flask_app.broker.base import _BrokerService
 from flask_app.common.s2n_type import (
     APIEndpoint, APIService, BrokerOutput, BrokerSchema, S2nKey, ServiceProvider)
-from flask_app.common.util import print_broker_output
 
 from sppy.tools.provider.gbif import GbifAPI
 from sppy.tools.provider.idigbio import IdigbioAPI
@@ -144,54 +143,36 @@ class OccurrenceSvc(_BrokerService):
                 a count and records
             kwargs: any additional keyword arguments are ignored
 
-        Raises:
-            BadRequest: on invalid query parameters.
-            BadRequest: on unknown exception parsing parameters.
-            InternalServerError: on unknown exception when executing request
-
         Returns:
-            a flask_app.broker.s2n_type.BrokerOutput object with optional records as a
-            list of dictionaries of records corresponding to specimen occurrences in
-            the provider database.
+            full_output (flask_app.common.s2n_type.BrokerOutput): including records
+                as a list of dictionaries of records corresponding to specimen
+                occurrences in the provider database.
         """
         if occid is None and gbif_dataset_key is None:
             return cls.get_endpoint()
         else:
-            # No filter_params defined for Name service yet
             try:
                 good_params, errinfo = cls._standardize_params(
                     occid=occid, provider=provider, gbif_dataset_key=gbif_dataset_key,
                     count_only=count_only)
-                # Bad parameters
+
+            except BadRequest as e:
+                full_output = cls._get_badquery_output(e.description)
+
+            else:
                 try:
-                    error_description = "; ".join(errinfo["error"])
-                    raise BadRequest(error_description)
-                except KeyError:
-                    pass
+                    # Do Query!, returns BrokerOutput
+                    full_output = cls._get_records(
+                        good_params["occid"], good_params["provider"],
+                        good_params["count_only"],
+                        gbif_dataset_key=good_params["gbif_dataset_key"])
+                except Exception:
+                    full_output = cls._get_badquery_output(get_traceback())
 
-            except Exception:
-                error_description = get_traceback()
-                raise BadRequest(error_description)
+                # Combine with errors from parameters
+                full_output.combine_errors(errinfo)
 
-            # Do Query!
-            try:
-                output = cls._get_records(
-                    good_params["occid"], good_params["provider"],
-                    good_params["count_only"],
-                    gbif_dataset_key=good_params["gbif_dataset_key"])
-
-                # Add message on invalid parameters to output
-                try:
-                    for err in errinfo["warning"]:
-                        output.append_error("warning", err)
-                except KeyError:
-                    pass
-
-            except Exception:
-                error_description = get_traceback()
-                raise InternalServerError(error_description)
-
-        return output.response
+        return full_output.response
 
 
 # .............................................................................
@@ -219,11 +200,11 @@ if __name__ == "__main__":
 
     svc = OccurrenceSvc()
     out = svc.get_endpoint()
-    out = svc.get_occurrence_records(occid="a7156437-55ec-4c6f-89de-938f9361753d")
+    response = svc.get_occurrence_records(occid="a7156437-55ec-4c6f-89de-938f9361753d")
 
-    print_broker_output(out, do_print_rec=True)
+    BrokerOutput.print_output(response, do_print_rec=True)
 
     # for occid in occids:
-    #     out = svc.get_occurrence_records(occid=occid, provider=None, count_only=False)
-    #     outputs = out["records"]
-    #     print_broker_output(out, do_print_rec=True)
+    #     response = svc.get_occurrence_records(occid=occid, provider=None, count_only=False)
+    #     recs = response["records"]
+    #     BrokerOutput.print_output(response, do_print_rec=True)

@@ -1,10 +1,10 @@
 """URL Routes for the Specify Network API services."""
-import os
 from flask import Blueprint, Flask, render_template, request
+import os
 
 # from flask_app.application import create_app
 from flask_app.common.constants import (
-    TEMPLATE_DIR, STATIC_DIR, SCHEMA_DIR, SCHEMA_FNAME
+    TEMPLATE_DIR, STATIC_DIR, SCHEMA_DIR, SCHEMA_BROKER_FNAME
 )
 from flask_app.common.s2n_type import APIEndpoint
 
@@ -54,7 +54,7 @@ def display_raw_schema():
     Returns:
         schema: the schema for the Specify Network.
     """
-    fname = os.path.join(SCHEMA_DIR, SCHEMA_FNAME)
+    fname = os.path.join(SCHEMA_DIR, SCHEMA_BROKER_FNAME)
     with open(fname, "r") as f:
         schema = f.read()
     return schema
@@ -68,7 +68,7 @@ def swagger_ui():
     Returns:
         a webpage UI of the Specify Network schema.
     """
-    return render_template("swagger_ui.html")
+    return render_template("swagger_ui.broker.html")
 
 
 # .....................................................................................

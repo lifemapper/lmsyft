@@ -28,8 +28,9 @@ extensions = [
     'sphinx_rtd_theme',
     # 'autoapi.extension',
     'myst_parser',  # For MD support
-    ]
-
+    # for internal links
+    'sphinx.ext.autosectionlabel',
+]
 
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']

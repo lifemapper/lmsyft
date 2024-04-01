@@ -1,10 +1,9 @@
 """Class for the Specify Network Name API service."""
-from werkzeug.exceptions import (BadRequest, InternalServerError)
+from werkzeug.exceptions import BadRequest
 
 from flask_app.broker.base import _BrokerService
 from flask_app.common.s2n_type import (
     APIEndpoint, APIService, BrokerOutput, BrokerSchema, S2nKey, ServiceProvider)
-from flask_app.common.util import print_broker_output
 
 from sppy.tools.provider.gbif import GbifAPI
 from sppy.tools.provider.itis import ItisAPI
@@ -156,35 +155,24 @@ class NameSvc(_BrokerService):
                 good_params, errinfo = cls._standardize_params(
                     namestr=namestr, provider=provider, is_accepted=is_accepted,
                     gbif_parse=gbif_parse, gbif_count=gbif_count, kingdom=kingdom)
-                # Bad parameters
+
+            except BadRequest as e:
+                full_output = cls._get_badquery_output(e.description)
+
+            else:
                 try:
-                    error_description = "; ".join(errinfo["error"])
-                    raise BadRequest(error_description)
-                except KeyError:
-                    pass
-            except Exception:
-                error_description = get_traceback()
-                raise BadRequest(error_description)
+                    # Do Query!, returns BrokerOutput
+                    full_output = cls._get_records(
+                        good_params["namestr"], good_params["provider"],
+                        good_params["is_accepted"], good_params["gbif_count"],
+                        good_params["kingdom"])
+                except Exception:
+                    full_output = cls._get_badquery_output(get_traceback())
 
-            try:
-                # Do Query!
-                output = cls._get_records(
-                    good_params["namestr"], good_params["provider"],
-                    good_params["is_accepted"], good_params["gbif_count"],
-                    good_params["kingdom"])
+                # Combine with errors from parameters
+                full_output.combine_errors(errinfo)
 
-                # Add message on invalid parameters to output
-                try:
-                    for err in errinfo["warning"]:
-                        output.append_error("warning", err)
-                except KeyError:
-                    pass
-
-            except Exception:
-                error_description = get_traceback()
-                raise InternalServerError(error_description)
-
-        return output.response
+        return full_output.response
 
 
 # .............................................................................
@@ -206,7 +194,7 @@ if __name__ == "__main__":
 
     svc = NameSvc()
     for namestr in test_names:
-        out = svc.get_name_records(
+        response = svc.get_name_records(
             namestr=namestr, provider=None, is_accepted=False,
             gbif_parse=True, gbif_count=True, kingdom=None)
-        print_broker_output(out, do_print_rec=True)
+        BrokerOutput.print_output(response, do_print_rec=True)
