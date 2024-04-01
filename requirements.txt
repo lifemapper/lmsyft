@@ -6,6 +6,7 @@ gunicorn==20.1.0
 rtree>=1.0.0
 awscli
 boto3>=1.34.60
+s3fs
 fastparquet
 sqlalchemy
 pandas
