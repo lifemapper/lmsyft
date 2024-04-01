@@ -61,7 +61,13 @@
 <li class="toctree-l1"><a class="reference internal" href="debugging.html">Debugging Flask and Docker instances</a></li>
 <li class="toctree-l1"><a class="reference internal" href="example_sp6_export.html">Example Specify 6 Export</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Specify Network SSL certificates</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#renewal-procedure">Renewal procedure</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#local-self-signed-certificates">Local self-signed certificates</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#tls-ssl-using-certificate-authority-ca">TLS/SSL using Certificate Authority (CA)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#install-certificates-into-config-directory">Install certificates into config directory</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#renew-certbot-ssl-certificates">Renew Certbot SSL certificates</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#todo-ssl-through-amazon">TODO: SSL through Amazon</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="taxonomy_tools.html">GBIF Backbone Taxonomy</a></li>
@@ -97,66 +103,143 @@
 <p>SSL certificates are served from the host machine, and are administered by
 Letsencrypt using Certbot.  They are only valid for 90 days at a time.</p>
 <p>TODO: move administration to AWS, and script renewal if necessary</p>
-<section id="renewal-procedure">
-<h2>Renewal procedure<a class="headerlink" href="#renewal-procedure" title="Link to this heading"></a></h2>
-<ul>
-<li><p>Change to superuser, then check the validity of your certificates:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">su</span> <span class="o">-</span>
-<span class="n">certbot</span> <span class="n">certificates</span>
+<section id="local-self-signed-certificates">
+<h2>Local self-signed certificates<a class="headerlink" href="#local-self-signed-certificates" title="Link to this heading"></a></h2>
+<p>To run the containers, generate <cite>fullchain.pem</cite> and <cite>privkey.pem</cite> (certificate
+and the private key) using Let’s Encrypt and link these files in <cite>./sp_network/config/</cite>.</p>
+<p>While in development, generate self-signed certificates then link them in
+~/git/sp_network/config/ directory for this project:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ mkdir ~/certificates
+
+openssl req \
+-x509 -sha256 -nodes -newkey rsa:2048 -days 365 \
+-keyout ~/certificates/privkey.pem \
+-out ~/certificates/fullchain.pem
+
+$ cd ~/git/sp_network/config
+$ ln -s ~/certificates/privkey.pem
+$ ln -s ~/certificates/fullchain.pem
 </pre></div>
 </div>
-</li>
-<li><p>When it is time for a renewal (approx every 60 days), move to the Specify Network
-project directory where Docker was started, and stop the Docker containers:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cd</span> <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">ubuntu</span><span class="o">/</span><span class="n">git</span><span class="o">/</span><span class="n">sp_network</span>
-<span class="n">docker</span> <span class="n">compose</span> <span class="n">stop</span>
+<p>To run either the production or the development containers with HTTPS
+support, generate <cite>fullchain.pem</cite> and <cite>privkey.pem</cite> (certificate and the private
+key) using Let’s Encrypt, link these files in the <cite>./config/</cite> directory.
+Full instructions in the docs/aws-steps.rst page, under <cite>Set up TLS/SSL</cite></p>
+<p>Modify the <cite>FQDN</cite> environment variable in <cite>.env.conf</cite> as needed.</p>
+</section>
+<section id="tls-ssl-using-certificate-authority-ca">
+<h2>TLS/SSL using Certificate Authority (CA)<a class="headerlink" href="#tls-ssl-using-certificate-authority-ca" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Make sure that DNS has propogated for domain for SSL</p></li>
+<li><p>Stop apache service</p></li>
+<li><p>request a certificate for the domain</p></li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ sudo systemctl stop apache2
+$ sudo certbot certonly -v
+Saving debug log to /var/log/letsencrypt/letsencrypt.log
+
+How would you like to authenticate with the ACME CA?
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+1: Spin up a temporary webserver (standalone)
+2: Place files in webroot directory (webroot)
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+Select the appropriate number [1-2] then [enter] (press &#39;c&#39; to cancel): 1
+Plugins selected: Authenticator standalone, Installer None
+Enter email address (used for urgent renewal and security notices)
+ (Enter &#39;c&#39; to cancel): aimee.stewart@ku.edu
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+Please read the Terms of Service at
+https://letsencrypt.org/documents/LE-SA-v1.3-September-21-2022.pdf. You must
+agree in order to register with the ACME server. Do you agree?
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+(Y)es/(N)o: Y
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+Would you be willing, once your first certificate is successfully issued, to
+share your email address with the Electronic Frontier Foundation, a founding
+partner of the Let&#39;s Encrypt project and the non-profit organization that
+develops Certbot? We&#39;d like to send you email about our work encrypting the web,
+EFF news, campaigns, and ways to support digital freedom.
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+(Y)es/(N)o: N
+Account registered.
+Please enter the domain name(s) you would like on your certificate (comma and/or
+space separated) (Enter &#39;c&#39; to cancel): dev.spcoco.org, analyst-dev.spcoco.org, broker-dev.spcoco.org
+Requesting a certificate for dev.spcoco.org and 2 more domains
+Performing the following challenges:
+http-01 challenge for analyst-dev.spcoco.org
+http-01 challenge for broker-dev.spcoco.org
+http-01 challenge for dev.spcoco.org
+Waiting for verification...
+Cleaning up challenges
+
+Successfully received certificate.
+Certificate is saved at: /etc/letsencrypt/live/dev.spcoco.org/fullchain.pem
+Key is saved at:         /etc/letsencrypt/live/dev.spcoco.org/privkey.pem
+This certificate expires on 2024-06-19.
+These files will be updated when the certificate renews.
+Certbot has set up a scheduled task to automatically renew this certificate in the background.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+If you like Certbot, please consider supporting our work by:
+ * Donating to ISRG / Let&#39;s Encrypt:   https://letsencrypt.org/donate
+ * Donating to EFF:                    https://eff.org/donate-le
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 </pre></div>
 </div>
-</li>
-<li><p>Renew the certificates:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">certbot</span> <span class="n">renew</span>
+<section id="install-certificates-into-config-directory">
+<h3>Install certificates into config directory<a class="headerlink" href="#install-certificates-into-config-directory" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Create a ~/certificates directory to hold certificate files</p></li>
+<li><p>as superuser, copy the newly created fullchain.pem and privkey.pem files from the
+letsencrypt live</p></li>
+<li><p>change the owner so that they can be used in Docker containers</p></li>
+<li><p>Link the certificates in the repo config directory</p></li>
+</ul>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ cd
+$ mkdir certificates
+$ sudo su -
+# cp -p /etc/letsencrypt/live/&lt;fqdn&gt;/* /home/ubuntu/certificates/
+# chown ubuntu:ubuntu /home/ubuntu/certificates/*
+# exit
+$ cd ~/git/sp_network/config
+$ ln -s ~/certificates/fullchain.pem
+$ ln -s ~/certificates/privkey.pem
 </pre></div>
 </div>
-</li>
-<li><p>Move to /etc/letsencrypt/archive/&lt;FQDN&gt; and find the most recent
-certificate names in the directory (certX.pem, chainX.pem, fullchainX.pem,
-privkeyX.pem, where X is an integer):</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cd</span> <span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">letsencrypt</span><span class="o">/</span><span class="n">archive</span><span class="o">/</span><span class="n">spcoco</span><span class="o">.</span><span class="n">org</span><span class="o">/</span>
-<span class="n">ls</span> <span class="o">-</span><span class="n">lahtr</span>
+</section>
+</section>
+<section id="renew-certbot-ssl-certificates">
+<h2>Renew Certbot SSL certificates<a class="headerlink" href="#renew-certbot-ssl-certificates" title="Link to this heading"></a></h2>
+<p>SSL certificates are served from the instance (AWS EC2), and need port 80 to be renewed.
+These are administered by Letsencrypt using Certbot and are only valid for 90 days at
+a time. When it is time for a renewal (approx every 60 days), bring the docker
+containers down.  Prune the volumes so the new containers and volumes will be created
+with the updated certificates.  Renew the certificates, then bring the containers up.</p>
+<p>Amazon EC2 containers do not need apache running, certbot runs its own temp web server.</p>
+<p>Test with <a class="reference external" href="https://broker.spcoco.org/api/v1/frontend/?occid=01493b05-4310-4f28-9d81-ad20860311f3">https://broker.spcoco.org/api/v1/frontend/?occid=01493b05-4310-4f28-9d81-ad20860311f3</a></p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ sudo certbot certificates
+$ sudo docker compose stop
+$ sudo su -
+# certbot renew
+# cp -p /etc/letsencrypt/live/spcoco.org/* /home/ubuntu/certificates/
+# chown ubuntu:ubuntu /home/ubuntu/certificates/*
+# exit
+$ ls -lahtr ~/git/sp_network/config
+&lt;check symlinks - should still be valid&gt;
+$ sudo docker system prune --all --volumes
+$ sudo docker compose up -d
 </pre></div>
 </div>
-</li>
-<li><p>Copy the new certificates to /home/ubuntu/certificates, changing
-the name to cert.pem, chain.pem, fullchain.pem, privkey.pem (no X integer).  Then
-change the owner from root, to the username (ubuntu):</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cp</span> <span class="n">cert4</span><span class="o">.</span><span class="n">pem</span> <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">ubuntu</span><span class="o">/</span><span class="n">certificates</span><span class="o">/</span><span class="n">cert</span><span class="o">.</span><span class="n">pem</span>
-<span class="n">cp</span> <span class="n">chain4</span><span class="o">.</span><span class="n">pem</span> <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">ubuntu</span><span class="o">/</span><span class="n">certificates</span><span class="o">/</span><span class="n">chain</span><span class="o">.</span><span class="n">pem</span>
-<span class="n">cp</span> <span class="n">fullchain4</span><span class="o">.</span><span class="n">pem</span> <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">ubuntu</span><span class="o">/</span><span class="n">certificates</span><span class="o">/</span><span class="n">fullchain</span><span class="o">.</span><span class="n">pem</span>
-<span class="n">cp</span> <span class="n">privkey4</span><span class="o">.</span><span class="n">pem</span> <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">ubuntu</span><span class="o">/</span><span class="n">certificates</span><span class="o">/</span><span class="n">privkey</span><span class="o">.</span><span class="n">pem</span>
-</pre></div>
-</div>
-</li>
-<li><p>Move to the directory with the certificates and change the
-owner to ubuntu, then exit superuser:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cd</span> <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">ubuntu</span><span class="o">/</span><span class="n">certificates</span>
-<span class="n">chown</span> <span class="n">ubuntu</span><span class="p">:</span><span class="n">ubuntu</span> <span class="o">*</span>
-<span class="n">exit</span>
-</pre></div>
-</div>
-</li>
-<li><p>Move to the config directory and create symbolic links to the new fullchain.pem
-and privkey.pem files:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cd</span> <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">ubuntu</span><span class="o">/</span><span class="n">git</span><span class="o">/</span><span class="n">sp_network</span><span class="o">/</span><span class="n">config</span>
-<span class="n">ln</span> <span class="o">-</span><span class="n">s</span> <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">ubuntu</span><span class="o">/</span><span class="n">certificates</span><span class="o">/</span><span class="n">fullchain</span><span class="o">.</span><span class="n">pem</span>
-<span class="n">ln</span> <span class="o">-</span><span class="n">s</span> <span class="o">/</span><span class="n">home</span><span class="o">/</span><span class="n">ubuntu</span><span class="o">/</span><span class="n">certificates</span><span class="o">/</span><span class="n">privkey</span><span class="o">.</span><span class="n">pem</span>
-</pre></div>
-</div>
-</li>
-<li><p>Then restart the containers:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">docker</span> <span class="n">compose</span> <span class="n">up</span> <span class="o">-</span><span class="n">d</span>
-</pre></div>
-</div>
-</li>
+</section>
+<section id="todo-ssl-through-amazon">
+<h2>TODO: SSL through Amazon<a class="headerlink" href="#todo-ssl-through-amazon" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>Create Elastic IP address for EC2 instance</p></li>
+<li><p>Request a public certificate through Certificate Manager (ACM)
+* Choose DNS validation
+* Add tags sp_network, dev or prod, others</p></li>
 </ul>
 </section>
 </section>

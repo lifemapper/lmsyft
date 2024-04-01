@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Docker &mdash; Specify Network  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
+
+  
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=5929fcd5"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            Specify Network
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Overview:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../about/s2n_overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../about/install_run_notes.html">Install/Run Notes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../about/tos.html">Terms of Service</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">AWS:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../aws/aws-setup.html">Authentication</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../aws/aws_workflow.html">AWS Workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../aws/aws_experiment.html">AWS strategy</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Misc:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="debugging.html">Debugging Flask and Docker instances</a></li>
+<li class="toctree-l1"><a class="reference internal" href="example_sp6_export.html">Example Specify 6 Export</a></li>
+<li class="toctree-l1"><a class="reference internal" href="ssl_certificates.html">Specify Network SSL certificates</a></li>
+<li class="toctree-l1"><a class="reference internal" href="taxonomy_tools.html">GBIF Backbone Taxonomy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="testing.html">Testing Specify Network elements</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">Specify Network</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Docker</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/misc/docker.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="docker">
+<h1>Docker<a class="headerlink" href="#docker" title="Link to this heading"></a></h1>
+<section id="standard-manipulation">
+<h2>Standard manipulation<a class="headerlink" href="#standard-manipulation" title="Link to this heading"></a></h2>
+<section id="edit-the-docker-environment-files">
+<h3>Edit the docker environment files<a class="headerlink" href="#edit-the-docker-environment-files" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Add the container domain name to the files .env.broker.conf and .env.analyst.conf</p></li>
+<li><p>Change the FQDN value to the fully qualified domain name of the server.</p>
+<ul>
+<li><p>If this is a local testing deployment, it will be “localhost”</p></li>
+<li><p>For a development or production server it will be the FQDN with correct subdomain
+for each container, i.e FQDN=broker.spcoco.org in .env.broker.conf and
+FQDN=analyst.spcoco.org in .env.analyst.conf</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="run-the-containers-production">
+<h3>Run the containers (production)<a class="headerlink" href="#run-the-containers-production" title="Link to this heading"></a></h3>
+<p>Start the containers with the Docker composition file:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">docker</span> <span class="n">compose</span> <span class="o">-</span><span class="n">f</span> <span class="n">docker</span><span class="o">-</span><span class="n">compose</span><span class="o">.</span><span class="n">yml</span> <span class="n">up</span> <span class="o">-</span><span class="n">d</span>
+</pre></div>
+</div>
+<p>Specify Network is now available at [<a class="reference external" href="https://localhost/](https://localhost:443">https://localhost/](https://localhost:443</a>)</p>
+</section>
+<section id="run-the-containers-development">
+<h3>Run the containers (development)<a class="headerlink" href="#run-the-containers-development" title="Link to this heading"></a></h3>
+<p>Note that the development compose file, docker-compose.development.yml, is referenced
+first on the command line.  It has elements that override those defined in the
+general compose file, docker-compose.yml:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">docker</span> <span class="n">compose</span> <span class="o">-</span><span class="n">f</span> <span class="n">docker</span><span class="o">-</span><span class="n">compose</span><span class="o">.</span><span class="n">development</span><span class="o">.</span><span class="n">yml</span> <span class="o">-</span><span class="n">f</span> <span class="n">docker</span><span class="o">-</span><span class="n">compose</span><span class="o">.</span><span class="n">yml</span>  <span class="n">up</span>
+</pre></div>
+</div>
+<p>Flask has hot-reload enabled.</p>
+</section>
+<section id="rebuild-restart">
+<h3>Rebuild/restart<a class="headerlink" href="#rebuild-restart" title="Link to this heading"></a></h3>
+<p>To delete all containers, images, networks and volumes, stop any running
+containers:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">docker</span> <span class="n">compose</span> <span class="n">stop</span>
+</pre></div>
+</div>
+<p>And run this command (which ignores running container):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">docker</span> <span class="n">system</span> <span class="n">prune</span> <span class="o">--</span><span class="nb">all</span> <span class="o">--</span><span class="n">volumes</span>
+</pre></div>
+</div>
+<p>Then rebuild/restart:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">docker</span> <span class="n">compose</span> <span class="n">up</span> <span class="o">-</span><span class="n">d</span>
+<span class="c1"># or</span>
+<span class="n">sudo</span> <span class="n">docker</span> <span class="n">compose</span> <span class="o">-</span><span class="n">f</span> <span class="n">docker</span><span class="o">-</span><span class="n">compose</span><span class="o">.</span><span class="n">development</span><span class="o">.</span><span class="n">yml</span> <span class="o">-</span><span class="n">f</span> <span class="n">docker</span><span class="o">-</span><span class="n">compose</span><span class="o">.</span><span class="n">yml</span>  <span class="n">up</span>
+</pre></div>
+</div>
+</section>
+<section id="examine-container">
+<h3>Examine container<a class="headerlink" href="#examine-container" title="Link to this heading"></a></h3>
+<p>To examine containers at a shell prompt:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">docker</span> <span class="n">exec</span> <span class="o">-</span><span class="n">it</span> <span class="n">sp_network</span><span class="o">-</span><span class="n">nginx</span><span class="o">-</span><span class="mi">1</span> <span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">sh</span>
+</pre></div>
+</div>
+<p>Error port in use:
+“Error starting userland proxy: listen tcp4 0.0.0.0:443: bind: address already in use”</p>
+<p>See what else is using the port.  In my case apache was started on reboot.  Bring down
+all docker containers, shut down httpd, bring up docker.</p>
+<dl class="simple">
+<dt>::</dt><dd><p>lsof -i -P -n | grep 443
+sudo docker compose down
+sudo systemctl stop httpd
+sudo docker compose  up -d</p>
+</dd>
+</dl>
+</section>
+</section>
+<section id="run-docker-on-osx">
+<h2>Run Docker on OSX<a class="headerlink" href="#run-docker-on-osx" title="Link to this heading"></a></h2>
+<p>Need to bind server to 0.0.0.0 instead of 127.0.0.1</p>
+<p>Test by getting internal IP, using ifconfig, then command to see if connects successfully:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">nc</span> <span class="o">-</span><span class="n">v</span> <span class="n">x</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">x</span><span class="o">.</span><span class="n">x</span> <span class="mi">443</span>
+</pre></div>
+</div>
+<p>Then can use same IP in browser, i.e. <a class="reference external" href="https://x.x.x.x/api/v1/name/">https://x.x.x.x/api/v1/name/</a>
+This only exposes the broker, not the analyst services.</p>
+</section>
+<section id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading"></a></h2>
+<section id="out-of-space-problem">
+<h3>Out of Space Problem<a class="headerlink" href="#out-of-space-problem" title="Link to this heading"></a></h3>
+<p>Running <cite>certbot certificates</cite> failed because the EC2 instance running Docker
+containers for Specify Network development shows disk full:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">root</span><span class="nd">@ip</span><span class="o">-</span><span class="mi">172</span><span class="o">-</span><span class="mi">31</span><span class="o">-</span><span class="mi">86</span><span class="o">-</span><span class="mi">62</span><span class="p">:</span><span class="o">~</span><span class="c1"># df -h</span>
+<span class="n">Filesystem</span>      <span class="n">Size</span>  <span class="n">Used</span> <span class="n">Avail</span> <span class="n">Use</span><span class="o">%</span> <span class="n">Mounted</span> <span class="n">on</span>
+<span class="o">/</span><span class="n">dev</span><span class="o">/</span><span class="n">root</span>       <span class="mf">7.6</span><span class="n">G</span>  <span class="mf">7.6</span><span class="n">G</span>     <span class="mi">0</span> <span class="mi">100</span><span class="o">%</span> <span class="o">/</span>
+<span class="n">tmpfs</span>           <span class="mi">483</span><span class="n">M</span>     <span class="mi">0</span>  <span class="mi">483</span><span class="n">M</span>   <span class="mi">0</span><span class="o">%</span> <span class="o">/</span><span class="n">dev</span><span class="o">/</span><span class="n">shm</span>
+<span class="n">tmpfs</span>           <span class="mi">194</span><span class="n">M</span>   <span class="mi">21</span><span class="n">M</span>  <span class="mi">173</span><span class="n">M</span>  <span class="mi">11</span><span class="o">%</span> <span class="o">/</span><span class="n">run</span>
+<span class="n">tmpfs</span>           <span class="mf">5.0</span><span class="n">M</span>     <span class="mi">0</span>  <span class="mf">5.0</span><span class="n">M</span>   <span class="mi">0</span><span class="o">%</span> <span class="o">/</span><span class="n">run</span><span class="o">/</span><span class="n">lock</span>
+<span class="o">/</span><span class="n">dev</span><span class="o">/</span><span class="n">xvda15</span>     <span class="mi">105</span><span class="n">M</span>  <span class="mf">6.1</span><span class="n">M</span>   <span class="mi">99</span><span class="n">M</span>   <span class="mi">6</span><span class="o">%</span> <span class="o">/</span><span class="n">boot</span><span class="o">/</span><span class="n">efi</span>
+<span class="n">overlay</span>         <span class="mf">7.6</span><span class="n">G</span>  <span class="mf">7.6</span><span class="n">G</span>     <span class="mi">0</span> <span class="mi">100</span><span class="o">%</span> <span class="o">/</span><span class="n">var</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">docker</span><span class="o">/</span><span class="n">overlay2</span><span class="o">/</span><span class="mi">82</span><span class="n">d82cc5eb13260207b94443934c7318af651ea96a5fcd88c579f23224ba099d</span><span class="o">/</span><span class="n">merged</span>
+<span class="n">overlay</span>         <span class="mf">7.6</span><span class="n">G</span>  <span class="mf">7.6</span><span class="n">G</span>     <span class="mi">0</span> <span class="mi">100</span><span class="o">%</span> <span class="o">/</span><span class="n">var</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">docker</span><span class="o">/</span><span class="n">overlay2</span><span class="o">/</span><span class="n">cb0d78289131b3925e21d7eff2d03c79fe432eeba2d69a33c6134db40dc3caf3</span><span class="o">/</span><span class="n">merged</span>
+<span class="n">overlay</span>         <span class="mf">7.6</span><span class="n">G</span>  <span class="mf">7.6</span><span class="n">G</span>     <span class="mi">0</span> <span class="mi">100</span><span class="o">%</span> <span class="o">/</span><span class="n">var</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">docker</span><span class="o">/</span><span class="n">overlay2</span><span class="o">/</span><span class="mi">3</span><span class="n">bd6d12b36e746f9c74227b6ac9d928a3179d8b604a9dea4fd88625eab84be1f</span><span class="o">/</span><span class="n">merged</span>
+<span class="n">tmpfs</span>            <span class="mi">97</span><span class="n">M</span>  <span class="mf">4.0</span><span class="n">K</span>   <span class="mi">97</span><span class="n">M</span>   <span class="mi">1</span><span class="o">%</span> <span class="o">/</span><span class="n">run</span><span class="o">/</span><span class="n">user</span><span class="o">/</span><span class="mi">1000</span>
+</pre></div>
+</div>
+<p>The disk is small, but the culprit is /var/lib/docker/overlay2</p>
+<p>Some strategies at:
+<a class="reference external" href="https://forums.docker.com/t/some-way-to-clean-up-identify-contents-of-var-lib-docker-overlay/30604/19">https://forums.docker.com/t/some-way-to-clean-up-identify-contents-of-var-lib-docker-overlay/30604/19</a></p>
+</section>
+<section id="solution">
+<h3>Solution:<a class="headerlink" href="#solution" title="Link to this heading"></a></h3>
+<ul>
+<li><p>The instance was created with a volume of an 8gb default size.</p></li>
+<li><p>Stop the instance</p></li>
+<li><p>Modify the volume.</p></li>
+<li><p>Restart the EC2 instance - ok while the volume is in the optimizing state.</p></li>
+<li><p>If the instance does not recognize the extended volume immediately:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>ubuntu@ip-172-31-91-57:~$ df -h
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/root       7.6G  7.6G     0 100% /
+tmpfs           475M     0  475M   0% /dev/shm
+tmpfs           190M   11M  180M   6% /run
+tmpfs           5.0M     0  5.0M   0% /run/lock
+/dev/xvda15     105M  6.1M   99M   6% /boot/efi
+tmpfs            95M  4.0K   95M   1% /run/user/1000
+ubuntu@ip-172-31-91-57:~$ sudo lsblk
+sudo: unable to resolve host ip-172-31-91-57: Temporary failure in name resolution
+NAME     MAJ:MIN RM  SIZE RO TYPE MOUNTPOINTS
+loop0      7:0    0 24.9M  1 loop /snap/amazon-ssm-agent/7628
+loop1      7:1    0 25.2M  1 loop /snap/amazon-ssm-agent/7983
+loop2      7:2    0 55.7M  1 loop /snap/core18/2796
+loop3      7:3    0 55.7M  1 loop /snap/core18/2812
+loop4      7:4    0 63.9M  1 loop /snap/core20/2105
+loop5      7:5    0 63.9M  1 loop /snap/core20/2182
+loop6      7:6    0   87M  1 loop /snap/lxd/27037
+loop7      7:7    0   87M  1 loop /snap/lxd/27428
+loop8      7:8    0 40.4M  1 loop /snap/snapd/20671
+loop9      7:9    0 39.1M  1 loop /snap/snapd/21184
+xvda     202:0    0   30G  0 disk
+├─xvda1  202:1    0  7.9G  0 part /
+├─xvda14 202:14   0    4M  0 part
+└─xvda15 202:15   0  106M  0 part /boot/efi
+</pre></div>
+</div>
+</li>
+<li><p>extend the filesystem:
+<a class="reference external" href="https://docs.aws.amazon.com/ebs/latest/userguide/recognize-expanded-volume-linux.html">https://docs.aws.amazon.com/ebs/latest/userguide/recognize-expanded-volume-linux.html</a></p></li>
+<li><p>In this case we want to extend xvda1, so:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ sudo growpart /dev/xvda 1
+sudo: unable to resolve host ip-172-31-91-57: Temporary failure in name resolution
+mkdir: cannot create directory ‘/tmp/growpart.1496’: No space left on device
+FAILED: failed to make temp dir
+</pre></div>
+</div>
+</li>
+<li><p>We must free up space to allow extension:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ sudo docker system prune --all --volumes
+sudo: unable to resolve host ip-172-31-91-57: Temporary failure in name resolution
+WARNING! This will remove:
+  - all stopped containers
+  - all networks not used by at least one container
+  - all volumes not used by at least one container
+  - all images without at least one container associated to them
+  - all build cache
+
+Are you sure you want to continue? [y/N] y
+Deleted Containers:
+24768ca767d37f248eff173f13556007468330298329200d533dfa9ca011e409
+809709d6f8bfa8575009a0d07df16ee78852e9ab3735aa19561ac0dbc0313123
+64591ed14ecae60721ea367af650683f738636167162f6ed577063582c210aa9
+
+Deleted Networks:
+sp_network_nginx
+
+Deleted Images:
+untagged: nginx:alpine
+untagged: nginx@sha256:a59278fd22a9d411121e190b8cec8aa57b306aa3332459197777583beb728f59
+deleted: sha256:529b5644c430c06553d2e8082c6713fe19a4169c9dc2369cbb960081f52924ff
+...
+deleted: sha256:e74dab46dbca98b4be75dfbda3608cd857914b750ecd251c4f1bdbb4ef623c8c
+
+Total reclaimed space: 1.536GB
+</pre></div>
+</div>
+</li>
+<li><p>Extend filesystem:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ sudo growpart /dev/xvda 1
+sudo: unable to resolve host ip-172-31-91-57: Temporary failure in name resolution
+CHANGED: partition=1 start=227328 old: size=16549855 end=16777183 new: size=62687199 end=62914527
+$ df -h
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/root       7.6G  5.7G  2.0G  75% /
+tmpfs           475M     0  475M   0% /dev/shm
+tmpfs           190M   18M  173M  10% /run
+tmpfs           5.0M     0  5.0M   0% /run/lock
+/dev/xvda15     105M  6.1M   99M   6% /boot/efi
+tmpfs            95M  4.0K   95M   1% /run/user/1000
+</pre></div>
+</div>
+</li>
+<li><p>Stop apache2 if running</p></li>
+<li><p>Rebuild the docker containers</p></li>
+</ul>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Specify Team.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

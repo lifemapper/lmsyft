@@ -1,6 +1,35 @@
 Authentication
 ####################
 
+Create an IAM role for the EC2/Redshift/S3 interaction
+***********************************************************
+
+* Create a Role (Redshift-S3) for service Redshift to read/write to S3
+
+  * Add a policy allowing read and write access to the specnet S3 bucket
+  * Step 1: Trusted entity type = AWS service, Use Case = Redshift - Customizable.
+
+    * TODO: change to Redshift - Scheduler when we automate the workflow
+
+  * Step 2: Add permissions
+
+    * AmazonRedshiftAllCommandsFullAccess (AWS managed)
+    * AmazonS3FullAccess (AWS managed)
+
+EC2 instance creation
+===========================================================
+
+* Instance type t3.small
+
+  * Build fails with t2.micro or t3.micro with 1gb RAM
+  * t3.small is 2gb RAM
+
+* Ubuntu Server 22.04 LTS, SSD Volume Type (free tier eligible), x86 architecture
+* Security Group: launch-wizard-1
+* 30 Gb General Purpose SSD (gp2)
+* For dev, Spot instance (in Advanced options)
+* Modify IAM role - for role created above (i.e. specnet_ec2_role)
+
 For programmatic access to S3
 ===========================================================
 Configure AWS credentials either through
@@ -8,6 +37,13 @@ Configure AWS credentials either through
 * environment variables
 * AWS CLI configuration (for command line tools), or
 * using an IAM role attached to your instance if running on AWS infrastructure.
+
+The AWS cli depends on boto3, so both must be up to date.  In my testing, awscli
+1.27.118 (with requirement botocore==1.29.118) and boto3 1.28.1, failed on
+S3 Select access.
+
+I upgraded awscli (sudo apt install awscli), then upgraded boto3
+(pip install --upgrade boto3) , which installed 1.34.60.  Success
 
 
 Redshift
@@ -30,21 +66,6 @@ Overview
   species level, and records with a basis of record that is not observation, occurrence,
   or preserved specimen.  This brings the full dataset from about 2.6 billion down to
   2.3 billion.
-
-Create an IAM role for the Redshift/S3 interaction
-***********************************************************
-
-* Create a Role (Redshift-S3) for service Redshift to read/write to S3
-
-  * Add a policy allowing read and write access to the specnet S3 bucket
-  * Step 1: Trusted entity type = AWS service, Use Case = Redshift - Customizable.
-
-    * TODO: change to Redshift - Scheduler when we automate the workflow
-
-  * Step 2: Add permissions
-
-    * AmazonRedshiftAllCommandsFullAccess (AWS managed)
-    * AmazonS3FullAccess (AWS managed)
 
 
 Create a new workgroup (and namespace)
@@ -251,6 +272,8 @@ Enable S3 access from local machine and EC2
 Error: SSL
 ***************************************
 
+First time:
+
 Error message ::
 
     SSL validation failed for https://ec2.us-east-1.amazonaws.com/
@@ -263,6 +286,38 @@ Test with::
     $ aws ec2 describe-instances --no-verify-ssl
 
 Fix: Set up to work with Secret containing security key
+
+Second time (in python code):
+>>> response = requests.get(url)
+Traceback (most recent call last):
+  File "/home/astewart/git/sp_network/venv/lib/python3.8/site-packages/urllib3/connectionpool.py", line 703, in urlopen
+    httplib_response = self._make_request(
+  File "/home/astewart/git/sp_network/venv/lib/python3.8/site-packages/urllib3/connectionpool.py", line 386, in _make_request
+    self._validate_conn(conn)
+  File "/home/astewart/git/sp_network/venv/lib/python3.8/site-packages/urllib3/connectionpool.py", line 1042, in _validate_conn
+    conn.connect()
+  File "/home/astewart/git/sp_network/venv/lib/python3.8/site-packages/urllib3/connection.py", line 419, in connect
+    self.sock = ssl_wrap_socket(
+  File "/home/astewart/git/sp_network/venv/lib/python3.8/site-packages/urllib3/util/ssl_.py", line 449, in ssl_wrap_socket
+    ssl_sock = _ssl_wrap_socket_impl(
+  File "/home/astewart/git/sp_network/venv/lib/python3.8/site-packages/urllib3/util/ssl_.py", line 493, in _ssl_wrap_socket_impl
+    return ssl_context.wrap_socket(sock, server_hostname=server_hostname)
+  File "/usr/lib/python3.8/ssl.py", line 500, in wrap_socket
+    return self.sslsocket_class._create(
+  File "/usr/lib/python3.8/ssl.py", line 1069, in _create
+    self.do_handshake()
+  File "/usr/lib/python3.8/ssl.py", line 1338, in do_handshake
+    self._sslobj.do_handshake()
+ssl.SSLCertVerificationError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1131)
+
+
+https://stackoverflow.com/questions/51925384/unable-to-get-local-issuer-certificate-when-using-requests
+
+pip install certifi
+
+import certifi
+certifi.where()
+
 
 
 Workflow for Specify Network Analyst pre-computations

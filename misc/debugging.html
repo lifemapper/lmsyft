@@ -61,6 +61,12 @@
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Debugging Flask and Docker instances</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#ide-debugging-of-functions">IDE debugging of functions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#local-debugging-of-flask-app">Local debugging of flask app</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#local-debugging-of-docker">Local debugging of Docker</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#run-docker-containers-development">Run Docker containers (development)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rebuild-restart">Rebuild/restart</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#examine-container">Examine container</a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="example_sp6_export.html">Example Specify 6 Export</a></li>
@@ -105,18 +111,71 @@
 <section id="local-debugging-of-flask-app">
 <h2>Local debugging of flask app<a class="headerlink" href="#local-debugging-of-flask-app" title="Link to this heading"></a></h2>
 <ul class="simple">
+<li><p>Choose to run the Analyst or Broker with FLASK_APP environment variable</p></li>
 <li><p>Run flask at command prompt</p></li>
 </ul>
 <p><code class="docutils literal notranslate"><span class="pre">`zsh</span>
 <span class="pre">export</span> <span class="pre">FLASK_ENV=development</span>
 <span class="pre">export</span> <span class="pre">FLASK_APP=flask_app.broker.routes</span>
+<span class="pre">export</span> <span class="pre">FLASK_APP=flask_app.analyst.routes</span>
 <span class="pre">flask</span> <span class="pre">run</span>
-<span class="pre">`</span></code></p>
+<span class="pre">`</span></code>
+* With either Analyst or Broker, the development port will be 5000.  Connect to</p>
+<blockquote>
+<div><p><a class="reference external" href="http://127.0.0.1:5000">http://127.0.0.1:5000</a> in browser,</p>
 <ul class="simple">
-<li><p>Connect to localhost in browser.</p></li>
+<li><p>Broker
+* <a class="reference external" href="http://127.0.0.1:5000/api/v1/name/Acer%20opalus%20Miller">http://127.0.0.1:5000/api/v1/name/Acer%20opalus%20Miller</a>?is_accepted=True&amp;gbif_count=False&amp;
+* <a class="reference external" href="http://127.0.0.1:5000/api/v1/occ/?occid=db8cc0df-1ed3-11e3-bfac-90b11c41863e&amp;provider=gbif">http://127.0.0.1:5000/api/v1/occ/?occid=db8cc0df-1ed3-11e3-bfac-90b11c41863e&amp;provider=gbif</a>
+* <a class="reference external" href="http://127.0.0.1:5000/api/v1/badge/?provider=mopho">http://127.0.0.1:5000/api/v1/badge/?provider=mopho</a></p></li>
+<li><p>Analyst:
+<a class="reference external" href="http://127.0.0.1:5000/api/v1/count/?dataset_key=0000e36f-d0e9-46b0-aa23-cc1980f00515">http://127.0.0.1:5000/api/v1/count/?dataset_key=0000e36f-d0e9-46b0-aa23-cc1980f00515</a>
+<a class="reference external" href="http://127.0.0.1:5000/api/v1/rank/?by_species=true">http://127.0.0.1:5000/api/v1/rank/?by_species=true</a></p></li>
+</ul>
+</div></blockquote>
+<ul class="simple">
 <li><p>Flask will auto-update on file save.</p></li>
 <li><p>Refresh browser after changes</p></li>
+<li><p>The frontend endpoint cannot be tested this way, as it depends on frontend
+<strong>webpack-output</strong> and <strong>static-files</strong> to be mounted as docker volumes.</p></li>
 </ul>
+</section>
+<section id="local-debugging-of-docker">
+<h2>Local debugging of Docker<a class="headerlink" href="#local-debugging-of-docker" title="Link to this heading"></a></h2>
+<p>More info in about/install_run_notes</p>
+<section id="run-docker-containers-development">
+<h3>Run Docker containers (development)<a class="headerlink" href="#run-docker-containers-development" title="Link to this heading"></a></h3>
+<p>Note that the development compose file, docker-compose.development.yml, is referenced
+first on the command line.  It has elements that override those defined in the
+general compose file, docker-compose.yml:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">docker</span> <span class="n">compose</span> <span class="o">-</span><span class="n">f</span> <span class="n">docker</span><span class="o">-</span><span class="n">compose</span><span class="o">.</span><span class="n">development</span><span class="o">.</span><span class="n">yml</span> <span class="o">-</span><span class="n">f</span> <span class="n">docker</span><span class="o">-</span><span class="n">compose</span><span class="o">.</span><span class="n">yml</span>  <span class="n">up</span>
+</pre></div>
+</div>
+<p>Flask has hot-reload enabled.</p>
+</section>
+<section id="rebuild-restart">
+<h3>Rebuild/restart<a class="headerlink" href="#rebuild-restart" title="Link to this heading"></a></h3>
+<p>To delete all containers, images, networks and volumes, stop any running
+containers:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">docker</span> <span class="n">compose</span> <span class="n">stop</span>
+</pre></div>
+</div>
+<p>And run this command (which ignores running container):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">docker</span> <span class="n">system</span> <span class="n">prune</span> <span class="o">--</span><span class="nb">all</span> <span class="o">--</span><span class="n">volumes</span>
+</pre></div>
+</div>
+<p>Then rebuild/restart:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">docker</span> <span class="n">compose</span> <span class="o">-</span><span class="n">f</span> <span class="n">docker</span><span class="o">-</span><span class="n">compose</span><span class="o">.</span><span class="n">development</span><span class="o">.</span><span class="n">yml</span> <span class="o">-</span><span class="n">f</span> <span class="n">docker</span><span class="o">-</span><span class="n">compose</span><span class="o">.</span><span class="n">yml</span>  <span class="n">up</span>
+</pre></div>
+</div>
+</section>
+<section id="examine-container">
+<h3>Examine container<a class="headerlink" href="#examine-container" title="Link to this heading"></a></h3>
+<p>To examine containers at a shell prompt:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">docker</span> <span class="n">exec</span> <span class="o">-</span><span class="n">it</span> <span class="n">sp_network</span><span class="o">-</span><span class="n">nginx</span><span class="o">-</span><span class="mi">1</span> <span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">sh</span>
+</pre></div>
+</div>
+</section>
 </section>
 </section>
 
