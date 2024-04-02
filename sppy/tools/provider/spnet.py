@@ -182,7 +182,8 @@ class SpNetAnalyses():
              records: empty list or list of 1 record (list)
         """
         fields = self._summary_tables["dataset_counts"]["fields"]
-        key_idx = fields.index(self._summary_tables["dataset_counts"]["key"])
+        key_fld = self._summary_tables["dataset_counts"]["key"]
+        # key_idx = fields.index(self._summary_tables["dataset_counts"]["key"])
 
         table_path = \
             f"{self._summary_path}/{self._summary_tables['dataset_counts']['fname']}"
@@ -192,11 +193,11 @@ class SpNetAnalyses():
         # Returns empty list or list of 1 record
         records = self._query_table(table_path, query_str, format=format)
         if self._dataset_metadata_exists():
-            self.add_dataset_lookup_vals(records, key_idx=key_idx)
+            self._add_dataset_lookup_vals(records, format)
         return records
 
     # ----------------------------------------------------
-    def add_dataset_lookup_vals(self, records, key_idx=0, format="JSON"):
+    def _add_dataset_lookup_vals(self, records, format):
         """Query the S3 resource for occurrence and species counts for this dataset.
 
         Args:
@@ -206,28 +207,34 @@ class SpNetAnalyses():
         Returns:
              records: empty list or list of 1 record (list)
         """
-        table_path = \
-            f"{self._summary_path}/{self._summary_tables['dataset_meta']['fname']}"
-        fields = self._summary_tables["dataset_meta"]["fields"]
-        key_fld = fields[0]
-        new_flds = fields[1:]
-        qry_flds = " ".join(new_flds)
+        table = self._summary_tables['dataset_meta']
+        table_path = f"{self._summary_path}/{table['fname']}"
+        fields = table["fields"]
+        key_fld = table["key"]
+        key_idx = fields.index(key_fld)
+        rest_flds = fields.pop(key_fld)
+        qry_flds = " ".join(rest_flds)
 
         for rec in records:
+            # Get value by field or position
+            if format == "JSON":
+                val = rec[key_fld]
+            else:
+                val = rec[key_idx]
+
             query_str = (
-                f"SELECT {qry_flds} FROM s3object s WHERE s.{key_fld} = "
-                f"'{rec[key_idx]}'"
+                f"SELECT {qry_flds} FROM s3object s WHERE s.{key_fld} = '{val}'"
             )
             # Returns empty list or list of 1 record
             meta_recs = self._query_table(table_path, query_str, format=format)
             try:
                 meta = meta_recs[0]
             except IndexError:
+                # Add placeholders for empty values, no entries for dictionary
                 if format == "CSV":
-                    # Add placeholders for empty values
-                    rec.extend(["" for f in new_flds])
+                    rec.extend(["" for f in rest_flds])
             else:
-                for fld in new_flds:
+                for fld in rest_flds:
                     if format == "JSON":
                         rec.update(meta)
                     else:
@@ -285,15 +292,14 @@ class SpNetAnalyses():
 
 # ----------------------------------------------------
 def rank_species_counts(self, count_by, order, limit):
-    """Return the top or bottom datasets, with counts, ranked by number of species.
+    """Rank the occurrences of a species in a single dataset, most or least
 
     Args:
         count_by: string indicating rank datasets by counts of "species" or
             "occurrence" .
         order: string indicating whether to rank in "descending" or
             "ascending" order.
-        limit: number of datasets to return, no more than 300.
-        format: output format, options "CSV" or "JSON"
+        limit: number of species occurrence counts to return, no more than 300.
 
     Returns:
          records: list of limit records containing dataset_key, occ_count, species_count
@@ -303,7 +309,7 @@ def rank_species_counts(self, count_by, order, limit):
         f"{self._summary_path}/{self._summary_tables['dataset_lists']['fname']}"
     fields = self._summary_tables["dataset_lists"]["fields"]
     key_idx = fields.index(self._summary_tables["dataset_lists"]["key"])
-    sort_fields = ["occ_count", "species"]
+    sort_fields = ["occ_count", "datasetkey"]
     try:
         records, errors = self._query_order_s3_table(
             table_path, sort_fields, order, limit)
