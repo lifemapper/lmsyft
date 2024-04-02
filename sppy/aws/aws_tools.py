@@ -1003,8 +1003,10 @@ def write_csvfiles_to_s3(
     Postcondition:
         CSV table with output_columns and values for each written to the named S3 object
             in bucket and folders
+
+    Note: delimiter is written to original temp CSV files: '\t'
     """
-    output_path = f"{s3_folders}/{output_fname}"
+    output_path = f"{s3_folders}/{output_fname}.csv"
     combined_fname = f"/tmp/{output_fname}.csv"
     with open(combined_fname, "a") as outf:
         # Output data written as CSV
