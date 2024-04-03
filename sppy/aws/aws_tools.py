@@ -1020,6 +1020,49 @@ def write_csvfiles_to_s3(
 
 
 # ----------------------------------------------------
+def write_csvfiles_to_s3_parquet(
+        csv_fnames, bucket, s3_folders, output_fname, region=REGION, encoding=ENCODING):
+    """Query an API, read the data and write a subset to a table in S3.
+
+    Args:
+        csvfiles: input CSV files for S3 table. The first file in the list will have
+            a header, the rest will not.
+        bucket: name of the bucket containing the CSV data.
+        s3_folders: S3 bucket folders for output lookup table
+        output_fname: output table for looking up dataset name and citation
+        region: AWS region containing the destination bucket.
+        encoding: encoding of the input data
+
+    Postcondition:
+        CSV table with output_columns and values for each written to the named S3 object
+            in bucket and folders
+
+    Note: delimiter is written to original temp CSV files: '\t'
+    """
+    output_path = f"{s3_folders}/{output_fname}.csv"
+    combined_fname = f"/tmp/{output_fname}.csv"
+
+    if os.path.exists(combined_fname):
+        df = pd.read_csv(
+            combined_fname, index_col=0, header=0, delimiter="\t",
+            encoding=encoding, low_memory=False, quoting=csv.QUOTE_NONE)
+    else:
+        df_lst = []
+        for i in range(len(csv_fnames)):
+            subdf = pd.read_csv(
+                csv_fnames[i], index_col=0, header=0, delimiter="\t",
+                encoding=encoding, low_memory=False, quoting=csv.QUOTE_NONE)
+            df_lst.append(subdf)
+        df = pd.concat(df_lst, axis=0, ignore_index=True)
+
+    df.to_parquet(output_path, engine="fastparquet")
+
+    print(f"Wrote {output_path}")
+    upload_to_s3(combined_fname, bucket, output_path, region=region)
+    print(f"Uploaded to s3://{bucket}/{output_path}")
+
+
+# ----------------------------------------------------
 def write_dataframe_to_s3(
         dataframe, bucket, s3_folders, output_fname, region=REGION, encoding=ENCODING):
     """Query an API, read the data and write a subset to a table in S3.
