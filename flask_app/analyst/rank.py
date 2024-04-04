@@ -1,5 +1,4 @@
 """Class for the Specify Network Name API service."""
-from http import HTTPStatus
 from werkzeug.exceptions import BadRequest
 
 from flask_app.common.s2n_type import APIService, AnalystOutput
@@ -81,9 +80,8 @@ if __name__ == "__main__":
     dataset_key = "0000e36f-d0e9-46b0-aa23-cc1980f00515"
 
     svc = RankSvc()
-    response = svc.get_endpoint()
-    AnalystOutput.print_output(response, do_print_rec=True)
-    # print(response)
+    # response = svc.get_endpoint()
+    # AnalystOutput.print_output(response, do_print_rec=True)
     count_by = "species"
     order = "descending"
     limit = 5
@@ -91,3 +89,24 @@ if __name__ == "__main__":
     AnalystOutput.print_output(response, do_print_rec=True)
     # print(response)
 
+"""
+from werkzeug.exceptions import BadRequest
+
+from flask_app.common.s2n_type import APIService, AnalystOutput
+from flask_app.analyst.base import _AnalystService
+from flask_app.analyst.rank import *
+
+from sppy.aws.aws_constants import PROJ_BUCKET
+from sppy.tools.provider.spnet import SpNetAnalyses
+from sppy.tools.s2n.utils import (combine_errinfo, get_traceback)
+
+dataset_key = "0000e36f-d0e9-46b0-aa23-cc1980f00515"
+count_by = "species"
+order = "descending"
+limit = 5
+
+svc = RankSvc()
+response = svc.rank_counts(count_by)
+AnalystOutput.print_output(response, do_print_rec=True)
+
+"""
