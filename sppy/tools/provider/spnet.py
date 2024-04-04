@@ -46,15 +46,15 @@ class SpNetAnalyses():
                 "key": "datasetkey"
             },
             "dataset_meta": {
-                "fname": f"dataset_meta_{self.datestr}.csv",
-                "table_format": "CSV",
+                "fname": f"dataset_meta_{self.datestr}.parquet",
+                "table_format": "Parquet",
                 "fields": [
-                    "datasetKey", "publishingOrganizationKey", "title", "citation"],
-                "key": "datasetKey"
+                    "dataset_key", "publishing_organization_key", "title"],
+                "key": "dataset_key"
             },
             "organization_meta": {
                 "fname": f"organization_meta_{self.datestr}.csv",
-                "table_format": "CSV",
+                "table_format": "Parquet",
                 "fields": ["publishingOrganizationKey", "title"],
                 "key": "publishingOrganizationKey"
             }
@@ -266,6 +266,7 @@ class SpNetAnalyses():
                     rec.update(meta)
                 else:
                     rec.extend(meta)
+        print(records)
 
     # # ----------------------------------------------------
     # def get_org_counts(self, pub_org_key):
@@ -298,6 +299,7 @@ class SpNetAnalyses():
              records: list of limit records containing dataset_key, occ_count, species_count
         """
         records = []
+        errors = {}
         table = self._summary_tables['dataset_counts']
 
         if count_by == "species":
@@ -355,3 +357,6 @@ if __name__ == "__main__":
     for r in recs:
         print(r)
 
+["4fa7b334-ce0d-4e88-aaae-2e0c138d049e", "d7dddbf4-2cf0-4f39-9b2a-bb099caae36c",
+ "7ddf754f-d193-4cc9-b351-99906754a03b", "fab88965-e69d-4491-a04d-e3198b626e52",
+ "6b6b2923-0a10-4708-b170-5b7c611aceef"]
