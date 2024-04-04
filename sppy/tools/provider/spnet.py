@@ -31,25 +31,30 @@ class SpNetAnalyses():
         self.datestr = get_current_datadate_str()
         self.datestr = "2024_02_01"
         self._summary_path = "summary"
+        # Data objects for query
         self._summary_tables = {
             "dataset_counts": {
                 "fname": f"dataset_counts_{self.datestr}_000.parquet",
+                "table_format": "Parquet",
                 "fields": ["datasetkey", "occ_count", "species_count"],
                 "key": "datasetkey"
             },
             "dataset_species_lists": {
                 "fname": f"dataset_lists_{self.datestr}_000.parquet",
+                "table_format": "Parquet",
                 "fields": ["datasetkey", "taxonkey", "species", "occ_count"],
                 "key": "datasetkey"
             },
             "dataset_meta": {
                 "fname": f"dataset_meta_{self.datestr}.csv",
+                "table_format": "CSV",
                 "fields": [
                     "datasetKey", "publishingOrganizationKey", "title", "citation"],
                 "key": "datasetKey"
             },
             "organization_meta": {
                 "fname": f"organization_meta_{self.datestr}.csv",
+                "table_format": "CSV",
                 "fields": ["publishingOrganizationKey", "title"],
                 "key": "publishingOrganizationKey"
             }
@@ -80,20 +85,36 @@ class SpNetAnalyses():
         return False
 
     # ----------------------------------------------------
-    def _query_table(self, s3_path, query_str, format="CSV"):
+    def _query_summary_table(self, table, query_str, format):
         """Query the S3 resource defined for this class.
 
         Args:
-            s3_path: S3 folder and filename within the bucket
+            table: summary object within the bucket and summary folder
             query_str: a SQL query for S3 select.
             format: output format, options "CSV" or "JSON"
 
         Returns:
              list of records matching the query
+
+        Raises:
+            Exception: on unsupported output format
+            Exception: on failed select_object_content
         """
-        recs = []
         if format not in ("JSON", "CSV"):
-            format = "JSON"
+            raise(Exception(f"Unsupported output format {format}"))
+
+        recs = []
+        # Table properties
+        tbl_format = table["table_format"]
+        s3_path = f"{self._summary_path}/{table['fname']}"
+
+        # Input S3 serialization
+        if tbl_format == "CSV":
+            in_serialization = {"CSV": {"FileHeaderInfo": "Use"}}
+        else:
+            in_serialization = {"Parquet": {}}
+
+        # Output serialization
         if format == "JSON":
             out_serialization = {"JSON": {}}
         elif format == "CSV":
@@ -102,18 +123,23 @@ class SpNetAnalyses():
                     "QuoteFields": "ASNEEDED",
                     "FieldDelimiter": ",",
                     "QuoteCharacter": '"'}
-            }
+        }
         s3 = boto3.client("s3", region_name=self.region)
-        resp = s3.select_object_content(
-            Bucket=self.bucket,
-            Key=s3_path,
-            ExpressionType="SQL",
-            Expression=query_str,
-            InputSerialization={"Parquet": {}},
-            OutputSerialization=out_serialization
-        )
+        try:
+            resp = s3.select_object_content(
+                Bucket=self.bucket,
+                Key=s3_path,
+                ExpressionType="SQL",
+                Expression=query_str,
+                InputSerialization=in_serialization,
+                OutputSerialization=out_serialization
+            )
+        except Exception as e:
+            print(e)
+            raise
         for event in resp["Payload"]:
             if "Records" in event:
+                records = event['Records']['Payload']
                 recs_str = event["Records"]["Payload"].decode(ENCODING)
                 rec_strings = recs_str.strip().split("\n")
                 for rs in rec_strings:
@@ -140,12 +166,12 @@ class SpNetAnalyses():
         return df
 
     # ----------------------------------------------------
-    def _query_order_s3_table(
-            self, s3_path, sort_field, order, limit, format="CSV"):
+    def _query_order_summary_table(
+            self, table, sort_field, order, limit, format):
         """Query the S3 resource defined for this class.
 
         Args:
-            s3_path: S3 folder and filename within the bucket
+            table: summary object within the bucket and summary folder
             sort_field: fieldname (column) to sort records on
             order: boolean flag indicating to sort ascending or descending
             limit: number of records to return, limit is 500
@@ -154,23 +180,25 @@ class SpNetAnalyses():
         Returns:
              ordered list of records matching the query
         """
-        recs = []
-        errors = {}
+        s3_path = f"{self._summary_path}/{table['fname']}"
         df = self._create_dataframe_from_s3obj(s3_path)
         # Sort rows (Axis 0/index) by values in sort_field (column)
         sorted_df = df.sort_values(
             by=sort_field, axis=0, ascending=(order == "ascending"))
-        rec_df = sorted_df.head(limit)
+        recs_df = sorted_df.head(limit)
+        if format == "JSON":
+            recs = []
+            tmpdict = recs_df.to_dict(orient='index')
+            for idx, rec in tmpdict.items():
+                recs.append(rec)
+        else:
+            # Add column headings as first record in list
+            recs = [list(recs_df.columns)]
+            for rec in recs_df.values:
+                recs.append(rec)
+        return recs
 
-        for row in rec_df.itertuples():
-            # TODO: Construct these from the summary_table fields
-            rec = {"datasetkey": row.datasetkey,
-                   "species_count": row.species_count,
-                   "occ_count": row.occ_count}
-            recs.append(rec)
-        return recs, errors
-
-    # ----------------------------------------------------
+# ----------------------------------------------------
     def get_dataset_counts(self, dataset_key, format="JSON"):
         """Query the S3 resource for occurrence and species counts for this dataset.
 
@@ -181,23 +209,18 @@ class SpNetAnalyses():
         Returns:
              records: empty list or list of 1 record (list)
         """
-        fields = self._summary_tables["dataset_counts"]["fields"]
-        key_fld = self._summary_tables["dataset_counts"]["key"]
-        # key_idx = fields.index(self._summary_tables["dataset_counts"]["key"])
-
-        table_path = \
-            f"{self._summary_path}/{self._summary_tables['dataset_counts']['fname']}"
+        table = self._summary_tables["dataset_counts"]
         query_str = (
-            f"SELECT * FROM s3object s WHERE s.datasetkey = '{dataset_key}'"
+            f"SELECT * FROM s3object s WHERE s.{table['key']} = '{dataset_key}'"
         )
         # Returns empty list or list of 1 record
-        records = self._query_table(table_path, query_str, format=format)
+        records = self._query_summary_table(table, query_str, format)
         if self._dataset_metadata_exists():
-            self._add_dataset_lookup_vals(records, format)
+            self._add_dataset_lookup_vals(records, table, format)
         return records
 
     # ----------------------------------------------------
-    def _add_dataset_lookup_vals(self, records, format):
+    def _add_dataset_lookup_vals(self, records, rec_table, format):
         """Query the S3 resource for occurrence and species counts for this dataset.
 
         Args:
@@ -207,38 +230,42 @@ class SpNetAnalyses():
         Returns:
              records: empty list or list of 1 record (list)
         """
-        table = self._summary_tables['dataset_meta']
-        table_path = f"{self._summary_path}/{table['fname']}"
-        fields = table["fields"]
-        key_fld = table["key"]
-        key_idx = fields.index(key_fld)
-        rest_flds = fields.pop(key_fld)
-        qry_flds = " ".join(rest_flds)
+        # Metadata table info
+        meta_table = self._summary_tables["dataset_meta"]
+        meta_fields = meta_table["fields"]
+        meta_key_fld = meta_table["key"]
+        meta_key_idx = meta_fields.index(meta_key_fld)
+        meta_fields.pop(meta_key_idx)
+        qry_flds = ", ".join(meta_fields)
+
+        # Record info
+        rec_fields = rec_table["fields"]
+        rec_key_fld = rec_table["key"]
+        rec_key_idx = rec_fields.index(rec_key_fld)
 
         for rec in records:
-            # Get value by field or position
+            # Get datasetkey by field or position
             if format == "JSON":
-                val = rec[key_fld]
+                val = rec[rec_key_fld]
             else:
-                val = rec[key_idx]
+                val = rec[rec_key_idx]
 
             query_str = (
-                f"SELECT {qry_flds} FROM s3object s WHERE s.{key_fld} = '{val}'"
+                f"SELECT {qry_flds} FROM s3object s WHERE s.{meta_key_fld} = '{val}'"
             )
             # Returns empty list or list of 1 record
-            meta_recs = self._query_table(table_path, query_str, format=format)
+            meta_recs = self._query_summary_table(meta_table, query_str, format)
             try:
                 meta = meta_recs[0]
             except IndexError:
                 # Add placeholders for empty values, no entries for dictionary
                 if format == "CSV":
-                    rec.extend(["" for f in rest_flds])
+                    rec.extend(["" for _ in qry_flds])
             else:
-                for fld in rest_flds:
-                    if format == "JSON":
-                        rec.update(meta)
-                    else:
-                        rec.extend(meta)
+                if format == "JSON":
+                    rec.update(meta)
+                else:
+                    rec.extend(meta)
 
     # # ----------------------------------------------------
     # def get_org_counts(self, pub_org_key):
@@ -271,27 +298,26 @@ class SpNetAnalyses():
              records: list of limit records containing dataset_key, occ_count, species_count
         """
         records = []
-        table_path = \
-            f"{self._summary_path}/{self._summary_tables['dataset_counts']['fname']}"
-        fields = self._summary_tables["dataset_counts"]["fields"]
-        key_idx = fields.index(self._summary_tables["dataset_counts"]["key"])
+        table = self._summary_tables['dataset_counts']
+
         if count_by == "species":
             sort_field = "species_count"
         else:
             sort_field = "occ_count"
         try:
-            records, errors = self._query_order_s3_table(
-                table_path, sort_field, order, limit)
+            records = self._query_order_summary_table(
+                table, sort_field, order, limit, format)
         except Exception as e:
             errors = {"error": [get_traceback()]}
 
         if self._dataset_metadata_exists():
-            self.add_dataset_lookup_vals(records, key_idx=key_idx)
+            self._add_dataset_lookup_vals(records, table, format)
+
         return records, errors
 
 
 # ----------------------------------------------------
-def rank_species_counts(self, count_by, order, limit):
+def rank_species_counts(self, count_by, order, limit, format="JSON"):
     """Rank the occurrences of a species in a single dataset, most or least
 
     Args:
@@ -300,24 +326,22 @@ def rank_species_counts(self, count_by, order, limit):
         order: string indicating whether to rank in "descending" or
             "ascending" order.
         limit: number of species occurrence counts to return, no more than 300.
+        format: output format, options "CSV" or "JSON"
 
     Returns:
          records: list of limit records containing dataset_key, occ_count, species_count
     """
     records = []
-    table_path = \
-        f"{self._summary_path}/{self._summary_tables['dataset_lists']['fname']}"
-    fields = self._summary_tables["dataset_lists"]["fields"]
-    key_idx = fields.index(self._summary_tables["dataset_lists"]["key"])
+    table = self._summary_tables["dataset_lists"]
     sort_fields = ["occ_count", "datasetkey"]
     try:
-        records, errors = self._query_order_s3_table(
-            table_path, sort_fields, order, limit)
+        records = self._query_order_summary_table(
+            table, sort_fields, order, limit, format)
     except Exception as e:
         errors = {"error": [get_traceback()]}
 
     if self._dataset_metadata_exists():
-        self.add_dataset_lookup_vals(records, key_idx=key_idx)
+        self.add_dataset_lookup_vals(records, format)
     return records, errors
 
 
