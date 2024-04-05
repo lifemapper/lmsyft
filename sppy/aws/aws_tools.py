@@ -653,28 +653,26 @@ def create_dataframe_from_gbifcsv_s3_bucket(bucket, csv_path, region=REGION):
 
 # ----------------------------------------------------
 def create_dataframe_from_s3obj(
-        bucket, s3_path, datatype="parquet", region=REGION, encoding=ENCODING):
+        bucket, s3_path, datatype="Parquet", region=REGION, encoding=ENCODING):
     """Read CSV data from S3 into a pandas DataFrame.
 
     Args:
         bucket: name of the bucket containing the CSV data.
         s3_path: the object name with enclosing S3 bucket folders.
         region: AWS region to query.
-        datatype: tabular datatype, options are "csv", "parquet"
+        datatype: tabular datatype, options are "CSV", "Parquet"
 
     Returns:
         df: pandas DataFrame containing the CSV data.
     """
-    # import pyarrow.parquet as pq
-    # import s3fs
     datatype = datatype.lower()
-    if datatype == "csv":
+    if datatype == "CSV":
         s3_client = boto3.client("s3", region_name=region)
         s3_obj = s3_client.get_object(Bucket=bucket, Key=s3_path)
         df = pd.read_csv(
             s3_obj["Body"], delimiter="\t", encoding=encoding, low_memory=False,
             quoting=csv.QUOTE_NONE)
-    elif datatype == "parquet":
+    elif datatype == "Parquet":
         s3_uri = f"s3://{bucket}/{s3_path}"
         # s3_fs = s3fs.S3FileSystem
         df = pd.read_parquet(s3_uri)
