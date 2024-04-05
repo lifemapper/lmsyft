@@ -5,6 +5,44 @@ PROJ_BUCKET = f"{PROJ_NAME}-{REGION}"
 SUMMARY_FOLDER = "summary"
 ENCODING = "utf-8"
 
+class SummaryTables:
+    SUMMARY_TABLES = {
+        "dataset_counts": {
+            "fname": f"dataset_counts_XXXX_XX_XX_000.parquet",
+            "table_format": "Parquet",
+            "fields": ["datasetkey", "occ_count", "species_count"],
+            "key": "datasetkey"
+        },
+        "dataset_species_lists": {
+            "fname": f"dataset_lists_XXXX_XX_XX_000.parquet",
+            "table_format": "Parquet",
+            "fields": ["datasetkey", "taxonkey", "species", "occ_count"],
+            "key": "datasetkey"
+        },
+        "dataset_meta": {
+            "fname": f"dataset_meta_XXXX_XX_XX.parquet",
+            "table_format": "Parquet",
+            "fields": [
+                "dataset_key", "publishing_organization_key", "title"],
+            "key": "dataset_key"
+        }
+    }
+
+    @classmethod
+    def update_summary_tables(cls, datestr):
+        tables = {}
+        # Update filename in summary tables
+        for key, meta in cls.SUMMARY_TABLES.items():
+            tbl_meta = {}
+            for subkey, val in meta:
+                if subkey == "fname":
+                    tbl_meta["fname"] = val.replace("XXXX_XX_XX", datestr)
+                else:
+                    tbl_meta[subkey] = val
+            tables[key] = tbl_meta
+        return tables
+
+
 INPUT_PATH = "summary"
 LOG_PATH = "log"
 
