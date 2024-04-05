@@ -3,10 +3,10 @@ import boto3
 import json
 import pandas as pd
 
-from sppy.aws.aws_constants import ENCODING, PROJ_BUCKET, REGION, SUMMARY_FOLDER
+from sppy.aws.aws_constants import (
+    ENCODING, PROJ_BUCKET, REGION, SUMMARY_FOLDER, SummaryTables)
 from sppy.aws.aws_tools import get_current_datadate_str
 from sppy.tools.s2n.utils import get_traceback
-
 
 
 # .............................................................................
@@ -16,7 +16,8 @@ class SpNetAnalyses():
     # ...............................................
     @classmethod
     def __init__(
-            self, bucket, region=REGION, encoding=ENCODING):
+            self, bucket, s3_summary_path=SUMMARY_FOLDER, region=REGION,
+            encoding=ENCODING):
         """Object to query tabular data in S3.
 
         Args:
@@ -29,36 +30,9 @@ class SpNetAnalyses():
         self.encoding = encoding
         self.exp_type = 'SQL'
         self.datestr = get_current_datadate_str()
-        self.datestr = "2024_02_01"
-        self._summary_path = "summary"
+        self._summary_path = s3_summary_path
         # Data objects for query
-        self._summary_tables = {
-            "dataset_counts": {
-                "fname": f"dataset_counts_{self.datestr}_000.parquet",
-                "table_format": "Parquet",
-                "fields": ["datasetkey", "occ_count", "species_count"],
-                "key": "datasetkey"
-            },
-            "dataset_species_lists": {
-                "fname": f"dataset_lists_{self.datestr}_000.parquet",
-                "table_format": "Parquet",
-                "fields": ["datasetkey", "taxonkey", "species", "occ_count"],
-                "key": "datasetkey"
-            },
-            "dataset_meta": {
-                "fname": f"dataset_meta_{self.datestr}.parquet",
-                "table_format": "Parquet",
-                "fields": [
-                    "dataset_key", "publishing_organization_key", "title"],
-                "key": "dataset_key"
-            },
-            "organization_meta": {
-                "fname": f"organization_meta_{self.datestr}.csv",
-                "table_format": "Parquet",
-                "fields": ["publishingOrganizationKey", "title"],
-                "key": "publishingOrganizationKey"
-            }
-        }
+        self._summary_tables = SummaryTables.update_summary_tables(self.datestr)
 
     # ----------------------------------------------------
     def _list_summaries(self):
