@@ -1,46 +1,62 @@
 """Constants for Specnet AWS Resources."""
+import copy
+
 PROJ_NAME = "specnet"
 REGION = "us-east-1"
 PROJ_BUCKET = f"{PROJ_NAME}-{REGION}"
 SUMMARY_FOLDER = "summary"
 ENCODING = "utf-8"
 
-class SummaryTables:
-    SUMMARY_TABLES = {
+LOCAL_OUTDIR = "/tmp"
+
+class Summaries:
+    TABLES = {
         "dataset_counts": {
             "fname": f"dataset_counts_XXXX_XX_XX_000.parquet",
             "table_format": "Parquet",
             "fields": ["datasetkey", "occ_count", "species_count"],
-            "key": "datasetkey"
+            "key_fld": "datasetkey"
         },
         "dataset_species_lists": {
             "fname": f"dataset_lists_XXXX_XX_XX_000.parquet",
             "table_format": "Parquet",
             "fields": ["datasetkey", "taxonkey", "species", "occ_count"],
-            "key": "datasetkey"
+            "key_fld": "datasetkey",
+            "species_fld": "species",
+            "value_fld": "occ_count",
         },
         "dataset_meta": {
             "fname": f"dataset_meta_XXXX_XX_XX.parquet",
             "table_format": "Parquet",
             "fields": [
                 "dataset_key", "publishing_organization_key", "title"],
-            "key": "dataset_key"
+            "key_fld": "dataset_key"
         }
     }
 
+    # ...............................................
     @classmethod
     def update_summary_tables(cls, datestr):
         tables = {}
         # Update filename in summary tables
-        for key, meta in cls.SUMMARY_TABLES.items():
-            tbl_meta = {}
-            for subkey, val in meta:
-                if subkey == "fname":
-                    tbl_meta["fname"] = val.replace("XXXX_XX_XX", datestr)
-                else:
-                    tbl_meta[subkey] = val
-            tables[key] = tbl_meta
+        for key, meta in cls.TABLES.items():
+            meta_cpy = copy.deepcopy(meta)
+            fname_tmpl = meta["fname"]
+            meta_cpy["fname"] = fname_tmpl.replace("XXXX_XX_XX", datestr)
+            tables[key] = meta_cpy
         return tables
+
+    # ...............................................
+    @classmethod
+    def get_table(cls, table_type, datestr):
+        # Update filename in summary tables
+        try:
+            cpy_table = copy.deepcopy(cls.TABLES[table_type])
+        except KeyError:
+            return None
+        fname_tmpl = cpy_table["fname"]
+        cpy_table["fname"] = fname_tmpl.replace("XXXX_XX_XX", datestr)
+        return cpy_table
 
 
 INPUT_PATH = "summary"

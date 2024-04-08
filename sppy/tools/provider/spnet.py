@@ -4,7 +4,7 @@ import json
 import pandas as pd
 
 from sppy.aws.aws_constants import (
-    ENCODING, PROJ_BUCKET, REGION, SUMMARY_FOLDER, SummaryTables)
+    ENCODING, PROJ_BUCKET, REGION, SUMMARY_FOLDER, Summaries)
 from sppy.aws.aws_tools import get_current_datadate_str
 from sppy.tools.s2n.utils import get_traceback
 
@@ -32,7 +32,7 @@ class SpNetAnalyses():
         self.datestr = get_current_datadate_str()
         self._summary_path = s3_summary_path
         # Data objects for query
-        self._summary_tables = SummaryTables.update_summary_tables(self.datestr)
+        self._summary_tables = Summaries.update_summary_tables(self.datestr)
 
     # ----------------------------------------------------
     def _list_summaries(self):
@@ -207,14 +207,14 @@ class SpNetAnalyses():
         # Metadata table info
         meta_table = self._summary_tables["dataset_meta"]
         meta_fields = meta_table["fields"]
-        meta_key_fld = meta_table["key"]
+        meta_key_fld = meta_table["key_fld"]
         meta_key_idx = meta_fields.index(meta_key_fld)
         meta_fields.pop(meta_key_idx)
         qry_flds = ", ".join(meta_fields)
 
         # Record info
         rec_fields = rec_table["fields"]
-        rec_key_fld = rec_table["key"]
+        rec_key_fld = rec_table["key_fld"]
         rec_key_idx = rec_fields.index(rec_key_fld)
 
         for rec in records:

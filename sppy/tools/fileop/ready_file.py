@@ -25,7 +25,7 @@ def ready_filename(full_filename, overwrite=False):
         Exception: on parent directories do not exist and cannot be created.
     """
     if full_filename is None:
-        raise Exception("full_filename is `None`")
+        raise Exception("full_filename is None`")
 
     if os.path.exists(full_filename):
         if overwrite:
