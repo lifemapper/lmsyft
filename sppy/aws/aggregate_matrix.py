@@ -484,6 +484,8 @@ tmp_df = orig_df.loc[orig_df[x_fld] == x]
 
 # Create a 1-d series for the x column
 ts = pd.Series(pd.arrays.SparseArray(tmp_df[val_fld].values), index=tmp_df[y_fld])
+ts.name = x
+new_df.update(other=ts)
 
 # Add the column to the DF
 new_df = new_df.assign(**{x: ts})
