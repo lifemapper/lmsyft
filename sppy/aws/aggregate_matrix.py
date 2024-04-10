@@ -254,7 +254,7 @@ class AggregateMatrix:
 
     # ...............................................
     @classmethod
-    def reframe_from_columns(cls, orig_df, fields, x_fld, y_fld, val_fld, logger=None):
+    def reframe_from_columns(cls, orig_df, x_fld, y_fld, val_fld, logger=None):
         """Create a dataframe of rows by columns containing values from a table.
 
         Args:
@@ -273,6 +273,7 @@ class AggregateMatrix:
                 datasets (columnns, x axis=1), with values = number of occurrences.
         """
         # Get rid of extra columns
+        fields = list(orig_df.columns)
         extra_cols = list(set(fields).difference([x_fld, y_fld, val_fld]))
         orig_df.drop(columns=extra_cols, inplace=True)
 
@@ -283,15 +284,16 @@ class AggregateMatrix:
         # Create dataframe of zeros with rows=species and columns=datasets
         sparse_dtype = pd.SparseDtype("int32", 0)
         # Create a new dataframe with only column labels
-        df = pd.DataFrame(0, index=[], columns=[], dtype="int32")
+        new_df = pd.DataFrame(0, index=[], columns=[], dtype="int32")
         # For each column (x value)
         for x in unique_x_vals:
             # Select a dataframe containing only rows with x_fld = x
             tmp_df = orig_df.loc[orig_df[x_fld] == x]
             # Create a 1-d series for the x column
-            ts = pd.Series(tmp_df[val_fld].values, index=tmp_df[y_fld])
+            ts = pd.Series(pd.arrays.SparseArray(tmp_df[val_fld].values), index=tmp_df[y_fld])
+
             # Add the column to the DF
-            df[:, x] = ts
+            new_df.assign(**{x: ts})
 
         # reframed_df = pd.DataFrame(
         #     0, index=unique_y_vals, columns=unique_x_vals, dtype=sparse_dtype)
@@ -422,6 +424,7 @@ if __name__ == "__main__":
 
     data_datestr = get_current_datadate_str()
     table = Summaries.get_table("dataset_species_lists", data_datestr)
+    fields = table["fields"]
     x_fld = table["key_fld"]
     y_fld = table["species_fld"]
     val_fld = table["value_fld"]
@@ -432,7 +435,7 @@ if __name__ == "__main__":
     )
 
     species_dataset_matrix = AggregateMatrix.reframe_from_columns(
-        orig_df, x_fld, y_fld, val_fld, logger=logger)
+        orig_df, fields, x_fld, y_fld, val_fld, logger=logger)
 
     # Upload logfile to S3
     s3_log_filename = upload_to_s3(logger.filename, PROJ_BUCKET, LOG_PATH, logger)
@@ -455,22 +458,52 @@ val_fld = table["value_fld"]
 orig_df = read_s3_parquet_to_pandas(
     PROJ_BUCKET, SUMMARY_FOLDER, table["fname"], logger=logger)
 
-extra_cols = list(set(table["fields"]).difference([x_fld, y_fld, val_fld])
-for col in orig_df.columns:
 
+fields = list(orig_df.columns)
+extra_cols = list(set(fields).difference([x_fld, y_fld, val_fld]))
+orig_df.drop(columns=extra_cols, inplace=True)
 
+# Get column and row indexes
 unique_x_vals = orig_df[x_fld].unique()
 unique_y_vals = orig_df[y_fld].unique()
-dt = pd.SparseDtype("int32", 0)
+
+# Create dataframe of zeros with rows=species and columns=datasets
+sparse_dtype = pd.SparseDtype("int32", 0)
+
+# Create a new dataframe with only column labels
+new_df = pd.DataFrame(0, index=[], columns=[], dtype=sparse_dtype)
+
+# For each column (x value)
+x = unique_x_vals[0]
+x = unique_x_vals[1]
+x = unique_x_vals[2]
+
+
+# Select a dataframe containing only rows with x_fld = x
+tmp_df = orig_df.loc[orig_df[x_fld] == x]
+
+# Create a 1-d series for the x column
+ts = pd.Series(pd.arrays.SparseArray(tmp_df[val_fld].values), index=tmp_df[y_fld])
+
+# Add the column to the DF
+new_df = new_df.assign(**{x: ts})
+# new_df[x] = ts
 
 reframed_df = pd.DataFrame(
-    0, index=unique_y_vals, columns=unique_x_vals, dtype=dt)
-# Fill dataframe
-for _idx, row in orig_df.iterrows():
-    x = row[x_fld]
-    y = row[y_fld]
-    val = row[val_fld]
-    reframed_df.loc[y][x] = val
+    0, index=unique_y_vals, columns=, dtype=dt)
+    
+# datasets/columns
+
+
+# Select a dataframe containing only rows with x_fld = x
+tmp_df = orig_df.loc[orig_df[x_fld] == x]
+
+# Create a 1-d series for the x column; y = rows/species
+ts = pd.Series(pd.arrays.SparseArray(tmp_df[val_fld].values), index=tmp_df[y_fld]))
+
+# Add the column to the DF
+df1 = df.assign(x=ts)
+df[x] = ts
 
 sd_mtx = AggregateMatrix(reframed_df, logger=logger)
         
