@@ -269,41 +269,43 @@ class AggregateMatrix:
             logger (object): logger for saving relevant processing messages
 
         Returns:
-            reframed_df (pandas.DataFrame): DF of species (rows, y axis=0) by
-                datasets (columnns, x axis=1), with values = number of occurrences.
+            sd_mtx (AggregateMatrix): matrix containing a dataframe of y values (rows, y axis=0) by
+                x values (columnns, x axis=1), with values from another column.
+
+        Note:
+            The input dataframe must contain only one input record for any x and y value
+                combination, and each record must contain another value for the dataframe
+                contents.  The function was written for a table of records with
+                datasetkey (for the column labels/x), species (for the row labels/y),
+                and occurrence count.
         """
         # Get rid of extra columns
         fields = list(orig_df.columns)
         extra_cols = list(set(fields).difference([x_fld, y_fld, val_fld]))
         orig_df.drop(columns=extra_cols, inplace=True)
 
-        # Get column and row indexes
-        unique_x_vals = orig_df[x_fld].unique()
-        unique_y_vals = orig_df[y_fld].unique()
+        # Get column and row indexes, remove None
+        unique_x_vals = orig_df[x_fld].dropna().unique()
+        unique_y_vals = orig_df[y_fld].dropna().unique()
 
-        # Create dataframe of zeros with rows=species and columns=datasets
         sparse_dtype = pd.SparseDtype("int32", 0)
-        # Create a new dataframe with only column labels
-        new_df = pd.DataFrame(0, index=[], columns=[], dtype="int32")
-        # For each column (x value)
+        # Must not use index or columns, to ensure DF is sparse
+        new_df = pd.DataFrame(0, index=[], columns=[], dtype=sparse_dtype)
+
+        # NOTE: Works but too slow. For each column
         for x in unique_x_vals:
-            # Select a dataframe containing only rows with x_fld = x
-            tmp_df = orig_df.loc[orig_df[x_fld] == x]
-            # Create a 1-d series for the x column
-            ts = pd.Series(pd.arrays.SparseArray(tmp_df[val_fld].values), index=tmp_df[y_fld])
+            # Subset a dataframe containing only rows with x_fld = x
+            xdf = orig_df.loc[orig_df[x_fld] == x]
+            # Create a 1 column temp DF for the x column, with y/row indices
+            tdf = pd.DataFrame(
+                pd.arrays.SparseArray(
+                    xdf[val_fld].values), index=xdf[y_fld], columns=[x], dtype=sparse_dtype
+            )
+            # Add an empty column to the dataframe, then overwrite null values with the temp DF
+            new_df = new_df.assign(**{x: None})
+            new_df = new_df.combine_first(tdf)
 
-            # Add the column to the DF
-            new_df.assign(**{x: ts})
-
-        # reframed_df = pd.DataFrame(
-        #     0, index=unique_y_vals, columns=unique_x_vals, dtype=sparse_dtype)
-        # Fill dataframe
-        for _idx, row in orig_df.iterrows():
-            x = row[x_fld]
-            y = row[y_fld]
-            val = row[val_fld]
-            reframed_df.loc[y, x] = val
-        sd_mtx = AggregateMatrix(reframed_df, logger=logger)
+        sd_mtx = AggregateMatrix(new_df, logger=logger)
         return sd_mtx
 
     # ...............................................
@@ -435,7 +437,7 @@ if __name__ == "__main__":
     )
 
     species_dataset_matrix = AggregateMatrix.reframe_from_columns(
-        orig_df, fields, x_fld, y_fld, val_fld, logger=logger)
+        orig_df, x_fld, y_fld, val_fld, logger=logger)
 
     # Upload logfile to S3
     s3_log_filename = upload_to_s3(logger.filename, PROJ_BUCKET, LOG_PATH, logger)
@@ -450,6 +452,7 @@ logger = Logger(
 
 data_datestr = get_current_datadate_str()
 table = Summaries.get_table("dataset_species_lists", data_datestr)
+
 x_fld = table["key_fld"]
 y_fld = table["species_fld"]
 val_fld = table["value_fld"]
@@ -458,61 +461,38 @@ val_fld = table["value_fld"]
 orig_df = read_s3_parquet_to_pandas(
     PROJ_BUCKET, SUMMARY_FOLDER, table["fname"], logger=logger)
 
-
 fields = list(orig_df.columns)
 extra_cols = list(set(fields).difference([x_fld, y_fld, val_fld]))
 orig_df.drop(columns=extra_cols, inplace=True)
 
-# Get column and row indexes
-unique_x_vals = orig_df[x_fld].unique()
-unique_y_vals = orig_df[y_fld].unique()
+# Get column and row indexes, remove None
+unique_x_vals = orig_df[x_fld].dropna().unique()
+unique_y_vals = orig_df[y_fld].dropna().unique()
 
-# Create dataframe of zeros with rows=species and columns=datasets
+# Create empty sparse dataframe
 sparse_dtype = pd.SparseDtype("int32", 0)
-
-# Create a new dataframe with only column labels
 new_df = pd.DataFrame(0, index=[], columns=[], dtype=sparse_dtype)
 
 # For each column (x value)
 x = unique_x_vals[0]
-x = unique_x_vals[1]
-x = unique_x_vals[2]
+x1 = unique_x_vals[1]
+x2 = unique_x_vals[2]
 
+# For each column (x value)
+start = DT.datetime.now()
+for x in unique_x_vals:
+    # Subset a dataframe containing only rows with x_fld = x
+    xdf = orig_df.loc[orig_df[x_fld] == x]
+    # Create a 1 column temp DF for the x column, with y/row indices
+    tdf = pd.DataFrame(
+        pd.arrays.SparseArray(
+            xdf[val_fld].values), index=xdf[y_fld], columns=[x]
+    )
+    # Add an empty column to the dataframe, then overwrite null values with the temp DF
+    new_df = new_df.assign(**{x: None})
+    new_df = new_df.combine_first(tdf)
 
-# Select a dataframe containing only rows with x_fld = x
-tmp_df = orig_df.loc[orig_df[x_fld] == x]
-
-# Create a 1-d series for the x column
-ts = pd.Series(pd.arrays.SparseArray(tmp_df[val_fld].values), index=tmp_df[y_fld])
-ts.name = x
-new_df.update(other=ts)
-
-# Add the column to the DF
-new_df = new_df.assign(**{x: ts})
-# new_df[x] = ts
-
-reframed_df = pd.DataFrame(
-    0, index=unique_y_vals, columns=, dtype=dt)
-    
-# datasets/columns
-
-
-# Select a dataframe containing only rows with x_fld = x
-tmp_df = orig_df.loc[orig_df[x_fld] == x]
-
-# Create a 1-d series for the x column; y = rows/species
-ts = pd.Series(pd.arrays.SparseArray(tmp_df[val_fld].values), index=tmp_df[y_fld]))
-
-# Add the column to the DF
-df1 = df.assign(x=ts)
-df[x] = ts
-
-sd_mtx = AggregateMatrix(reframed_df, logger=logger)
-        
-sd_mtx = AggregateMatrix(reframed_df, logger=logger)
-
-# species_dataset_matrix = AggregateMatrix.reframe_from_columns(
-#     orig_df, x_fld, y_fld, val_fld, logger=logger)
+end = DT.datetime.now()
 
 
 # Upload logfile to S3
