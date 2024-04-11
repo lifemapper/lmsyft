@@ -444,6 +444,8 @@ if __name__ == "__main__":
 
 """
 from sppy.aws.aggregate_matrix import * 
+from scipy.sparse import csr_array
+from pandas.api.types import CategoricalDtype
 
 todaystr = get_today_str()
 log_name = f"testing_{todaystr}"
@@ -454,17 +456,72 @@ data_datestr = get_current_datadate_str()
 table = Summaries.get_table("dataset_species_lists", data_datestr)
 
 x_fld = table["key_fld"]
-y_fld = table["species_fld"]
+y_fld = table["combo_species_fld"]
+combine_fields = table["combine_fields"]
 val_fld = table["value_fld"]
 
-# Read directly into DataFrame
+# Read stacked data (records) directly into DataFrame
 orig_df = read_s3_parquet_to_pandas(
     PROJ_BUCKET, SUMMARY_FOLDER, table["fname"], logger=logger)
+
+# Get unique values to use as column and row indexes, remove None
+unique_x_vals = list(orig_df[x_fld].dropna().unique())
+unique_y_vals = list(orig_df[y_fld].dropna().unique())
+sparse_dtype = pd.SparseDtype("int32", 0)
+
+# Categories allow using codes as the integer index for scipy matrix 
+y_categ = CategoricalDtype(unique_y_vals, ordered=True)
+x_categ = CategoricalDtype(unique_x_vals, ordered=True)
+
+# from original data records
+# assigns category codes replacing datasetkey and taxonkey_species strings
+# contains original record count for each
+# Assign each row from the stacked data columns 
+col_idx = orig_df[x_fld].astype(x_categ).cat.codes
+row_idx = orig_df[y_fld].astype(y_categ).cat.codes
+
+# This is row = species, column = dataset
+sparse_matrix = csr_matrix((orig_df[val_fld], (row_idx, col_idx)), \
+                           shape=(y_categ.categories.size, x_categ.categories.size))
+
+# This now only uses codes for categories, need to convert back to x and y categories
+sdf = pd.DataFrame.sparse.from_spmatrix(sparse_matrix)
+# ok
+sdf = pd.DataFrame.sparse.from_spmatrix(
+    sparse_matrix, index=y_categ.categories, columns=x_categ.categories)
+                         
+
+dfs = pd.SparseDataFrame(sparse_matrix, \
+                         index=y_categ.categories, \
+                         columns=x_categ.categories, \
+                         default_fill_value=0)
+
+
+
+
+def combine_columns(row):
+    return str(row['taxonkey']) + ' ' + str(row['species'])
+
+orig_df[y_fld] = orig_df.apply(combine_columns, axis=1)
+    
+orig_df.pivot(index=y_fld, columns=x_fld, values=val_fld)
+
+orig_df.taxonkey_species.astype('category', catagories=
+
+
+
+
+
+
+
+
+
 
 fields = list(orig_df.columns)
 extra_cols = list(set(fields).difference([x_fld, y_fld, val_fld]))
 orig_df.drop(columns=extra_cols, inplace=True)
 
+orig_df.pivot(index=
 # Get column and row indexes, remove None
 unique_x_vals = orig_df[x_fld].dropna().unique()
 unique_y_vals = orig_df[y_fld].dropna().unique()

@@ -23,6 +23,8 @@ class Summaries:
             "fields": ["datasetkey", "taxonkey", "species", "occ_count"],
             "key_fld": "datasetkey",
             "species_fld": "species",
+            "combine_fields": ["taxonkey", "species"],
+            "combo_species_fld": "taxonkey_species",
             "value_fld": "occ_count",
         },
         "dataset_meta": {
