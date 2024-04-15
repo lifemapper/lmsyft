@@ -23,8 +23,7 @@ class Summaries:
             "fields": ["datasetkey", "taxonkey", "species", "occ_count"],
             "key_fld": "datasetkey",
             "species_fld": "species",
-            "combine_fields": ["taxonkey", "species"],
-            "combo_species_fld": "taxonkey_species",
+            "combine_fields": {"taxonkey_species": ("taxonkey", "species")},
             "value_fld": "occ_count",
         },
         "dataset_meta": {
@@ -33,7 +32,15 @@ class Summaries:
             "fields": [
                 "dataset_key", "publishing_organization_key", "title"],
             "key_fld": "dataset_key"
-        }
+        },
+        "species_dataset_matrix": {
+            "fname": f"species_dataset_matrix_XXXX_XX_XX.parquet",
+            "table_format": "Parquet",
+            "row": "taxonkey_species",
+            "column": "datasetkey",
+            "value": "occ_count",
+        },
+
     }
 
     # ...............................................
