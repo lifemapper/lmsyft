@@ -240,6 +240,7 @@ class _BrokerService(_SpecifyNetworkService):
         Raises:
             BadRequest: on invalid query parameters.
             BadRequest: on unknown exception when parsing request
+
         Note:
             filter_params is present to distinguish between providers for occ service by
             occurrence_id or by dataset_id.

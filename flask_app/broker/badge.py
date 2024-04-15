@@ -69,6 +69,7 @@ class BadgeSvc(_BrokerService):
             a file containing the requested icon
 
         Raises:
+            BadRequest: on unknown exception when parsing request
             NotImplementedError: on request for a non-supported provider icon.
         """
         # return info for empty request

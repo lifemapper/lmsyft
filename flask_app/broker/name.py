@@ -141,9 +141,6 @@ class NameSvc(_BrokerService):
             provider.  Each provider element is a BrokerOutput object with records as a
             list of dictionaries following the flask_app.broker.s2n_type.BrokerSchema.NAME
             corresponding to names in the provider taxonomy.
-
-        Raises:
-            InternalServerError: on unknown exception when executing request
         """
         if namestr is None:
             return cls.get_endpoint()
