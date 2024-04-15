@@ -6,6 +6,7 @@ from logging import ERROR, INFO, WARNING
 import os
 import pandas as pd
 from pandas.api.types import CategoricalDtype
+import random
 from scipy.sparse import csr_matrix
 
 from sppy.aws.aws_constants import (
@@ -268,6 +269,34 @@ class AggregateMatrix:
         return total
 
     # ...............................................
+    def count_values_for_column(self, col_label, value):
+        """Count the number of occurrences of `value` in column `col_name`.
+
+        Args:
+            col_label: label for column of interest
+            value: value to count in the column
+
+        Returns:
+            count: the number of times value occurs in column col_label.
+        """
+        count = sdf[col_label].value_counts()[value]
+        return count
+
+    # ...............................................
+    def count_values_for_row(self, row_label, value):
+        """Count the number of occurrences of `value` in row `row_label`.
+
+        Args:
+            row_label: label for row of interest
+            value: value to count in the row
+
+        Returns:
+            count: the number of times value occurs in column col_name.
+        """
+        count = sdf.loc[row_label].value_counts()[value]
+        return count
+
+    # ...............................................
     def write_to_s3(
             self, bucket, bucket_path, filename, format="Parquet", **args):
         """Write a pd DataFrame to CSV or parquet on S3.
@@ -381,6 +410,72 @@ def create_sparse_df_from_stacked_data(orig_df, x_fld, y_fld, val_fld):
     return sdf
 
 
+# ...............................................
+def filter_stacked_data_on_column_val(stacked_df, filter_label, filter_value):
+    """Create a dataframe containing only rows where a column contains a value.
+
+    Args:
+        stacked_df: dataframe containing stacked data records
+        filter_label: column name for filtering.
+        filter_value: column value for filtering.
+    """
+    tmp_df = stacked_df.loc[stacked_df[filter_label] == filter_value]
+    return tmp_df
+
+
+# ...............................................
+def sum_stacked_data_vals_for_column(stacked_df, filter_label, filter_value, val_label):
+    tmp_df = filter_stacked_data_on_column_val(stacked_df, filter_label, filter_value)
+    count = tmp_df[val_label].sum()
+    return count
+
+
+# ...............................................
+def _get_random_values_from_stacked_data(stacked_df, col_label, count):
+    idxs = random.sample(range(1, stacked_df.shape[0]), count)
+    x_vals = [stacked_df[col_label][i] for i in idxs]
+    return x_vals
+
+
+# ...............................................
+def test_stacked_to_aggregate(
+        stacked_df, x_col_label, y_col_label, val_col_label, aggregate_df):
+    test_count = 5
+    x_vals = _get_random_values_from_stacked_data(stacked_df, x_col_label, test_count)
+    y_vals = _get_random_values_from_stacked_data(stacked_df, y_col_label, test_count)
+    #
+    # Test stacked column totals against aggregate x columns
+    for x_col in x_vals:
+        stk_sum = sum_stacked_data_vals_for_column(
+            stacked_df, x_col_label, x_col, val_col_label)
+        agg_sum = aggregate_df[x_col].sum()
+        if stk_sum == agg_sum:
+            print(
+                f"Total {stk_sum}: Stacked data for {x_col_label} = {x_col} == "
+                f"aggregate data in column {x_col}"
+            )
+        else:
+            print(
+                f"{stk_sum} != {agg_sum}: Stacked data for {x_col_label} = {x_col} != "
+                f"aggregate data in column {x_col}"
+            )
+    # Test stacked column totals against aggregate y rows
+    for y_col in y_vals:
+        stk_sum = sum_stacked_data_vals_for_column(
+            stacked_df, y_col_label, y_col, val_col_label)
+        agg_sum = aggregate_df.loc[y_col].sum()
+        if stk_sum == agg_sum:
+            print(
+                f"Total {stk_sum}: Stacked data for {x_col_label} = {y_col} ==  "
+                f"aggregate data in column {y_col}"
+            )
+        else:
+            print(
+                f"{stk_sum} != {agg_sum}: Stacked data for {x_col_label} = {y_col} !=  "
+                f"aggregate data in column {y_col}"
+            )
+
+
 # --------------------------------------------------------------------------------------
 # Main
 # --------------------------------------------------------------------------------------
@@ -424,5 +519,42 @@ if __name__ == "__main__":
 
 """
 from sppy.aws.aggregate_matrix import * 
+
+# Create a logger
+script_name = "testing_aggregate_matrix"
+todaystr = get_today_str()
+log_name = f"{script_name}_{todaystr}"
+# Create logger with default INFO messages
+logger = Logger(
+    log_name, log_path=LOCAL_OUTDIR, log_console=True, log_level=INFO)
+
+data_datestr = get_current_datadate_str()
+table = Summaries.get_table("dataset_species_lists", data_datestr)
+x_fld = table["key_fld"]
+val_fld = table["value_fld"]
+# Dict of new fields constructed from existing fields, just 1 for species key/name
+fld_mods = table["combine_fields"]
+y_fld = list(fld_mods.keys())[0]
+(fld1, fld2) = fld_mods[y_fld]
+
+# Read directly into DataFrame
+orig_df = read_s3_parquet_to_pandas(
+    PROJ_BUCKET, SUMMARY_FOLDER, table["fname"], logger, s3_client=None
+)
+# ......................
+def combine_columns(row):
+    return str(row[fld1]) + ' ' + str(row[fld2])
+# ......................
+orig_df[y_fld] = orig_df.apply(combine_columns, axis=1)
+
+sdf = create_sparse_df_from_stacked_data(orig_df, x_fld, y_fld, val_fld)
+
+out_table = Summaries.get_table("species_dataset_matrix", data_datestr)
+write_pandas_to_s3(
+    sdf, PROJ_BUCKET, SUMMARY_FOLDER, out_table["fname"], logger=logger,
+    format="Parquet")
+
+# Upload logfile to S3
+s3_log_filename = upload_to_s3(logger.filename, PROJ_BUCKET, LOG_PATH, logger)
 
 """
