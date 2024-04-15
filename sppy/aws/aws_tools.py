@@ -374,6 +374,36 @@ def upload_trigger_to_s3(trigger_name, s3_bucket, s3_bucket_path, region=REGION)
 #     df.to_parquet(parquet_buffer, engine="pyarrow")
 #     parquet_buffer.seek(0)
 #     s3_client.upload_fileobj(parquet_buffer, bucket, parquet_path)
+# .............................................................................
+def download_from_s3(bucket, bucket_path, filename, overwrite=True):
+    """Download a file from S3 to a local file.
+
+    Args:
+        bucket (str): Bucket identifier on S3.
+        bucket_path (str): Folder path to the S3 parquet data.
+        filename (str): Filename of parquet data to read from S3.
+        logger (object): logger for saving relevant processing messages
+        overwrite (boolean):  flag indicating whether to overwrite an existing file.
+
+    Returns:
+        local_filename (str): full path to local filename containing downloaded data.
+    """
+    local_path = os.getcwd()
+    local_filename = os.path.join(local_path, filename)
+    if os.path.exists(local_filename):
+        if overwrite is True:
+            os.remove(local_filename)
+        else:
+            print(f"{local_filename} already exists")
+    else:
+        s3_client = boto3.client("s3")
+        try:
+            s3_client.download_file(bucket, f"{bucket_path}/{filename}", local_filename)
+        except ClientError as e:
+            print(f"Failed to download {filename} from {bucket}/{bucket_path}, ({e})")
+        else:
+            print(f"Downloaded {filename} from S3 to {local_filename}")
+    return local_filename
 
 
 # ----------------------------------------------------
