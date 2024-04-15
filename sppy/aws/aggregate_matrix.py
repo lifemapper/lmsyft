@@ -40,7 +40,7 @@ def read_s3_parquet_to_pandas(
         obj = s3_client.get_object(Bucket=bucket, Key=s3_key)
     except ClientError as e:
         logit(
-            logger, f"Failed to get {bucket}/{s3_key} from S3, ({e})", 
+            logger, f"Failed to get {bucket}/{s3_key} from S3, ({e})",
             log_level=ERROR)
     else:
         logit(logger, f"Read {bucket}/{s3_key} from S3")
@@ -107,9 +107,10 @@ def write_pandas_to_s3(
         Exception: on format other than "csv" or "parquet"
     """
     target = f"s3://{bucket}/{bucket_path}/{filename}"
-    if format.lower() not in ("csv", "parquet"):
+    format = format.lower()
+    if format not in ("csv", "parquet"):
         raise Exception(f"Format {format} not supported.")
-    if format.lower() == "csv":
+    if format == "csv":
         try:
             dataframe.to_csv(target)
         except Exception as e:
@@ -411,7 +412,7 @@ def create_sparse_df_from_stacked_data(orig_df, x_fld, y_fld, val_fld):
 
 
 # ...............................................
-def filter_stacked_data_on_column_val(stacked_df, filter_label, filter_value):
+def _filter_stacked_data_on_column_val(stacked_df, filter_label, filter_value):
     """Create a dataframe containing only rows where a column contains a value.
 
     Args:
@@ -424,8 +425,8 @@ def filter_stacked_data_on_column_val(stacked_df, filter_label, filter_value):
 
 
 # ...............................................
-def sum_stacked_data_vals_for_column(stacked_df, filter_label, filter_value, val_label):
-    tmp_df = filter_stacked_data_on_column_val(stacked_df, filter_label, filter_value)
+def _sum_stacked_data_vals_for_column(stacked_df, filter_label, filter_value, val_label):
+    tmp_df = _filter_stacked_data_on_column_val(stacked_df, filter_label, filter_value)
     count = tmp_df[val_label].sum()
     return count
 
@@ -440,13 +441,14 @@ def _get_random_values_from_stacked_data(stacked_df, col_label, count):
 # ...............................................
 def test_stacked_to_aggregate(
         stacked_df, x_col_label, y_col_label, val_col_label, aggregate_df):
+
     test_count = 5
     x_vals = _get_random_values_from_stacked_data(stacked_df, x_col_label, test_count)
     y_vals = _get_random_values_from_stacked_data(stacked_df, y_col_label, test_count)
     #
     # Test stacked column totals against aggregate x columns
     for x_col in x_vals:
-        stk_sum = sum_stacked_data_vals_for_column(
+        stk_sum = _sum_stacked_data_vals_for_column(
             stacked_df, x_col_label, x_col, val_col_label)
         agg_sum = aggregate_df[x_col].sum()
         if stk_sum == agg_sum:
@@ -502,10 +504,10 @@ if __name__ == "__main__":
         PROJ_BUCKET, SUMMARY_FOLDER, table["fname"], logger, s3_client=None
     )
     # ......................
-    def combine_columns(row):
+    def _combine_columns(row):
         return str(row[fld1]) + ' ' + str(row[fld2])
     # ......................
-    orig_df[y_fld] = orig_df.apply(combine_columns, axis=1)
+    orig_df[y_fld] = orig_df.apply(_combine_columns, axis=1)
 
     sdf = create_sparse_df_from_stacked_data(orig_df, x_fld, y_fld, val_fld)
 
@@ -518,7 +520,7 @@ if __name__ == "__main__":
     s3_log_filename = upload_to_s3(logger.filename, PROJ_BUCKET, LOG_PATH, logger)
 
 """
-from sppy.aws.aggregate_matrix import * 
+from sppy.aws.aggregate_matrix import *
 
 # Create a logger
 script_name = "testing_aggregate_matrix"

@@ -1044,7 +1044,7 @@ if __name__ == "__main__":
         is_test = True)
 
 """
-# Note: Test with quoted data such as: 
+# Note: Test with quoted data such as:
 # http://api.gbif.org/v1/dataset/3c83d5da-822a-439c-897a-7569e82c4ebc
 from sppy.aws.aws_tools  import *
 from sppy.aws.aws_tools  import _query_table

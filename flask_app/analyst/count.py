@@ -97,4 +97,3 @@ if __name__ == "__main__":
     response = svc.get_counts(dataset_key=dataset_key, pub_org_key=None)
     AnalystOutput.print_output(response, do_print_rec=True)
     # print(response)
-

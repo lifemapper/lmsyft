@@ -5,4 +5,3 @@ dependencies:
   - sphinx-rtd-theme
     sphinx-autoapi
     myst-parser
-
