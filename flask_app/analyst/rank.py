@@ -31,6 +31,9 @@ class RankSvc(_AnalystService):
             full_output (flask_app.common.s2n_type.AnalystOutput): including records
                 as a list of lists (CSV) or dictionaries (JSON) of records
                 containing dataset_key,  occurrence count, and species count.
+
+        Returns:
+            JSON response for this API query.
         """
         if count_by is None:
             return cls.get_endpoint()
@@ -74,6 +77,7 @@ class RankSvc(_AnalystService):
             errinfo = {"error": [get_traceback()]}
 
         return records, errinfo
+
 
 # .............................................................................
 if __name__ == "__main__":

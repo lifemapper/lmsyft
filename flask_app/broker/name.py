@@ -143,8 +143,6 @@ class NameSvc(_BrokerService):
             corresponding to names in the provider taxonomy.
 
         Raises:
-            BadRequest: on invalid query parameters.
-            BadRequest: on unknown exception parsing parameters.
             InternalServerError: on unknown exception when executing request
         """
         if namestr is None:

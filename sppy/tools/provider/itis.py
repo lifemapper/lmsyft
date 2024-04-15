@@ -338,7 +338,6 @@ class ItisAPI(APIQuery):
         """Return a name and kingdom for an ITIS TSN using the ITIS Solr service.
 
         Args:
-            broker_url: the URL of the calling Specify Network service
             tsn: a unique integer identifier for a taxonomic record in ITIS
             logger: object for logging messages and errors.
 

@@ -20,7 +20,7 @@ import xml.etree.ElementTree as ET
 from sppy.aws.aws_constants import (
     ENCODING, INSTANCE_TYPE, KEY_NAME, LOGFILE_MAX_BYTES, LOG_FORMAT, LOG_DATE_FORMAT,
     PROJ_BUCKET, PROJ_NAME, REGION, SECURITY_GROUP_ID, SPOT_TEMPLATE_BASENAME,
-    USER_DATA_TOKEN)
+    SUMMARY_FOLDER, USER_DATA_TOKEN)
 
 
 # --------------------------------------------------------------------------------------
@@ -382,7 +382,6 @@ def download_from_s3(bucket, bucket_path, filename, overwrite=True):
         bucket (str): Bucket identifier on S3.
         bucket_path (str): Folder path to the S3 parquet data.
         filename (str): Filename of parquet data to read from S3.
-        logger (object): logger for saving relevant processing messages
         overwrite (boolean):  flag indicating whether to overwrite an existing file.
 
     Returns:
@@ -691,6 +690,7 @@ def create_dataframe_from_s3obj(
         s3_path: the object name with enclosing S3 bucket folders.
         region: AWS region to query.
         datatype: tabular datatype, options are "CSV", "Parquet"
+        encoding: encoding of the input data.
 
     Returns:
         df: pandas DataFrame containing the CSV data.
@@ -737,6 +737,7 @@ def _get_values_for_keys(output, keys):
 # ...............................................
 def _get_api_response_vals(url, keys, certificate=None):
     values = []
+    errmsg = None
     try:
         response = requests.get(url, verify=certificate)
     except Exception as e:
@@ -744,10 +745,10 @@ def _get_api_response_vals(url, keys, certificate=None):
     else:
         try:
             status_code = response.status_code
-            reason = response.reason
+            errmsg = response.reason
         except Exception:
             status_code = HTTPStatus.INTERNAL_SERVER_ERROR
-            reason = "Unknown API status_code/reason"
+            errmsg = "Unknown API status_code/reason"
         if status_code == HTTPStatus.OK:
             # Parse response
             try:
@@ -758,11 +759,15 @@ def _get_api_response_vals(url, keys, certificate=None):
                     output = ET.fromstring(str(output))
                 try:
                     output = ET.parse(output)
-                except Exception as e:
+                except Exception:
+                    pass
                     errmsg = f"Provider error: Invalid JSON response ({output})"
             # Get values from JSON response
             values = _get_values_for_keys(output, keys)
+    if errmsg:
+        print(errmsg)
     return values
+
 
 # ...............................................
 def get_dataset_name_citation(dataset_key, certificate=None):
@@ -770,34 +775,21 @@ def get_dataset_name_citation(dataset_key, certificate=None):
 
     Args:
         dataset_key: GBIF identifier for this dataset
+        certificate: local SSL certificate for API queries.
 
     Returns:
         dataset_name: the name of the dataset.
         citation: the preferred citation for the dataset.
-
-    Raises:
-        Exception: on query failure.
     """
     url = f"https://api.gbif.org/v1/dataset/{dataset_key}"
-    name, citation = _get_api_response_vals(
+    [name, citation] = _get_api_response_vals(
         url, ["title", ["citation", "text"]], certificate=certificate)
     return name, citation
 
 
 # ----------------------------------------------------
 def _query_table(bucket, s3_path, query_str, region=REGION, format="CSV"):
-    """Query the S3 resource defined for this class.
-
-    Args:
-        bucket:
-        s3_path: S3 folder and filename within the bucket
-        query_str: a SQL query for S3 select.
-        region:
-        format: output format, options "CSV" or "JSON"
-
-    Returns:
-         list of records matching the query
-    """
+    # Query the S3 resource defined for this class.
     recs = []
     if format not in ("JSON", "CSV"):
         format = "JSON"
@@ -840,9 +832,11 @@ def _parse_records(ret_records, keys):
         small_recs.append(values)
     return small_recs
 
+
 # ...............................................
 def _get_single_record(url, keys, certificate=None):
     rec = None
+    errmsg = None
     try:
         if certificate:
             response = requests.get(url, verify=certificate)
@@ -853,10 +847,10 @@ def _get_single_record(url, keys, certificate=None):
     else:
         try:
             status_code = response.status_code
-            reason = response.reason
+            errmsg = response.reason
         except Exception as e:
             status_code = HTTPStatus.INTERNAL_SERVER_ERROR
-            reason = str(e)
+            errmsg = str(e)
         if status_code == HTTPStatus.OK:
             # Parse response
             try:
@@ -869,7 +863,7 @@ def _get_single_record(url, keys, certificate=None):
                     output = ET.parse(output)
                 except Exception:
                     output = None
-                    reason = f"Provider error: Invalid JSON response ({output})"
+                    errmsg = f"Provider error: Invalid JSON response ({output})"
             if output:
                 # Output is only one record
                 small_recs = _parse_records([output], keys)
@@ -877,6 +871,8 @@ def _get_single_record(url, keys, certificate=None):
                     rec = small_recs[0]
                 except Exception as e:
                     print(f"Error: no output record ({e})")
+    if errmsg:
+        print(errmsg)
     return rec
 
 
@@ -987,7 +983,6 @@ def create_s3_dataset_lookup_from_tsv(
         bucket: name of the bucket containing the CSV data.
         s3_folders: S3 bucket folders for output lookup table
         by_keys: boolean flag indicating save only metadata for dataset keys of interest
-        region: AWS region containing the destination bucket.
         encoding: encoding of the input data
 
     Note:
@@ -1024,24 +1019,23 @@ def create_s3_dataset_lookup_from_tsv(
     upload_to_s3(tmp_parquet_fname, bucket, output_s3_path)
 
 
-
 # .............................................................................
 if __name__ == "__main__":
-    bucket=PROJ_BUCKET
-    region=REGION
-    encoding=ENCODING
-    s3_folders="summary"
+    bucket = PROJ_BUCKET
+    region = REGION
+    encoding = ENCODING
+    s3_folders = SUMMARY_FOLDER
     data_date = get_current_datadate_str()
     tsv_filename = "/home/astewart/Downloads/gbif_datasets.tsv"
     is_test = True
 
     # Get keys for dataset resolution
-    s3_path = f"{s3_folders}/dataset_counts_{data_date}_000.parquet"
-    keys = _get_dataset_keys(bucket, s3_path, is_test)
+    outfile = f"dataset_counts_{data_date}_000.parquet"
+    keys = _get_dataset_keys(bucket, s3_folders, outfile, is_test)
 
+    # tsv_filename, bucket, s3_folders, by_keys = False, encoding = ENCODING
     create_s3_dataset_lookup_from_tsv(
-        tsv_filename, bucket, s3_folders, keys=keys, region=REGION, encoding=ENCODING,
-        is_test = True)
+        tsv_filename, bucket, s3_folders, by_keys=False, encoding=ENCODING)
 
 """
 # Note: Test with quoted data such as:

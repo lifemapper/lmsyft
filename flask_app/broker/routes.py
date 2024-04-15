@@ -26,6 +26,11 @@ app.register_blueprint(broker_blueprint)
 # .....................................................................................
 @app.route('/')
 def index():
+    """Render template for the base URL.
+
+    Returns:
+        Rendered template for a browser response.
+    """
     return render_template("broker.index.html")
 
 

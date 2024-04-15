@@ -10,9 +10,8 @@ import random
 from scipy.sparse import csr_matrix
 
 from sppy.aws.aws_constants import (
-    ENCODING, LOCAL_OUTDIR, LOG_PATH, PROJ_BUCKET, REGION, SUMMARY_FOLDER, Summaries)
+    LOCAL_OUTDIR, LOG_PATH, PROJ_BUCKET, REGION, SUMMARY_FOLDER, Summaries)
 from sppy.aws.aws_tools import get_current_datadate_str, get_today_str
-from sppy.tools.s2n.utils import get_traceback
 from sppy.tools.util.logtools import Logger, logit
 
 
@@ -239,7 +238,6 @@ class AggregateMatrix:
                         f"{self._df.shape[1]}.", log_level=WARNING)
         return count
 
-
     # ...............................................
     @property
     def sum_column(self, col):
@@ -327,7 +325,7 @@ class AggregateMatrix:
                 self._df.to_parquet(target)
             except Exception as e:
                 logit(
-                    logger,f"Failed to write {target} as parquet: {e}",
+                    logger, f"Failed to write {target} as parquet: {e}",
                     log_level=ERROR)
 
     # .............................................................................
@@ -347,12 +345,16 @@ class AggregateMatrix:
             bin_df = self._df.applymap(lambda x: 1 if x >= min_val else 0)
         return bin_df
 
+
 # ...............................................
 def add_combo_column_to_df(orig_df, new_fld, fld1, fld2):
-    """Add a new field to the dataframe, with fld1 concatenated to fld2
+    """Add a new field to the dataframe, with fld1 concatenated to fld2.
 
     Args:
-        orig_df, new_fld, fld1, fld2
+        orig_df: dataframe
+        new_fld: label for new column to add
+        fld1: name of the column to use the value in first part of the new column
+        fld2: name of the column to use the value in second part of the new column
     """
     def combine_columns(row):
         return str(row[fld1]) + ' ' + str(row[fld2])
@@ -419,6 +421,10 @@ def _filter_stacked_data_on_column_val(stacked_df, filter_label, filter_value):
         stacked_df: dataframe containing stacked data records
         filter_label: column name for filtering.
         filter_value: column value for filtering.
+
+    Returns:
+        tmp_df: dataframe containing only rows with a value of filter_value in column
+            filter_label.
     """
     tmp_df = stacked_df.loc[stacked_df[filter_label] == filter_value]
     return tmp_df
@@ -441,7 +447,25 @@ def _get_random_values_from_stacked_data(stacked_df, col_label, count):
 # ...............................................
 def test_stacked_to_aggregate(
         stacked_df, x_col_label, y_col_label, val_col_label, aggregate_df):
+    """Test for equality of sums in stacked and aggregated dataframes.
 
+    Args:
+        stacked_df: dataframe of stacked data, containing records with columns of
+            categorical values and counts.
+        x_col_label: column label in stacked_df to be used as the column labels of
+            the aggregate_df
+        y_col_label: column label in stacked_df to be used as the row labels of
+            the aggregate_df
+        val_col_label: column label in stacked_df to be used as the row labels of
+            the aggregate_df, aggregate_df
+        aggregate_df: dataframe containing a matrix with 3 columns from the stacked_df
+            arranged as rows and columns with values
+
+    Postcondition:
+        Printed information for successful or failed tests.
+
+    Note: The aggregate_df must have been created from the stacked_df.
+    """
     test_count = 5
     x_vals = _get_random_values_from_stacked_data(stacked_df, x_col_label, test_count)
     y_vals = _get_random_values_from_stacked_data(stacked_df, y_col_label, test_count)
@@ -463,7 +487,7 @@ def test_stacked_to_aggregate(
             )
     # Test stacked column totals against aggregate y rows
     for y_col in y_vals:
-        stk_sum = sum_stacked_data_vals_for_column(
+        stk_sum = _sum_stacked_data_vals_for_column(
             stacked_df, y_col_label, y_col, val_col_label)
         agg_sum = aggregate_df.loc[y_col].sum()
         if stk_sum == agg_sum:
@@ -503,9 +527,11 @@ if __name__ == "__main__":
     orig_df = read_s3_parquet_to_pandas(
         PROJ_BUCKET, SUMMARY_FOLDER, table["fname"], logger, s3_client=None
     )
+
     # ......................
     def _combine_columns(row):
         return str(row[fld1]) + ' ' + str(row[fld2])
+
     # ......................
     orig_df[y_fld] = orig_df.apply(_combine_columns, axis=1)
 

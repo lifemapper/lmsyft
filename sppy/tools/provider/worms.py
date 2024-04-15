@@ -1,6 +1,5 @@
 """Module containing functions for WoRMS API Queries."""
 from collections import OrderedDict
-from http import HTTPStatus
 import urllib
 
 from flask_app.broker.constants import WORMS
@@ -9,7 +8,7 @@ from flask_app.common.s2n_type import (
 from flask_app.common.constants import URL_ESCAPES, ENCODING
 
 from sppy.tools.provider.api import APIQuery
-from sppy.tools.s2n.utils import add_errinfo, get_traceback
+from sppy.tools.s2n.utils import add_errinfo
 
 
 # .............................................................................

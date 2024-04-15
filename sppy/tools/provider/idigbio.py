@@ -1,5 +1,4 @@
 """Module containing functions for GBIF API Queries."""
-from http import HTTPStatus
 import os
 
 from flask_app.broker.constants import (
@@ -215,7 +214,7 @@ class IdigbioAPI(APIQuery):
 
         try:
             api.query()
-        except Exception as e:
+        except Exception:
             std_out = cls._get_query_fail_output(
                 [api.url], APIEndpoint.Occurrence)
         else:

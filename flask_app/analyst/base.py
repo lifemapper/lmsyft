@@ -3,9 +3,7 @@ from werkzeug.exceptions import BadRequest
 
 from flask_app.common.base import _SpecifyNetworkService
 from flask_app.common.s2n_type import AnalystOutput, APIService
-
 from sppy.tools.s2n.utils import get_traceback
-from sppy.tools.provider.spnet import SpNetAnalyses
 
 
 # .............................................................................
@@ -82,7 +80,6 @@ class _AnalystService(_SpecifyNetworkService):
             "order": order,
             "limit": limit
         }
-
         try:
             usr_params, errinfo = cls._process_params(user_kwargs)
         except Exception:

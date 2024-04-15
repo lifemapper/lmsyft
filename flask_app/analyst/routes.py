@@ -20,7 +20,13 @@ app.register_blueprint(analyst_blueprint)
 # .....................................................................................
 @app.route('/')
 def index():
+    """Render template for the base URL.
+
+    Returns:
+        Rendered template for a browser response.
+    """
     return render_template("analyst.index.html")
+
 
 # .....................................................................................
 @app.route("/api/v1/", methods=["GET"])
@@ -104,36 +110,6 @@ def rank_endpoint():
             count_by_arg, order=order_arg, limit=limit_arg)
     return response
 
-# # .....................................................................................
-# @app.route("/api/v1/collection/<string:collection_id>", methods=["GET"])
-# def collection_get():
-#     """Get the available counts.
-#
-#     Returns:
-#         response: A flask_app.analyst API response object containing the count
-#             API response for the given collection.
-#     """
-#     compare_coll_arg = request.args.get("compare_coll_id", default=None, type=str)
-#     compare_others_arg = request.args.get("compare_others", default=False, type=bool)
-#     compare_total_arg = request.args.get("compare_total", default=False, type=bool)
-#     response = CountSvc.get_endpoint(compare_coll_arg, compare_others_arg, compare_total_arg)
-#     return response
-#
-# # .....................................................................................
-# @app.route("/api/v1/organization/<string:organization_id>", methods=["GET"])
-# def organization_get():
-#     """Get the available counts.
-#
-#     Returns:
-#         response: A flask_app.analyst API response object containing the count
-#             API response for the given organization.
-#     """
-#     compare_org_arg = request.args.get("compare_org_id", default=None, type=str)
-#     compare_others_arg = request.args.get("compare_others", default=False, type=bool)
-#     compare_total_arg = request.args.get("compare_total", default=False, type=bool)
-#     response = CountSvc.get_endpoint(
-#         compare_org_arg, compare_others_arg, compare_total_arg)
-#     return response
 
 # .....................................................................................
 # .....................................................................................

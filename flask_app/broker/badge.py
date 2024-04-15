@@ -3,12 +3,10 @@ from flask import json, send_file
 import os
 from werkzeug.exceptions import (BadRequest, InternalServerError)
 
+from flask_app.broker.base import _BrokerService
 from flask_app.broker.constants import (ICON_CONTENT, ICON_DIR)
 from flask_app.common.s2n_type import APIService, S2nKey, ServiceProvider
-
-from sppy.tools.s2n.utils import combine_errinfo, get_traceback
-
-from flask_app.broker.base import _BrokerService
+from sppy.tools.s2n.utils import get_traceback
 
 
 # .............................................................................
@@ -71,8 +69,6 @@ class BadgeSvc(_BrokerService):
             a file containing the requested icon
 
         Raises:
-            BadRequest: on invalid query parameters.
-            BadRequest: on unknown exception when parsing request
             NotImplementedError: on request for a non-supported provider icon.
         """
         # return info for empty request
@@ -83,7 +79,7 @@ class BadgeSvc(_BrokerService):
             good_params, errinfo = cls._standardize_params(
                 provider=provider, icon_status=icon_status)
 
-        except BadRequest as e:
+        except BadRequest:
             raise
 
         else:

@@ -1,16 +1,11 @@
-import zipfile
-
+"""Test workflow."""
 import base64
 import boto3
 import csv
 import datetime
 import io
-# import logging
-# from logging.handlers import RotatingFileHandler
 import os
 import pandas
-# import requests
-# import subprocess
 
 # --------------------------------------------------------------------------------------
 # Constants for GBIF data, local dev machine, EC2, S3
@@ -50,6 +45,14 @@ LOGFILE_BACKUP_COUNT = 5
 # --------------------------------------------------------------------------------------
 # ----------------------------------------------------
 def get_launch_template_from_instance(instance_id):
+    """Get or create an EC2 launch template from an EC2 instance identifier.
+
+    Args:
+        instance_id: identifier for an EC2 instance to use as a template.
+
+    Returns:
+        launch_template_data: metadata to be used as an EC2 launch template.
+    """
     ec2_client = boto3.client("ec2")
     launch_template_data = ec2_client.get_launch_template_data(InstanceId=instance_id)
     return launch_template_data
@@ -57,6 +60,14 @@ def get_launch_template_from_instance(instance_id):
 
 # ----------------------------------------------------
 def delete_instance(instance_id):
+    """Delete an EC2 instance.
+
+    Args:
+        instance_id: identifier for an EC2 instance to delete.
+
+    Returns:
+        response: response from the server.
+    """
     ec2_client = boto3.client("ec2")
     response = ec2_client.delete_instance(InstanceId=instance_id)
     return response
@@ -64,6 +75,15 @@ def delete_instance(instance_id):
 
 # ----------------------------------------------------
 def create_dataframe_from_gbifcsv_s3_bucket(bucket, csv_path):
+    """Get or create an EC2 launch template from an EC2 instance identifier.
+
+    Args:
+        bucket: name for an S3 bucket.
+        csv_path: bucket path, including object name, of CSV data of interest.
+
+    Returns:
+        df: pandas dataframe containing the tabular CSV data.
+    """
     # Read CSV file from S3 into a pandas DataFrame
     s3_client = boto3.client("s3")
     s3_obj = s3_client.get_object(Bucket=bucket, Key=csv_path)
@@ -73,16 +93,18 @@ def create_dataframe_from_gbifcsv_s3_bucket(bucket, csv_path):
     return df
 
 
-# ----------------------------------------------------
-def get_client(profile, service):
-    session = boto3.Session(profile_name=profile)
-    client = session.client(service)
-    return client
-
-
 # --------------------------------------------------------------------------------------
-# On local machine: Describe all instances with given key_name and/or launch_template_id
+# On local machine:
 def find_instances(key_name, launch_template_name):
+    """Describe all instances with given key_name and/or launch_template_id.
+
+    Args:
+        key_name: optional key_name assigned to an instance.
+        launch_template_name: name assigned to the template which created the instance
+
+    Returns:
+        instances: list of metadata for instances
+    """
     ec2_client = boto3.client("ec2")
     filters = []
     if launch_template_name is not None:
@@ -98,7 +120,7 @@ def find_instances(key_name, launch_template_name):
     instances = []
     try:
         ress = response["Reservations"]
-    except:
+    except Exception:
         pass
     else:
         for res in ress:
@@ -121,7 +143,7 @@ def _get_user_data(script_filename):
     try:
         with open(script_filename, "r") as infile:
             script_text = infile.read()
-    except:
+    except Exception:
         return None
     else:
         text_bytes = script_text.encode("ascii")
@@ -138,7 +160,7 @@ def _print_inst_info(reservation):
     name = temp_id = None
     try:
         tags = inst["Tags"]
-    except:
+    except Exception:
         pass
     else:
         for t in tags:
@@ -150,27 +172,21 @@ def _print_inst_info(reservation):
     state = inst["State"]["Name"]
     print(f"Instance name: {name}, template: {temp_id}, IP: {ip}, state: {state}")
 
+
 # ----------------------------------------------------
 def _define_spot_launch_template_data(
         spot_template_name, security_group_id, script_filename, key_name):
     user_data_64 = _get_user_data(script_filename)
     launch_template_data = {
         "EbsOptimized": True,
-        "IamInstanceProfile":
-            {
-                # "Arn":
-                #     "arn:aws:iam::321942852011:instance-profile/AmazonEMR-InstanceProfile-20230404T163626",
-                 "Name": "AmazonEMR-InstanceProfile-20230404T163626"
-            },
+        "IamInstanceProfile": {"Name": "AmazonEMR-InstanceProfile-20230404T163626"},
         "BlockDeviceMappings": [
             {
                 "DeviceName": "/dev/sda1",
                 "Ebs": {
                     "Encrypted": False,
                     "DeleteOnTermination": True,
-                    # "SnapshotId": "snap-0a6ff81ccbe3194d1",
-                    "VolumeSize": 50, "VolumeType": "gp2"
-                }
+                    "VolumeSize": 50, "VolumeType": "gp2"}
             }
         ],
         "NetworkInterfaces": [
@@ -182,11 +198,6 @@ def _define_spot_launch_template_data(
                 "Groups": [security_group_id],
                 "InterfaceType": "interface",
                 "Ipv6Addresses": [],
-                # "PrivateIpAddresses": [
-                #     {"Primary": True, "PrivateIpAddress": "172.31.16.201"}
-                # ],
-                # "SubnetId": "subnet-0beb8b03a44442eef",
-                # "NetworkCardIndex": 0
             }
         ],
         "ImageId": "ami-0a0c8eebcdd6dcbd0",
@@ -242,15 +253,14 @@ def _get_launch_template(template_name):
     lnch_temp = None
     try:
         response = ec2_client.describe_launch_templates(
-            LaunchTemplateNames=[template_name],
-        )
-    except:
+            LaunchTemplateNames=[template_name])
+    except Exception:
         pass
     else:
         # LaunchTemplateName is unique
         try:
             lnch_temp = response["LaunchTemplates"][0]
-        except:
+        except Exception:
             pass
     return lnch_temp
 
@@ -258,6 +268,19 @@ def _get_launch_template(template_name):
 # ----------------------------------------------------
 def create_spot_launch_template(
         spot_template_name, security_group_id, script_filename, key_name):
+    """Create a launch template for an EC2 Spot instance.
+
+    Args:
+        spot_template_name: Name to assign to this template.
+        security_group_id: Identifier for security group to assign to the
+            EC2 instance created from this template.
+        script_filename: filename for a script to include as userdata on an
+            EC2 instance created from this template.
+        key_name: key name assigned to a launch template.
+
+    Returns:
+        success: boolean flag indicating success of the operation.
+    """
     template = _get_launch_template(spot_template_name)
     if template is not None:
         success = True
@@ -267,11 +290,11 @@ def create_spot_launch_template(
         template_token = _create_token("template")
         ec2_client = boto3.client("ec2")
         response = ec2_client.create_launch_template(
-            DryRun = False,
-            ClientToken = template_token,
-            LaunchTemplateName = spot_template_name,
-            VersionDescription = "Spot for GBIF process",
-            LaunchTemplateData = spot_template_data
+            DryRun=False,
+            ClientToken=template_token,
+            LaunchTemplateName=spot_template_name,
+            VersionDescription="Spot for GBIF process",
+            LaunchTemplateData=spot_template_data
         )
         success = (response["ResponseMetadata"]["HTTPStatusCode"] == 200)
     return success
@@ -279,6 +302,16 @@ def create_spot_launch_template(
 
 # ----------------------------------------------------
 def run_instance_spot(instance_basename, spot_template_name):
+    """Create a launch template for an EC2 Spot instance.
+
+    Args:
+        instance_basename: Basename to assign to this EC2 Spot instance.
+        spot_template_name: Name assigned to a spot launch template to be used
+            creating this instance.
+
+    Returns:
+        string: instance id of the successfully launched EC2 Spot instance.
+    """
     ec2_client = boto3.client("ec2")
     spot_token = _create_token("spot")
     instance_name = _create_token(instance_basename)
@@ -286,7 +319,7 @@ def run_instance_spot(instance_basename, spot_template_name):
         # KeyName=key_name,
         ClientToken=spot_token,
         MinCount=1, MaxCount=1,
-        LaunchTemplate = {"LaunchTemplateName": spot_template_name, "Version": "1"},
+        LaunchTemplate={"LaunchTemplateName": spot_template_name, "Version": "1"},
         TagSpecifications=[{
             "ResourceType": "instance",
             "Tags": [
@@ -305,7 +338,13 @@ def run_instance_spot(instance_basename, spot_template_name):
 
 # ----------------------------------------------------
 def write_dataframe_to_s3_parquet(df, bucket, parquet_path):
-    # Write DataFrame to Parquet format and upload to S3
+    """Write DataFrame to Parquet format and upload to S3.
+
+    Args:
+        df (pandas.DataFrame): tabular data to write on S3.
+        bucket (str): Bucket identifier on S3.
+        parquet_path (str): Destination path to the S3 parquet data.
+    """
     s3_client = boto3.client("s3")
     parquet_buffer = io.BytesIO()
     df.to_parquet(parquet_buffer, engine="pyarrow")
@@ -316,17 +355,31 @@ def write_dataframe_to_s3_parquet(df, bucket, parquet_path):
 # --------------------------------------------------------------------------------------
 # Run on EC2 or local: Upload file to S3
 # --------------------------------------------------------------------------------------
-def upload_to_s3(local_path, filename, dev_bucket, s3_path):
+def upload_to_s3(local_path, filename, bucket, s3_path):
+    """Upload a local file to S3.
+
+    Args:
+        local_path: path to data to upload.
+        filename: filename of the data to upload.
+        bucket (str): Bucket identifier on S3.
+        s3_path (str): Destination path to the S3 data.
+    """
     s3_client = boto3.client("s3")
     local_filename = os.path.join(local_path, filename)
-    s3_client.upload_file(local_filename, dev_bucket, s3_path)
-    print(f"Successfully uploaded {filename} to s3://{dev_bucket}/{s3_path}")
+    s3_client.upload_file(local_filename, bucket, s3_path)
+    print(f"Successfully uploaded {filename} to s3://{bucket}/{s3_path}")
 
 
 # --------------------------------------------------------------------------------------
 # On local machine: Trim CSV file to named columns and save in parquet format
 # --------------------------------------------------------------------------------------
 def trim_gbifcsv_to_parquet(local_filename, parquet_filename):
+    """Trim a GBIF CSV file to a subset of fields, then write to S3 in parquet format.
+
+    Args:
+        local_filename: path and filename of data to subset and upload.
+        parquet_filename: filename for the destination parquet file on S3.
+    """
     gbif_dataframe = pandas.read_csv(
         local_filename, delimiter="\t", encoding="utf-8", low_memory=False,
         quoting=csv.QUOTE_NONE)
@@ -340,6 +393,14 @@ def trim_gbifcsv_to_parquet(local_filename, parquet_filename):
 # On local machine: Describe the instance with the instance_id
 # --------------------------------------------------------------------------------------
 def get_instance(instance_id):
+    """Get an EC2 instance.
+
+    Args:
+        instance_id: identifier for an EC2 instance to retrieve.
+
+    Returns:
+        instance: metadata response from the server.
+    """
     ec2_client = boto3.client("ec2")
     response = ec2_client.describe_instances(
         InstanceIds=[instance_id],
@@ -347,7 +408,7 @@ def get_instance(instance_id):
     )
     try:
         instance = response["Reservations"][0]["Instances"][0]
-    except:
+    except Exception:
         instance = None
     return instance
 
@@ -401,9 +462,8 @@ spot_opts = {
 }
 launch_template_config = {
     "LaunchTemplateSpecification": {
-    "LaunchTemplateName": spot_template_name,
-    "Version": "1"
-    }
+        "LaunchTemplateName": spot_template_name,
+        "Version": "1"}
 }
 
 # -------  Find or create template -------

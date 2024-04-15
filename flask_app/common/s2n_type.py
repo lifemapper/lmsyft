@@ -85,6 +85,12 @@ class APIEndpoint:
 
     @classmethod
     def Resources(cls):
+        """Get the endpoints for each of the API tools, Analyst and Broker.
+
+        Returns:
+             a dictionary containing the endpoints for each of the API tools, Analyst
+                and Broker.
+        """
         return {
             cls.Analyst: [cls.Count, cls.Rank],
             cls.Broker:
@@ -98,10 +104,20 @@ class APIEndpoint:
 
     @classmethod
     def BrokerServices(cls):
+        """Get the endpoints for the Broker API tools.
+
+        Returns:
+             a dictionary containing the endpoints for the Broker API tools.
+        """
         return cls.Resources()[cls.Broker]
 
     @classmethod
     def AnalystServices(cls):
+        """Get the endpoints for the Analyst API tools.
+
+        Returns:
+             a dictionary containing the endpoints for the Analyst API tools.
+        """
         return cls.Resources()[cls.Analyst]
 
     @classmethod
@@ -126,6 +142,13 @@ class APIEndpoint:
 # .............................................................................
 class APIService:
     """Endpoint, parameters, output format for all Specify Network Broker APIs."""
+    BaseSpNetwork = {
+        "name": "",
+        "endpoint": "",
+        "params": {},
+        "description": "",
+        S2nKey.RECORD_FORMAT: None
+    }
     BrokerRoot = {
         "name": APIEndpoint.Broker,
         "endpoint": APIEndpoint.Root,

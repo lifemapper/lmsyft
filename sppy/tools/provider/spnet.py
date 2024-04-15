@@ -1,4 +1,4 @@
-"""Class to query tabular summary Specify Network data in S3"""
+"""Class to query tabular summary Specify Network data in S3."""
 import boto3
 import json
 import pandas as pd
@@ -22,6 +22,7 @@ class SpNetAnalyses():
 
         Args:
              bucket: S3 bucket containing data.
+             s3_summary_path: path within the bucket for summary data.
              region: AWS region containing the data.
              encoding: encoding of the data.
         """
@@ -97,7 +98,7 @@ class SpNetAnalyses():
                     "QuoteFields": "ASNEEDED",
                     "FieldDelimiter": ",",
                     "QuoteCharacter": '"'}
-        }
+            }
         s3 = boto3.client("s3", region_name=self.region)
         try:
             resp = s3.select_object_content(
@@ -113,7 +114,6 @@ class SpNetAnalyses():
             raise
         for event in resp["Payload"]:
             if "Records" in event:
-                records = event['Records']['Payload']
                 recs_str = event["Records"]["Payload"].decode(ENCODING)
                 rec_strings = recs_str.strip().split("\n")
                 for rs in rec_strings:
@@ -163,7 +163,7 @@ class SpNetAnalyses():
         if format == "JSON":
             recs = []
             tmpdict = recs_df.to_dict(orient='index')
-            for idx, rec in tmpdict.items():
+            for _idx, rec in tmpdict.items():
                 recs.append(rec)
         else:
             # Add column headings as first record in list
@@ -195,14 +195,12 @@ class SpNetAnalyses():
 
     # ----------------------------------------------------
     def _add_dataset_lookup_vals(self, records, rec_table, format):
-        """Query the S3 resource for occurrence and species counts for this dataset.
+        """Add dataset metadata to records.
 
         Args:
-            key: unique GBIF identifier for object of interest.
+            records: records to add dataset metadata to.
+            rec_table: dictionary of fieldnames, filename, format for a summary table
             format: output format, options "CSV" or "JSON"
-
-        Returns:
-             records: empty list or list of 1 record (list)
         """
         # Metadata table info
         meta_table = self._summary_tables["dataset_meta"]
@@ -283,43 +281,40 @@ class SpNetAnalyses():
         try:
             records = self._query_order_summary_table(
                 table, sort_field, order, limit, format)
-        except Exception as e:
+        except Exception:
             errors = {"error": [get_traceback()]}
-
+        # Add dataset title, etc if the lookup table exists in S3
         if self._dataset_metadata_exists():
             self._add_dataset_lookup_vals(records, table, format)
 
         return records, errors
 
-
-# ----------------------------------------------------
-def rank_species_counts(self, count_by, order, limit, format="JSON"):
-    """Rank the occurrences of a species in a single dataset, most or least
-
-    Args:
-        count_by: string indicating rank datasets by counts of "species" or
-            "occurrence" .
-        order: string indicating whether to rank in "descending" or
-            "ascending" order.
-        limit: number of species occurrence counts to return, no more than 300.
-        format: output format, options "CSV" or "JSON"
-
-    Returns:
-         records: list of limit records containing dataset_key, occ_count, species_count
-    """
-    records = []
-    table = self._summary_tables["dataset_lists"]
-    sort_fields = ["occ_count", "datasetkey"]
-    try:
-        records = self._query_order_summary_table(
-            table, sort_fields, order, limit, format)
-    except Exception as e:
-        errors = {"error": [get_traceback()]}
-
-    if self._dataset_metadata_exists():
-        self.add_dataset_lookup_vals(records, format)
-    return records, errors
-
+    # # ----------------------------------------------------
+    # def rank_species_counts(self, order, limit, format="JSON"):
+    #     """Rank the occurrences of a species in a single dataset, most or least.
+    #
+    #     Args:
+    #         order: string indicating whether to rank in "descending" or
+    #             "ascending" order.
+    #         limit: number of species occurrence counts to return, no more than 300.
+    #         format: output format, options "CSV" or "JSON"
+    #
+    #     Returns:
+    #          records: list of limit records containing dataset_key, occ_count, species_count
+    #     """
+    #     records = []
+    #     errors = {}
+    #     table = self._summary_tables["dataset_lists"]
+    #     sort_fields = ["occ_count", "datasetkey"]
+    #     try:
+    #         records = self._query_order_summary_table(
+    #             table, sort_fields, order, limit, format)
+    #     except Exception:
+    #         errors = {"error": [get_traceback()]}
+    #
+    #     if self._dataset_metadata_exists():
+    #         self._add_dataset_lookup_vals(records, format)
+    #     return records, errors
 
 
 # .............................................................................
@@ -330,7 +325,3 @@ if __name__ == "__main__":
     recs = s3q.get_dataset_counts(dataset_key, format=format)
     for r in recs:
         print(r)
-
-["4fa7b334-ce0d-4e88-aaae-2e0c138d049e", "d7dddbf4-2cf0-4f39-9b2a-bb099caae36c",
- "7ddf754f-d193-4cc9-b351-99906754a03b", "fab88965-e69d-4491-a04d-e3198b626e52",
- "6b6b2923-0a10-4708-b170-5b7c611aceef"]

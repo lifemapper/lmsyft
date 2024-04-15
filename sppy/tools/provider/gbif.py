@@ -471,7 +471,7 @@ class GbifAPI(APIQuery):
 
         try:
             api.query_by_get()
-        except Exception as e:
+        except Exception:
             std_output = cls._get_query_fail_output([api.url], APIEndpoint.Occurrence)
             # query_status = HTTPStatus.INTERNAL_SERVER_ERROR
             # errinfo["error"] = [cls._get_error_message(err=get_traceback())]
@@ -687,7 +687,7 @@ class GbifAPI(APIQuery):
         try:
             citation = ds_api._get_nested_output_val(
                 ds_api.output, ["citation", "text"])
-        except Exception as e:
+        except Exception:
             citation = None
         return dataset_name, citation
 
@@ -695,9 +695,6 @@ class GbifAPI(APIQuery):
     def query(self):
         """Query the API and set "output" attribute to a ElementTree object."""
         APIQuery.query_by_get(self, output_type="json", verify=False)
-
-
-
 
 
 # .............................................................................

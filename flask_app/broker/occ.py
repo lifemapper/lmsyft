@@ -1,10 +1,9 @@
 """Class for the Specify Network Occurrence API service."""
-from werkzeug.exceptions import (BadRequest, InternalServerError)
+from werkzeug.exceptions import BadRequest
 
 from flask_app.broker.base import _BrokerService
 from flask_app.common.s2n_type import (
     APIEndpoint, APIService, BrokerOutput, BrokerSchema, S2nKey, ServiceProvider)
-
 from sppy.tools.provider.gbif import GbifAPI
 from sppy.tools.provider.idigbio import IdigbioAPI
 from sppy.tools.provider.mopho import MorphoSourceAPI

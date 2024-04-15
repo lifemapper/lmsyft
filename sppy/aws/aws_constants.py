@@ -6,19 +6,20 @@ REGION = "us-east-1"
 PROJ_BUCKET = f"{PROJ_NAME}-{REGION}"
 SUMMARY_FOLDER = "summary"
 ENCODING = "utf-8"
-
 LOCAL_OUTDIR = "/tmp"
 
+
 class Summaries:
+    """Class containing a dictionary of constant metadata about summary tables."""
     TABLES = {
         "dataset_counts": {
-            "fname": f"dataset_counts_XXXX_XX_XX_000.parquet",
+            "fname": "dataset_counts_XXXX_XX_XX_000.parquet",
             "table_format": "Parquet",
             "fields": ["datasetkey", "occ_count", "species_count"],
             "key_fld": "datasetkey"
         },
         "dataset_species_lists": {
-            "fname": f"dataset_lists_XXXX_XX_XX_000.parquet",
+            "fname": "dataset_lists_XXXX_XX_XX_000.parquet",
             "table_format": "Parquet",
             "fields": ["datasetkey", "taxonkey", "species", "occ_count"],
             "key_fld": "datasetkey",
@@ -27,14 +28,14 @@ class Summaries:
             "value_fld": "occ_count",
         },
         "dataset_meta": {
-            "fname": f"dataset_meta_XXXX_XX_XX.parquet",
+            "fname": "dataset_meta_XXXX_XX_XX.parquet",
             "table_format": "Parquet",
             "fields": [
                 "dataset_key", "publishing_organization_key", "title"],
             "key_fld": "dataset_key"
         },
         "species_dataset_matrix": {
-            "fname": f"species_dataset_matrix_XXXX_XX_XX.parquet",
+            "fname": "species_dataset_matrix_XXXX_XX_XX.parquet",
             "table_format": "Parquet",
             "row": "taxonkey_species",
             "column": "datasetkey",
@@ -46,6 +47,15 @@ class Summaries:
     # ...............................................
     @classmethod
     def update_summary_tables(cls, datestr):
+        """Update filenames in the metadata dictionary and return.
+
+        Args:
+            datestr: Datestring contained in the filename indicating the current version
+                of the data.
+
+        Returns:
+            tables: dictionary of summary table metadata.
+        """
         tables = {}
         # Update filename in summary tables
         for key, meta in cls.TABLES.items():
@@ -58,7 +68,16 @@ class Summaries:
     # ...............................................
     @classmethod
     def get_table(cls, table_type, datestr):
-        # Update filename in summary tables
+        """Update the filename in a metadata dictionary for one table, and return.
+
+        Args:
+            table_type: type of summary table to return.
+            datestr: Datestring contained in the filename indicating the current version
+                of the data.
+
+        Returns:
+            tables: dictionary of summary table metadata.
+        """
         try:
             cpy_table = copy.deepcopy(cls.TABLES[table_type])
         except KeyError:

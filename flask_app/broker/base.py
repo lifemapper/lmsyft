@@ -1,6 +1,5 @@
 """Parent Class for the Specify Network API services."""
-from flask import Flask
-from werkzeug.exceptions import BadRequest, InternalServerError
+from werkzeug.exceptions import BadRequest
 
 from sppy.tools.s2n.utils import add_errinfo, combine_errinfo, get_traceback
 from flask_app.common.base import _SpecifyNetworkService
@@ -239,8 +238,8 @@ class _BrokerService(_SpecifyNetworkService):
                 user specified parameters.
 
         Raises:
-            BadRequest on invalid query parameters
-
+            BadRequest: on invalid query parameters.
+            BadRequest: on unknown exception when parsing request
         Note:
             filter_params is present to distinguish between providers for occ service by
             occurrence_id or by dataset_id.

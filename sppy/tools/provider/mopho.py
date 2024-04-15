@@ -1,12 +1,10 @@
 """Module containing functions for MorphoSource API Queries."""
-from http import HTTPStatus
-
 from flask_app.broker.constants import (MorphoSource, TST_VALUES)
 from flask_app.common.s2n_type import (
     APIEndpoint, BrokerSchema, S2nKey, ServiceProvider)
 
 from sppy.tools.provider.api import APIQuery
-from sppy.tools.s2n.utils import add_errinfo, get_traceback
+from sppy.tools.s2n.utils import add_errinfo
 
 
 # .............................................................................

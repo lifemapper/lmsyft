@@ -3,7 +3,7 @@ from flask import Flask
 from werkzeug.exceptions import BadRequest, InternalServerError
 
 from sppy.tools.s2n.utils import add_errinfo
-from flask_app.common.s2n_type import APIEndpoint
+from flask_app.common.s2n_type import APIEndpoint, APIService
 
 app = Flask(__name__)
 
@@ -11,18 +11,36 @@ app = Flask(__name__)
 # .............................................................................
 @app.errorhandler(BadRequest)
 def handle_bad_request(e):
+    """Return text explaining a bad request.
+
+    Args:
+        e: an Exception object
+
+    Returns:
+        string response.
+    """
     return f"Bad request: {e}"
 
+
+# .............................................................................
 @app.errorhandler(InternalServerError)
 def handle_bad_response(e):
+    """Return text explaining a bad response.
+
+    Args:
+        e: an Exception object
+
+    Returns:
+        string response.
+    """
     return f"Internal Server Error: {e}"
+
 
 # .............................................................................
 class _SpecifyNetworkService:
     """Base S-to-the-N service, handles parameter names and acceptable values."""
     # overridden by subclasses
-    SERVICE_TYPE = None
-
+    SERVICE_TYPE = APIService.BaseSpNetwork
 
     # .............................................................................
     @classmethod
@@ -142,7 +160,6 @@ class _SpecifyNetworkService:
 
         return usr_val, valid_options
 
-
     # ...............................................
     @classmethod
     def _test_numbers(cls, provided_val, param_meta):
@@ -255,7 +272,6 @@ class _SpecifyNetworkService:
                 good_params[key] = param_meta["default"]
 
         return good_params, errinfo
-
 
     # ..........................
     @staticmethod
