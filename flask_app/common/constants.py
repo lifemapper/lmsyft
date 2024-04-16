@@ -10,4 +10,3 @@ SCHEMA_DIR = f"{STATIC_DIR}/schema"
 TEMPLATE_DIR = "../templates"
 SCHEMA_ANALYST_FNAME = "open_api.analyst.yaml"
 SCHEMA_BROKER_FNAME = "open_api.broker.yaml"
-

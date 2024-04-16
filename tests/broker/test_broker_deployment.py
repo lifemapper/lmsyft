@@ -1,3 +1,4 @@
+"""Tests for the Broker flask application."""
 from open_api_tools.test.full_test import full_test
 from open_api_tools.common.load_schema import load_schema
 import os
@@ -9,7 +10,13 @@ schema = load_schema(os.path.join(STATIC_DIR, SCHEMA_BROKER_FNAME))
 
 # Error message schema is defined in open_api_tools.validate.index
 def after_error_occurred(*error_message):
+    """Print a response on error.
+
+    Args:
+        error_message: message to print
+    """
     print(error_message)
+
 
 full_test(
     schema=schema,
