@@ -7,7 +7,7 @@ import os
 import pandas as pd
 from pandas.api.types import CategoricalDtype
 import random
-from scipy.sparse import csr_matrix
+import scipy.sparse
 
 from sppy.aws.aws_constants import (
     LOCAL_OUTDIR, LOG_PATH, PROJ_BUCKET, REGION, SUMMARY_FOLDER, Summaries)
@@ -89,39 +89,56 @@ def read_s3_multiple_parquets_to_pandas(
 
 
 # .............................................................................
-def write_pandas_to_s3(
-        dataframe, bucket, bucket_path, filename, logger=None, format="Parquet", **args):
+def write_npz_array_to_s3(
+        sparse_coo_array, bucket, bucket_path, filename, logger=None, **args):
     """Write a pd DataFrame to CSV or parquet on S3.
 
     Args:
-        dataframe (pandas.DataFrame): dataframe to write to S3.
+        sparse_coo_array (scipy.coo_array): matrix in COO format to write to S3.
         bucket (str): Bucket identifier on S3.
         bucket_path (str): Folder path to the S3 output data.
         filename (str): Filename of output data to write to S3.
         logger (object): logger for saving relevant processing messages
-        format (str): output format, "csv" and "parquet" supported.
+        args: Additional arguments to be sent to the pd.read_parquet function.
+    """
+    s3_filename = None
+    tmp_fname = f"/tmp/{filename}"
+    try:
+        scipy.sparse.save_npz(tmp_fname, sparse_coo_array, compressed=True)
+    except Exception as e:
+        logit(
+            logger, f"Failed to write {tmp_fname}: {e}", log_level=ERROR)
+    else:
+        s3_filename = upload_to_s3(tmp_fname, bucket, bucket_path, logger=logger)
+
+    return s3_filename
+
+# .............................................................................
+def read_npz_array_from_s3(
+        bucket, bucket_path, filename, local_path=None, logger=None, **args):
+    """Write a pd DataFrame to CSV or parquet on S3.
+
+    Args:
+        bucket (str): Bucket identifier on S3.
+        bucket_path (str): Folder path to the S3 output data.
+        filename (str): Filename of output data to write to S3.
+        logger (object): logger for saving relevant processing messages
         args: Additional arguments to be sent to the pd.read_parquet function.
 
-    Raises:
-        Exception: on format other than "csv" or "parquet"
+    Returns:
+        sparse_coo_array (scipy.coo_array): matrix in COO format.
     """
-    target = f"s3://{bucket}/{bucket_path}/{filename}"
-    format = format.lower()
-    if format not in ("csv", "parquet"):
-        raise Exception(f"Format {format} not supported.")
-    if format == "csv":
-        try:
-            dataframe.to_csv(target)
-        except Exception as e:
-            logit(
-                logger, f"Failed to write {target} as csv: {e}", log_level=ERROR)
-    else:
-        try:
-            dataframe.to_parquet(target)
-        except Exception as e:
-            logit(
-                logger, f"Failed to write {target} as parquet: {e}",
-                log_level=ERROR)
+    sparse_coo = None
+    if local_path is None:
+        local_path = os.getcwd()
+    tmp_fname = download_from_s3(
+        bucket, bucket_path, filename, local_path, overwrite=True)
+    try:
+        sparse_coo = scipy.sparse.load_npz(tmp_fname)
+    except Exception as e:
+        logit(logger, f"Failed to read {tmp_fname}: {e}", log_level=ERROR)
+
+    return sparse_coo
 
 
 # .............................................................................
@@ -131,7 +148,7 @@ def upload_to_s3(full_filename, bucket, bucket_path, logger=None):
     Args:
         full_filename (str): Full filename to the file to upload.
         bucket (str): Bucket identifier on S3.
-        bucket_path (str): Parent folder path to the S3 parquet data.
+        bucket_path (str): Parent folder path to the S3 data.
         logger (object): logger for saving relevant processing messages
 
     Returns:
@@ -156,10 +173,56 @@ def upload_to_s3(full_filename, bucket, bucket_path, logger=None):
 
 
 # .............................................................................
+def download_from_s3(bucket, bucket_path, filename, local_path, overwrite=True):
+    """Download a file from S3 to a local file.
+
+    Args:
+        bucket (str): Bucket identifier on S3.
+        bucket_path (str): Folder path to the S3 parquet data.
+        filename (str): Filename of data to read from S3.
+        overwrite (boolean):  flag indicating whether to overwrite an existing file.
+
+    Returns:
+        local_filename (str): full path to local filename containing downloaded data.
+    """
+    local_filename = os.path.join(local_path, filename)
+    # Delete if needed
+    if os.path.exists(local_filename):
+        if overwrite is True:
+            os.remove(local_filename)
+        else:
+            print(f"{local_filename} already exists")
+    # Download current
+    if not os.path.exists(local_filename):
+        s3_client = boto3.client("s3")
+        try:
+            s3_client.download_file(bucket, f"{bucket_path}/{filename}", local_filename)
+        except ClientError as e:
+            print(f"Failed to download {filename} from {bucket}/{bucket_path}, ({e})")
+        else:
+            print(f"Downloaded {filename} from S3 to {local_filename}")
+    return local_filename
+
+# .............................................................................
 # .............................................................................
 class AggregateMatrix:
     """Class for managing computations for counts of aggregator0 x aggregator1."""
 
+    # # ...........................
+    # def __init__(self, sparse_coo_array, logger=None):
+    #     """Constructor for species by dataset comparisons.
+    #
+    #     Args:
+    #         sparse_coo_array (scipy.sparse.coo_array): A 2d sparse array with count
+    #             values for one aggregator0 (i.e. species) rows (axis 0) by another
+    #             aggregator1 (i.e. dataset) columns (axis 1) to use for computations.
+    #         logger (object): An optional local logger to use for logging output
+    #             with consistent options
+    #     """
+    #     self._coo_array = sparse_coo_array
+    #     self._logger = logger
+    #     self._report = {}
+    #
     # ...........................
     def __init__(self, aggregate_df, logger=None):
         """Constructor for species by dataset comparisons.
@@ -347,24 +410,8 @@ class AggregateMatrix:
 
 
 # ...............................................
-def add_combo_column_to_df(orig_df, new_fld, fld1, fld2):
-    """Add a new field to the dataframe, with fld1 concatenated to fld2.
-
-    Args:
-        orig_df: dataframe
-        new_fld: label for new column to add
-        fld1: name of the column to use the value in first part of the new column
-        fld2: name of the column to use the value in second part of the new column
-    """
-    def combine_columns(row):
-        return str(row[fld1]) + ' ' + str(row[fld2])
-    # .......
-    orig_df[new_fld] = orig_df.apply(combine_columns, axis=1)
-
-
-# ...............................................
-def create_sparse_df_from_stacked_data(orig_df, x_fld, y_fld, val_fld):
-    """Create a dataframe of rows by columns containing values from a table.
+def create_sparse_coo_mtx_from_stacked_data(orig_df, x_fld, y_fld, val_fld):
+    """Create a sparse matrix of rows by columns containing values from a table.
 
     Args:
         orig_df (pandas.DataFrame): DataFrame of records containing columns to be used
@@ -377,7 +424,7 @@ def create_sparse_df_from_stacked_data(orig_df, x_fld, y_fld, val_fld):
             values for the intersection of x and y fields
 
     Returns:
-        sdf (pandas.SparseDataFrame): dataframe of y values (rows, y axis=0) by
+        sparse_coo (scipy.coo_array): matrix of y values (rows, y axis=0) by
             x values (columnns, x axis=1), with values from another column.
 
     Note:
@@ -401,16 +448,17 @@ def create_sparse_df_from_stacked_data(orig_df, x_fld, y_fld, val_fld):
     col_idx = orig_df[x_fld].astype(x_categ).cat.codes
     row_idx = orig_df[y_fld].astype(y_categ).cat.codes
 
-    # This compresses original rows with the same y_fld values and multiple
-    #   x_fld values into a row (y) with different values (counts) for the columns (x)
-    sparse_matrix = csr_matrix(
+    # This creates a new matrix in Coordinate list (COO) format.  COO stores a list of
+    # (row, column, value) tuples.  Convert to CSR or CSC for efficient Row or Column
+    # slicing, respectively
+    sparse_coo = coo_array(
         (orig_df[val_fld], (row_idx, col_idx)),
         shape=(y_categ.categories.size, x_categ.categories.size))
 
-    sdf = pd.DataFrame.sparse.from_spmatrix(
-        sparse_matrix, index=y_categ.categories, columns=x_categ.categories)
+    # sdf = pd.DataFrame.sparse.from_spmatrix(
+    #     sparse_matrix, index=y_categ.categories, columns=x_categ.categories)
 
-    return sdf
+    return sparse_coo
 
 
 # ...............................................
@@ -535,12 +583,11 @@ if __name__ == "__main__":
     # ......................
     orig_df[y_fld] = orig_df.apply(_combine_columns, axis=1)
 
-    sdf = create_sparse_df_from_stacked_data(orig_df, x_fld, y_fld, val_fld)
+    sparse_coo = create_sparse_coo_mtx_from_stacked_data(orig_df, x_fld, y_fld, val_fld)
 
     out_table = Summaries.get_table("species_dataset_matrix", data_datestr)
-    write_pandas_to_s3(
-        sdf, PROJ_BUCKET, SUMMARY_FOLDER, out_table["fname"], logger=logger,
-        format="Parquet")
+    write_coo_array_to_s3(
+        sparse_coo, PROJ_BUCKET, SUMMARY_FOLDER, out_table["fname"], logger=logger)
 
     # Upload logfile to S3
     s3_log_filename = upload_to_s3(logger.filename, PROJ_BUCKET, LOG_PATH, logger)
@@ -572,10 +619,36 @@ orig_df = read_s3_parquet_to_pandas(
 # ......................
 def combine_columns(row):
     return str(row[fld1]) + ' ' + str(row[fld2])
+
 # ......................
 orig_df[y_fld] = orig_df.apply(combine_columns, axis=1)
 
-sdf = create_sparse_df_from_stacked_data(orig_df, x_fld, y_fld, val_fld)
+
+
+#.......................................................................................
+
+# Get unique values to use as categories for scipy column and row indexes, remove None
+unique_x_vals = list(orig_df[x_fld].dropna().unique())
+unique_y_vals = list(orig_df[y_fld].dropna().unique())
+
+# Categories allow using codes as the integer index for scipy matrix
+y_categ = CategoricalDtype(unique_y_vals, ordered=True)
+x_categ = CategoricalDtype(unique_x_vals, ordered=True)
+
+# Create a list of category codes matching original stacked data records to replace
+#   column names from stacked data dataframe with integer codes for row and column
+#   indexes in the new scipy matrix
+col_idx = orig_df[x_fld].astype(x_categ).cat.codes
+row_idx = orig_df[y_fld].astype(y_categ).cat.codes
+
+sparse_coo = coo_array(
+    (orig_df[val_fld], (row_idx, col_idx)),
+    shape=(y_categ.categories.size, x_categ.categories.size))
+
+#.......................................................................................
+
+
+sparse_coo = create_sparse_coo_mtx_from_stacked_data(orig_df, x_fld, y_fld, val_fld)
 
 out_table = Summaries.get_table("species_dataset_matrix", data_datestr)
 write_pandas_to_s3(
