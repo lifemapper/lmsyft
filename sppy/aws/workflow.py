@@ -32,13 +32,6 @@ FIELD_SUBSET = [
     "family",
     ]
 
-# Log processing progress
-LOGINTERVAL = 1000000
-LOG_FORMAT = " ".join(["%(asctime)s", "%(levelname)-8s", "%(message)s"])
-LOG_DATE_FORMAT = "%d %b %Y %H:%M"
-LOGFILE_MAX_BYTES = 52000000
-LOGFILE_BACKUP_COUNT = 5
-
 
 # --------------------------------------------------------------------------------------
 # Tools for experimentation
