@@ -18,7 +18,7 @@ import requests
 import xml.etree.ElementTree as ET
 
 from sppy.aws.aws_constants import (
-    ENCODING, INSTANCE_TYPE, KEY_NAME, LOGFILE_MAX_BYTES, LOG_FORMAT, LOG_DATE_FORMAT,
+    ENCODING, INSTANCE_TYPE, KEY_NAME, LOG,
     PROJ_BUCKET, PROJ_NAME, REGION, SECURITY_GROUP_ID, SPOT_TEMPLATE_BASENAME,
     SUMMARY_FOLDER, USER_DATA_TOKEN)
 
@@ -645,10 +645,10 @@ def get_logger(log_name, log_dir=None, log_level=logging.INFO):
         os.makedirs(log_dir, exist_ok=True)
     # create file handler
     handler = RotatingFileHandler(
-        filename, mode="w", maxBytes=LOGFILE_MAX_BYTES, backupCount=10,
+        filename, mode="w", maxBytes=LOG.FILE_MAX_BYTES, backupCount=10,
         encoding=ENCODING
     )
-    formatter = logging.Formatter(LOG_FORMAT, LOG_DATE_FORMAT)
+    formatter = logging.Formatter(LOG.FORMAT, LOG.DATE_FORMAT)
     handler.setLevel(log_level)
     handler.setFormatter(formatter)
     # Get logger
