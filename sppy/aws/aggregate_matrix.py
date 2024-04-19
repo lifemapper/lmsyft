@@ -11,14 +11,14 @@ import random
 import scipy.sparse
 
 from sppy.aws.aws_constants import (
-    LOCAL_OUTDIR, PROJ_BUCKET, REGION, RowColumnComparisonKeys, SUMMARY_FOLDER,
+    LOCAL_OUTDIR, PROJ_BUCKET, REGION, SNKeys, SUMMARY_FOLDER,
     Summaries, SUMMARY_TABLE_TYPES)
 from sppy.aws.aws_tools import get_current_datadate_str, get_today_str
 from sppy.tools.util.logtools import Logger, logit
 
 
 # ...............................................
-def _sum_stacked_data_vals_for_column(stacked_df, filter_label, filter_value, val_label):
+def sum_stacked_data_vals_for_column(stacked_df, filter_label, filter_value, val_label):
     """Sum the values for rows where column 'filter_label' = 'filter_value'.
 
     Args:
@@ -39,7 +39,7 @@ def _sum_stacked_data_vals_for_column(stacked_df, filter_label, filter_value, va
 
 
 # ...............................................
-def _get_random_values_from_stacked_data(stacked_df, col_label, count):
+def get_random_values_from_stacked_data(stacked_df, col_label, count):
     # Get a random sample of row indexes
     row_idxs = random.sample(range(1, stacked_df.shape[0]), count)
     x_vals = [stacked_df[col_label][i] for i in row_idxs]
@@ -69,38 +69,38 @@ def test_stacked_to_aggregate(
     Note: The aggregate_df must have been created from the stacked_df.
     """
     test_count = 5
-    x_vals = _get_random_values_from_stacked_data(stacked_df, x_col_label, test_count)
-    y_vals = _get_random_values_from_stacked_data(stacked_df, y_col_label, test_count)
+    x_vals = get_random_values_from_stacked_data(stacked_df, x_col_label, test_count)
+    y_vals = get_random_values_from_stacked_data(stacked_df, y_col_label, test_count)
     #
     # Test stacked column totals against aggregate x columns
-    for x_col in x_vals:
-        stk_sum = _sum_stacked_data_vals_for_column(
-            stacked_df, x_col_label, x_col, val_col_label)
-        agg_sum = aggregate_sparse_mtx[x_col].sum()
+    for x in x_vals:
+        stk_sum = sum_stacked_data_vals_for_column(
+            stacked_df, x_col_label, x, val_col_label)
+        agg_sum = aggregate_sparse_mtx.sum_column(x)
         if stk_sum == agg_sum:
             print(
-                f"Total {stk_sum}: Stacked data for {x_col_label} = {x_col} == "
-                f"aggregate data in column {x_col}"
+                f"Total {stk_sum}: Stacked data for {x_col_label} = {x} == "
+                f"aggregate data in column {x}"
             )
         else:
             print(
-                f"{stk_sum} != {agg_sum}: Stacked data for {x_col_label} = {x_col} != "
-                f"aggregate data in column {x_col}"
+                f"{stk_sum} != {agg_sum}: Stacked data for {x_col_label} = {x} != "
+                f"aggregate data in column {x}"
             )
     # Test stacked column totals against aggregate y rows
-    for y_col in y_vals:
-        stk_sum = _sum_stacked_data_vals_for_column(
-            stacked_df, y_col_label, y_col, val_col_label)
-        agg_sum = aggregate_sparse_mtx.loc[y_col].sum()
+    for y in y_vals:
+        stk_sum = sum_stacked_data_vals_for_column(
+            stacked_df, y_col_label, y, val_col_label)
+        agg_sum = aggregate_sparse_mtx.sum_row(y)
         if stk_sum == agg_sum:
             print(
-                f"Total {stk_sum}: Stacked data for {x_col_label} = {y_col} ==  "
-                f"aggregate data in column {y_col}"
+                f"Total {stk_sum}: Stacked data for {x_col_label} = {y} ==  "
+                f"aggregate data in row {y}"
             )
         else:
             print(
-                f"{stk_sum} != {agg_sum}: Stacked data for {x_col_label} = {y_col} !=  "
-                f"aggregate data in column {y_col}"
+                f"{stk_sum} != {agg_sum}: Stacked data for {x_col_label} = {y} !=  "
+                f"aggregate data in row {y}"
             )
 
 
@@ -181,97 +181,35 @@ def read_s3_multiple_parquets_to_pandas(
     return pd.concat(dfs, ignore_index=True)
 
 
-# # .............................................................................
-# def write_npz_array_to_s3(
-#         sparse_coo_array, bucket, bucket_path, filename, logger=None):
-#     """Write a pd DataFrame to CSV or parquet on S3.
-#
-#     Args:
-#         sparse_coo_array (scipy.coo_array): matrix in COO format to write to S3.
-#         bucket (str): Bucket identifier on S3.
-#         bucket_path (str): Folder path to the S3 output data.
-#         filename (str): Filename of output data to write to S3.
-#         logger (object): logger for saving relevant processing messages
-#     """
-#     s3_filename = None
-#     tmp_fname = f"/tmp/{filename}"
-#     if os.path.exists(tmp_fname):
-#         os.remove(tmp_fname)
-#     try:
-#         scipy.sparse.save_npz(tmp_fname, sparse_coo_array, compressed=True)
-#     except Exception as e:
-#         logit(
-#             logger, f"Failed to write {tmp_fname}: {e}", log_level=ERROR)
-#     else:
-#         s3_filename = upload_to_s3(tmp_fname, bucket, bucket_path, logger=logger)
-#
-#     return s3_filename
+# .............................................................................
+def read_npz_array_from_s3(
+        bucket, bucket_path, filename, local_path=None, region=REGION, logger=None, **args):
+    """Write a pd DataFrame to CSV or parquet on S3.
 
-# # .............................................................................
-# def read_npz_array_from_s3(
-#         bucket, bucket_path, filename, local_path=None, region=REGION, logger=None, **args):
-#     """Write a pd DataFrame to CSV or parquet on S3.
-#
-#     Args:
-#         bucket (str): Bucket identifier on S3.
-#         bucket_path (str): Folder path to the S3 output data.
-#         filename (str): Filename of output data to write to S3.
-#         local_path (str): local path for temporary download of npz file.
-#         region (str): AWS region to query.
-#         logger (object): logger for saving relevant processing messages
-#         args: Additional arguments to be sent to the pd.read_parquet function.
-#
-#     Returns:
-#         sparse_coo_array (scipy.coo_array): matrix in COO format.
-#     """
-#     sparse_coo = None
-#     if local_path is None:
-#         local_path = os.getcwd()
-#     tmp_fname = download_from_s3(
-#         bucket, bucket_path, filename, local_path, region=region, overwrite=True)
-#     try:
-#         sparse_coo = scipy.sparse.load_npz(tmp_fname)
-#     except Exception as e:
-#         logit(logger, f"Failed to read {tmp_fname}: {e}", log_level=ERROR)
-#
-#     return sparse_coo
+    Args:
+        bucket (str): Bucket identifier on S3.
+        bucket_path (str): Folder path to the S3 output data.
+        filename (str): Filename of output data to write to S3.
+        local_path (str): local path for temporary download of npz file.
+        region (str): AWS region to query.
+        logger (object): logger for saving relevant processing messages
+        args: Additional arguments to be sent to the pd.read_parquet function.
 
+    Returns:
+        sparse_coo_array (scipy.coo_array): matrix in COO format.
+    """
+    sparse_coo = None
+    if local_path is None:
+        local_path = os.getcwd()
+    tmp_fname = download_from_s3(
+        bucket, bucket_path, filename, local_path, region=region, overwrite=True)
+    try:
+        sparse_coo = scipy.sparse.load_npz(tmp_fname)
+    except Exception as e:
+        logit(logger, f"Failed to read {tmp_fname}: {e}", log_level=ERROR)
 
-# # .............................................................................
-# def upload_to_s3(full_filename, bucket, bucket_path, region=REGION, logger=None):
-#     """Upload a file to S3.
-#
-#     Args:
-#         full_filename (str): Full filename to the file to upload.
-#         bucket (str): Bucket identifier on S3.
-#         bucket_path (str): Parent folder path to the S3 data.
-#         region (str): AWS region to query.
-#         logger (object): logger for saving relevant processing messages
-#
-#     Returns:
-#         s3_filename (str): path including bucket, bucket_folder, and filename for the
-#             uploaded data
-#     """
-#     s3_filename = None
-#     s3_client = boto3.client("s3", region_name=region)
-#     obj_name = os.path.basename(full_filename)
-#     if bucket_path:
-#         obj_name = f"{bucket_path}/{obj_name}"
-#     try:
-#         s3_client.upload_file(full_filename, bucket, obj_name)
-#     except SSLError:
-#         logit(
-#             logger, f"Failed with SSLError to upload {obj_name} to {bucket}",
-#             log_level=ERROR)
-#     except ClientError as e:
-#         logit(
-#             logger, f"Failed to upload {obj_name} to {bucket}, ({e})",
-#             log_level=ERROR)
-#     else:
-#         s3_filename = f"s3://{bucket}/{obj_name}"
-#         logit(logger, f"Uploaded {s3_filename} to S3")
-#     return s3_filename
-#
+    return sparse_coo
+
 
 # .............................................................................
 def download_from_s3(bucket, bucket_path, filename, local_path, region=REGION, overwrite=True):
@@ -314,56 +252,6 @@ def download_from_s3(bucket, bucket_path, filename, local_path, region=REGION, o
     return local_filename
 
 
-# # ...............................................
-# def create_sparse_df_from_stacked_data(orig_df, x_fld, y_fld, val_fld):
-#     """Create a dataframe of rows by columns containing values from a table.
-#
-#     Args:
-#         orig_df (pandas.DataFrame): DataFrame of records containing columns to be used
-#             as the new rows, new columns, and values.
-#         x_fld: column in the input dataframe containing values to be used as
-#             columns (axis 1)
-#         y_fld: column in the input dataframe containing values to be used as rows
-#             (axis 0)
-#         val_fld: : column in the input dataframe containing values to be used as
-#             values for the intersection of x and y fields
-#
-#     Returns:
-#         sdf (pandas.SparseDataFrame): dataframe of y values (rows, y axis=0) by
-#             x values (columnns, x axis=1), with values from another column.
-#
-#     Note:
-#         The input dataframe must contain only one input record for any x and y value
-#             combination, and each record must contain another value for the dataframe
-#             contents.  The function was written for a table of records with
-#             datasetkey (for the column labels/x), species (for the row labels/y),
-#             and occurrence count.
-#     """
-#     # Get unique values to use as categories for scipy column and row indexes, remove None
-#     unique_x_vals = list(orig_df[x_fld].dropna().unique())
-#     unique_y_vals = list(orig_df[y_fld].dropna().unique())
-#
-#     # Categories allow using codes as the integer index for scipy matrix
-#     y_categ = CategoricalDtype(unique_y_vals, ordered=True)
-#     x_categ = CategoricalDtype(unique_x_vals, ordered=True)
-#
-#     # Create a list of category codes matching original stacked data records to replace
-#     #   column names from stacked data dataframe with integer codes for row and column
-#     #   indexes in the new scipy matrix
-#     col_idx = orig_df[x_fld].astype(x_categ).cat.codes
-#     row_idx = orig_df[y_fld].astype(y_categ).cat.codes
-#
-#     # This compresses original rows with the same y_fld values and multiple
-#     #   x_fld values into a row (y) with different values (counts) for the columns (x)
-#     sparse_matrix = scipy.sparse.csr_array(
-#         (orig_df[val_fld], (row_idx, col_idx)),
-#         shape=(y_categ.categories.size, x_categ.categories.size))
-#
-#     sdf = pd.DataFrame.sparse.from_spmatrix(
-#         sparse_matrix, index=y_categ.categories, columns=x_categ.categories)
-#
-#     return sdf
-
 # .............................................................................
 # .............................................................................
 class SparseMatrix:
@@ -389,6 +277,7 @@ class SparseMatrix:
         """
         self._coo_array = sparse_coo_array
         self._table_type = table_type
+        self._keys = SNKeys.get_keys_for_table(self._table_type)
         self._row_categ = row_category
         self._col_categ = column_category
         self._logger = logger
@@ -396,7 +285,7 @@ class SparseMatrix:
 
     # ...........................
     @classmethod
-    def init_from_stacked_data(cls, stacked_df, x_fld, y_fld, val_fld):
+    def init_from_stacked_data(cls, stacked_df, x_fld, y_fld, val_fld, table_type):
         """Create a sparse matrix of rows by columns containing values from a table.
 
         Args:
@@ -437,7 +326,8 @@ class SparseMatrix:
         sparse_coo = scipy.sparse.coo_array(
             (stacked_df[val_fld], (row_idx, col_idx)),
             shape=(y_categ.categories.size, x_categ.categories.size))
-        sparse_matrix = SparseMatrix(sparse_coo, y_categ, x_categ)
+        sparse_matrix = SparseMatrix(
+            sparse_coo, table_type, row_category=y_categ, column_category=x_categ)
         return sparse_matrix
 
     # .............................................................................
@@ -451,7 +341,8 @@ class SparseMatrix:
     # .............................................................................
     @classmethod
     def init_from_s3(
-            cls, bucket, bucket_path, filename, local_path=None, region=REGION, logger=None):
+            cls, bucket, bucket_path, filename, table_type, local_path=None,
+            region=REGION, logger=None):
         """Write a pd DataFrame to CSV or parquet on S3.
 
         Args:
@@ -465,6 +356,8 @@ class SparseMatrix:
 
         Returns:
             sparse_coo_array (scipy.coo_array): matrix in COO format.
+
+        TODO: read row and column categories from S3
         """
         sparse_coo = None
         if local_path is None:
@@ -476,9 +369,12 @@ class SparseMatrix:
         except Exception as e:
             logit(logger, f"Failed to read {tmp_fname}: {e}", log_level=ERROR)
 
-        sparse_matrix = SparseMatrix(sparse_coo)
+        # TODO: read row and column categories from S3
+        sparse_matrix = SparseMatrix(
+            sparse_coo, table_type, row_category=None, column_category=None,
+            logger=logger)
 
-        return sparse_coo
+        return sparse_matrix
 
     # ...............................................
     def _get_code_from_category(self, label, axis=0):
@@ -595,7 +491,6 @@ class SparseMatrix:
         return row, row_idx
 
     # ...............................................
-    @property
     def sum_column(self, col_label):
         """Get the total of values in a single column.
 
@@ -605,7 +500,7 @@ class SparseMatrix:
         Returns:
             int: The total of all values in one column
         """
-        col = self.get_column(col_label)
+        col, col_idx = self.get_column_from_label(col_label)
         total = col.sum()
         return total
 
@@ -624,7 +519,6 @@ class SparseMatrix:
         return total
 
     # ...............................................
-    @property
     def get_all_row_counts(self):
         """Get an array of totals for each row.
 
@@ -638,7 +532,6 @@ class SparseMatrix:
         return self._coo_array.sum(axis=1)
 
     # ...............................................
-    @property
     def get_all_col_counts(self):
         """Return stats (min, max, mean) of totals and counts for all columns.
 
@@ -650,24 +543,22 @@ class SparseMatrix:
             The rows (1-d arrays) returned will have totals/counts ordered by
                 column index.
         """
-        keys = RowColumnComparisonKeys.AGG[self._table_type]
         # Sum all columns to return a row (numpy.ndarray, axis=0)
         all_totals = self._coo_array.sum(axis=0)
         # Get number of non-zero entries for every column (row, numpy.ndarray)
         all_counts = self._coo_array.getnnz(axis=0)
         all_col_stats = {
-            keys.COL_TOTAL_MIN: all_totals.min(),
-            keys.COL_TOTAL_MAX: all_totals.max(),
-            keys.COL_TOTAL_MEAN: all_totals.mean(),
-            keys.COL_COUNT_MIN: all_counts.min(),
-            keys.COL_COUNT_MAX: all_counts.max(),
-            keys.COL_COUNT_MEAN: all_counts.mean()
+            self._keys.COL_TOTAL_MIN: all_totals.min(),
+            self._keys.COL_TOTAL_MAX: all_totals.max(),
+            self._keys.COL_TOTAL_MEAN: all_totals.mean(),
+            self._keys.COL_COUNT_MIN: all_counts.min(),
+            self._keys.COL_COUNT_MAX: all_counts.max(),
+            self._keys.COL_COUNT_MEAN: all_counts.mean()
         }
         return all_col_stats
 
 
     # ...............................................
-    @property
     def get_column_stats(self, col_label):
         """Get a dictionary of statistics for the column with this col_label.
 
@@ -681,29 +572,28 @@ class SparseMatrix:
             Inline comments are specific to a SUMMARY_TABLE_TYPES.SPECIES_DATASET_MATRIX
                 with row/column/value = species/dataset/occ_count
         """
-        stats = {}
-        keys = RowColumnComparisonKeys.AGG[self._table_type]
         # Get column (sparse array), and its index
         col, col_idx = self.get_column_from_label(col_label)
-        # Return the column index and label
-        stats[keys.COL_INDEX] = col_idx
-        stats[keys.COL_LABEL] = col_label
-        # Total Occurrence count for Dataset
-        total = col.sum()
-        stats[keys.COL_TOTAL] = total
         # Largest Occurrence count for Dataset
         mx = col.max()
-        stats[keys.COL_MAX_COUNT] = mx
         # Species with largest Occurrence count for Dataset
         max_idxs = list((col == mx).nonzero()[0])
-        row_labels = self._get_categories_from_code(max_idxs, axis=0)
-        # Return indexes (for further matrix examination) and labels (for people)
-        stats[keys.COL_MAX_INDEXES] = max_idxs
-        stats[keys.COL_MAX_LABELS] = row_labels
+        max_labels = self._get_categories_from_code(max_idxs, axis=0)
+        stats = {
+            self._keys[SNKeys.COL_IDX]: col_idx,
+            self._keys[SNKeys.COL_LABEL]: col_label,
+            # Total Occurrence count for Dataset
+            self._keys[SNKeys.COL_TOTAL]: col.sum(),
+            # Count of Species within this Dataset
+            self._keys[SNKeys.COL_COUNT]: col.nnz,
+            self._keys[SNKeys.COL_MAX_COUNT]: mx,
+            # Return indexes (for further matrix examination) and labels (for people)
+            self._keys[SNKeys.COL_MAX_INDEXES]: max_idxs,
+            self._keys[SNKeys.COL_MAX_LABELS]: max_labels
+        }
         return stats
 
     # ...............................................
-    @property
     def get_row_stats(self, row_label):
         """Get a dictionary of statistics for the row with this row_label.
 
@@ -717,32 +607,28 @@ class SparseMatrix:
             Inline comments are specific to a SUMMARY_TABLE_TYPES.SPECIES_DATASET_MATRIX
                 with row/column/value = species/dataset/occ_count
         """
-        stats = {}
-        keys = RowColumnComparisonKeys.AGG[self._table_type]
         # Get row (sparse array), and its index
         row, row_idx = self.get_row_from_label(row_label)
-        # Return the row index and label
-        stats[keys.ROW_INDEX] = row_idx
-        stats[keys.ROW_LABEL] = row_label
-        # Total Occurrence count for this Species
-        total = row.sum()
-        stats[keys.ROW_TOTAL] = total
-        # Count of Datasets containing this Species
-        count = row.nnz
-        stats[keys.ROW_COUNT] = count
         # Largest Occurrence count for this Species
         mx = row.max()
-        stats[keys.ROW_MAX_COUNT] = mx
         # Datasets with largest Occurrence count for this Species
         max_idxs = list((row == mx).nonzero()[0])
         max_labels = self._get_categories_from_code(max_idxs, axis=1)
-        # Return indexes (for further matrix examination) and labels (for people)
-        stats[keys.ROW_MAX_INDEXES] = max_idxs
-        stats[keys.ROW_MAX_LABELS] = max_labels
+        stats = {
+            self._keys[SNKeys.ROW_IDX]: row_idx,
+            self._keys[SNKeys.ROW_LABEL]: row_label,
+            # Total Occurrence count for this Species
+            self._keys[SNKeys.ROW_TOTAL]: row.sum(),
+            # Count of Datasets containing this Species
+            self._keys[SNKeys.ROW_COUNT]: row.nnz,
+            self._keys[SNKeys.ROW_MAX_COUNT]: mx,
+            # Return indexes (for further matrix examination) and labels (for people)
+            self._keys[SNKeys.ROW_MAX_INDEXES]: max_idxs,
+            self._keys[SNKeys.ROW_MAX_LABELS]: max_labels
+        }
         return stats
 
     # ...............................................
-    @property
     def compare_column_to_others(self, col_label):
         """Compare the number of rows and counts in rows to those of other columns.
 
@@ -753,20 +639,15 @@ class SparseMatrix:
             comparisons (dict): comparison measures
         """
         comparisons = {}
-        keys = RowColumnComparisonKeys.AGG[self._table_type]
         # Get this column stats
-        stats = self.get_column_stats(col_label)
-        print(stats)
-        # Get other column totals and counts
-        all_totals, all_counts = self.get_all_col_counts()
-
-        this_total = stats[keys.COL_TOTAL]
-        this_count = stats[keys.COL_COUNT]
-        print()
-        # TODO: Compare the rows (species) returned by this column's max counts against
-        # with other columns (datasets) counts of those rows (species)
+        col_stats = self.get_column_stats(col_label)
+        print(col_stats)
+        # Show this column totals and counts compared to min, max, mean of all columns
+        all_col_stats = self.get_all_col_counts()
+        print(all_col_stats)
+        print(f"this column: {SNKeys.COL_TOTAL}: {col_stats[self._keys[SNKeys.COL_TOTAL]]}")
+        print(f"this column: {SNKeys.COL_COUNT}: {col_stats[self._keys[SNKeys.COL_COUNT]]}")
         return comparisons
-
 
     # ...............................................
     def compare_row_to_others(self, row_label):
@@ -780,9 +661,15 @@ class SparseMatrix:
         """
         comparisons = {}
         row_stats = self.get_row_stats(row_label)
+        print(row_stats)
+        # Show this column totals and counts compared to min, max, mean of all columns
+        all_row_stats = self.get_all_row_counts()
+        print(all_row_stats)
+        print(f"this row: {SNKeys.ROW_TOTAL}: {row_stats[self._keys[SNKeys.ROW_TOTAL]]}")
+        print(f"this row: {SNKeys.ROW_COUNT}: {row_stats[self._keys[SNKeys.ROW_COUNT]]}")
         return comparisons
 
-    # .............................................................................
+    # ...............................................
     def _upload_to_s3(self, full_filename, bucket, bucket_path, region):
         """Upload a file to S3.
 
@@ -824,6 +711,11 @@ class SparseMatrix:
             bucket (str): Bucket identifier on S3.
             bucket_path (str): Folder path to the S3 output data.
             filename (str): Filename of output data to write to S3.
+
+        Returns:
+            s3_filename (str): S3 object with bucket and folders.
+
+        TODO: write row and column categories to S3
         """
         s3_filename = None
         tmp_fname = f"/tmp/{filename}"
@@ -836,197 +728,6 @@ class SparseMatrix:
         else:
             s3_filename = self._upload_to_s3(tmp_fname, bucket, bucket_path, region)
         return s3_filename
-
-
-# .............................................................................
-# .............................................................................
-class AggregateMatrix:
-    """Class for managing computations for counts of aggregator0 x aggregator1."""
-
-    # ...........................
-    def __init__(self, aggregate_df, logger=None):
-        """Constructor for species by dataset comparisons.
-
-        Args:
-            aggregate_df (pandas.DataFrame): A 2d sparse matrix with count values for
-                one aggregator0 (i.e. species) rows (axis 0) by another aggregator1
-                (i.e. dataset) columns (axis 1) to use for computations.
-            logger (object): An optional local logger to use for logging output
-                with consistent options
-        """
-        self._df = aggregate_df
-        self._logger = logger
-        self._report = {}
-
-    # ...............................................
-    def _logme(self, msg, refname="", log_level=None):
-        logit(self._logger, msg, refname=refname, log_level=log_level)
-
-    # ...............................................
-    @property
-    def num_y_values(self):
-        """Get the number of rows.
-
-        Returns:
-            int: The count of rows where the value > 0 in at least one column.
-
-        Note:
-            Also used as gamma diversity (species richness over entire landscape)
-        Note: because these data should be constructed only from rows and columns
-            containing data, this should ALWAYS equal the number of rows
-        """
-        count = -1
-        if self._df is not None:
-            # If this axis is very large, it may throw a MemoryError
-            try:
-                count = self._df.any(axis=0).sum()
-            except Exception as e:
-                self._logme(
-                    f"Exception {e} on sum; returning row count.",
-                    log_level=WARNING)
-                count = self._df.shape[0]
-
-            else:
-                if count != self._df.shape[0]:
-                    self._logme(
-                        f"Count of non-null rows {count} != row count "
-                        f"{self._df.shape[0]}.", log_level=WARNING)
-        return count
-
-    # ...............................................
-    @property
-    def num_x_values(self):
-        """Get the number of columns.
-
-        Returns:
-            int: The count of columns where the value > 0 in at least one row
-
-        Note: because these data should be constructed only from rows and columns
-            containing data, this should ALWAYS equal the number of columns
-        """
-        count = -1
-        if self._df is not None:
-            # If this axis is very large, it may throw a MemoryError
-            try:
-                count = self._df.any(axis=1).sum()
-            except Exception as e:
-                self._logme(
-                    f"Exception {e} on sum; returning column count.",
-                    log_level=WARNING)
-                count = self._df.shape[1]
-            else:
-                if count != self._df.shape[1]:
-                    self._logme(
-                        f"Count of non-null columns {count} != column count "
-                        f"{self._df.shape[1]}.", log_level=WARNING)
-        return count
-
-    # ...............................................
-    @property
-    def sum_column(self, col):
-        """Get the total of values in a single column.
-
-        Args:
-            col: label on the column to total.
-
-        Returns:
-            int: The total of all values in one column
-        """
-        # Access column by label with dataframe[column]
-        total = self._df[col].sum()
-        return total
-
-    # ...............................................
-    def sum_row(self, row):
-        """Get the total of values in a single row.
-
-        Args:
-            row: label on the row to total.
-
-        Returns:
-            int: The total of all values in one row
-        """
-        # Access row by label with dataframe.loc[row]
-        total = self._df.loc[row].sum(axis=1)
-        return total
-
-    # ...............................................
-    def count_values_for_column(self, col_label, value):
-        """Count the number of occurrences of `value` in column `col_name`.
-
-        Args:
-            col_label: label for column of interest
-            value: value to count in the column
-
-        Returns:
-            count: the number of times value occurs in column col_label.
-        """
-        count = self._df[col_label].value_counts()[value]
-        return count
-
-    # ...............................................
-    def count_values_for_row(self, row_label, value):
-        """Count the number of occurrences of `value` in row `row_label`.
-
-        Args:
-            row_label: label for row of interest
-            value: value to count in the row
-
-        Returns:
-            count: the number of times value occurs in column col_name.
-        """
-        count = self._df.loc[row_label].value_counts()[value]
-        return count
-
-    # ...............................................
-    def write_to_s3(
-            self, bucket, bucket_path, filename, format="Parquet", **args):
-        """Write a pd DataFrame to CSV or parquet on S3.
-
-        Args:
-            bucket (str): Bucket identifier on S3.
-            bucket_path (str): Folder path to the S3 output data.
-            filename (str): Filename of output data to write to S3.
-            format (str): output format, "csv" and "parquet" supported.
-            args: Additional arguments to be sent to the pd.read_parquet function.
-
-        Raises:
-            Exception: on format other than "csv" or "parquet"
-        """
-        target = f"s3://{bucket}/{bucket_path}/{filename}"
-        if format.lower() not in ("csv", "parquet"):
-            raise Exception(f"Format {format} not supported.")
-        if format.lower() == "csv":
-            try:
-                self._df.to_csv(target)
-            except Exception as e:
-                logit(
-                    self._logger, f"Failed to write {target} as csv: {e}",
-                    log_level=ERROR)
-        else:
-            try:
-                self._df.to_parquet(target)
-            except Exception as e:
-                logit(
-                    logger, f"Failed to write {target} as parquet: {e}",
-                    log_level=ERROR)
-
-    # .............................................................................
-    def reframe_to_binary(self, min_val):
-        """Create a binary dataframe of values from a numeric dataframe.
-
-        Args:
-            min_val(numeric): Minimum value to be considered present/1 in the output matrix.
-
-        Returns:
-            bin_df (pandas.DataFrame): DF with values = 1 (presence) or 0 (absence).
-        """
-        try:
-            # pd 2.1.0, upgrade then replace "applymap" with "map"
-            bin_df = self._df.applymap(lambda x: 1 if x >= min_val else 0)
-        except AttributeError:
-            bin_df = self._df.applymap(lambda x: 1 if x >= min_val else 0)
-        return bin_df
 
 
 # --------------------------------------------------------------------------------------
@@ -1042,8 +743,11 @@ if __name__ == "__main__":
     logger = Logger(
         log_name, log_path=LOCAL_OUTDIR, log_console=True, log_level=INFO)
 
+    in_table_type = SUMMARY_TABLE_TYPES.DATASET_SPECIES_LISTS
+    out_table_type = SUMMARY_TABLE_TYPES.SPECIES_DATASET_MATRIX
+
     data_datestr = get_current_datadate_str()
-    table = Summaries.get_table(SUMMARY_TABLE_TYPES.DATASET_SPECIES_LISTS, data_datestr)
+    table = Summaries.get_table(in_table_type, data_datestr)
     x_fld = table["key_fld"]
     val_fld = table["value_fld"]
     # Dict of new fields constructed from existing fields, just 1 for species key/name
@@ -1056,17 +760,19 @@ if __name__ == "__main__":
         PROJ_BUCKET, SUMMARY_FOLDER, table["fname"], logger, s3_client=None
     )
 
-    # ......................
+    # .................................
+    # Combine key and species fields to ensure uniqueness
     def _combine_columns(row):
         return str(row[fld1]) + ' ' + str(row[fld2])
-
     # ......................
     stacked_df[y_fld] = stacked_df.apply(_combine_columns, axis=1)
+    # .................................
 
-    sp_mtx = SparseMatrix.init_from_stacked_data(stacked_df, x_fld, y_fld, val_fld)
+    sp_mtx = SparseMatrix.init_from_stacked_data(
+        stacked_df, x_fld, y_fld, val_fld, out_table_type)
 
     out_filename = Summaries.get_filename(
-        SUMMARY_TABLE_TYPES.SPECIES_DATASET_MATRIX, data_datestr)
+        out_table_type, data_datestr)
     # sp_mtx.write_to_s3(PROJ_BUCKET, SUMMARY_FOLDER, out_filename)
 
     test_stacked_to_aggregate(
@@ -1087,9 +793,12 @@ log_name = f"{script_name}_{todaystr}"
 # Create logger with default INFO messages
 logger = Logger(
     log_name, log_path=LOCAL_OUTDIR, log_console=True, log_level=INFO)
+    
+in_table_type = SUMMARY_TABLE_TYPES.DATASET_SPECIES_LISTS
+out_table_type = SUMMARY_TABLE_TYPES.SPECIES_DATASET_MATRIX
 
 data_datestr = get_current_datadate_str()
-table = Summaries.get_table(DATASET_SPECIES_LISTS, data_datestr)
+table = Summaries.get_table(SUMMARY_TABLE_TYPES.DATASET_SPECIES_LISTS, data_datestr)
 x_fld = table["key_fld"]
 val_fld = table["value_fld"]
 # Dict of new fields constructed from existing fields, just 1 for species key/name
@@ -1103,17 +812,34 @@ stacked_df = read_s3_parquet_to_pandas(
 )
 
 # ......................
-def combine_columns(row):
+def _combine_columns(row):
     return str(row[fld1]) + ' ' + str(row[fld2])
 
 # ......................
-stacked_df[y_fld] = stacked_df.apply(combine_columns, axis=1)
+stacked_df[y_fld] = stacked_df.apply(_combine_columns, axis=1)
 
-sp_mtx = SparseMatrix.init_from_stacked_data(stacked_df, x_fld, y_fld, val_fld)
+sp_mtx = SparseMatrix.init_from_stacked_data(
+    stacked_df, x_fld, y_fld, val_fld, out_table_type)
 
-out_table = Summaries.get_table(SPECIES_DATASET_MATRIX, data_datestr)
+test_stacked_to_aggregate(
+        stacked_df, x_fld, y_fld, val_fld, sp_mtx)
 
-sp_mtx.write_to_s3(PROJ_BUCKET, SUMMARY_FOLDER, out_table["fname"])
 
+
+# --------------------------------------------------------------------------------------
+# Testing
+# --------------------------------------------------------------------------------------
+(x_col_label, y_col_label, val_col_label, aggregate_sparse_mtx) = (
+    x_fld, y_fld, val_fld, sp_mtx)
+test_count = 5
+x_vals = get_random_values_from_stacked_data(stacked_df, x_col_label, test_count)
+y_vals = get_random_values_from_stacked_data(stacked_df, y_col_label, test_count)
+x = x_vals[0]
+y = y_vals[0]
+
+sp_mtx.get_row_stats(y)
+sp_mtx.get_column_stats(x)
+
+        
 
 """

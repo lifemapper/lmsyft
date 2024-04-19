@@ -1,5 +1,6 @@
 """Constants for Specnet AWS Resources."""
 import copy
+from enum import Enum
 
 PROJ_NAME = "specnet"
 REGION = "us-east-1"
@@ -149,67 +150,52 @@ class Summaries:
 
 
 # .............................................................................
-class RowColumnComparisonKeys:
-    """Dictionary keys to use for describing Aggregated Summary data.
+class SNKeys(Enum):
+    """Dictionary keys to use for describing RowColumnComparisons of SUMMARY data.
 
     Note: All keys refer to the relationship between rows, columns and values.  Missing
         values in a dataset dictionary indicate that the measure is not meaningful.
     """
-    COL_IDX = "col_index"
-    COL_LABEL = "col_label"
-    COL_TOTAL = "col_total"
-    COL_TOTAL_MIN = "col_total_min"
-    COL_TOTAL_MAX = "col_total_max"
-    COL_TOTAL_MEAN = "col_total_mean"
-    COL_COUNT = "col_count"
-    COL_COUNT_MIN = "col_count_min"
-    COL_COUNT_MAX = "col_count_max"
-    COL_COUNT_MEAN = "col_count_mean"
-    COL_MAX_COUNT = "col_max_count"
-    COL_MAX_LABELS = "col_max_labels"
-    COL_MAX_INDEXES = "col_max_indexes"
-    ROW_IDX = "row_index"
-    ROW_LABEL = "row_label"
-    ROW_TOTAL = "row_total"
-    ROW_TOTAL_MIN = "row_total_min"
-    ROW_TOTAL_MAX = "row_total_max"
-    ROW_TOTAL_MEAN = "row_total_mean"
-    ROW_COUNT = "row_count"
-    ROW_COUNT_MIN = "row_count_min",
-    ROW_COUNT_MAX = "row_count_max",
-    ROW_COUNT_MEAN = "row_count_mean"
-    ROW_MAX_COUNT = "row_max_count"
-    ROW_MAX_LABELS = "row_max_labels"
-    ROW_MAX_INDEXES = "col_max_indexes"
-    AGG = {
-        SUMMARY_TABLE_TYPES.SPECIES_DATASET_MATRIX: {
-            # Column
-            COL_IDX: "dataset_index",
-            COL_LABEL: "dataset_label",
-            COL_TOTAL: "total_occurrences_for_dataset",
-            COL_TOTAL_MIN: "min_total_occurrences_for_all_datasets",
-            COL_TOTAL_MAX: "max_total_occurrences_for_all_datasets",
-            COL_TOTAL_MEAN: "mean_total_occurrences_for_all_datasets",
-            COL_COUNT: "occurrence_count_for_dataset",
-            COL_COUNT_MIN: "min_occurrence_count_for_all_datasets",
-            COL_COUNT_MAX: "max_occurrence_count_for_all_datasets",
-            COL_COUNT_MEAN: "mean_occurrence_count_for_all_datasets",
-            COL_MAX_COUNT: "max_occurrence_count_for_dataset",
-            COL_MAX_LABELS: "species_with_max_count_for_dataset",
-            COL_MAX_INDEXES: "species_indexes_with_max_count_for_dataset",
-            # Row
-            ROW_IDX: "species_index",
-            ROW_LABEL: "species_label",
-            ROW_TOTAL: "total_occurrences_for_species",
-            ROW_TOTAL_MIN: "min_total_occurrences_for_all_species",
-            ROW_TOTAL_MAX: "max_total_occurrences_for_all_species",
-            ROW_TOTAL_MEAN: "mean_total_occurrences_for_all_species",
-            ROW_COUNT: "dataset_count",
-            ROW_COUNT_MIN: "min_occurrence_count_for_all_species",
-            ROW_COUNT_MAX: "max_occurrence_count_for_all_species",
-            ROW_COUNT_MEAN: "mean_occurrence_count_for_all_species",
-            ROW_MAX_COUNT: "max_occurrence_count_for_species",
-            ROW_MAX_LABELS: "datasets_with_max_count_for_species",
-            ROW_MAX_INDEXES: "dataset_indexes_with_max_count_for_species"
-        }
-    }
+    (COL_IDX, COL_LABEL, COL_TOTAL, COL_TOTAL_MIN, COL_TOTAL_MAX, COL_TOTAL_MEAN,
+     COL_COUNT, COL_COUNT_MIN, COL_COUNT_MAX, COL_COUNT_MEAN, COL_MAX_COUNT,
+     COL_MAX_LABELS, COL_MAX_INDEXES) = range(1,14)
+    (ROW_IDX, ROW_LABEL, ROW_TOTAL, ROW_TOTAL_MIN, ROW_TOTAL_MAX, ROW_TOTAL_MEAN,
+     ROW_COUNT, ROW_COUNT_MIN, ROW_COUNT_MAX, ROW_COUNT_MEAN, ROW_MAX_COUNT,
+     ROW_MAX_LABELS, ROW_MAX_INDEXES) = range(101, 114)
+
+    @classmethod
+    def get_keys_for_table(cls, table_type):
+        if table_type == SUMMARY_TABLE_TYPES.SPECIES_DATASET_MATRIX:
+            keys = {
+                # Column
+                cls.COL_IDX: "dataset_index",
+                cls.COL_LABEL: "dataset_label",
+                cls.COL_TOTAL: "total_occurrences_for_dataset",
+                cls.COL_TOTAL_MIN: "min_total_occurrences_for_all_datasets",
+                cls.COL_TOTAL_MAX: "max_total_occurrences_for_all_datasets",
+                cls.COL_TOTAL_MEAN: "mean_total_occurrences_for_all_datasets",
+                cls.COL_COUNT: "occurrence_count_for_dataset",
+                cls.COL_COUNT_MIN: "min_occurrence_count_for_all_datasets",
+                cls.COL_COUNT_MAX: "max_occurrence_count_for_all_datasets",
+                cls.COL_COUNT_MEAN: "mean_occurrence_count_for_all_datasets",
+                cls.COL_MAX_COUNT: "max_occurrence_count_for_dataset",
+                cls.COL_MAX_LABELS: "species_with_max_count_for_dataset",
+                cls.COL_MAX_INDEXES: "species_indexes_with_max_count_for_dataset",
+                # Row
+                cls.ROW_IDX: "species_index",
+                cls.ROW_LABEL: "species_label",
+                cls.ROW_TOTAL: "total_occurrences_for_species",
+                cls.ROW_TOTAL_MIN: "min_total_occurrences_for_all_species",
+                cls.ROW_TOTAL_MAX: "max_total_occurrences_for_all_species",
+                cls.ROW_TOTAL_MEAN: "mean_total_occurrences_for_all_species",
+                cls.ROW_COUNT: "dataset_count",
+                cls.ROW_COUNT_MIN: "min_occurrence_count_for_all_species",
+                cls.ROW_COUNT_MAX: "max_occurrence_count_for_all_species",
+                cls.ROW_COUNT_MEAN: "mean_occurrence_count_for_all_species",
+                cls.ROW_MAX_COUNT: "max_occurrence_count_for_species",
+                cls.ROW_MAX_LABELS: "datasets_with_max_count_for_species",
+                cls.ROW_MAX_INDEXES: "dataset_indexes_with_max_count_for_species"
+            }
+        else:
+            raise Exception(f"Keys not defined for table {table_type}")
+        return keys
