@@ -145,7 +145,7 @@ class Summaries:
             tables: dictionary of summary table metadata.
         """
         fname_tmpl = cls.TABLES[table_type]["fname"]
-        fname =  fname_tmpl.replace("XXXX_XX_XX", datestr)
+        fname = fname_tmpl.replace("XXXX_XX_XX", datestr)
         return fname
 
 
@@ -158,13 +158,22 @@ class SNKeys(Enum):
     """
     (COL_IDX, COL_LABEL, COL_TOTAL, COL_TOTAL_MIN, COL_TOTAL_MAX, COL_TOTAL_MEAN,
      COL_COUNT, COL_COUNT_MIN, COL_COUNT_MAX, COL_COUNT_MEAN, COL_MAX_COUNT,
-     COL_MAX_LABELS, COL_MAX_INDEXES) = range(1,14)
+     COL_MAX_LABELS, COL_MAX_INDEXES) = range(1, 14)
     (ROW_IDX, ROW_LABEL, ROW_TOTAL, ROW_TOTAL_MIN, ROW_TOTAL_MAX, ROW_TOTAL_MEAN,
      ROW_COUNT, ROW_COUNT_MIN, ROW_COUNT_MAX, ROW_COUNT_MEAN, ROW_MAX_COUNT,
      ROW_MAX_LABELS, ROW_MAX_INDEXES) = range(101, 114)
 
     @classmethod
     def get_keys_for_table(cls, table_type):
+        """Return keystrings for statistics dictionary for specific aggregation tables.
+
+        Args:
+            table_type (aws_constants.SUMMARY_TABLE_TYPES): type of aggregated data
+
+        Returns:
+            keys (dict): Dictionary of strings to be used as keys for each type of
+                value in a dictionary of statistics.
+        """
         if table_type == SUMMARY_TABLE_TYPES.SPECIES_DATASET_MATRIX:
             keys = {
                 # Column

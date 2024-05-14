@@ -81,6 +81,8 @@ def logit(logger, msg, refname="", log_level=logging.INFO):
         refname: referring object, module, or function
         log_level: level of severity
     """
+    if log_level is None:
+        log_level = logging.INFO
     if logger is not None:
         logger.log(msg, refname=refname, log_level=log_level)
     else:

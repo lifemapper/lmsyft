@@ -2,7 +2,7 @@
 import boto3
 from botocore.exceptions import ClientError, SSLError
 import io
-from logging import ERROR, INFO, WARNING
+from logging import ERROR, INFO
 import numpy as np
 import os
 import pandas as pd
@@ -48,7 +48,8 @@ def get_random_values_from_stacked_data(stacked_df, col_label, count):
 
 # ...............................................
 def test_stacked_to_aggregate(
-        stacked_df, x_col_label, y_col_label, val_col_label, aggregate_sparse_mtx):
+        stacked_df, x_col_label, y_col_label, val_col_label, aggregate_sparse_mtx,
+        logger=None):
     """Test for equality of sums in stacked and aggregated dataframes.
 
     Args:
@@ -62,6 +63,7 @@ def test_stacked_to_aggregate(
             the aggregate_df, aggregate_df
         aggregate_sparse_mtx (SparseMatrix): object containing a scipy.sparse.coo_array
             with 3 columns from the stacked_df arranged as rows and columns with values
+        logger (object): logger for saving relevant processing messages
 
     Postcondition:
         Printed information for successful or failed tests.
@@ -78,14 +80,14 @@ def test_stacked_to_aggregate(
             stacked_df, x_col_label, x, val_col_label)
         agg_sum = aggregate_sparse_mtx.sum_column(x)
         if stk_sum == agg_sum:
-            print(
-                f"Total {stk_sum}: Stacked data for {x_col_label} = {x} == "
-                f"aggregate data in column {x}"
+            logit(
+                logger, f"Total {stk_sum}: Stacked data for "
+                f"{x_col_label} = {x} == aggregate data in column {x}"
             )
         else:
-            print(
-                f"{stk_sum} != {agg_sum}: Stacked data for {x_col_label} = {x} != "
-                f"aggregate data in column {x}"
+            logit(
+                logger, f"{stk_sum} != {agg_sum}: Stacked data for "
+                f"{x_col_label} = {x} != aggregate data in column {x}"
             )
     # Test stacked column totals against aggregate y rows
     for y in y_vals:
@@ -93,14 +95,14 @@ def test_stacked_to_aggregate(
             stacked_df, y_col_label, y, val_col_label)
         agg_sum = aggregate_sparse_mtx.sum_row(y)
         if stk_sum == agg_sum:
-            print(
-                f"Total {stk_sum}: Stacked data for {x_col_label} = {y} ==  "
-                f"aggregate data in row {y}"
+            logit(
+                logger, f"Total {stk_sum}: Stacked data for "
+                f"{x_col_label} = {y} ==  aggregate data in row {y}"
             )
         else:
-            print(
-                f"{stk_sum} != {agg_sum}: Stacked data for {x_col_label} = {y} !=  "
-                f"aggregate data in row {y}"
+            logit(
+                logger, f"{stk_sum} != {agg_sum}: Stacked data for "
+                f"{x_col_label} = {y} !=  aggregate data in row {y}"
             )
 
 
@@ -121,6 +123,7 @@ def read_s3_parquet_to_pandas(
     Returns:
         pd.DataFrame containing the tabular data.
     """
+    dataframe = None
     s3_key = f"{bucket_path}/{filename}"
     if s3_client is None:
         s3_client = boto3.client("s3", region_name=region)
@@ -136,7 +139,7 @@ def read_s3_parquet_to_pandas(
             log_level=ERROR)
     else:
         logit(logger, f"Read {bucket}/{s3_key} from S3")
-    dataframe = pd.read_parquet(io.BytesIO(obj["Body"].read()), **args)
+        dataframe = pd.read_parquet(io.BytesIO(obj["Body"].read()), **args)
     return dataframe
 
 
@@ -183,7 +186,7 @@ def read_s3_multiple_parquets_to_pandas(
 
 # .............................................................................
 def read_npz_array_from_s3(
-        bucket, bucket_path, filename, local_path=None, region=REGION, logger=None, **args):
+        bucket, bucket_path, filename, local_path=None, region=REGION, logger=None):
     """Write a pd DataFrame to CSV or parquet on S3.
 
     Args:
@@ -193,7 +196,6 @@ def read_npz_array_from_s3(
         local_path (str): local path for temporary download of npz file.
         region (str): AWS region to query.
         logger (object): logger for saving relevant processing messages
-        args: Additional arguments to be sent to the pd.read_parquet function.
 
     Returns:
         sparse_coo_array (scipy.coo_array): matrix in COO format.
@@ -202,7 +204,8 @@ def read_npz_array_from_s3(
     if local_path is None:
         local_path = os.getcwd()
     tmp_fname = download_from_s3(
-        bucket, bucket_path, filename, local_path, region=region, overwrite=True)
+        bucket, bucket_path, filename, local_path, region=region, logger=logger,
+        overwrite=True)
     try:
         sparse_coo = scipy.sparse.load_npz(tmp_fname)
     except Exception as e:
@@ -212,7 +215,9 @@ def read_npz_array_from_s3(
 
 
 # .............................................................................
-def download_from_s3(bucket, bucket_path, filename, local_path, region=REGION, overwrite=True):
+def download_from_s3(
+        bucket, bucket_path, filename, local_path, region=REGION, logger=None,
+        overwrite=True):
     """Download a file from S3 to a local file.
 
     Args:
@@ -221,6 +226,7 @@ def download_from_s3(bucket, bucket_path, filename, local_path, region=REGION, o
         filename (str): Filename of data to read from S3.
         local_path (str): local path for download.
         region (str): AWS region to query.
+        logger (object): logger for saving relevant processing messages
         overwrite (boolean):  flag indicating whether to overwrite an existing file.
 
     Returns:
@@ -267,7 +273,7 @@ class SparseMatrix:
             sparse_coo_array (scipy.sparse.coo_array): A 2d sparse array with count
                 values for one aggregator0 (i.e. species) rows (axis 0) by another
                 aggregator1 (i.e. dataset) columns (axis 1) to use for computations.
-            table_type (Summaries.TABLE_TYPE):
+            table_type (aws_constants.SUMMARY_TABLE_TYPES): type of aggregated data
             row_category (CategoricalDtype): category of unique labels with ordered
                 indices/codes for rows (y, axis 0)
             column_category (CategoricalDtype): category of unique labels with ordered
@@ -285,7 +291,8 @@ class SparseMatrix:
 
     # ...........................
     @classmethod
-    def init_from_stacked_data(cls, stacked_df, x_fld, y_fld, val_fld, table_type):
+    def init_from_stacked_data(
+            cls, stacked_df, x_fld, y_fld, val_fld, table_type, logger=None):
         """Create a sparse matrix of rows by columns containing values from a table.
 
         Args:
@@ -297,6 +304,8 @@ class SparseMatrix:
                 (axis 0)
             val_fld: : column in the input dataframe containing values to be used as
                 values for the intersection of x and y fields
+            table_type (aws_constants.SUMMARY_TABLE_TYPES): type of aggregated data
+            logger (object): logger for saving relevant processing messages
 
         Returns:
             sparse_coo (scipy.coo_array): matrix of y values (rows, y axis=0) by
@@ -327,7 +336,8 @@ class SparseMatrix:
             (stacked_df[val_fld], (row_idx, col_idx)),
             shape=(y_categ.categories.size, x_categ.categories.size))
         sparse_matrix = SparseMatrix(
-            sparse_coo, table_type, row_category=y_categ, column_category=x_categ)
+            sparse_coo, table_type, row_category=y_categ, column_category=x_categ,
+            logger=logger)
         return sparse_matrix
 
     # .............................................................................
@@ -349,10 +359,10 @@ class SparseMatrix:
             bucket (str): Bucket identifier on S3.
             bucket_path (str): Folder path to the S3 output data.
             filename (str): Filename of output data to write to S3.
+            table_type (aws_constants.SUMMARY_TABLE_TYPES): type of aggregated data
             local_path (str): local path for temporary download of npz file.
             region (str): AWS region to query.
             logger (object): logger for saving relevant processing messages
-            args: Additional arguments to be sent to the pd.read_parquet function.
 
         Returns:
             sparse_coo_array (scipy.coo_array): matrix in COO format.
@@ -363,16 +373,15 @@ class SparseMatrix:
         if local_path is None:
             local_path = os.getcwd()
         tmp_fname = download_from_s3(
-            bucket, bucket_path, filename, local_path, region=region, overwrite=True)
+            bucket, bucket_path, filename, local_path, region=region, logger=logger,
+            overwrite=True)
         try:
             sparse_coo = scipy.sparse.load_npz(tmp_fname)
         except Exception as e:
             logit(logger, f"Failed to read {tmp_fname}: {e}", log_level=ERROR)
 
         # TODO: read row and column categories from S3
-        sparse_matrix = SparseMatrix(
-            sparse_coo, table_type, row_category=None, column_category=None,
-            logger=logger)
+        sparse_matrix = SparseMatrix(sparse_coo, table_type, logger=logger)
 
         return sparse_matrix
 
@@ -390,7 +399,7 @@ class SparseMatrix:
         try:
             # labels are unique in categories so there will be 0 or 1 value in the array
             code = arr[0]
-        except:
+        except IndexError:
             pass
         return code
 
@@ -548,15 +557,14 @@ class SparseMatrix:
         # Get number of non-zero entries for every column (row, numpy.ndarray)
         all_counts = self._coo_array.getnnz(axis=0)
         all_col_stats = {
-            self._keys.COL_TOTAL_MIN: all_totals.min(),
-            self._keys.COL_TOTAL_MAX: all_totals.max(),
-            self._keys.COL_TOTAL_MEAN: all_totals.mean(),
-            self._keys.COL_COUNT_MIN: all_counts.min(),
-            self._keys.COL_COUNT_MAX: all_counts.max(),
-            self._keys.COL_COUNT_MEAN: all_counts.mean()
+            self._keys[SNKeys.COL_TOTAL_MIN]: all_totals.min(),
+            self._keys[SNKeys.COL_TOTAL_MAX]: all_totals.max(),
+            self._keys[SNKeys.COL_TOTAL_MEAN]: all_totals.mean(),
+            self._keys[SNKeys.COL_COUNT_MIN]: all_counts.min(),
+            self._keys[SNKeys.COL_COUNT_MAX]: all_counts.max(),
+            self._keys[SNKeys.COL_COUNT_MEAN]: all_counts.mean()
         }
         return all_col_stats
-
 
     # ...............................................
     def get_column_stats(self, col_label):
@@ -711,6 +719,7 @@ class SparseMatrix:
             bucket (str): Bucket identifier on S3.
             bucket_path (str): Folder path to the S3 output data.
             filename (str): Filename of output data to write to S3.
+            region (str): AWS region to upload to.
 
         Returns:
             s3_filename (str): S3 object with bucket and folders.
@@ -729,6 +738,28 @@ class SparseMatrix:
             s3_filename = self._upload_to_s3(tmp_fname, bucket, bucket_path, region)
         return s3_filename
 
+    # .............................................................................
+    def copy_logfile_to_s3(self, bucket, bucket_path, region):
+        """Write a the logfile to S3.
+
+        Args:
+            bucket (str): Bucket identifier on S3.
+            bucket_path (str): Folder path to the S3 output data.
+            region (str): AWS region to upload to.
+
+        Returns:
+            s3_filename (str): S3 object with bucket and folders.
+
+        Raises:
+            Exception if logger is not present.
+        """
+        if self._logger is None:
+            raise Exception("No logfile to write")
+
+        s3_filename = self._upload_to_s3(
+            self._logger.filename, bucket, bucket_path, region)
+        return s3_filename
+
 
 # --------------------------------------------------------------------------------------
 # Main
@@ -740,7 +771,7 @@ if __name__ == "__main__":
     todaystr = get_today_str()
     log_name = f"{script_name}_{todaystr}"
     # Create logger with default INFO messages
-    logger = Logger(
+    tst_logger = Logger(
         log_name, log_path=LOCAL_OUTDIR, log_console=True, log_level=INFO)
 
     in_table_type = SUMMARY_TABLE_TYPES.DATASET_SPECIES_LISTS
@@ -748,16 +779,16 @@ if __name__ == "__main__":
 
     data_datestr = get_current_datadate_str()
     table = Summaries.get_table(in_table_type, data_datestr)
-    x_fld = table["key_fld"]
-    val_fld = table["value_fld"]
+    xfld = table["key_fld"]
+    valfld = table["value_fld"]
     # Dict of new fields constructed from existing fields, just 1 for species key/name
     fld_mods = table["combine_fields"]
-    y_fld = list(fld_mods.keys())[0]
-    (fld1, fld2) = fld_mods[y_fld]
+    yfld = list(fld_mods.keys())[0]
+    (fld1, fld2) = fld_mods[yfld]
 
-    # Read directly into DataFrame
-    stacked_df = read_s3_parquet_to_pandas(
-        PROJ_BUCKET, SUMMARY_FOLDER, table["fname"], logger, s3_client=None
+    # Read stacked (record) data directly into DataFrame
+    stk_df = read_s3_parquet_to_pandas(
+        PROJ_BUCKET, SUMMARY_FOLDER, table["fname"], tst_logger, s3_client=None
     )
 
     # .................................
@@ -765,81 +796,88 @@ if __name__ == "__main__":
     def _combine_columns(row):
         return str(row[fld1]) + ' ' + str(row[fld2])
     # ......................
-    stacked_df[y_fld] = stacked_df.apply(_combine_columns, axis=1)
+    stk_df[yfld] = stk_df.apply(_combine_columns, axis=1)
     # .................................
 
+    # Create matrix from record data
     sp_mtx = SparseMatrix.init_from_stacked_data(
-        stacked_df, x_fld, y_fld, val_fld, out_table_type)
+        stk_df, xfld, yfld, valfld, out_table_type, logger=tst_logger)
 
-    out_filename = Summaries.get_filename(
-        out_table_type, data_datestr)
-    # sp_mtx.write_to_s3(PROJ_BUCKET, SUMMARY_FOLDER, out_filename)
+    # Test matrix
+    test_stacked_to_aggregate(stk_df, xfld, yfld, valfld, sp_mtx, logger=tst_logger)
 
-    test_stacked_to_aggregate(
-        stacked_df, x_fld, y_fld, val_fld, sp_mtx)
+    # Save matrix to S3
+    out_filename = Summaries.get_filename(out_table_type, data_datestr)
+    sp_mtx.write_to_s3(PROJ_BUCKET, SUMMARY_FOLDER, out_filename, REGION)
 
-    # # Upload logfile to S3
-    # s3_log_filename = upload_to_s3(logger.filename, PROJ_BUCKET, LOG_PATH, logger)
+    # Copy logfile to S3
+    sp_mtx.write_to_s3(PROJ_BUCKET, SUMMARY_FOLDER, tst_logger.filename, REGION)
+    sp_mtx.copy_logfile_to_s3(PROJ_BUCKET, SUMMARY_FOLDER, REGION)
 
 """
 from sppy.aws.aggregate_matrix import *
-ds = '8092785 Sourniaea diacantha'
-sp = '2480637 Accipiter nisus'
 
 # Create a logger
 script_name = "testing_aggregate_matrix"
 todaystr = get_today_str()
 log_name = f"{script_name}_{todaystr}"
 # Create logger with default INFO messages
-logger = Logger(
+tst_logger = Logger(
     log_name, log_path=LOCAL_OUTDIR, log_console=True, log_level=INFO)
-    
+
 in_table_type = SUMMARY_TABLE_TYPES.DATASET_SPECIES_LISTS
 out_table_type = SUMMARY_TABLE_TYPES.SPECIES_DATASET_MATRIX
 
 data_datestr = get_current_datadate_str()
-table = Summaries.get_table(SUMMARY_TABLE_TYPES.DATASET_SPECIES_LISTS, data_datestr)
-x_fld = table["key_fld"]
-val_fld = table["value_fld"]
+table = Summaries.get_table(in_table_type, data_datestr)
+xfld = table["key_fld"]
+valfld = table["value_fld"]
 # Dict of new fields constructed from existing fields, just 1 for species key/name
 fld_mods = table["combine_fields"]
-y_fld = list(fld_mods.keys())[0]
-(fld1, fld2) = fld_mods[y_fld]
+yfld = list(fld_mods.keys())[0]
+(fld1, fld2) = fld_mods[yfld]
 
-# Read directly into DataFrame
-stacked_df = read_s3_parquet_to_pandas(
-    PROJ_BUCKET, SUMMARY_FOLDER, table["fname"], logger, s3_client=None
+# Read stacked (record) data directly into DataFrame
+stk_df = read_s3_parquet_to_pandas(
+    PROJ_BUCKET, SUMMARY_FOLDER, table["fname"], tst_logger, s3_client=None
 )
 
-# ......................
+# .................................
+# Combine key and species fields to ensure uniqueness
 def _combine_columns(row):
     return str(row[fld1]) + ' ' + str(row[fld2])
 
-# ......................
-stacked_df[y_fld] = stacked_df.apply(_combine_columns, axis=1)
+stk_df[yfld] = stk_df.apply(_combine_columns, axis=1)
 
+# Create matrix from
 sp_mtx = SparseMatrix.init_from_stacked_data(
-    stacked_df, x_fld, y_fld, val_fld, out_table_type)
+    stk_df, xfld, yfld, valfld, out_table_type, logger=tst_logger)
 
-test_stacked_to_aggregate(
-        stacked_df, x_fld, y_fld, val_fld, sp_mtx)
+# Test matrix
+test_stacked_to_aggregate(stk_df, xfld, yfld, valfld, sp_mtx, logger=tst_logger)
 
+# Save matrix to S3
+out_filename = Summaries.get_filename(out_table_type, data_datestr)
+sp_mtx.write_to_s3(PROJ_BUCKET, SUMMARY_FOLDER, out_filename, REGION)
 
+# Copy logfile to S3
+sp_mtx.write_to_s3(PROJ_BUCKET, SUMMARY_FOLDER, tst_logger.filename, REGION)
+sp_mtx.copy_logfile_to_s3(PROJ_BUCKET, SUMMARY_FOLDER, REGION)
 
 # --------------------------------------------------------------------------------------
 # Testing
 # --------------------------------------------------------------------------------------
 (x_col_label, y_col_label, val_col_label, aggregate_sparse_mtx) = (
-    x_fld, y_fld, val_fld, sp_mtx)
+    xfld, yfld, valfld, sp_mtx)
 test_count = 5
-x_vals = get_random_values_from_stacked_data(stacked_df, x_col_label, test_count)
-y_vals = get_random_values_from_stacked_data(stacked_df, y_col_label, test_count)
+x_vals = get_random_values_from_stacked_data(stk_df, x_col_label, test_count)
+y_vals = get_random_values_from_stacked_data(stk_df, y_col_label, test_count)
 x = x_vals[0]
 y = y_vals[0]
 
 sp_mtx.get_row_stats(y)
 sp_mtx.get_column_stats(x)
 
-        
+
 
 """
