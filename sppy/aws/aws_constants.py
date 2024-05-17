@@ -173,6 +173,9 @@ class SNKeys(Enum):
         Returns:
             keys (dict): Dictionary of strings to be used as keys for each type of
                 value in a dictionary of statistics.
+
+        Raises:
+            Exception: on un-implemented table type.
         """
         if table_type == SUMMARY_TABLE_TYPES.SPECIES_DATASET_MATRIX:
             keys = {

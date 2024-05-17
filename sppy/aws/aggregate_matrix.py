@@ -751,7 +751,7 @@ class SparseMatrix:
             s3_filename (str): S3 object with bucket and folders.
 
         Raises:
-            Exception if logger is not present.
+            Exception: if logger is not present.
         """
         if self._logger is None:
             raise Exception("No logfile to write")
@@ -812,8 +812,8 @@ if __name__ == "__main__":
 
     # Copy logfile to S3
     sp_mtx.write_to_s3(PROJ_BUCKET, SUMMARY_FOLDER, tst_logger.filename, REGION)
-    sp_mtx.copy_logfile_to_s3(PROJ_BUCKET, SUMMARY_FOLDER, REGION)
-
+    s3_logfile = sp_mtx.copy_logfile_to_s3(PROJ_BUCKET, SUMMARY_FOLDER, REGION)
+    print(s3_logfile)
 """
 from sppy.aws.aggregate_matrix import *
 
@@ -861,8 +861,8 @@ out_filename = Summaries.get_filename(out_table_type, data_datestr)
 sp_mtx.write_to_s3(PROJ_BUCKET, SUMMARY_FOLDER, out_filename, REGION)
 
 # Copy logfile to S3
-sp_mtx.write_to_s3(PROJ_BUCKET, SUMMARY_FOLDER, tst_logger.filename, REGION)
-sp_mtx.copy_logfile_to_s3(PROJ_BUCKET, SUMMARY_FOLDER, REGION)
+s3_logfile = sp_mtx.copy_logfile_to_s3(PROJ_BUCKET, SUMMARY_FOLDER, REGION)
+print(s3_logfile)
 
 # --------------------------------------------------------------------------------------
 # Testing
