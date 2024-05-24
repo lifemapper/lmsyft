@@ -18,6 +18,32 @@ from sppy.tools.util.logtools import Logger, logit
 
 
 # ...............................................
+def get_max_val_and_attr_for_column_from_stacked_data(
+        stacked_df, filter_label, filter_value, attr_label, val_label):
+    """Sum the values for rows where column 'filter_label' = 'filter_value'.
+
+    Args:
+        stacked_df: dataframe containing stacked data records
+        filter_label: column name for filtering.
+        filter_value: column value for filtering.
+        attr_label: column name of attribute to return.
+        val_label: column name for summation.
+
+    Returns:
+        tmp_df: dataframe containing only rows with a value of filter_value in column
+            filter_label.
+    """
+    # Create a dataframe of rows where column 'filter_label' = 'filter_value'.
+    tmp_df = stacked_df.loc[stacked_df[filter_label] == filter_value]
+    # Find the max value for those rows
+    max_val = tmp_df[val_label].max()
+    # Get the attribute(s) in the row(s) with the max value
+    attrs_containing_max_df = tmp_df.loc[tmp_df[val_label] == max_val]
+    attr_vals = [rec for rec in attrs_containing_max_df[attr_label]]
+    return max_val, attr_vals
+
+
+# ...............................................
 def sum_stacked_data_vals_for_column(stacked_df, filter_label, filter_value, val_label):
     """Sum the values for rows where column 'filter_label' = 'filter_value'.
 
@@ -40,6 +66,16 @@ def sum_stacked_data_vals_for_column(stacked_df, filter_label, filter_value, val
 
 # ...............................................
 def get_random_values_from_stacked_data(stacked_df, col_label, count):
+    """Get random values from a column of records.
+
+    Args:
+        stacked_df (pandas.DataFrame): data records in a pandas matrix.
+        col_label (str): column header for values to gather.
+        count (int): number of values to return
+
+    Returns:
+        x_vals (list): random values pulled from the column
+    """
     # Get a random sample of row indexes
     row_idxs = random.sample(range(1, stacked_df.shape[0]), count)
     x_vals = [stacked_df[col_label][i] for i in row_idxs]
@@ -47,7 +83,7 @@ def get_random_values_from_stacked_data(stacked_df, col_label, count):
 
 
 # ...............................................
-def test_stacked_to_aggregate(
+def test_stacked_to_aggregate_sum(
         stacked_df, x_col_label, y_col_label, val_col_label, aggregate_sparse_mtx,
         logger=None):
     """Test for equality of sums in stacked and aggregated dataframes.
@@ -79,31 +115,106 @@ def test_stacked_to_aggregate(
         stk_sum = sum_stacked_data_vals_for_column(
             stacked_df, x_col_label, x, val_col_label)
         agg_sum = aggregate_sparse_mtx.sum_column(x)
+        logit(logger, f"Test column {x}")
         if stk_sum == agg_sum:
             logit(
-                logger, f"Total {stk_sum}: Stacked data for "
-                f"{x_col_label} = {x} == aggregate data in column {x}"
+                logger, f"  Total {stk_sum}: Stacked data for "
+                f"{x_col_label} == aggregate data in column {x}"
             )
         else:
             logit(
-                logger, f"{stk_sum} != {agg_sum}: Stacked data for "
-                f"{x_col_label} = {x} != aggregate data in column {x}"
+                logger, f"  !!! {stk_sum} != {agg_sum}: Stacked data for "
+                f"{x_col_label} != aggregate data in column {x}"
             )
+        logit(logger, "")
+    logit(logger, "")
     # Test stacked column totals against aggregate y rows
     for y in y_vals:
         stk_sum = sum_stacked_data_vals_for_column(
             stacked_df, y_col_label, y, val_col_label)
         agg_sum = aggregate_sparse_mtx.sum_row(y)
+        logit(logger, f"Test row {y}")
         if stk_sum == agg_sum:
             logit(
-                logger, f"Total {stk_sum}: Stacked data for "
-                f"{x_col_label} = {y} ==  aggregate data in row {y}"
+                logger, f"  Total {stk_sum}: Stacked data for "
+                f"{y_col_label} ==  aggregate data in row {y}"
             )
         else:
             logit(
-                logger, f"{stk_sum} != {agg_sum}: Stacked data for "
-                f"{x_col_label} = {y} !=  aggregate data in row {y}"
+                logger, f"  !!! {stk_sum} != {agg_sum}: Stacked data for "
+                f"{y_col_label} !=  aggregate data in row {y}"
             )
+        logit(logger, "")
+
+
+# ...............................................
+def test_stacked_to_aggregate_max(
+        stacked_df, x_col_label, y_col_label, val_col_label, aggregate_sparse_mtx,
+        logger=None):
+    """Test unique attributes from the sparse matrix against counts from stacked data.
+
+    Args:
+        stacked_df: dataframe of stacked data, containing records with columns of
+            categorical values and counts.
+        x_col_label: column label in stacked_df to be used as the column labels of
+            the aggregate_df
+        y_col_label: column label in stacked_df to be used as the row labels of
+            the aggregate_df
+        val_col_label: column label in stacked_df to be used as the row labels of
+            the aggregate_df, aggregate_df
+        aggregate_sparse_mtx (SparseMatrix): object containing a scipy.sparse.coo_array
+            with 3 columns from the stacked_df arranged as rows and columns with values
+        logger (object): logger for saving relevant processing messages
+
+    Postcondition:
+        Printed information for successful or failed tests.
+
+    Note: The aggregate_df must have been created from the stacked_df.
+    """
+    test_count = 5
+    x_vals = get_random_values_from_stacked_data(stacked_df, x_col_label, test_count)
+    y_vals = get_random_values_from_stacked_data(stacked_df, y_col_label, test_count)
+    # Test dataset - get species with largest count and compare
+    for x in x_vals:
+        stk_max_val, stk_attr_vals = get_max_val_and_attr_for_column_from_stacked_data(
+            stacked_df, x_col_label, x, y_col_label, val_col_label)
+        agg_max_val, agg_labels = aggregate_sparse_mtx.max_column(x)
+        logit(logger, f"Test column {x}")
+        if stk_max_val == agg_max_val:
+            logit(logger, f"  Max values equal {stk_max_val}")
+            if set(stk_attr_vals) == set(agg_labels):
+                logit(logger, f"  Max value labels equal {stk_attr_vals}")
+            else:
+                logit(
+                    logger, f"  !!! Max value stacked labels {stk_attr_vals} != "
+                    f"agg labels {agg_labels}"
+                )
+        else:
+            logit(
+                logger,
+                f"!!! Max stacked value {stk_max_val} != {agg_max_val} agg value")
+        logit(logger, "")
+    logit(logger, "")
+    # Test species - get dataset/s with largest count and compare
+    for y in y_vals:
+        stk_max_val, stk_attr_vals = get_max_val_and_attr_for_column_from_stacked_data(
+            stacked_df, y_col_label, y, x_col_label, val_col_label)
+        agg_max_val, agg_labels = aggregate_sparse_mtx.max_row(y)
+        logit(logger, f"Test row {y}")
+        if stk_max_val == agg_max_val:
+            logit(logger, f"  Max values equal {stk_max_val}")
+            if set(stk_attr_vals) == set(agg_labels):
+                logit(logger, f"  Max value labels equal {stk_attr_vals}")
+            else:
+                logit(
+                    logger, f"  !!! Max value stacked labels {stk_attr_vals} != "
+                    f"agg labels {agg_labels}"
+                )
+        else:
+            logit(
+                logger,
+                f"!!! Max stacked value {stk_max_val} != {agg_max_val} agg value")
+        logit(logger, "")
 
 
 # .............................................................................
@@ -280,6 +391,11 @@ class SparseMatrix:
                 indices/codes for columns (x, axis 1)
             logger (object): An optional local logger to use for logging output
                 with consistent options
+
+        Note: in the first implementation, because species are generally far more
+            numerous, rows are always species, columns are datasets.  This allows
+            easier exporting to other formats (i.e. Excel), which allows more rows than
+            columns.
         """
         self._coo_array = sparse_coo_array
         self._table_type = table_type
@@ -509,7 +625,7 @@ class SparseMatrix:
         Returns:
             int: The total of all values in one column
         """
-        col, col_idx = self.get_column_from_label(col_label)
+        col, _col_idx = self.get_column_from_label(col_label)
         total = col.sum()
         return total
 
@@ -523,9 +639,55 @@ class SparseMatrix:
         Returns:
             int: The total of all values in one row
         """
-        row, row_idx = self.get_row_from_label(row_label)
-        total = row.sum(axis=1)
+        row, _row_idx = self.get_row_from_label(row_label)
+        total = row.sum()
         return total
+
+    # ...............................................
+    def max_column(self, col_label):
+        """Get the maximum value and its row label(s) for a single column.
+
+        Args:
+            col_label: label on the column to find maximum.
+
+        Returns:
+            maxval: The maximum value for a column
+            row_labels: The labels of the rows containing the maximimum value
+        """
+        col, _col_idx = self.get_column_from_label(col_label)
+        maxval = col.max()
+        # Returns row_idxs, col_idxs, vals of NNZ values in row
+        row_idxs, col_idxs, vals = scipy.sparse.find(col)
+        # Indexes of maxval in the NNZ value array
+        tmp_idxs = np.where(vals == maxval)[0]
+        tmp_idx_lst = [tmp_idxs[i] for i in range(len(tmp_idxs))]
+        # Row indexes of maxval in column
+        max_idxs_lst = [row_idxs[i] for i in tmp_idx_lst]
+        row_labels = [self._get_category_from_code(idx, axis=0) for idx in max_idxs_lst]
+        return maxval, row_labels
+
+    # ...............................................
+    def max_row(self, row_label):
+        """Get the maximum value and its column label(s) for a single row.
+
+        Args:
+            row_label: label on the row to find maximum.
+
+        Returns:
+            maxval: The maximum value for a row
+            col_labels: The labels of the columns containing the maximimum value
+        """
+        row, row_idx = self.get_row_from_label(row_label)
+        maxval = row.max()
+        # Returns row_idxs, col_idxs, vals of NNZ values in row
+        row_idxs, col_idxs, vals = scipy.sparse.find(row)
+        # Indexes of maxval in the NNZ value array
+        tmp_idxs = np.where(vals == maxval)[0]
+        tmp_idx_lst = [tmp_idxs[i] for i in range(len(tmp_idxs))]
+        # Column indexes of maxval in row
+        max_idxs_lst = [col_idxs[j] for j in tmp_idx_lst]
+        col_labels = [self._get_category_from_code(idx, axis=1) for idx in max_idxs_lst]
+        return maxval, col_labels
 
     # ...............................................
     def get_all_row_counts(self):
@@ -582,11 +744,8 @@ class SparseMatrix:
         """
         # Get column (sparse array), and its index
         col, col_idx = self.get_column_from_label(col_label)
-        # Largest Occurrence count for Dataset
-        mx = col.max()
-        # Species with largest Occurrence count for Dataset
-        max_idxs = list((col == mx).nonzero()[0])
-        max_labels = self._get_categories_from_code(max_idxs, axis=0)
+        # Largest Occurrence count for Dataset, species containing that count
+        maxval, row_labels = self.max_column(col_label)
         stats = {
             self._keys[SNKeys.COL_IDX]: col_idx,
             self._keys[SNKeys.COL_LABEL]: col_label,
@@ -594,10 +753,9 @@ class SparseMatrix:
             self._keys[SNKeys.COL_TOTAL]: col.sum(),
             # Count of Species within this Dataset
             self._keys[SNKeys.COL_COUNT]: col.nnz,
-            self._keys[SNKeys.COL_MAX_COUNT]: mx,
-            # Return indexes (for further matrix examination) and labels (for people)
-            self._keys[SNKeys.COL_MAX_INDEXES]: max_idxs,
-            self._keys[SNKeys.COL_MAX_LABELS]: max_labels
+            # Return max count in this dataset and species for that count
+            self._keys[SNKeys.COL_MAX_COUNT]: maxval,
+            self._keys[SNKeys.COL_MAX_LABELS]: row_labels
         }
         return stats
 
@@ -617,11 +775,8 @@ class SparseMatrix:
         """
         # Get row (sparse array), and its index
         row, row_idx = self.get_row_from_label(row_label)
-        # Largest Occurrence count for this Species
-        mx = row.max()
-        # Datasets with largest Occurrence count for this Species
-        max_idxs = list((row == mx).nonzero()[0])
-        max_labels = self._get_categories_from_code(max_idxs, axis=1)
+        # Largest Occurrence count for this Species, and datasets that contain it
+        maxval, col_labels = self.max_row(row_label)
         stats = {
             self._keys[SNKeys.ROW_IDX]: row_idx,
             self._keys[SNKeys.ROW_LABEL]: row_label,
@@ -629,10 +784,9 @@ class SparseMatrix:
             self._keys[SNKeys.ROW_TOTAL]: row.sum(),
             # Count of Datasets containing this Species
             self._keys[SNKeys.ROW_COUNT]: row.nnz,
-            self._keys[SNKeys.ROW_MAX_COUNT]: mx,
-            # Return indexes (for further matrix examination) and labels (for people)
-            self._keys[SNKeys.ROW_MAX_INDEXES]: max_idxs,
-            self._keys[SNKeys.ROW_MAX_LABELS]: max_labels
+            # Return max count in this species and datasets for that count
+            self._keys[SNKeys.ROW_MAX_COUNT]: maxval,
+            self._keys[SNKeys.ROW_MAX_LABELS]: col_labels
         }
         return stats
 
@@ -804,7 +958,8 @@ if __name__ == "__main__":
         stk_df, xfld, yfld, valfld, out_table_type, logger=tst_logger)
 
     # Test matrix
-    test_stacked_to_aggregate(stk_df, xfld, yfld, valfld, sp_mtx, logger=tst_logger)
+    test_stacked_to_aggregate_sum(stk_df, xfld, yfld, valfld, sp_mtx, logger=tst_logger)
+    test_stacked_to_aggregate_max(stk_df, xfld, yfld, valfld, sp_mtx, logger=tst_logger)
 
     # Save matrix to S3
     out_filename = Summaries.get_filename(out_table_type, data_datestr)
@@ -828,6 +983,7 @@ tst_logger = Logger(
 in_table_type = SUMMARY_TABLE_TYPES.DATASET_SPECIES_LISTS
 out_table_type = SUMMARY_TABLE_TYPES.SPECIES_DATASET_MATRIX
 
+# Get fields for this table to concatenate to ensure uniqueness
 data_datestr = get_current_datadate_str()
 table = Summaries.get_table(in_table_type, data_datestr)
 xfld = table["key_fld"]
@@ -842,8 +998,7 @@ stk_df = read_s3_parquet_to_pandas(
     PROJ_BUCKET, SUMMARY_FOLDER, table["fname"], tst_logger, s3_client=None
 )
 
-# .................................
-# Combine key and species fields to ensure uniqueness
+# Concatenate key and species fields to ensure uniqueness
 def _combine_columns(row):
     return str(row[fld1]) + ' ' + str(row[fld2])
 
@@ -854,7 +1009,10 @@ sp_mtx = SparseMatrix.init_from_stacked_data(
     stk_df, xfld, yfld, valfld, out_table_type, logger=tst_logger)
 
 # Test matrix
-test_stacked_to_aggregate(stk_df, xfld, yfld, valfld, sp_mtx, logger=tst_logger)
+test_stacked_to_aggregate_sum(stk_df, xfld, yfld, valfld, sp_mtx, logger=tst_logger)
+test_stacked_to_aggregate_max(stk_df, xfld, yfld, valfld, sp_mtx, logger=tst_logger)
+# .................................
+
 
 # Save matrix to S3
 out_filename = Summaries.get_filename(out_table_type, data_datestr)
@@ -867,8 +1025,9 @@ print(s3_logfile)
 # --------------------------------------------------------------------------------------
 # Testing
 # --------------------------------------------------------------------------------------
-(x_col_label, y_col_label, val_col_label, aggregate_sparse_mtx) = (
-    xfld, yfld, valfld, sp_mtx)
+
+(x_col_label, y_col_label, val_col_label, aggregate_sparse_mtx, stacked_df) = (
+    xfld, yfld, valfld, sp_mtx, stk_df)
 test_count = 5
 x_vals = get_random_values_from_stacked_data(stk_df, x_col_label, test_count)
 y_vals = get_random_values_from_stacked_data(stk_df, y_col_label, test_count)
