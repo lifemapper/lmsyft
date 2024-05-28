@@ -156,12 +156,16 @@ class SNKeys(Enum):
     Note: All keys refer to the relationship between rows, columns and values.  Missing
         values in a dataset dictionary indicate that the measure is not meaningful.
     """
-    (COL_IDX, COL_LABEL, COL_TOTAL, COL_TOTAL_MIN, COL_TOTAL_MAX, COL_TOTAL_MEAN,
-     COL_COUNT, COL_COUNT_MIN, COL_COUNT_MAX, COL_COUNT_MEAN, COL_MAX_COUNT,
-     COL_MAX_LABELS, COL_MAX_INDEXES) = range(1, 14)
-    (ROW_IDX, ROW_LABEL, ROW_TOTAL, ROW_TOTAL_MIN, ROW_TOTAL_MAX, ROW_TOTAL_MEAN,
-     ROW_COUNT, ROW_COUNT_MIN, ROW_COUNT_MAX, ROW_COUNT_MEAN, ROW_MAX_COUNT,
-     ROW_MAX_LABELS, ROW_MAX_INDEXES) = range(101, 114)
+    (COL_IDX, COL_LABEL,
+     COL_TOTAL, COL_TOTAL_MIN, COL_TOTAL_MAX, COL_TOTAL_MEAN, COL_TOTAL_MEDIAN,
+     COL_COUNT,
+     COL_COUNT_MIN, COL_COUNT_MAX, COL_COUNT_MEAN, COL_MAX_MEDIAN,
+     COL_MAX_COUNT, COL_MAX_LABELS, COL_MAX_INDEXES) = range(1, 16)
+    (ROW_IDX, ROW_LABEL,
+     ROW_TOTAL, ROW_TOTAL_MIN, ROW_TOTAL_MAX, ROW_TOTAL_MEAN, ROW_TOTAL_MEDIAN,
+     ROW_COUNT,
+     ROW_COUNT_MIN, ROW_COUNT_MAX, ROW_COUNT_MEAN, ROW_COUNT_MEDIAN,
+     ROW_MAX_COUNT, ROW_MAX_LABELS, ROW_MAX_INDEXES) = range(101, 116)
 
     @classmethod
     def get_keys_for_table(cls, table_type):
@@ -186,10 +190,12 @@ class SNKeys(Enum):
                 cls.COL_TOTAL_MIN: "min_total_occurrences_for_all_datasets",
                 cls.COL_TOTAL_MAX: "max_total_occurrences_for_all_datasets",
                 cls.COL_TOTAL_MEAN: "mean_total_occurrences_for_all_datasets",
+                cls.COL_TOTAL_MEDIAN: "median_total_occurrences_for_all_datasets",
                 cls.COL_COUNT: "occurrence_count_for_dataset",
                 cls.COL_COUNT_MIN: "min_occurrence_count_for_all_datasets",
                 cls.COL_COUNT_MAX: "max_occurrence_count_for_all_datasets",
                 cls.COL_COUNT_MEAN: "mean_occurrence_count_for_all_datasets",
+                cls.COL_COUNT_MEDIAN: "median_occurrence_count_for_all_datasets",
                 cls.COL_MAX_COUNT: "max_occurrence_count_for_dataset",
                 cls.COL_MAX_LABELS: "species_with_max_count_for_dataset",
                 cls.COL_MAX_INDEXES: "species_indexes_with_max_count_for_dataset",
@@ -200,10 +206,12 @@ class SNKeys(Enum):
                 cls.ROW_TOTAL_MIN: "min_total_occurrences_for_all_species",
                 cls.ROW_TOTAL_MAX: "max_total_occurrences_for_all_species",
                 cls.ROW_TOTAL_MEAN: "mean_total_occurrences_for_all_species",
+                cls.ROW_TOTAL_MEDIAN: "median_total_occurrences_for_all_species",
                 cls.ROW_COUNT: "dataset_count",
                 cls.ROW_COUNT_MIN: "min_occurrence_count_for_all_species",
                 cls.ROW_COUNT_MAX: "max_occurrence_count_for_all_species",
                 cls.ROW_COUNT_MEAN: "mean_occurrence_count_for_all_species",
+                cls.ROW_COUNT_MEDIAN: "median_occurrence_count_for_all_species",
                 cls.ROW_MAX_COUNT: "max_occurrence_count_for_species",
                 cls.ROW_MAX_LABELS: "datasets_with_max_count_for_species",
                 cls.ROW_MAX_INDEXES: "dataset_indexes_with_max_count_for_species"
