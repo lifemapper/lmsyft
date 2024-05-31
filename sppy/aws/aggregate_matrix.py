@@ -28,11 +28,15 @@ def get_extreme_val_and_attrs_for_column_from_stacked_data(
         filter_value: column value for filtering.
         attr_label: column name of attribute to return.
         val_label: column name for attribute with min/max value.
+        is_max (bool): flag indicating whether to get maximum (T) or minimum (F)
 
     Returns:
         target_val:  Minimum or maximum value for rows where
             'filter_label' = 'filter_value'.
         attr_vals: values for attr_label for rows with the minimum or maximum value.
+
+    Raises:
+        Exception: on min/max = 0.  Zeros should never be returned for min or max value.
     """
     # Create a dataframe of rows where column 'filter_label' = 'filter_value'.
     tmp_df = stacked_df.loc[stacked_df[filter_label] == filter_value]
@@ -73,41 +77,51 @@ def sum_stacked_data_vals_for_column(stacked_df, filter_label, filter_value, val
     return count
 
 
-# ...............................................
-def get_random_values_from_stacked_data(stacked_df, col_label, count):
-    """Get random values from a column of records.
-
-    Args:
-        stacked_df (pandas.DataFrame): data records in a pandas matrix.
-        col_label (str): column header for values to gather.
-        count (int): number of values to return
-
-    Returns:
-        x_vals (list): random values pulled from the column
-    """
-    # Get a random sample of row indexes
-    row_idxs = random.sample(range(1, stacked_df.shape[0]), count)
-    x_vals = [stacked_df[col_label][i] for i in row_idxs]
-    return x_vals
+# # ...............................................
+# def test_row_col_comparisons(
+#         x_col_label, y_col_label, val_col_label, agg_sparse_mtx,
+#         test_count=5, logger=None):
+#     """Test row comparisons between 1 and all, and column comparisons between 1 and all.
+#
+#     Args:
+#         x_col_label: column label in stacked_df to be used as the column labels of
+#             the aggregate_df
+#         y_col_label: column label in stacked_df to be used as the row labels of
+#             the aggregate_df
+#         val_col_label: column label in stacked_df to be used as the row labels of
+#             the aggregate_df, aggregate_df
+#         agg_sparse_mtx (SparseMatrix): object containing a scipy.sparse.coo_array
+#             with 3 columns from the stacked_df arranged as rows and columns with values
+#         test_count (int): number of rows and columns to test.
+#         logger (object): logger for saving relevant processing messages
+#
+#     Postcondition:
+#         Printed information for successful or failed tests.
+#
+#     Note: The aggregate_df must have been created from the stacked_df.
+#     """
+#     y_vals = agg_sparse_mtx.get_random_labels(test_count, axis=0)
+#     x_vals = agg_sparse_mtx.get_random_labels(test_count, axis=1)
 
 
 # ...............................................
 def test_stacked_to_aggregate_sum(
-        stacked_df, x_col_label, y_col_label, val_col_label, aggregate_sparse_mtx,
-        logger=None):
+        stk_df, stk_axis_col_label, stk_val_col_label, agg_sparse_mtx, agg_axis=0,
+        test_count=5, logger=None):
     """Test for equality of sums in stacked and aggregated dataframes.
 
     Args:
-        stacked_df: dataframe of stacked data, containing records with columns of
+        stk_df: dataframe of stacked data, containing records with columns of
             categorical values and counts.
-        x_col_label: column label in stacked_df to be used as the column labels of
-            the aggregate_df
-        y_col_label: column label in stacked_df to be used as the row labels of
-            the aggregate_df
-        val_col_label: column label in stacked_df to be used as the row labels of
-            the aggregate_df, aggregate_df
-        aggregate_sparse_mtx (SparseMatrix): object containing a scipy.sparse.coo_array
-            with 3 columns from the stacked_df arranged as rows and columns with values
+        stk_axis_col_label: column label in stacked dataframe to be used as the column
+            labels of the axis in the aggregate sparse matrix.
+        stk_val_col_label: column label in stacked dataframe for data to be used as
+            value in the aggregate sparse matrix.
+        agg_sparse_mtx (SparseMatrix): object containing a scipy.sparse.coo_array
+            with 3 columns from the stacked_df arranged as rows and columns with values]
+        agg_axis (int): Axis 0 (row) or 1 (column) that corresponds with the column
+            label (stk_axis_col_label) in the original stacked data.
+        test_count (int): number of rows and columns to test.
         logger (object): logger for saving relevant processing messages
 
     Postcondition:
@@ -115,87 +129,77 @@ def test_stacked_to_aggregate_sum(
 
     Note: The aggregate_df must have been created from the stacked_df.
     """
-    test_count = 5
-    x_vals = get_random_values_from_stacked_data(stacked_df, x_col_label, test_count)
-    y_vals = get_random_values_from_stacked_data(stacked_df, y_col_label, test_count)
-    #
+    labels = agg_sparse_mtx.get_random_labels(test_count, axis=agg_axis)
     # Test stacked column totals against aggregate x columns
-    for x in x_vals:
+    for lbl in labels:
         stk_sum = sum_stacked_data_vals_for_column(
-            stacked_df, x_col_label, x, val_col_label)
-        agg_sum = aggregate_sparse_mtx.sum_column(x)
-        logit(logger, f"Test column {x}")
+            stk_df, stk_axis_col_label, lbl, stk_val_col_label)
+        agg_sum = agg_sparse_mtx.sum_vector(lbl, axis=agg_axis)
+        logit(logger, f"Test axis {agg_axis}: {lbl}")
         if stk_sum == agg_sum:
             logit(
                 logger, f"  Total {stk_sum}: Stacked data for "
-                f"{x_col_label} == aggregate data in column {x}"
+                f"{stk_axis_col_label} == aggregate data in axis {agg_axis}: {lbl}"
             )
         else:
             logit(
                 logger, f"  !!! {stk_sum} != {agg_sum}: Stacked data for "
-                f"{x_col_label} != aggregate data in column {x}"
+                f"{stk_axis_col_label} != aggregate data in axis {agg_axis}: {lbl}"
             )
         logit(logger, "")
     logit(logger, "")
-    # Test stacked column totals against aggregate y rows
-    for y in y_vals:
-        stk_sum = sum_stacked_data_vals_for_column(
-            stacked_df, y_col_label, y, val_col_label)
-        agg_sum = aggregate_sparse_mtx.sum_row(y)
-        logit(logger, f"Test row {y}")
-        if stk_sum == agg_sum:
-            logit(
-                logger, f"  Total {stk_sum}: Stacked data for "
-                f"{y_col_label} ==  aggregate data in row {y}"
-            )
-        else:
-            logit(
-                logger, f"  !!! {stk_sum} != {agg_sum}: Stacked data for "
-                f"{y_col_label} !=  aggregate data in row {y}"
-            )
-        logit(logger, "")
 
 
 # ...............................................
 def test_stacked_to_aggregate_extremes(
-        stacked_df, x_col_label, y_col_label, val_col_label, agg_sparse_mtx,
-        logger=None, is_max=True):
+        stk_df, stk_col_label_for_axis0, stk_col_label_for_axis1, stk_col_label_for_val,
+        agg_sparse_mtx, agg_axis=0, test_count=5, logger=None, is_max=True):
     """Test min/max counts for attributes in the sparse matrix vs. the stacked data.
 
     Args:
-        stacked_df: dataframe of stacked data, containing records with columns of
+        stk_df: dataframe of stacked data, containing records with columns of
             categorical values and counts.
-        x_col_label: column label in stacked_df to be used as the column labels of
-            the aggregate_df
-        y_col_label: column label in stacked_df to be used as the row labels of
-            the aggregate_df
-        val_col_label: column label in stacked_df to be used as the row labels of
-            the aggregate_df, aggregate_df
+        stk_col_label_for_axis0: column label in stacked dataframe to be used as the
+            row (axis 0) labels of the axis in the aggregate sparse matrix.
+        stk_col_label_for_axis1: column label in stacked dataframe to be used as the
+            column (axis 1) labels of the axis in the aggregate sparse matrix.
+        stk_col_label_for_val: column label in stacked dataframe for data to be used as
+            value in the aggregate sparse matrix.
         agg_sparse_mtx (SparseMatrix): object containing a scipy.sparse.coo_array
-            with 3 columns from the stacked_df arranged as rows and columns with values
+            with 3 columns from the stacked_df arranged as rows and columns with values]
+        agg_axis (int): Axis 0 (row) or 1 (column) that corresponds with the column
+            label (stk_axis_col_label) in the original stacked data.
+        test_count (int): number of rows and columns to test.
         logger (object): logger for saving relevant processing messages
+        is_max (bool): flag indicating whether to test maximum (T) or minimum (F)
 
     Postcondition:
         Printed information for successful or failed tests.
 
     Note: The aggregate_df must have been created from the stacked_df.
     """
-    test_count = 5
-    x_vals = get_random_values_from_stacked_data(stacked_df, x_col_label, test_count)
-    y_vals = get_random_values_from_stacked_data(stacked_df, y_col_label, test_count)
+    labels = agg_sparse_mtx.get_random_labels(test_count, axis=agg_axis)
     # for logging
     if is_max is True:
         extm = "Max"
     else:
         extm = "Min"
+
+    # Get min/max of row (identified by filter_label, attr_label in axis 0)
+    if agg_axis == 0:
+        filter_label, attr_label = stk_col_label_for_axis0, stk_col_label_for_axis1
+    # Get min/max of column (identified by label in axis 1)
+    elif agg_axis == 1:
+        filter_label, attr_label = stk_col_label_for_axis1, stk_col_label_for_axis0
+
     # Test dataset - get species with largest count and compare
-    for x in x_vals:
+    for lbl in labels:
         (stk_target_val,
          stk_attr_vals) = get_extreme_val_and_attrs_for_column_from_stacked_data(
-            stacked_df, x_col_label, x, y_col_label, val_col_label, is_max=is_max)
-        agg_target_val, agg_labels = agg_sparse_mtx.get_extreme_val_labels_for_column(
-            x, is_max=is_max)
-        logit(logger, f"Test column {x}")
+            stk_df, filter_label, lbl, attr_label, stk_col_label_for_val, is_max=is_max)
+        agg_target_val, agg_labels = agg_sparse_mtx.get_extreme_val_labels_for_vector(
+            lbl, axis=agg_axis, is_max=is_max)
+        logit(logger, f"Test vector {lbl} on axis {agg_axis}")
         if stk_target_val == agg_target_val:
             logit(logger, f"  {extm} values equal {stk_target_val}")
             if set(stk_attr_vals) == set(agg_labels):
@@ -205,7 +209,7 @@ def test_stacked_to_aggregate_extremes(
             else:
                 logit(
                     logger, f"  !!! {extm} value labels NOT equal; "
-                    f"stacked label len={stk_attr_vals} != agg label len={agg_labels}"
+                    f"stacked labels {stk_attr_vals} != agg labels {agg_labels}"
                 )
         else:
             logit(
@@ -213,30 +217,6 @@ def test_stacked_to_aggregate_extremes(
                 f"{agg_target_val} agg value")
         logit(logger, "")
     logit(logger, "")
-    # Test species - get dataset/s with largest count and compare
-    for y in y_vals:
-        (stk_target_val,
-         stk_attr_vals) = get_extreme_val_and_attrs_for_column_from_stacked_data(
-            stacked_df, y_col_label, y, x_col_label, val_col_label, is_max=is_max)
-        agg_target_val, agg_labels = agg_sparse_mtx.get_extreme_val_labels_for_row(
-            y, is_max=is_max)
-        logit(logger, f"Test row {y}")
-        if stk_target_val == agg_target_val:
-            logit(logger, f"  {extm} values equal {stk_target_val}")
-            if set(stk_attr_vals) == set(agg_labels):
-                logit(
-                    logger, f"  {extm} value labels equal; "
-                    f"len={len(stk_attr_vals)}")
-            else:
-                logit(
-                    logger, f"  !!! {extm} value labels NOT equal; "
-                    f"stacked label len={stk_attr_vals} != agg label len={agg_labels}"
-                )
-        else:
-            logit(
-                logger, f"!!! {extm} stacked value {stk_target_val} != "
-                f"{agg_target_val} agg value")
-        logit(logger, "")
 
 
 # .............................................................................
@@ -530,7 +510,8 @@ class SparseMatrix:
         elif axis == 1:
             categ = self._col_categ
         else:
-            raise Exception("Axis must be 0 or 1")
+            raise Exception(f"2D sparse array does not have axis {axis}")
+
         code = None
         # returns a tuple of a single 1-dimensional array of locations
         arr = np.where(categ.categories == label)[0]
@@ -548,7 +529,7 @@ class SparseMatrix:
         elif axis == 1:
             categ = self._col_categ
         else:
-            raise Exception("Axis must be 0 or 1")
+            raise Exception(f"2D sparse array does not have axis {axis}")
         category = categ.categories[code]
         return category
 
@@ -559,7 +540,7 @@ class SparseMatrix:
         elif axis == 1:
             categ = self._col_categ
         else:
-            raise Exception("Axis must be 0 or 1")
+            raise Exception(f"2D sparse array does not have axis {axis}")
         category_labels = []
         for code in code_list:
             category_labels.append(categ.categories[code])
@@ -580,6 +561,31 @@ class SparseMatrix:
         # Convert to CSC format for efficient column slicing
         csc = self._coo_array.tocsr()
         return csc
+
+    # ...............................................
+    def get_random_labels(self, count, axis=0):
+        """Get random values from the labels on an axis of a sparse matrix.
+
+        Args:
+            count (int): number of values to return
+            axis (int): column (0) or row (1) header for labels to gather.
+
+        Returns:
+            x_vals (list): random values pulled from the column
+
+        Raises:
+            Exception: on axis not in (0, 1)
+        """
+        if axis == 0:
+            categ = self._row_categ
+        elif axis == 1:
+            categ = self._col_categ
+        else:
+            raise Exception(f"2D sparse array does not have axis {axis}")
+        # Get a random sample of category indexes
+        idxs = random.sample(range(1, len(categ.categories)), count)
+        labels = [self._get_category_from_code(i, axis=axis) for i in idxs]
+        return labels
 
     # ...............................................
     @property
@@ -609,60 +615,71 @@ class SparseMatrix:
         """
         return self._coo_array.shape[1]
 
+    # # ...............................................
+    # def get_column_from_label(self, col_label):
+    #     """Return the column with label `col_label`.
+    #
+    #     Args:
+    #         col_label: label for column of interest
+    #
+    #     Returns:
+    #         column(scipy.sparse.csr_array): 1-d array of the column for 'col_label'.
+    #     """
+    #     col_idx = self._get_code_from_category(col_label, axis=1)
+    #     column = self._coo_array.getcol(col_idx)
+    #     return column, col_idx
+    #
+    # # ...............................................
+    # def get_row_from_label(self, row_label):
+    #     """Return the row with label `row_label`.
+    #
+    #     Args:
+    #         row_label: label for row of interest
+    #
+    #     Returns:
+    #         row (scipy.sparse.csr_array): 1-d array of the row for 'row_label'.
+    #     """
+    #     row_idx = self._get_code_from_category(row_label, axis=0)
+    #     row = self._coo_array.getrow(row_idx)
+    #     return row, row_idx
+
     # ...............................................
-    def get_column_from_label(self, col_label):
-        """Return the column with label `col_label`.
+    def get_vector_from_label(self, label, axis=0):
+        """Return the row (axis 0) or column (axis 1) with label `label`.
 
         Args:
-            col_label: label for column of interest
+            label: label for row of interest
+            axis (int): column (0) or row (1) header for vector and index to gather.
 
         Returns:
-            column(scipy.sparse.csr_array): 1-d array of the column for 'col_label'.
+            vector (scipy.sparse.csr_array): 1-d array of the row/column for 'label'.
+            idx (int): index for the vector (zeros and non-zeros) in the sparse matrix
+
+        Raises:
+            Exception: on axis not in (0, 1)
         """
-        col_idx = self._get_code_from_category(col_label, axis=1)
-        column = self._coo_array.getcol(col_idx)
-        return column, col_idx
+        idx = self._get_code_from_category(label, axis=axis)
+        if axis == 0:
+            vector = self._coo_array.getrow(idx)
+        elif axis == 1:
+            vector = self._coo_array.getcol(idx)
+        else:
+            raise Exception(f"2D sparse array does not have axis {axis}")
+        return vector, idx
 
     # ...............................................
-    def get_row_from_label(self, row_label):
-        """Return the row with label `row_label`.
+    def sum_vector(self, label, axis=0):
+        """Get the total of values in a single row or column.
 
         Args:
-            row_label: label for row of interest
-
-        Returns:
-            row (scipy.sparse.csr_array): 1-d array of the row for 'row_label'.
-        """
-        row_idx = self._get_code_from_category(row_label, axis=0)
-        row = self._coo_array.getrow(row_idx)
-        return row, row_idx
-
-    # ...............................................
-    def sum_column(self, col_label):
-        """Get the total of values in a single column.
-
-        Args:
-            col_label: label on the column to total.
+            label: label on the row (axis 0) or column (axis 1) to total.
+            axis (int): column (0) or row (1) header for vector to sum.
 
         Returns:
             int: The total of all values in one column
         """
-        col, _col_idx = self.get_column_from_label(col_label)
-        total = col.sum()
-        return total
-
-    # ...............................................
-    def sum_row(self, row_label):
-        """Get the total of values in a single row.
-
-        Args:
-            row_label: label on the row to total.
-
-        Returns:
-            int: The total of all values in one row
-        """
-        row, _row_idx = self.get_row_from_label(row_label)
-        total = row.sum()
+        vector, _idx = self.get_vector_from_label(label, axis=axis)
+        total = vector.sum()
         return total
 
     # ...............................................
@@ -671,6 +688,8 @@ class SparseMatrix:
 
         Args:
             col: column to find row labels in.
+            value: filter data value to return row labels for.  If None, return labels
+                for all non-zero rows.
 
         Returns:
             target: The minimum or maximum value for a column
@@ -678,7 +697,7 @@ class SparseMatrix:
         """
         # Returns row_idxs, col_idxs, vals of NNZ values in row
         row_idxs, col_idxs, vals = scipy.sparse.find(col)
-        if value == None:
+        if value is None:
             idxs_lst = [row_idxs[i] for i in range(len(row_idxs))]
         else:
             tmp_idxs = np.where(vals == value)[0]
@@ -688,108 +707,114 @@ class SparseMatrix:
         row_labels = [self._get_category_from_code(idx, axis=0) for idx in idxs_lst]
         return row_labels
 
+    # # ...............................................
+    # def count_rows_in_column(self, col_label):
+    #     """Get the minimum or maximum NON-ZERO value and row label(s) for a column.
+    #
+    #     Args:
+    #         col_label: label on the column to find minimum or maximum.
+    #
+    #     Returns:
+    #         target: The minimum or maximum value for a column
+    #         row_labels: The labels of the rows containing the target value
+    #     """
+    #     col, _col_idx = self.get_column_from_label(col_label)
+    #     return col.nnz
+
     # ...............................................
-    def count_rows_in_column(self, col_label):
+    def get_extreme_val_labels_for_vector(self, label, axis=0, is_max=True):
         """Get the minimum or maximum NON-ZERO value and row label(s) for a column.
 
         Args:
-            col_label: label on the column to find minimum or maximum.
+            label: label on the row(0)/column(1) to find minimum or maximum.
+            is_max (bool): flag indicating whether to get maximum (T) or minimum (F)
+            axis (int): row (0) or column (1) header for extreme value and labels.
 
         Returns:
             target: The minimum or maximum value for a column
             row_labels: The labels of the rows containing the target value
+
+        Raises:
+            Exception: on axis not in (0, 1)
         """
-        col, _col_idx = self.get_column_from_label(col_label)
-        return col.nnz
-
-    # ...............................................
-    def get_extreme_val_labels_for_column(self, col_label, is_max=True):
-        """Get the minimum or maximum NON-ZERO value and row label(s) for a column.
-
-        Args:
-            col_label: label on the column to find minimum or maximum.
-
-        Returns:
-            target: The minimum or maximum value for a column
-            row_labels: The labels of the rows containing the target value
-        """
-        col, _col_idx = self.get_column_from_label(col_label)
+        vector, _idx = self.get_vector_from_label(label, axis=axis)
         # Returns row_idxs, col_idxs, vals of NNZ values in row
-        row_idxs, col_idxs, vals = scipy.sparse.find(col)
+        row_idxs, col_idxs, vals = scipy.sparse.find(vector)
         if is_max is True:
             target = vals.max()
         else:
             target = vals.min()
+        # Get indexes of target value within NNZ vals
         tmp_idxs = np.where(vals == target)[0]
         tmp_idx_lst = [tmp_idxs[i] for i in range(len(tmp_idxs))]
-        # Row indexes of maxval in column
-        idxs_lst = [row_idxs[i] for i in tmp_idx_lst]
-        row_labels = [self._get_category_from_code(idx, axis=0) for idx in idxs_lst]
-        return target, row_labels
-
-    # ...............................................
-    def get_extreme_val_labels_for_row(self, row_label, is_max=True):
-        """Get the minimum or maximum NON-ZERO value and column label(s) for a row.
-
-        Args:
-            row_label: label on the row to find minimum or maximum.
-
-        Returns:
-            minval: The minimum or maximum value for a row
-            col_labels: The labels of the columns containing the target value
-        """
-        row, row_idx = self.get_row_from_label(row_label)
-        row_idxs, col_idxs, vals = scipy.sparse.find(row)
-        if is_max is True:
-            target = vals.max()
+        # Get actual indexes (within all zero/non-zero elements) of target in vector
+        if axis == 0:
+            # Column indexes of maxval in row
+            idxs_lst = [col_idxs[i] for i in tmp_idx_lst]
+            # Label axis is the opposite of the vector axis
+            label_axis = 1
+        elif axis == 1:
+            # Row indexes of maxval in column
+            idxs_lst = [row_idxs[j] for j in tmp_idx_lst]
+            label_axis = 0
         else:
-            target = vals.min()
-        tmp_idxs = np.where(vals == target)[0]
-        tmp_idx_lst = [tmp_idxs[i] for i in range(len(tmp_idxs))]
-        # Column indexes of maxval in row
-        idxs_lst = [col_idxs[j] for j in tmp_idx_lst]
-        col_labels = [self._get_category_from_code(idx, axis=1) for idx in idxs_lst]
-        return target, col_labels
+            raise Exception(f"2D sparse array does not have axis {axis}")
+
+        # Convert from indexes to labels
+        labels = [
+            self._get_category_from_code(idx, axis=label_axis) for idx in idxs_lst]
+        return target, labels
 
     # ...............................................
     def get_all_row_counts(self):
-        """Get an array of totals for each row.
+        """Return stats (min, max, mean, median) of totals and counts for all rows.
 
         Returns:
+            all_row_stats (dict): counts and statistics about all rows.
             (numpy.ndarray): array of totals of all rows.
-
-        Note:
-            The column (1-d array) returned will have totals ordered by row.
         """
         # Sum all rows to return a column (axis=1)
-        return self._coo_array.sum(axis=1)
+        all_totals = self._coo_array.sum(axis=1)
+        # Get number of non-zero entries for every row (column, numpy.ndarray)
+        all_counts = self._coo_array.getnnz(axis=1)
+        all_row_stats = {
+            self._keys[SNKeys.ROWS_COUNT]: all_totals.nnz,
+            self._keys[SNKeys.ROWS_TOTAL]: all_totals.sum(),
+            self._keys[SNKeys.ROWS_MIN]: all_totals.min(),
+            self._keys[SNKeys.ROWS_MAX]: all_totals.max(),
+            self._keys[SNKeys.ROWS_MEAN]: all_totals.mean(),
+            self._keys[SNKeys.ROWS_MEDIAN]: np.median(all_totals, axis=0),
+
+            self._keys[SNKeys.ROWS_COUNT_MIN]: all_counts.min(),
+            self._keys[SNKeys.ROWS_COUNT_MAX]: all_counts.max(),
+            self._keys[SNKeys.ROWS_COUNT_MEAN]: all_counts.mean(),
+            self._keys[SNKeys.ROWS_COUNT_MEDIAN]: np.median(all_counts, axis=0),
+        }
+        return all_row_stats
 
     # ...............................................
     def get_all_col_counts(self):
-        """Return stats (min, max, mean) of totals and counts for all columns.
+        """Return stats (min, max, mean, median) of totals and counts for all columns.
 
         Returns:
-            all_col_stats (numpy.ndarray): array of totals of all columns.
-            counts (numpy.ndarray): array of number of values in all columns.
-
-        Note:
-            The rows (1-d arrays) returned will have totals/counts ordered by
-                column index.
+            all_col_stats (dict): counts and statistics about all columns.
         """
         # Sum all columns to return a row (numpy.ndarray, axis=0)
         all_totals = self._coo_array.sum(axis=0)
         # Get number of non-zero entries for every column (row, numpy.ndarray)
         all_counts = self._coo_array.getnnz(axis=0)
         all_col_stats = {
-            self._keys[SNKeys.COL_TOTAL_MIN]: all_totals.min(),
-            self._keys[SNKeys.COL_TOTAL_MAX]: all_totals.max(),
-            self._keys[SNKeys.COL_TOTAL_MEAN]: all_totals.mean(),
-            self._keys[SNKeys.COL_TOTAL_MEDIAN]: np.median(all_totals, axis=0),
+            self._keys[SNKeys.COLS_COUNT]: all_totals.nnz,
+            self._keys[SNKeys.COLS_TOTAL]: all_totals.sum(),
+            self._keys[SNKeys.COLS_MIN]: all_totals.min(),
+            self._keys[SNKeys.COLS_MAX]: all_totals.max(),
+            self._keys[SNKeys.COLS_MEAN]: all_totals.mean(),
+            self._keys[SNKeys.COLS_MEDIAN]: np.median(all_totals, axis=0),
 
-            self._keys[SNKeys.COL_COUNT_MIN]: all_counts.min(),
-            self._keys[SNKeys.COL_COUNT_MAX]: all_counts.max(),
-            self._keys[SNKeys.COL_COUNT_MEAN]: all_counts.mean(),
-            self._keys[SNKeys.COL_COUNT_MEDIAN]: np.median(all_counts, axis=0),
+            self._keys[SNKeys.COLS_COUNTS_MIN]: all_counts.min(),
+            self._keys[SNKeys.COLS_COUNTS_MAX]: all_counts.max(),
+            self._keys[SNKeys.COLS_COUNTS_MEAN]: all_counts.mean(),
+            self._keys[SNKeys.COLS_COUNTS_MEDIAN]: np.median(all_counts, axis=0),
         }
         return all_col_stats
 
@@ -808,25 +833,25 @@ class SparseMatrix:
                 with row/column/value = species/dataset/occ_count
         """
         # Get column (sparse array), and its index
-        col, col_idx = self.get_column_from_label(col_label)
-        # Largest Occurrence count for Dataset, species containing that count
-        maxval, max_col_labels = self.get_extreme_val_labels_for_column(
-            col_label, is_max=True)
-        minval, min_col_labels = self.get_extreme_val_labels_for_column(
-            col_label, is_max=False)
+        col, col_idx = self.get_vector_from_label(col_label, axis=1)
+        # Largest count for dataset (column), species (row) containing that count
+        maxval, max_col_labels = self.get_extreme_val_labels_for_vector(
+            col_label, axis=1, is_max=True)
+        minval, min_col_labels = self.get_extreme_val_labels_for_vector(
+            col_label, axis=1, is_max=False)
 
         stats = {
             self._keys[SNKeys.COL_IDX]: col_idx,
             self._keys[SNKeys.COL_LABEL]: col_label,
-            # Total Occurrence count for Dataset
+            # Total Occurrences for Dataset
             self._keys[SNKeys.COL_TOTAL]: col.sum(),
             # Count of Species within this Dataset
             self._keys[SNKeys.COL_COUNT]: col.nnz,
-            # Return max/min count in this dataset and species for that count
-            self._keys[SNKeys.COL_MAX_COUNT]: maxval,
-            self._keys[SNKeys.COL_MAX_LABELS]: max_col_labels,
+            # Return min/max count in this dataset and species for that count
             self._keys[SNKeys.COL_MIN_COUNT]: minval,
             self._keys[SNKeys.COL_MIN_LABELS]: min_col_labels,
+            self._keys[SNKeys.COL_MAX_COUNT]: maxval,
+            self._keys[SNKeys.COL_MAX_LABELS]: max_col_labels,
         }
         return stats
 
@@ -845,24 +870,24 @@ class SparseMatrix:
                 with row/column/value = species/dataset/occ_count
         """
         # Get row (sparse array), and its index
-        row, row_idx = self.get_row_from_label(row_label)
+        row, row_idx = self.get_vector_from_label(row_label, axis=0)
         # Largest Occurrence count for this Species, and datasets that contain it
-        maxval, max_row_labels = self.get_extreme_val_labels_for_row(
-            row_label, is_max=True)
-        minval, min_row_labels = self.get_extreme_val_labels_for_row(
-            row_label, is_max=False)
+        maxval, max_row_labels = self.get_extreme_val_labels_for_vector(
+            row_label, axis=0, is_max=True)
+        minval, min_row_labels = self.get_extreme_val_labels_for_vector(
+            row_label, axis=0, is_max=False)
         stats = {
             self._keys[SNKeys.ROW_IDX]: row_idx,
             self._keys[SNKeys.ROW_LABEL]: row_label,
-            # Total Occurrence count for this Species
+            # Total Occurrences for this Species
             self._keys[SNKeys.ROW_TOTAL]: row.sum(),
             # Count of Datasets containing this Species
             self._keys[SNKeys.ROW_COUNT]: row.nnz,
-            # Return max/min count in this species and datasets for that count
-            self._keys[SNKeys.ROW_MAX_COUNT]: maxval,
-            self._keys[SNKeys.ROW_MAX_LABELS]: max_row_labels,
+            # Return min/max count in this species and datasets for that count
             self._keys[SNKeys.ROW_MIN_COUNT]: minval,
             self._keys[SNKeys.ROW_MIN_LABELS]: min_row_labels,
+            self._keys[SNKeys.ROW_MAX_COUNT]: maxval,
+            self._keys[SNKeys.ROW_MAX_LABELS]: max_row_labels,
         }
         return stats
 
@@ -883,8 +908,8 @@ class SparseMatrix:
         # Show this column totals and counts compared to min, max, mean of all columns
         all_col_stats = self.get_all_col_counts()
         print(all_col_stats)
-        print(f"this column: {SNKeys.COL_TOTAL}: {col_stats[self._keys[SNKeys.COL_TOTAL]]}")
-        print(f"this column: {SNKeys.COL_COUNT}: {col_stats[self._keys[SNKeys.COL_COUNT]]}")
+        print(f"this column: {SNKeys.COL_TOTAL}: {col_stats[self._keys[SNKeys.COLS_TOTAL]]}")
+        print(f"this column: {SNKeys.COL_COUNT}: {col_stats[self._keys[SNKeys.COLS_COUNT]]}")
         return comparisons
 
     # ...............................................
@@ -903,8 +928,8 @@ class SparseMatrix:
         # Show this column totals and counts compared to min, max, mean of all columns
         all_row_stats = self.get_all_row_counts()
         print(all_row_stats)
-        print(f"this row: {SNKeys.ROW_TOTAL}: {row_stats[self._keys[SNKeys.ROW_TOTAL]]}")
-        print(f"this row: {SNKeys.ROW_COUNT}: {row_stats[self._keys[SNKeys.ROW_COUNT]]}")
+        print(f"this row: {SNKeys.ROW_TOTAL}: {row_stats[self._keys[SNKeys.ROWS_TOTAL]]}")
+        print(f"this row: {SNKeys.ROW_COUNT}: {row_stats[self._keys[SNKeys.ROWS_COUNT]]}")
         return comparisons
 
     # ...............................................
@@ -1009,12 +1034,14 @@ if __name__ == "__main__":
 
     data_datestr = get_current_datadate_str()
     table = Summaries.get_table(in_table_type, data_datestr)
-    xfld = table["key_fld"]
-    valfld = table["value_fld"]
+    # Datasets in rows/x/axis 1
+    stk_col_label_for_axis1 = table["key_fld"]
+    stk_col_label_for_val = table["value_fld"]
     # Dict of new fields constructed from existing fields, just 1 for species key/name
     fld_mods = table["combine_fields"]
-    yfld = list(fld_mods.keys())[0]
-    (fld1, fld2) = fld_mods[yfld]
+    # Species (taxonKey + name) in columns/y/axis 0
+    stk_col_label_for_axis0 = list(fld_mods.keys())[0]
+    (fld1, fld2) = fld_mods[stk_col_label_for_axis0]
 
     # Read stacked (record) data directly into DataFrame
     stk_df = read_s3_parquet_to_pandas(
@@ -1026,33 +1053,42 @@ if __name__ == "__main__":
     def _combine_columns(row):
         return str(row[fld1]) + ' ' + str(row[fld2])
     # ......................
-    stk_df[yfld] = stk_df.apply(_combine_columns, axis=1)
+    stk_df[stk_col_label_for_axis0] = stk_df.apply(_combine_columns, axis=1)
     # .................................
 
     # Create matrix from record data
-    sp_mtx = SparseMatrix.init_from_stacked_data(
-        stk_df, xfld, yfld, valfld, out_table_type, logger=tst_logger)
+    agg_sparse_mtx = SparseMatrix.init_from_stacked_data(
+        stk_df, stk_col_label_for_axis1, stk_col_label_for_axis0, stk_col_label_for_val,
+        out_table_type, logger=tst_logger)
 
-    # Test matrix
-    test_stacked_to_aggregate_sum(stk_df, xfld, yfld, valfld, sp_mtx, logger=tst_logger)
-    test_stacked_to_aggregate_extremes(
-        stk_df, xfld, yfld, valfld, sp_mtx, logger=tst_logger, is_max=True)
-    test_stacked_to_aggregate_extremes(
-        stk_df, xfld, yfld, valfld, sp_mtx, logger=tst_logger, is_max=False)
+    # Test raw counts between stacked data and sparse matrix
+    for stk_lbl, axis in ((stk_col_label_for_axis0, 0), (stk_col_label_for_axis1, 1)):
+        # Test stacked column used for axis 0/1 against sparse matrix axis 0/1
+        test_stacked_to_aggregate_sum(
+            stk_df, stk_lbl, stk_col_label_for_val, agg_sparse_mtx, agg_axis=axis,
+            test_count=5, logger=tst_logger)
+
+    # Test min/max values for rows/columns
+    for is_max in (False, True):
+        for axis in (0, 1):
+            test_stacked_to_aggregate_extremes(
+                stk_df, stk_col_label_for_axis0, stk_col_label_for_axis1,
+                stk_col_label_for_val, agg_sparse_mtx, agg_axis=axis, test_count=5,
+                logger=tst_logger, is_max=is_max)
 
     # Save matrix to S3
     out_filename = Summaries.get_filename(out_table_type, data_datestr)
-    sp_mtx.write_to_s3(PROJ_BUCKET, SUMMARY_FOLDER, out_filename, REGION)
+    agg_sparse_mtx.write_to_s3(PROJ_BUCKET, SUMMARY_FOLDER, out_filename, REGION)
 
     # Copy logfile to S3
-    sp_mtx.write_to_s3(PROJ_BUCKET, SUMMARY_FOLDER, tst_logger.filename, REGION)
-    s3_logfile = sp_mtx.copy_logfile_to_s3(PROJ_BUCKET, SUMMARY_FOLDER, REGION)
+    agg_sparse_mtx.write_to_s3(PROJ_BUCKET, SUMMARY_FOLDER, tst_logger.filename, REGION)
+    s3_logfile = agg_sparse_mtx.copy_logfile_to_s3(PROJ_BUCKET, SUMMARY_FOLDER, REGION)
     print(s3_logfile)
 """
 from sppy.aws.aggregate_matrix import *
 
 # Create a logger
-script_name = "testing_aggregate_matrix"
+script_name = "testing"
 todaystr = get_today_str()
 log_name = f"{script_name}_{todaystr}"
 # Create logger with default INFO messages
@@ -1062,55 +1098,77 @@ tst_logger = Logger(
 in_table_type = SUMMARY_TABLE_TYPES.DATASET_SPECIES_LISTS
 out_table_type = SUMMARY_TABLE_TYPES.SPECIES_DATASET_MATRIX
 
-# Get fields for this table to concatenate to ensure uniqueness
 data_datestr = get_current_datadate_str()
 table = Summaries.get_table(in_table_type, data_datestr)
-xfld = table["key_fld"]
-valfld = table["value_fld"]
+# Datasets in rows/x/axis 1
+stk_col_label_for_axis1 = table["key_fld"]
+stk_col_label_for_val = table["value_fld"]
 # Dict of new fields constructed from existing fields, just 1 for species key/name
 fld_mods = table["combine_fields"]
-yfld = list(fld_mods.keys())[0]
-(fld1, fld2) = fld_mods[yfld]
+# Species (taxonKey + name) in columns/y/axis 0
+stk_col_label_for_axis0 = list(fld_mods.keys())[0]
+(fld1, fld2) = fld_mods[stk_col_label_for_axis0]
 
 # Read stacked (record) data directly into DataFrame
 stk_df = read_s3_parquet_to_pandas(
     PROJ_BUCKET, SUMMARY_FOLDER, table["fname"], tst_logger, s3_client=None
 )
 
-# Concatenate key and species fields to ensure uniqueness
+# .................................
+# Combine key and species fields to ensure uniqueness
 def _combine_columns(row):
     return str(row[fld1]) + ' ' + str(row[fld2])
 
-stk_df[yfld] = stk_df.apply(_combine_columns, axis=1)
-
-# Create matrix from
-sp_mtx = SparseMatrix.init_from_stacked_data(
-    stk_df, xfld, yfld, valfld, out_table_type, logger=tst_logger)
-
-# Test matrix
-test_stacked_to_aggregate_sum(stk_df, xfld, yfld, valfld, sp_mtx, logger=tst_logger)
-test_stacked_to_aggregate_extremes(stk_df, xfld, yfld, valfld, sp_mtx, logger=tst_logger, is_max=True)
-test_stacked_to_aggregate_extremes(stk_df, xfld, yfld, valfld, sp_mtx, logger=tst_logger, is_max=False)
+# ......................
+stk_df[stk_col_label_for_axis0] = stk_df.apply(_combine_columns, axis=1)
 # .................................
 
+# Create matrix from record data
+agg_sparse_mtx = SparseMatrix.init_from_stacked_data(
+    stk_df, stk_col_label_for_axis1, stk_col_label_for_axis0, stk_col_label_for_val,
+    out_table_type, logger=tst_logger)
+
+
+
+self = agg_sparse_mtx
+test_count = 5
+
+# Test raw counts between stacked data and sparse matrix
+for stk_lbl, axis in ((stk_col_label_for_axis0, 0), (stk_col_label_for_axis1, 1)):
+    # Test stacked column used for axis 0/1 against sparse matrix axis 0/1
+    test_stacked_to_aggregate_sum(
+        stk_df, stk_lbl, stk_col_label_for_val, agg_sparse_mtx, agg_axis=axis,
+        test_count=5, logger=tst_logger)
+
+# Test min/max values for rows/columns
+for is_max in (False, True):
+    for axis in (0, 1):
+        test_stacked_to_aggregate_extremes(
+            stk_df, stk_col_label_for_axis0, stk_col_label_for_axis1,
+            stk_col_label_for_val, agg_sparse_mtx, agg_axis=axis, test_count=5,
+            logger=tst_logger, is_max=is_max)
 
 # Save matrix to S3
 out_filename = Summaries.get_filename(out_table_type, data_datestr)
-sp_mtx.write_to_s3(PROJ_BUCKET, SUMMARY_FOLDER, out_filename, REGION)
+agg_sparse_mtx.write_to_s3(PROJ_BUCKET, SUMMARY_FOLDER, out_filename, REGION)
 
 # Copy logfile to S3
-s3_logfile = sp_mtx.copy_logfile_to_s3(PROJ_BUCKET, SUMMARY_FOLDER, REGION)
+agg_sparse_mtx.write_to_s3(PROJ_BUCKET, SUMMARY_FOLDER, tst_logger.filename, REGION)
+s3_logfile = agg_sparse_mtx.copy_logfile_to_s3(PROJ_BUCKET, SUMMARY_FOLDER, REGION)
 print(s3_logfile)
+
+
 
 # --------------------------------------------------------------------------------------
 # Testing
 # --------------------------------------------------------------------------------------
 
-(x_col_label, y_col_label, val_col_label, aggregate_sparse_mtx, stacked_df) = (
-    xfld, yfld, valfld, sp_mtx, stk_df)
-test_count = 5
 x_vals = get_random_values_from_stacked_data(stk_df, x_col_label, test_count)
 y_vals = get_random_values_from_stacked_data(stk_df, y_col_label, test_count)
+
+y_vals = agg_sparse_mtx.get_random_labels(test_count, axis=0)
+x_vals = agg_sparse_mtx.get_random_labels(test_count, axis=1)
+
 x = x_vals[0]
 y = y_vals[0]
 row_label = y
