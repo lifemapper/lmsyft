@@ -19,4 +19,3 @@ occurrences.csv
 
 The name of the occurrence data file is specified in the `meta.xml` document.  The
 content of the file should follow what is described in the `meta.xml` file.
-

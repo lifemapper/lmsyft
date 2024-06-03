@@ -20,7 +20,7 @@ Citing Data
 
 Use the following format to cite data retrieved from Syftorium:
 
-Biodiversity occurrence data provided by: (Accessed through Specify Network Web Services, 
+Biodiversity occurrence data provided by: (Accessed through Specify Network Web Services,
 https://broker.spcoco.org, YYYY-MM-DD)
 
 For example::
@@ -63,5 +63,3 @@ Definitions
     Sensitive data
         Any data that the provider does not want to make available,
         e.g. precise localities of endangered species.
-
-

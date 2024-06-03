@@ -33,4 +33,3 @@ Steps
 
 * using boto3, write an API that queries the summary tables in S3
 * deploy the API on EC2
-
