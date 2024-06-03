@@ -77,31 +77,29 @@ def sum_stacked_data_vals_for_column(stacked_df, filter_label, filter_value, val
     return count
 
 
-# # ...............................................
-# def test_row_col_comparisons(
-#         x_col_label, y_col_label, val_col_label, agg_sparse_mtx,
-#         test_count=5, logger=None):
-#     """Test row comparisons between 1 and all, and column comparisons between 1 and all.
-#
-#     Args:
-#         x_col_label: column label in stacked_df to be used as the column labels of
-#             the aggregate_df
-#         y_col_label: column label in stacked_df to be used as the row labels of
-#             the aggregate_df
-#         val_col_label: column label in stacked_df to be used as the row labels of
-#             the aggregate_df, aggregate_df
-#         agg_sparse_mtx (SparseMatrix): object containing a scipy.sparse.coo_array
-#             with 3 columns from the stacked_df arranged as rows and columns with values
-#         test_count (int): number of rows and columns to test.
-#         logger (object): logger for saving relevant processing messages
-#
-#     Postcondition:
-#         Printed information for successful or failed tests.
-#
-#     Note: The aggregate_df must have been created from the stacked_df.
-#     """
-#     y_vals = agg_sparse_mtx.get_random_labels(test_count, axis=0)
-#     x_vals = agg_sparse_mtx.get_random_labels(test_count, axis=1)
+# ...............................................
+def test_row_col_comparisons(agg_sparse_mtx, test_count=5, logger=None):
+    """Test row comparisons between 1 and all, and column comparisons between 1 and all.
+
+    Args:
+        agg_sparse_mtx (SparseMatrix): object containing a scipy.sparse.coo_array
+            with 3 columns from the stacked_df arranged as rows and columns with values
+        test_count (int): number of rows and columns to test.
+        logger (object): logger for saving relevant processing messages
+
+    Postcondition:
+        Printed information for successful or failed tests.
+
+    Note: The aggregate_df must have been created from the stacked_df.
+    """
+    y_vals = agg_sparse_mtx.get_random_labels(test_count, axis=0)
+    x_vals = agg_sparse_mtx.get_random_labels(test_count, axis=1)
+    for y in y_vals:
+        row_comps = agg_sparse_mtx.compare_row_to_others(y)
+        logit(logger, "Row comparisons:", print_obj=row_comps)
+    for x in x_vals:
+        col_comps = agg_sparse_mtx.compare_column_to_others(x)
+        logit(logger, "Column comparisons:", print_obj=col_comps)
 
 
 # ...............................................
@@ -766,7 +764,7 @@ class SparseMatrix:
         return target, labels
 
     # ...............................................
-    def get_all_row_counts(self):
+    def get_all_row_stats(self):
         """Return stats (min, max, mean, median) of totals and counts for all rows.
 
         Returns:
@@ -777,8 +775,10 @@ class SparseMatrix:
         all_totals = self._coo_array.sum(axis=1)
         # Get number of non-zero entries for every row (column, numpy.ndarray)
         all_counts = self._coo_array.getnnz(axis=1)
+        # Count columns with at least one non-zero entry (all columns)
+        row_count = self._coo_array.shape[1]
         all_row_stats = {
-            self._keys[SNKeys.ROWS_COUNT]: all_totals.nnz,
+            self._keys[SNKeys.ROWS_COUNT]: row_count,
             self._keys[SNKeys.ROWS_TOTAL]: all_totals.sum(),
             self._keys[SNKeys.ROWS_MIN]: all_totals.min(),
             self._keys[SNKeys.ROWS_MAX]: all_totals.max(),
@@ -793,7 +793,7 @@ class SparseMatrix:
         return all_row_stats
 
     # ...............................................
-    def get_all_col_counts(self):
+    def get_all_col_stats(self):
         """Return stats (min, max, mean, median) of totals and counts for all columns.
 
         Returns:
@@ -803,18 +803,20 @@ class SparseMatrix:
         all_totals = self._coo_array.sum(axis=0)
         # Get number of non-zero entries for every column (row, numpy.ndarray)
         all_counts = self._coo_array.getnnz(axis=0)
+        # Count rows with at least one non-zero entry (all rows)
+        col_count = self._coo_array.shape[0]
         all_col_stats = {
-            self._keys[SNKeys.COLS_COUNT]: all_totals.nnz,
+            self._keys[SNKeys.COLS_COUNT]: col_count,
             self._keys[SNKeys.COLS_TOTAL]: all_totals.sum(),
             self._keys[SNKeys.COLS_MIN]: all_totals.min(),
             self._keys[SNKeys.COLS_MAX]: all_totals.max(),
             self._keys[SNKeys.COLS_MEAN]: all_totals.mean(),
             self._keys[SNKeys.COLS_MEDIAN]: np.median(all_totals, axis=0),
 
-            self._keys[SNKeys.COLS_COUNTS_MIN]: all_counts.min(),
-            self._keys[SNKeys.COLS_COUNTS_MAX]: all_counts.max(),
-            self._keys[SNKeys.COLS_COUNTS_MEAN]: all_counts.mean(),
-            self._keys[SNKeys.COLS_COUNTS_MEDIAN]: np.median(all_counts, axis=0),
+            self._keys[SNKeys.COLS_COUNT_MIN]: all_counts.min(),
+            self._keys[SNKeys.COLS_COUNT_MAX]: all_counts.max(),
+            self._keys[SNKeys.COLS_COUNT_MEAN]: all_counts.mean(),
+            self._keys[SNKeys.COLS_COUNT_MEDIAN]: np.median(all_counts, axis=0),
         }
         return all_col_stats
 
@@ -849,9 +851,9 @@ class SparseMatrix:
             self._keys[SNKeys.COL_COUNT]: col.nnz,
             # Return min/max count in this dataset and species for that count
             self._keys[SNKeys.COL_MIN_COUNT]: minval,
-            self._keys[SNKeys.COL_MIN_LABELS]: min_col_labels,
+            # self._keys[SNKeys.COL_MIN_LABELS]: min_col_labels,
             self._keys[SNKeys.COL_MAX_COUNT]: maxval,
-            self._keys[SNKeys.COL_MAX_LABELS]: max_col_labels,
+            # self._keys[SNKeys.COL_MAX_LABELS]: max_col_labels,
         }
         return stats
 
@@ -885,9 +887,9 @@ class SparseMatrix:
             self._keys[SNKeys.ROW_COUNT]: row.nnz,
             # Return min/max count in this species and datasets for that count
             self._keys[SNKeys.ROW_MIN_COUNT]: minval,
-            self._keys[SNKeys.ROW_MIN_LABELS]: min_row_labels,
+            # self._keys[SNKeys.ROW_MIN_LABELS]: min_row_labels,
             self._keys[SNKeys.ROW_MAX_COUNT]: maxval,
-            self._keys[SNKeys.ROW_MAX_LABELS]: max_row_labels,
+            # self._keys[SNKeys.ROW_MAX_LABELS]: max_row_labels,
         }
         return stats
 
@@ -901,15 +903,33 @@ class SparseMatrix:
         Returns:
             comparisons (dict): comparison measures
         """
-        comparisons = {}
         # Get this column stats
-        col_stats = self.get_column_stats(col_label)
-        print(col_stats)
+        stats = self.get_column_stats(col_label)
         # Show this column totals and counts compared to min, max, mean of all columns
-        all_col_stats = self.get_all_col_counts()
-        print(all_col_stats)
-        print(f"this column: {SNKeys.COL_TOTAL}: {col_stats[self._keys[SNKeys.COLS_TOTAL]]}")
-        print(f"this column: {SNKeys.COL_COUNT}: {col_stats[self._keys[SNKeys.COLS_COUNT]]}")
+        all_stats = self.get_all_col_stats()
+        comparisons = {
+            self._keys[SNKeys.COL_TYPE]: col_label,
+            "Occurrences": {
+                self._keys[SNKeys.COL_TOTAL]: stats[self._keys[SNKeys.COL_TOTAL]],
+                self._keys[SNKeys.COLS_TOTAL]: all_stats[self._keys[SNKeys.COLS_TOTAL]],
+                self._keys[SNKeys.COLS_MIN]: all_stats[self._keys[SNKeys.COLS_MIN]],
+                self._keys[SNKeys.COLS_MAX]: all_stats[self._keys[SNKeys.COLS_MAX]],
+                self._keys[SNKeys.COLS_MEAN]: all_stats[self._keys[SNKeys.COLS_MEAN]],
+                self._keys[SNKeys.COLS_MEDIAN]: all_stats[self._keys[SNKeys.COLS_MEDIAN]],
+            },
+            "Species": {
+                self._keys[SNKeys.COL_COUNT]: stats[self._keys[SNKeys.COL_COUNT]],
+                self._keys[SNKeys.COLS_COUNT]: all_stats[self._keys[SNKeys.COLS_COUNT]],
+                self._keys[SNKeys.COLS_COUNT_MIN]:
+                    all_stats[self._keys[SNKeys.COLS_COUNT_MIN]],
+                self._keys[SNKeys.COLS_COUNT_MAX]:
+                    all_stats[self._keys[SNKeys.COLS_COUNT_MAX]],
+                self._keys[SNKeys.COLS_COUNT_MEAN]:
+                    all_stats[self._keys[SNKeys.COLS_COUNT_MEAN]],
+                self._keys[SNKeys.COLS_COUNT_MEDIAN]:
+                    all_stats[self._keys[SNKeys.COLS_COUNT_MEDIAN]]
+            }
+        }
         return comparisons
 
     # ...............................................
@@ -922,14 +942,32 @@ class SparseMatrix:
         Returns:
             comparisons (dict): comparison measures
         """
-        comparisons = {}
-        row_stats = self.get_row_stats(row_label)
-        print(row_stats)
+        stats = self.get_row_stats(row_label)
         # Show this column totals and counts compared to min, max, mean of all columns
-        all_row_stats = self.get_all_row_counts()
-        print(all_row_stats)
-        print(f"this row: {SNKeys.ROW_TOTAL}: {row_stats[self._keys[SNKeys.ROWS_TOTAL]]}")
-        print(f"this row: {SNKeys.ROW_COUNT}: {row_stats[self._keys[SNKeys.ROWS_COUNT]]}")
+        all_stats = self.get_all_row_stats()
+        comparisons = {
+            self._keys[SNKeys.ROW_TYPE]: row_label,
+            "Occurrences": {
+                self._keys[SNKeys.ROW_TOTAL]: stats[self._keys[SNKeys.ROW_TOTAL]],
+                self._keys[SNKeys.ROWS_TOTAL]: all_stats[self._keys[SNKeys.ROWS_TOTAL]],
+                self._keys[SNKeys.ROWS_MIN]: all_stats[self._keys[SNKeys.ROWS_MIN]],
+                self._keys[SNKeys.ROWS_MAX]: all_stats[self._keys[SNKeys.ROWS_MAX]],
+                self._keys[SNKeys.ROWS_MEAN]: all_stats[self._keys[SNKeys.ROWS_MEAN]],
+                self._keys[SNKeys.ROWS_MEDIAN]: all_stats[self._keys[SNKeys.ROWS_MEDIAN]],
+            },
+            "Datasets": {
+                self._keys[SNKeys.ROW_COUNT]: stats[self._keys[SNKeys.ROW_COUNT]],
+                self._keys[SNKeys.ROWS_COUNT]: all_stats[self._keys[SNKeys.ROWS_COUNT]],
+                self._keys[SNKeys.ROWS_COUNT_MIN]:
+                    all_stats[self._keys[SNKeys.ROWS_COUNT_MIN]],
+                self._keys[SNKeys.ROWS_COUNT_MAX]:
+                    all_stats[self._keys[SNKeys.ROWS_COUNT_MAX]],
+                self._keys[SNKeys.ROWS_COUNT_MEAN]:
+                    all_stats[self._keys[SNKeys.ROWS_COUNT_MEAN]],
+                self._keys[SNKeys.ROWS_COUNT_MEDIAN]:
+                    all_stats[self._keys[SNKeys.ROWS_COUNT_MEDIAN]]
+            }
+        }
         return comparisons
 
     # ...............................................
@@ -1147,6 +1185,8 @@ for is_max in (False, True):
             stk_df, stk_col_label_for_axis0, stk_col_label_for_axis1,
             stk_col_label_for_val, agg_sparse_mtx, agg_axis=axis, test_count=5,
             logger=tst_logger, is_max=is_max)
+
+test_row_col_comparisons(agg_sparse_mtx, test_count=5, logger=tst_logger)
 
 # Save matrix to S3
 out_filename = Summaries.get_filename(out_table_type, data_datestr)

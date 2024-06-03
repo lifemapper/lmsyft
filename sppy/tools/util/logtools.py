@@ -1,7 +1,9 @@
 """Standard logger for console and/or file logging."""
+import io
 import logging
 from logging.handlers import RotatingFileHandler
 import os
+from pprint import pp
 import sys
 
 # Rough log of processing progress
@@ -72,15 +74,35 @@ class Logger:
 
 
 # ......................................................
-def logit(logger, msg, refname="", log_level=logging.INFO):
+def prettify_object(print_obj):
+    """Format an object for output.
+
+    Args:
+        print_obj (obj): Object to pretty print in output
+
+    Returns:
+        formatted string representation of object
+    """
+    strm = io.StringIO()
+    pp(print_obj, stream=strm)
+    obj_str = strm.getvalue()
+    return obj_str
+
+
+# ......................................................
+def logit(logger, msg, refname="", print_obj=None, log_level=logging.INFO):
     """Log or print a message.
 
     Args:
         logger: Logger object
         msg: Message to log
         refname: referring object, module, or function
+        print_obj (obj): Object to pretty print in output
         log_level: level of severity
     """
+    if print_obj is not None:
+        obj_str = prettify_object(print_obj)
+        msg = f"{msg}\n{obj_str}"
     if log_level is None:
         log_level = logging.INFO
     if logger is not None:
