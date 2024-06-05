@@ -8,7 +8,7 @@ awscli
 boto3>=1.34.60
 botocore
 s3fs
-fastparquet
+# fastparquet==2024.2.0
 sqlalchemy
 numpy
 scipy
