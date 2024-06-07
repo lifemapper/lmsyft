@@ -3,7 +3,7 @@ requires = ["setuptools", "wheel"]  # PEP 508 specifications.
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "specify-cache"
+name = "specify-netwirj"
 version = "0.0.4"
 description = "Publish APIs for the Specify Network."
 readme = "README.md"
@@ -15,11 +15,19 @@ classifiers = [
 ]
 keywords = ["Darwin Core", "Digital Object Architecture", "Extended Specimen Object"]
 dependencies = [
+    "Werkzeug",
     "flask",
     "requests",
     "pykew",
     "gunicorn",
-    "rtree"
+    "awscli",
+    "boto3",
+    "botocore",
+    "s3fs",
+    "sqlalchemy",
+    "numpy",
+    "scipy",
+    "pandas"
 ]
 requires-python = ">=3.8"
 
@@ -31,7 +39,7 @@ dev = [
 
 [tool.vulture]
 #exclude = ["_version.py"]
-paths = ["bison", "tests"]
+paths = ["flask_app", "sppy", "tests"]
 ignore_names = ["__module__", "__new__"]
 # make_whitelist = true
 min_confidence = 80
