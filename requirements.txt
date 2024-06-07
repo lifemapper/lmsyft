@@ -4,14 +4,13 @@ requests>=2.26.0
 pykew>=0.1.3
 gunicorn==20.1.0
 sqlalchemy
+numpy
+scipy
+pandas
 # AWS
-botocore==1.34.121
-boto3==1.34.121
-awscli==1.33.3
+awscli
+botocore
+boto3>=1.34.60
 s3fs
-# Installed by apk in Dockerfile
-# numpy
-# scipy
-# pandas
 # Still failing
 # fastparquet
