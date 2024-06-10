@@ -3,6 +3,7 @@ from flask import Blueprint, Flask, render_template, request
 import os
 
 from flask_app.analyst.count import CountSvc
+from flask_app.analyst.dataset import DatasetSvc
 from flask_app.analyst.rank import RankSvc
 from flask_app.common.constants import (
     STATIC_DIR, TEMPLATE_DIR, SCHEMA_DIR, SCHEMA_ANALYST_FNAME)
@@ -86,6 +87,25 @@ def count_endpoint():
         response = CountSvc.get_counts(ds_arg)
     return response
 
+
+# .....................................................................................
+@app.route("/api/v1/dataset/")
+def dataset_endpoint():
+    """Get the statistics for dataset counts of occurrences or species.
+
+    Returns:
+        response: A flask_app.analyst API response object containing the dataset
+            API response.
+    """
+    ds_arg = request.args.get("dataset_key", default=None, type=str)
+    count_arg = request.args.get("count_by", default=None, type=str)
+    stats_arg = request.args.get("out_stats", default=None, type=str)
+    if ds_arg is None:
+        response = DatasetSvc.get_endpoint()
+    else:
+        response = DatasetSvc.get_counts(
+            dataset_key=ds_arg, count_by=count_arg, out_stats=stats_arg)
+    return response
 
 # .....................................................................................
 @app.route("/api/v1/rank/")

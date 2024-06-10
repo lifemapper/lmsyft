@@ -6,8 +6,9 @@ from flask_app.common.s2n_type import APIService, AnalystOutput
 from flask_app.analyst.base import _AnalystService
 
 from sppy.aws.aws_constants import PROJ_BUCKET
+from sppy.aws.aggregate_matrix import SparseMatrix
 from sppy.tools.provider.spnet import SpNetAnalyses
-from sppy.tools.s2n.utils import (combine_errinfo, get_traceback)
+from sppy.tools.s2n.utils import (combine_errinfo, get_traceback, prettify_object)
 
 
 # .............................................................................
@@ -18,7 +19,7 @@ class DatasetSvc(_AnalystService):
 
     # ...............................................
     @classmethod
-    def get_counts(cls, dataset_key=None, count_by=None, out_stats=None):
+    def get_dataset_counts(cls, dataset_key=None, count_by=None, out_stats=None):
         """Return occurrence and species counts for dataset/organization identifiers.
 
         Args:
@@ -63,23 +64,21 @@ class DatasetSvc(_AnalystService):
 
         return full_out.response
 
-# ...............................................
+    # ...............................................
     @classmethod
-    def _get_dataset_counts(cls, dataset_key, count_by, out_stats):
-        """Get counts for datasetKey.
-
-        Args:
-            dataset_key: unique GBIF identifier for dataset of interest.
-
-        Returns:
-            a flask_app.analyst.s2n_type.AnalystOutput object with optional records as a
-            list of records corresponding to occurrence and counts for the dataset.
-        """
+    def _init_sparse_matrix(cls, dataset_key, count_by, out_stats):
         records = []
         errors = {}
-        s3 = SpNetAnalyses(PROJ_BUCKET)
+        spnet_query = SparseMatrix.init_from_s3(PROJ_BUCKET)
+
+    # ...............................................
+    @classmethod
+    def _get_dataset_counts(cls, dataset_key, count_by, out_stats):
+        records = []
+        errors = {}
+        spnet_query = SparseMatrix(PROJ_BUCKET)
         try:
-            records = s3.get_dataset_counts(dataset_key)
+            records = spnet_query.get_dataset_counts(dataset_key, count_by, out_stats)
         except Exception:
             traceback = get_traceback()
             errors["error"] = [HTTPStatus.INTERNAL_SERVER_ERROR, traceback]
@@ -91,10 +90,12 @@ class DatasetSvc(_AnalystService):
 if __name__ == "__main__":
     dataset_key = "0000e36f-d0e9-46b0-aa23-cc1980f00515"
 
-    svc = CountSvc()
+    svc = DatasetSvc()
     response = svc.get_endpoint()
     AnalystOutput.print_output(response, do_print_rec=True)
     # print(response)
-    response = svc.get_counts(dataset_key=dataset_key, pub_org_key=None)
-    AnalystOutput.print_output(response, do_print_rec=True)
+    response = svc.get_counts(
+        dataset_key=dataset_key, count_by="species", out_stats="describe")
+    print(prettify_object(response))
+    # AnalystOutput.print_output(response, do_print_rec=True)
     # print(response)

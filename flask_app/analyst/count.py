@@ -46,7 +46,7 @@ class CountSvc(_AnalystService):
             # Query dataset counts
             if good_params["dataset_key"] is not None:
                 try:
-                    records, errors = cls._get_dataset_counts(
+                    records, errors = cls._get_simple_dataset_counts(
                         good_params["dataset_key"])
                 except Exception:
                     errors = {"error": [get_traceback()]}
@@ -63,7 +63,7 @@ class CountSvc(_AnalystService):
 
 # ...............................................
     @classmethod
-    def _get_dataset_counts(cls, dataset_key):
+    def _get_simple_dataset_counts(cls, dataset_key):
         """Get counts for datasetKey.
 
         Args:
@@ -77,7 +77,7 @@ class CountSvc(_AnalystService):
         errors = {}
         s3 = SpNetAnalyses(PROJ_BUCKET)
         try:
-            records = s3.get_dataset_counts(dataset_key)
+            records = s3.get_simple_dataset_counts(dataset_key)
         except Exception:
             traceback = get_traceback()
             errors["error"] = [HTTPStatus.INTERNAL_SERVER_ERROR, traceback]
