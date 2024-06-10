@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Authentication &mdash; Specify Network  documentation</title>
+  <title>AWS Setup &mdash; Specify Network  documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
 
@@ -52,35 +52,40 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">AWS:</span></p>
 <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Authentication</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#create-an-iam-role-for-the-ec2-redshift-s3-interaction">Create an IAM role for the EC2/Redshift/S3 interaction</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#ec2-instance-creation">EC2 instance creation</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#for-programmatic-access-to-s3">For programmatic access to S3</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#redshift">Redshift</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#create-a-new-workgroup-and-namespace">Create a new workgroup (and namespace)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#connect-to-new-namespace-in-query-editor">Connect to new namespace in Query Editor</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#configure-for-data-acquisition-and-analyses">Configure for data acquisition and analyses</a><ul>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">AWS Setup</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#security">Security</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#create-a-security-group-for-the-region">Create a Security Group for the region</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#create-aws-elastic-compute-cloud-ec2-instance">Create AWS Elastic Compute Cloud (EC2) instance</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#enable-ssh-access-to-ec2">Enable SSH access to EC2</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#create-an-iam-role-for-the-ec2-redshift-s3-interaction-specnet-ec2-role">Create an IAM role for the EC2/Redshift/S3 interaction (specnet_ec2_role)</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#aws-access-keypair">AWS access: keypair</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#set-up-local-client">Set up local/client</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#connect-and-set-ec2-ssh-service-timeout">Connect and set EC2 SSH service timeout</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#install-software-on-ec2">Install software on EC2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#ec2">EC2</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#ec2-instance-creation">EC2 instance creation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#configure-programmatic-access-to-s3">Configure programmatic access to S3</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#elastic-ip">Elastic IP</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#install-software-on-ec2">Install software on EC2</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#baseline">Baseline</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#aws-client-tools">AWS Client tools</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#docker">Docker</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#add-the-specify-network-software-via-github">Add the Specify Network software via Github</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#base-software">Base software</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#docker">Docker</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#add-the-github-repo-to-ec2-instance">Add the Github repo to EC2 instance</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#enable-s3-access-from-local-machine-and-ec2">Enable S3 access from local machine and EC2</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="#error-ssl">Error: SSL</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#redshift">Redshift</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#create-a-new-workgroup-and-namespace">Create a new workgroup (and namespace)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#connect-to-new-namespace-in-query-editor">Connect to new namespace in Query Editor</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#configure-s3-redshift-for-data-acquisition-and-analyses">Configure S3/Redshift for data acquisition and analyses</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#local-client">Local client</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#configuration">Configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#connect-and-set-ec2-ssh-service-timeout">Connect and set EC2 SSH service timeout</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#enable-s3-access-from-local-machine-and-ec2">Enable S3 access from local machine (and EC2?)</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#troubleshooting">Troubleshooting</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#error-ssl">Error: SSL</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#workflow-for-specify-network-analyst-pre-computations">Workflow for Specify Network Analyst pre-computations</a></li>
 </ul>
 </li>
@@ -92,7 +97,7 @@
 <p class="caption" role="heading"><span class="caption-text">Misc:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../misc/debugging.html">Debugging Flask and Docker instances</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../misc/example_sp6_export.html">Example Specify 6 Export</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../misc/deploy.html">Deploy Specify Network</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../misc/ssl_certificates.html">Specify Network SSL certificates</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../misc/taxonomy_tools.html">GBIF Backbone Taxonomy</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../misc/testing.html">Testing Specify Network elements</a></li>
@@ -112,7 +117,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">Authentication</li>
+      <li class="breadcrumb-item active">AWS Setup</li>
       <li class="wy-breadcrumbs-aside">
             <a href="../_sources/aws/aws-setup.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -122,46 +127,110 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="authentication">
-<h1>Authentication<a class="headerlink" href="#authentication" title="Link to this heading"></a></h1>
-<section id="create-an-iam-role-for-the-ec2-redshift-s3-interaction">
-<h2>Create an IAM role for the EC2/Redshift/S3 interaction<a class="headerlink" href="#create-an-iam-role-for-the-ec2-redshift-s3-interaction" title="Link to this heading"></a></h2>
+  <section id="aws-setup">
+<h1>AWS Setup<a class="headerlink" href="#aws-setup" title="Link to this heading"></a></h1>
+<section id="security">
+<h2>Security<a class="headerlink" href="#security" title="Link to this heading"></a></h2>
+<section id="create-a-security-group-for-the-region">
+<h3>Create a Security Group for the region<a class="headerlink" href="#create-a-security-group-for-the-region" title="Link to this heading"></a></h3>
 <ul class="simple">
-<li><p>Create a Role (Redshift-S3) for service Redshift to read/write to S3</p>
+<li><p>Test this group!</p></li>
+<li><p>Create a security group for the instance (and all other instances in region)</p>
 <ul>
-<li><p>Add a policy allowing read and write access to the specnet S3 bucket</p></li>
-<li><p>Step 1: Trusted entity type = AWS service, Use Case = Redshift - Customizable.</p>
+<li><p>aimee.stewart_SG_useast1</p></li>
+<li><p>Must be tied to the region of instance</p></li>
+<li><p>inbound: SSH from campus (use VPN if elsewhere), HTTP/HTTPS from all</p></li>
+</ul>
+</li>
+<li><p>or use launch-wizard-1 security group (created by some EC2 instance creation in 2023)</p>
 <ul>
+<li><p>inbound rules IPv4:</p>
+<ul>
+<li><p>Custom TCP 8000</p></li>
+<li><p>Custom TCP 8080</p></li>
+<li><p>SSH 22</p></li>
+<li><p>HTTP 80</p></li>
+<li><p>HTTPS 443</p></li>
+</ul>
+</li>
+<li><p>outbound rules IPv4, IPv6:</p>
+<ul>
+<li><p>All traffic all ports</p></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="create-an-iam-role-for-the-ec2-redshift-s3-interaction-specnet-ec2-role">
+<h3>Create an IAM role for the EC2/Redshift/S3 interaction (specnet_ec2_role)<a class="headerlink" href="#create-an-iam-role-for-the-ec2-redshift-s3-interaction-specnet-ec2-role" title="Link to this heading"></a></h3>
+<ul>
+<li><p>Create a Role for EC2 instance access to Redshift and S3</p>
+<ol class="arabic simple">
+<li><p>Create Policy allowing FullAccess to SpecifyNetwork bucket
+(specnet_S3bucket_FullAccess)</p></li>
+<li><p>Trusted entity type = AWS service, Use Case = Redshift - Customizable.</p></li>
+</ol>
+<blockquote>
+<div><ul class="simple">
 <li><p>TODO: change to Redshift - Scheduler when we automate the workflow</p></li>
 </ul>
-</li>
-<li><p>Step 2: Add permissions</p>
-<ul>
+</div></blockquote>
+<ol class="arabic simple" start="3">
+<li><p>Add permissions</p></li>
+</ol>
+<blockquote>
+<div><ul class="simple">
 <li><p>AmazonRedshiftAllCommandsFullAccess (AWS managed)</p></li>
 <li><p>AmazonS3FullAccess (AWS managed)</p></li>
+<li><p>specnet_S3bucket_FullAccess</p></li>
 </ul>
+</div></blockquote>
+<ol class="arabic simple" start="4">
+<li><p>Save and name role (specnet_ec2_role)</p></li>
+</ol>
 </li>
 </ul>
-</li>
-</ul>
+</section>
+</section>
+<section id="ec2">
+<h2>EC2<a class="headerlink" href="#ec2" title="Link to this heading"></a></h2>
 <section id="ec2-instance-creation">
 <h3>EC2 instance creation<a class="headerlink" href="#ec2-instance-creation" title="Link to this heading"></a></h3>
+<ul>
+<li><p>Future - create and save an AMI for consistent reproduction</p></li>
+<li><p>via Console, without launch template:</p>
 <ul class="simple">
-<li><p>Instance type t3.small</p>
+<li><p>Ubuntu Server 24.04 LTS, SSD Volume Type (free tier eligible), Arm architecture</p></li>
+<li><p>Instance type t4g.small</p>
 <ul>
 <li><p>Build fails with t2.micro or t3.micro with 1gb RAM</p></li>
-<li><p>t3.small is 2gb RAM</p></li>
+<li><p>t4g.small is 2gb RAM</p></li>
 </ul>
 </li>
-<li><p>Ubuntu Server 22.04 LTS, SSD Volume Type (free tier eligible), x86 architecture</p></li>
 <li><p>Security Group: launch-wizard-1</p></li>
 <li><p>30 Gb General Purpose SSD (gp2)</p></li>
 <li><p>For dev, Spot instance (in Advanced options)</p></li>
-<li><p>Modify IAM role - for role created above (i.e. specnet_ec2_role)</p></li>
+<li><p>Modify IAM role - to role created above (i.e. specnet_ec2_role)</p></li>
+<li><p>Use the security group created for this region (currently launch-wizard-1)</p></li>
+</ul>
+</li>
+<li><p>Launch
+* Default user for ubuntu instance is <cite>ubuntu</cite>
+* If you do not have a keypair, create one for SSH access (tied to region) on initial</p>
+<blockquote>
+<div><p>EC2 launch</p>
+<ul class="simple">
+<li><p>One chance only: Download the private key (.pem file for Linux and OSX) to local
+machine</p></li>
+<li><p>Set file permissions to 400</p></li>
+</ul>
+</div></blockquote>
+</li>
 </ul>
 </section>
-<section id="for-programmatic-access-to-s3">
-<h3>For programmatic access to S3<a class="headerlink" href="#for-programmatic-access-to-s3" title="Link to this heading"></a></h3>
+<section id="configure-programmatic-access-to-s3">
+<h3>Configure programmatic access to S3<a class="headerlink" href="#configure-programmatic-access-to-s3" title="Link to this heading"></a></h3>
 <p>Configure AWS credentials either through</p>
 <ul class="simple">
 <li><p>environment variables</p></li>
@@ -174,159 +243,18 @@ S3 Select access.</p>
 <p>I upgraded awscli (sudo apt install awscli), then upgraded boto3
 (pip install –upgrade boto3) , which installed 1.34.60.  Success</p>
 </section>
-<section id="redshift">
-<h3>Redshift<a class="headerlink" href="#redshift" title="Link to this heading"></a></h3>
-</section>
-</section>
-<section id="overview">
-<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading"></a></h2>
+<section id="elastic-ip">
+<h3>Elastic IP<a class="headerlink" href="#elastic-ip" title="Link to this heading"></a></h3>
 <ul class="simple">
-<li><p>Redshift allows you to work with very large datasets in parallel very quickly.</p></li>
-<li><p>Redshift acts as a database application, and can connect to databases created in
-Redshift, Glue Data Catalogs, and mount tabular data in S3</p></li>
-<li><p>The default new database is “dev”, and it contains the “public” schema. The
-schema contains Tables, Views, Functions, and Stored Procedures.</p></li>
-<li><p>To mount S3 data, you must create an external schema in the database, and define
-the new data, including all of its fields and its S3 location.  These functions are
-included in the script rs_subset_gbif.sql</p></li>
-<li><p>After mounting a table, you can filter the data into a new table in your public
-schema, then drop the table in the external schema (the original S3 data).</p></li>
-<li><p>We currently filter out data with missing latitude or longitude, taxonomic ranks above
-species level, and records with a basis of record that is not observation, occurrence,
-or preserved specimen.  This brings the full dataset from about 2.6 billion down to
-2.3 billion.</p></li>
+<li><p>If needed (not re-using an existing IP), create an Elastic IP for the EC2 instance</p></li>
+<li><p>assign a DNS name to its FQDN in 3rd party (spcoco: GoDaddy)</p></li>
+<li><p>in console, assign EC2 instance to the Elastic IP</p></li>
 </ul>
 </section>
-<section id="create-a-new-workgroup-and-namespace">
-<h2>Create a new workgroup (and namespace)<a class="headerlink" href="#create-a-new-workgroup-and-namespace" title="Link to this heading"></a></h2>
-<ul class="simple">
-<li><p>In the Redshift dashbord, choose the button <strong>Create workspace</strong> to create a new
-workgroup and namespace.  The resulting form shows 3 steps.</p>
-<ul>
-<li><p>Step 1, define the Workgroup name, Capacity, and Network and Security.
-Choose a name, i.e. <strong>specnet</strong>, and keep the defaults for the Capacity, VPC, and
-Subnets</p></li>
-<li><p>Step 2, set up a namespace.  Create a new one, i.e. <strong>specnet</strong> (we are using
-the same name for the worksgroup and namespace).  Retain the first database name
-(dev) and leave the Admin user credentials as the default (unchecked Customize
-box).  Check the the default Associated IAM role or create a new role.
-Leave Encryption and security settings unchanged.</p>
-<ul>
-<li><p>Make sure that the Associated IAM role has permission to access the bucket
-you will write to (use Redshift-S3 created above)</p></li>
-<li><p>Make new Redshift-S3 Role the default for Redshift operations in this
-namespace</p></li>
-</ul>
-</li>
-<li><p>Step 3, review and create workspace.  This will take some time.</p></li>
-</ul>
-</li>
-</ul>
-</section>
-<section id="connect-to-new-namespace-in-query-editor">
-<h2>Connect to new namespace in Query Editor<a class="headerlink" href="#connect-to-new-namespace-in-query-editor" title="Link to this heading"></a></h2>
-<ul class="simple">
-<li><p>Choose <strong>Query editor v2</strong> in the Redshift dashboard left-side menu</p></li>
-<li><p>Choose the new workgroup “Serverless: specnet” in the resource list</p>
-<ul>
-<li><p>From the resulting dialog, choose “Other ways to connect” and “Federated user”
-then click the button “Create connection”</p></li>
-<li><dl class="simple">
-<dt>The connection will become active, and the new “dev” database will</dt><dd><p>appear, as well as any other data catalogs your user account has access to.</p>
-</dd>
-</dl>
-</li>
-<li><dl class="simple">
-<dt>In the top of the right pane, click the + sign to open a new tab for writing</dt><dd><p>and executing commands.</p>
-</dd>
-</dl>
-</li>
-<li><dl class="simple">
-<dt>Paste in the contents of rs_create_sps_functions.sql to create functions and</dt><dd><p>stored procedures to be used in this workspace.</p>
-</dd>
-</dl>
-</li>
-</ul>
-</li>
-</ul>
-</section>
-<section id="configure-for-data-acquisition-and-analyses">
-<h2>Configure for data acquisition and analyses<a class="headerlink" href="#configure-for-data-acquisition-and-analyses" title="Link to this heading"></a></h2>
-<ul class="simple">
-<li><p>Create a bucket to hold relevant data</p></li>
-<li><p>Create output folders for tables to be written from rs_summarize_data.sql</p></li>
-<li><p>Make sure that Redshift namespace/workgroup has permission to write to the S3 bucket</p></li>
-</ul>
-<section id="create-a-security-group-for-the-region">
-<h3>Create a Security Group for the region<a class="headerlink" href="#create-a-security-group-for-the-region" title="Link to this heading"></a></h3>
-<ul class="simple">
-<li><p>Create a security group for the instance (and all other instances in region)
-* Must be tied to the region of instance
-* aimee.stewart_SG_useast1
-* inbound: SSH from campus, HTTP/HTTPS from all</p></li>
-</ul>
-</section>
-<section id="create-aws-elastic-compute-cloud-ec2-instance">
-<h3>Create AWS Elastic Compute Cloud (EC2) instance<a class="headerlink" href="#create-aws-elastic-compute-cloud-ec2-instance" title="Link to this heading"></a></h3>
-<ul class="simple">
-<li><p>Create from AMI (or not for new config)</p></li>
-<li><p>Use the security group created for this region</p></li>
-<li><p>Default user for ubuntu instance is <cite>ubuntu</cite></p></li>
-<li><p>(opt) Request an Elastic IP and assign DNS to it
-* Register FQDN (GoDaddy) to IP for public access</p></li>
-</ul>
-</section>
-<section id="enable-ssh-access-to-ec2">
-<h3>Enable SSH access to EC2<a class="headerlink" href="#enable-ssh-access-to-ec2" title="Link to this heading"></a></h3>
-</section>
-</section>
-<section id="aws-access-keypair">
-<h2>AWS access: keypair<a class="headerlink" href="#aws-access-keypair" title="Link to this heading"></a></h2>
-<ul class="simple">
-<li><p>Create a keypair for SSH access (tied to region) on EC2 launch</p></li>
-<li><p>One chance only: Download the private key (.pem file for Linux and OSX) to local machine</p></li>
-<li><p>Set file permissions to 400</p></li>
-</ul>
-</section>
-<section id="set-up-local-client">
-<h2>Set up local/client<a class="headerlink" href="#set-up-local-client" title="Link to this heading"></a></h2>
-<ul>
-<li><p>Copy SSH private key to each machine used for AWS access</p></li>
-<li><p>Extend the SSH timeout in local ssh client config file ~/.ssh/config:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Host</span> <span class="o">*</span>
-    <span class="n">ServerAliveInterval</span> <span class="mi">20</span>
-</pre></div>
-</div>
-</li>
-<li><p>then login with private key:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ssh</span> <span class="o">-</span><span class="n">i</span> <span class="o">~/.</span><span class="n">ssh</span><span class="o">/&lt;</span><span class="n">your_aws_key</span><span class="o">&gt;.</span><span class="n">pem</span> <span class="n">ubuntu</span><span class="nd">@xxx</span><span class="o">.</span><span class="n">xxx</span><span class="o">.</span><span class="n">xx</span><span class="o">.</span><span class="n">xx</span>
-</pre></div>
-</div>
-</li>
-</ul>
-</section>
-<section id="connect-and-set-ec2-ssh-service-timeout">
-<h2>Connect and set EC2 SSH service timeout<a class="headerlink" href="#connect-and-set-ec2-ssh-service-timeout" title="Link to this heading"></a></h2>
-<ul>
-<li><p>Extend the SSH timeout (in AMI or instance?) in new config file (&lt;proj_name&gt;.conf)
-under ssh config dir (/etc/ssh/sshd_config.d):</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ClientAliveInterval</span> <span class="mi">1200</span>
-<span class="n">ClientAliveCountMax</span> <span class="mi">3</span>
-</pre></div>
-</div>
-</li>
-<li><p>Reload SSH with new configuration:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ sudo systemctl reload sshd
-</pre></div>
-</div>
-</li>
-</ul>
 <section id="install-software-on-ec2">
 <h3>Install software on EC2<a class="headerlink" href="#install-software-on-ec2" title="Link to this heading"></a></h3>
-</section>
-</section>
-<section id="base-software">
-<h2>Base software<a class="headerlink" href="#base-software" title="Link to this heading"></a></h2>
+<section id="baseline">
+<h4>Baseline<a class="headerlink" href="#baseline" title="Link to this heading"></a></h4>
 <ul>
 <li><p>update apt</p></li>
 <li><p>install AWS client, awscli</p></li>
@@ -337,13 +265,22 @@ $ sudo apt install awscli
 $ sudo apt install apache2
 $ sudo apt install certbot
 $ sudo apt install plocate
+$ sudo apt install unzip
 </pre></div>
 </div>
 </li>
 </ul>
 </section>
+<section id="aws-client-tools">
+<h4>AWS Client tools<a class="headerlink" href="#aws-client-tools" title="Link to this heading"></a></h4>
+<ul class="simple">
+<li><p>Use instructions to install the awscli package:
+<a class="reference external" href="https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html">https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html</a>.</p></li>
+<li><p>Make sure to use the instructions with the right architecture (x86 vs Arm)</p></li>
+</ul>
+</section>
 <section id="docker">
-<h2>Docker<a class="headerlink" href="#docker" title="Link to this heading"></a></h2>
+<h4>Docker<a class="headerlink" href="#docker" title="Link to this heading"></a></h4>
 <p>Follow instructions at <a class="reference external" href="https://docs.docker.com/engine/install/ubuntu/">https://docs.docker.com/engine/install/ubuntu/</a></p>
 <ul>
 <li><p>Set up the repository:</p>
@@ -374,8 +311,9 @@ $ sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugi
 </div>
 </li>
 </ul>
-<section id="add-the-github-repo-to-ec2-instance">
-<h3>Add the Github repo to EC2 instance<a class="headerlink" href="#add-the-github-repo-to-ec2-instance" title="Link to this heading"></a></h3>
+</section>
+<section id="add-the-specify-network-software-via-github">
+<h4>Add the Specify Network software via Github<a class="headerlink" href="#add-the-specify-network-software-via-github" title="Link to this heading"></a></h4>
 <ul>
 <li><p>Generate a local ssh key:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ ssh-keygen -t ed25519 -C &quot;&lt;your_email@address&gt;&quot;
@@ -405,8 +343,129 @@ with a memorable name</p></li>
 </li>
 </ul>
 </section>
+</section>
+</section>
+<section id="redshift">
+<h2>Redshift<a class="headerlink" href="#redshift" title="Link to this heading"></a></h2>
+<section id="overview">
+<h3>Overview<a class="headerlink" href="#overview" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Redshift allows you to work with very large datasets in parallel very quickly.</p></li>
+<li><p>Redshift acts as a database application, and can connect to databases created in
+Redshift, Glue Data Catalogs, and mount tabular data in S3</p></li>
+<li><p>The default new database is “dev”, and it contains the “public” schema. The
+schema contains Tables, Views, Functions, and Stored Procedures.</p></li>
+<li><p>To mount S3 data, you must create an external schema in the database, and define
+the new data, including all of its fields and its S3 location.  These functions are
+included in the script rs_subset_gbif.sql</p></li>
+<li><p>After mounting a table, you can filter the data into a new table in your public
+schema, then drop the table in the external schema (the original S3 data).</p></li>
+<li><p>We currently filter out data with missing latitude or longitude, taxonomic ranks above
+species level, and records with a basis of record that is not observation, occurrence,
+or preserved specimen.  This brings the full dataset from about 2.6 billion down to
+2.3 billion.</p></li>
+</ul>
+</section>
+<section id="create-a-new-workgroup-and-namespace">
+<h3>Create a new workgroup (and namespace)<a class="headerlink" href="#create-a-new-workgroup-and-namespace" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>In the Redshift dashbord, choose the button <strong>Create workspace</strong> to create a new
+workgroup and namespace.  The resulting form shows 3 steps.</p>
+<ul>
+<li><p>Step 1, define the Workgroup name, Capacity, and Network and Security.
+Choose a name, i.e. <strong>specnet</strong>, and keep the defaults for the Capacity, VPC, and
+Subnets</p></li>
+<li><p>Step 2, set up a namespace.  Create a new one, i.e. <strong>specnet</strong> (we are using
+the same name for the worksgroup and namespace).  Retain the first database name
+(dev) and leave the Admin user credentials as the default (unchecked Customize
+box).  Check the the default Associated IAM role or create a new role.
+Leave Encryption and security settings unchanged.</p>
+<ul>
+<li><p>Make sure that the Associated IAM role has permission to access the bucket
+you will write to (use Redshift-S3 created above)</p></li>
+<li><p>Make new Redshift-S3 Role the default for Redshift operations in this
+namespace</p></li>
+</ul>
+</li>
+<li><p>Step 3, review and create workspace.  This will take some time.</p></li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="connect-to-new-namespace-in-query-editor">
+<h3>Connect to new namespace in Query Editor<a class="headerlink" href="#connect-to-new-namespace-in-query-editor" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Choose <strong>Query editor v2</strong> in the Redshift dashboard left-side menu</p></li>
+<li><p>Choose the new workgroup “Serverless: specnet” in the resource list</p>
+<ul>
+<li><p>From the resulting dialog, choose “Other ways to connect” and “Federated user”
+then click the button “Create connection”</p></li>
+<li><dl class="simple">
+<dt>The connection will become active, and the new “dev” database will</dt><dd><p>appear, as well as any other data catalogs your user account has access to.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>In the top of the right pane, click the + sign to open a new tab for writing</dt><dd><p>and executing commands.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Paste in the contents of rs_create_sps_functions.sql to create functions and</dt><dd><p>stored procedures to be used in this workspace.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</li>
+</ul>
+</section>
+<section id="configure-s3-redshift-for-data-acquisition-and-analyses">
+<h3>Configure S3/Redshift for data acquisition and analyses<a class="headerlink" href="#configure-s3-redshift-for-data-acquisition-and-analyses" title="Link to this heading"></a></h3>
+<ul class="simple">
+<li><p>Create a bucket to hold relevant data</p></li>
+<li><p>Create output folders for tables to be written from rs_summarize_data.sql</p></li>
+<li><p>Make sure that Redshift namespace/workgroup has permission to write to the S3 bucket</p></li>
+</ul>
+</section>
+</section>
+<section id="local-client">
+<h2>Local client<a class="headerlink" href="#local-client" title="Link to this heading"></a></h2>
+<section id="configuration">
+<h3>Configuration<a class="headerlink" href="#configuration" title="Link to this heading"></a></h3>
+<ul>
+<li><p>Copy SSH private key to each machine used for AWS access</p></li>
+<li><p>Extend the SSH timeout in local ssh client config file ~/.ssh/config:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Host</span> <span class="o">*</span>
+    <span class="n">ServerAliveInterval</span> <span class="mi">20</span>
+</pre></div>
+</div>
+</li>
+<li><p>then login with private key:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ssh</span> <span class="o">-</span><span class="n">i</span> <span class="o">~/.</span><span class="n">ssh</span><span class="o">/&lt;</span><span class="n">your_aws_key</span><span class="o">&gt;.</span><span class="n">pem</span> <span class="n">ubuntu</span><span class="nd">@xxx</span><span class="o">.</span><span class="n">xxx</span><span class="o">.</span><span class="n">xx</span><span class="o">.</span><span class="n">xx</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</section>
+<section id="connect-and-set-ec2-ssh-service-timeout">
+<h3>Connect and set EC2 SSH service timeout<a class="headerlink" href="#connect-and-set-ec2-ssh-service-timeout" title="Link to this heading"></a></h3>
+<ul>
+<li><p>Extend the SSH timeout (in AMI or instance?) in new config file (&lt;proj_name&gt;.conf)
+under ssh config dir (/etc/ssh/sshd_config.d):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ClientAliveInterval</span> <span class="mi">1200</span>
+<span class="n">ClientAliveCountMax</span> <span class="mi">3</span>
+</pre></div>
+</div>
+</li>
+<li><p>Reload SSH with new configuration:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ sudo systemctl reload sshd
+</pre></div>
+</div>
+</li>
+</ul>
+</section>
 <section id="enable-s3-access-from-local-machine-and-ec2">
-<h3>Enable S3 access from local machine and EC2<a class="headerlink" href="#enable-s3-access-from-local-machine-and-ec2" title="Link to this heading"></a></h3>
+<h3>Enable S3 access from local machine (and EC2?)<a class="headerlink" href="#enable-s3-access-from-local-machine-and-ec2" title="Link to this heading"></a></h3>
 <ul>
 <li><p>Configure AWS credentials and defaults</p>
 <ul>
@@ -446,8 +505,10 @@ $ aws ec2 describe-instances
 </ul>
 </section>
 </section>
+<section id="troubleshooting">
+<h2>Troubleshooting<a class="headerlink" href="#troubleshooting" title="Link to this heading"></a></h2>
 <section id="error-ssl">
-<h2>Error: SSL<a class="headerlink" href="#error-ssl" title="Link to this heading"></a></h2>
+<h3>Error: SSL<a class="headerlink" href="#error-ssl" title="Link to this heading"></a></h3>
 <p>First time:</p>
 <p>Error message</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SSL</span> <span class="n">validation</span> <span class="n">failed</span> <span class="k">for</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">ec2</span><span class="o">.</span><span class="n">us</span><span class="o">-</span><span class="n">east</span><span class="o">-</span><span class="mf">1.</span><span class="n">amazonaws</span><span class="o">.</span><span class="n">com</span><span class="o">/</span>
@@ -491,6 +552,7 @@ Traceback (most recent call last):</p>
 <p>pip install certifi</p>
 <p>import certifi
 certifi.where()</p>
+</section>
 <section id="workflow-for-specify-network-analyst-pre-computations">
 <h3>Workflow for Specify Network Analyst pre-computations<a class="headerlink" href="#workflow-for-specify-network-analyst-pre-computations" title="Link to this heading"></a></h3>
 <ul class="simple">

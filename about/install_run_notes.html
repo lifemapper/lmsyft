@@ -56,7 +56,6 @@
 <li class="toctree-l3"><a class="reference internal" href="#install-update-repo-from-github">Install/Update repo from Github</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#dns">DNS</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#ssl">SSL</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#direct-docker-to-correct-fqdn">Direct Docker to correct FQDN</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#docker">Docker</a></li>
@@ -65,7 +64,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#dev-environment">Dev Environment</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#configure-debugger">Configure Debugger</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#pycharm">Pycharm</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#flask">Flask</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#local-flask-testing">Local Flask testing</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#troubleshooting">Troubleshooting</a><ul>
@@ -84,14 +83,14 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">AWS:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../aws/aws-setup.html">Authentication</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../aws/aws-setup.html">AWS Setup</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../aws/aws_workflow.html">AWS Workflow</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../aws/aws_experiment.html">AWS strategy</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Misc:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../misc/debugging.html">Debugging Flask and Docker instances</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../misc/example_sp6_export.html">Example Specify 6 Export</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../misc/deploy.html">Deploy Specify Network</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../misc/ssl_certificates.html">Specify Network SSL certificates</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../misc/taxonomy_tools.html">GBIF Backbone Taxonomy</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../misc/testing.html">Testing Specify Network elements</a></li>
@@ -201,20 +200,20 @@ spcoco.org) to the static IP address for the server.</p>
 <p>For AWS, create (or modify) an Elastic IP address to point to the EC2 instance.</p>
 <p>If replacing an EC2 instance, disassociate the Elastic IP address from the old EC2
 instance, and associate it with the new instance.</p>
+<p><strong>Direct Docker to correct FQDN:</strong> Edit FQDN value in .env.analyst.conf and
+.env.broker.conf (referenced by the docker compose file) and
+server_name in config/nginx.conf to actual FQDN.  For the local dev server, this will
+be analyst.localhost and broker.localhost; for the public dev server this would
+be analyst-dev.&lt;domain&gt;.org and broker-dev.&lt;domain&gt;.org</p>
 </section>
 <section id="ssl">
 <h3>SSL<a class="headerlink" href="#ssl" title="Link to this heading"></a></h3>
 <p><a class="reference internal" href="../misc/ssl_certificates.html#specify-network-ssl-certificates"><span class="std std-ref">Specify Network SSL certificates</span></a></p>
 </section>
-<section id="direct-docker-to-correct-fqdn">
-<h3>Direct Docker to correct FQDN<a class="headerlink" href="#direct-docker-to-correct-fqdn" title="Link to this heading"></a></h3>
-<p>Edit FQDN value in .env.analyst.conf and .env.broker.conf (referenced by the docker
-compose file) and server_name in config/nginx.conf to actual FQDN.</p>
-</section>
 </section>
 <section id="docker">
 <h2>Docker<a class="headerlink" href="#docker" title="Link to this heading"></a></h2>
-<p>More info at <a class="reference internal" href="../misc/docker.html#docker"><span class="std std-ref">Docker</span></a></p>
+<p>More info at <a class="reference internal" href="../misc/deploy.html#deploy-specify-network"><span class="std std-ref">Deploy Specify Network</span></a></p>
 </section>
 <section id="aws-config">
 <h2>AWS Config<a class="headerlink" href="#aws-config" title="Link to this heading"></a></h2>
@@ -299,8 +298,8 @@ $ pip install -r requirements.txt
 <p>[Instructions for PyCharm]
 (<a class="reference external" href="https://kartoza.com/en/blog/using-docker-compose-based-python-interpreter-in-pycharm/">https://kartoza.com/en/blog/using-docker-compose-based-python-interpreter-in-pycharm/</a>)</p>
 </section>
-<section id="flask">
-<h3>Flask<a class="headerlink" href="#flask" title="Link to this heading"></a></h3>
+<section id="local-flask-testing">
+<h3>Local Flask testing<a class="headerlink" href="#local-flask-testing" title="Link to this heading"></a></h3>
 <p>To run flask in debug mode, first set up Flask environment, then start the flask
 application (in this case, main in flask_app.broker.routes.py).  Only one resource
 (aka broker or analyst) at a time can be tested in this way.

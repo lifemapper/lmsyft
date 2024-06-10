@@ -76,22 +76,21 @@ For AWS, create (or modify) an Elastic IP address to point to the EC2 instance.
 If replacing an EC2 instance, disassociate the Elastic IP address from the old EC2
 instance, and associate it with the new instance.
 
+**Direct Docker to correct FQDN:** Edit FQDN value in .env.analyst.conf and
+.env.broker.conf (referenced by the docker compose file) and
+server_name in config/nginx.conf to actual FQDN.  For the local dev server, this will
+be analyst.localhost and broker.localhost; for the public dev server this would
+be analyst-dev.<domain>.org and broker-dev.<domain>.org
+
 SSL
 -----------------------------------
 :ref:`Specify Network SSL certificates`
 
 
-Direct Docker to correct FQDN
-------------------------------------
-
-Edit FQDN value in .env.analyst.conf and .env.broker.conf (referenced by the docker
-compose file) and server_name in config/nginx.conf to actual FQDN.
-
-
 Docker
 =================================
 
-More info at :ref:`Docker`
+More info at :ref:`Deploy Specify Network`
 
 AWS Config
 ================
@@ -180,7 +179,7 @@ Pycharm
 [Instructions for PyCharm]
 (https://kartoza.com/en/blog/using-docker-compose-based-python-interpreter-in-pycharm/)
 
-Flask
+Local Flask testing
 -------------------------------------------
 
 To run flask in debug mode, first set up Flask environment, then start the flask

@@ -22,7 +22,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="GBIF Backbone Taxonomy" href="taxonomy_tools.html" />
-    <link rel="prev" title="Example Specify 6 Export" href="example_sp6_export.html" /> 
+    <link rel="prev" title="Deploy Specify Network" href="deploy.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -52,14 +52,14 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">AWS:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../aws/aws-setup.html">Authentication</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../aws/aws-setup.html">AWS Setup</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../aws/aws_workflow.html">AWS Workflow</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../aws/aws_experiment.html">AWS strategy</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Misc:</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="debugging.html">Debugging Flask and Docker instances</a></li>
-<li class="toctree-l1"><a class="reference internal" href="example_sp6_export.html">Example Specify 6 Export</a></li>
+<li class="toctree-l1"><a class="reference internal" href="deploy.html">Deploy Specify Network</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Specify Network SSL certificates</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#local-self-signed-certificates">Local self-signed certificates</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#tls-ssl-using-certificate-authority-ca">TLS/SSL using Certificate Authority (CA)</a><ul>
@@ -67,6 +67,7 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#renew-certbot-ssl-certificates">Renew Certbot SSL certificates</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#todo-autorenew-ssl-with-certbot-letsencrypt">TODO: Autorenew SSL with Certbot/LetsEncrypt</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#todo-ssl-through-amazon">TODO: SSL through Amazon</a></li>
 </ul>
 </li>
@@ -233,6 +234,10 @@ $ sudo docker compose up -d
 </pre></div>
 </div>
 </section>
+<section id="todo-autorenew-ssl-with-certbot-letsencrypt">
+<h2>TODO: Autorenew SSL with Certbot/LetsEncrypt<a class="headerlink" href="#todo-autorenew-ssl-with-certbot-letsencrypt" title="Link to this heading"></a></h2>
+<p><a class="reference external" href="https://medium.com/swlh/dockerizing-two-web-servers-to-respond-to-the-same-domain-eb9c15734a68">https://medium.com/swlh/dockerizing-two-web-servers-to-respond-to-the-same-domain-eb9c15734a68</a></p>
+</section>
 <section id="todo-ssl-through-amazon">
 <h2>TODO: SSL through Amazon<a class="headerlink" href="#todo-ssl-through-amazon" title="Link to this heading"></a></h2>
 <ul class="simple">
@@ -248,7 +253,7 @@ $ sudo docker compose up -d
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="example_sp6_export.html" class="btn btn-neutral float-left" title="Example Specify 6 Export" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="deploy.html" class="btn btn-neutral float-left" title="Deploy Specify Network" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="taxonomy_tools.html" class="btn btn-neutral float-right" title="GBIF Backbone Taxonomy" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 

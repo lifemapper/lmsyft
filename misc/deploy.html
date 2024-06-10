@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Docker &mdash; Specify Network  documentation</title>
+  <title>Deploy Specify Network &mdash; Specify Network  documentation</title>
       <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=fa44fd50" />
       <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=19f00094" />
 
@@ -20,7 +20,9 @@
         <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
-    <link rel="search" title="Search" href="../search.html" /> 
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Specify Network SSL certificates" href="ssl_certificates.html" />
+    <link rel="prev" title="Debugging Flask and Docker instances" href="debugging.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -50,14 +52,42 @@
 </ul>
 <p class="caption" role="heading"><span class="caption-text">AWS:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../aws/aws-setup.html">Authentication</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../aws/aws-setup.html">AWS Setup</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../aws/aws_workflow.html">AWS Workflow</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../aws/aws_experiment.html">AWS strategy</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Misc:</span></p>
-<ul>
+<ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="debugging.html">Debugging Flask and Docker instances</a></li>
-<li class="toctree-l1"><a class="reference internal" href="example_sp6_export.html">Example Specify 6 Export</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Deploy Specify Network</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#install-specify-network-code">Install Specify Network code</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#create-ssl-certificates">Create SSL certificates</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#build-deploy-specify-network">Build/deploy Specify Network</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#environment-status-checks">Environment status checks:</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#standard-manipulation">Standard manipulation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#edit-the-docker-environment-files">Edit the docker environment files</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#run-the-containers-production">Run the containers (production)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#run-the-containers-development">Run the containers (development)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#rebuild-restart">Rebuild/restart</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#examine-container">Examine container</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#run-docker-on-osx">Run Docker on OSX</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#troubleshooting">Troubleshooting</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#out-of-space-problem">Out of Space Problem</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#solution">Solution:</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#problem-failed-programming-external-connectivity">Problem: Failed programming external connectivity</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id1">Solution</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="ssl_certificates.html">Specify Network SSL certificates</a></li>
 <li class="toctree-l1"><a class="reference internal" href="taxonomy_tools.html">GBIF Backbone Taxonomy</a></li>
 <li class="toctree-l1"><a class="reference internal" href="testing.html">Testing Specify Network elements</a></li>
@@ -77,9 +107,9 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">Docker</li>
+      <li class="breadcrumb-item active">Deploy Specify Network</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../_sources/misc/docker.rst.txt" rel="nofollow"> View page source</a>
+            <a href="../_sources/misc/deploy.rst.txt" rel="nofollow"> View page source</a>
       </li>
   </ul>
   <hr/>
@@ -87,14 +117,123 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="docker">
-<h1>Docker<a class="headerlink" href="#docker" title="Link to this heading"></a></h1>
+  <section id="deploy-specify-network">
+<h1>Deploy Specify Network<a class="headerlink" href="#deploy-specify-network" title="Link to this heading"></a></h1>
+<section id="install-specify-network-code">
+<h2>Install Specify Network code<a class="headerlink" href="#install-specify-network-code" title="Link to this heading"></a></h2>
+</section>
+<section id="create-ssl-certificates">
+<h2>Create SSL certificates<a class="headerlink" href="#create-ssl-certificates" title="Link to this heading"></a></h2>
+<p><a class="reference external" href="ssl_certificates">SSL certificate installation</a>.</p>
+</section>
+<section id="build-deploy-specify-network">
+<h2>Build/deploy Specify Network<a class="headerlink" href="#build-deploy-specify-network" title="Link to this heading"></a></h2>
+<section id="environment-status-checks">
+<h3>Environment status checks:<a class="headerlink" href="#environment-status-checks" title="Link to this heading"></a></h3>
+<ul>
+<li><p>Ensure the FQDN(s) in .env.*.conf and server/server_name in nginx.conf agree for each
+subdomain deployment.</p>
+<p>.env.analyst.conf:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">FQDN</span><span class="o">=</span><span class="n">analyst</span><span class="o">.</span><span class="n">localhost</span>
+</pre></div>
+</div>
+<p>nginx.conf:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">server</span> <span class="p">{</span>
+  <span class="o">...</span>
+  <span class="n">server_name</span>  <span class="n">analyst</span><span class="o">.</span><span class="n">localhost</span><span class="p">;</span>
+</pre></div>
+</div>
+</li>
+<li><p>Ensure no webserver (i.e. apache2) is running on the host machine</p></li>
+<li><p>Ensure the SSL certificates are present on the host machine, and visible to the
+containers.</p></li>
+<li><p>Ensure that the port in the deployment command in the Dockerfile (for running
+flask in the appropriate development or production flask container) matches the
+appropriate docker-compose file.  The development and production commands point
+to different flask applications via the variables FLASK_APP and FLASK_MANAGE, defined
+in the docker compose files.  The command also indicates which port the app runs on:
+5000 for FLASK_APP on production, DEBUG_PORT for FLASK_MANAGE on development.</p>
+<p>Dockerfile:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span># Production flask image from base
+...
+CMD venv/bin/python -m gunicorn -w 4 --bind 0.0.0.0:5000 ${FLASK_APP}
+</pre></div>
+</div>
+<p>docker-compose.yml:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">services</span><span class="p">:</span>
+  <span class="n">analyst</span><span class="p">:</span>
+    <span class="o">...</span>
+    <span class="n">environment</span><span class="p">:</span>
+      <span class="o">-</span> <span class="n">FLASK_APP</span><span class="o">=</span><span class="n">flask_app</span><span class="o">.</span><span class="n">analyst</span><span class="o">.</span><span class="n">routes</span><span class="p">:</span><span class="n">app</span>
+    <span class="o">...</span>
+  <span class="n">broker</span><span class="p">:</span>
+    <span class="o">...</span>
+    <span class="n">environment</span><span class="p">:</span>
+      <span class="o">-</span> <span class="n">FLASK_APP</span><span class="o">=</span><span class="n">flask_app</span><span class="o">.</span><span class="n">broker</span><span class="o">.</span><span class="n">routes</span><span class="p">:</span><span class="n">app</span>
+</pre></div>
+</div>
+<p>Dockerfile:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span># Development flask image from base
+FROM base as dev-flask
+...
+CMD venv/bin/python -m debugpy --listen 0.0.0.0:${DEBUG_PORT} -m ${FLASK_MANAGE} run --host=0.0.0.0
+</pre></div>
+</div>
+<p>docker-compose.development.yml:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">broker</span><span class="p">:</span>
+  <span class="o">...</span>
+  <span class="n">ports</span><span class="p">:</span>
+    <span class="o">-</span> <span class="s2">&quot;5001:5001&quot;</span>
+  <span class="n">environment</span><span class="p">:</span>
+    <span class="o">-</span> <span class="n">FLASK_APP</span><span class="o">=</span><span class="n">flask_app</span><span class="o">.</span><span class="n">broker</span><span class="o">.</span><span class="n">routes</span><span class="p">:</span><span class="n">app</span>
+    <span class="o">-</span> <span class="n">FLASK_MANAGE</span><span class="o">=</span><span class="n">flask_app</span><span class="o">.</span><span class="n">broker</span><span class="o">.</span><span class="n">manage</span>
+    <span class="o">-</span> <span class="n">DEBUG_PORT</span><span class="o">=</span><span class="mi">5001</span>
+  <span class="o">...</span>
+
+<span class="n">analyst</span><span class="p">:</span>
+  <span class="o">...</span>
+  <span class="n">ports</span><span class="p">:</span>
+    <span class="o">-</span> <span class="s2">&quot;5002:5002&quot;</span>
+  <span class="n">environment</span><span class="p">:</span>
+    <span class="o">-</span> <span class="n">FLASK_APP</span><span class="o">=</span><span class="n">flask_app</span><span class="o">.</span><span class="n">analyst</span><span class="o">.</span><span class="n">routes</span><span class="p">:</span><span class="n">app</span>
+    <span class="o">-</span> <span class="n">FLASK_MANAGE</span><span class="o">=</span><span class="n">flask_app</span><span class="o">.</span><span class="n">analyst</span><span class="o">.</span><span class="n">manage</span>
+    <span class="o">-</span> <span class="n">DEBUG_PORT</span><span class="o">=</span><span class="mi">5002</span>
+</pre></div>
+</div>
+</li>
+<li><p>The proxy pass in nginx.conf points to the container
+name (<a class="reference external" href="http://container:port">http://container:port</a>) using http (even for SSL); it points to port 5000
+for each container.  The Dockerfile command indicates which port the app runs on (5000
+for FLASK_APP on production, DEBUG_PORT for FLASK_MANAGE on development.
+(TODO: clarify this!
+<a class="reference external" href="https://maxtsh.medium.com/a-practical-guide-to-implementing-reverse-proxy-using-dockerized-nginx-with-multiple-apps-ad80f6dfce17">https://maxtsh.medium.com/a-practical-guide-to-implementing-reverse-proxy-using-dockerized-nginx-with-multiple-apps-ad80f6dfce17</a>):</p></li>
+</ul>
+<p>nginx.conf:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Broker</span>
+<span class="n">server</span> <span class="p">{</span>
+  <span class="n">listen</span> <span class="mi">443</span> <span class="n">ssl</span><span class="p">;</span>
+  <span class="n">location</span> <span class="o">/</span> <span class="p">{</span>
+    <span class="o">...</span>
+    <span class="c1"># pass queries to the broker container</span>
+    <span class="n">proxy_pass</span> <span class="n">http</span><span class="p">:</span><span class="o">//</span><span class="n">broker</span><span class="p">:</span><span class="mi">5000</span><span class="p">;</span>
+  <span class="o">...</span>
+<span class="c1"># Analyst</span>
+<span class="n">server</span> <span class="p">{</span>
+  <span class="n">listen</span> <span class="mi">443</span> <span class="n">ssl</span><span class="p">;</span>
+  <span class="n">location</span> <span class="o">/</span> <span class="p">{</span>
+    <span class="c1"># pass queries to the analyst container</span>
+    <span class="n">proxy_pass</span> <span class="n">http</span><span class="p">:</span><span class="o">//</span><span class="n">analyst</span><span class="p">:</span><span class="mi">5000</span><span class="p">;</span>
+</pre></div>
+</div>
+</section>
+</section>
 <section id="standard-manipulation">
 <h2>Standard manipulation<a class="headerlink" href="#standard-manipulation" title="Link to this heading"></a></h2>
 <section id="edit-the-docker-environment-files">
 <h3>Edit the docker environment files<a class="headerlink" href="#edit-the-docker-environment-files" title="Link to this heading"></a></h3>
 <ul class="simple">
-<li><p>Add the container domain name to the files .env.broker.conf and .env.analyst.conf</p></li>
+<li><p>Add the deployments’ FQDN to the files .env.broker.conf and .env.analyst.conf and
+nginx.conf</p></li>
 <li><p>Change the FQDN value to the fully qualified domain name of the server.</p>
 <ul>
 <li><p>If this is a local testing deployment, it will be “localhost”</p></li>
@@ -111,7 +250,9 @@ FQDN=analyst.spcoco.org in .env.analyst.conf</p></li>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">docker</span> <span class="n">compose</span> <span class="o">-</span><span class="n">f</span> <span class="n">docker</span><span class="o">-</span><span class="n">compose</span><span class="o">.</span><span class="n">yml</span> <span class="n">up</span> <span class="o">-</span><span class="n">d</span>
 </pre></div>
 </div>
-<p>Specify Network is now available at [<a class="reference external" href="https://localhost/](https://localhost:443">https://localhost/](https://localhost:443</a>)</p>
+<p>Specify Network is now available at [<a class="reference external" href="https://localhost/](https://localhost:443">https://localhost/](https://localhost:443</a>)`</p>
+<p>Make sure the host machine is not running a webserver (apache2) which will bind
+the http/https ports and not allow the docker containers to use them.</p>
 </section>
 <section id="run-the-containers-development">
 <h3>Run the containers (development)<a class="headerlink" href="#run-the-containers-development" title="Link to this heading"></a></h3>
@@ -192,9 +333,8 @@ containers for Specify Network development shows disk full:</p>
 <p>The disk is small, but the culprit is /var/lib/docker/overlay2</p>
 <p>Some strategies at:
 <a class="reference external" href="https://forums.docker.com/t/some-way-to-clean-up-identify-contents-of-var-lib-docker-overlay/30604/19">https://forums.docker.com/t/some-way-to-clean-up-identify-contents-of-var-lib-docker-overlay/30604/19</a></p>
-</section>
 <section id="solution">
-<h3>Solution:<a class="headerlink" href="#solution" title="Link to this heading"></a></h3>
+<h4>Solution:<a class="headerlink" href="#solution" title="Link to this heading"></a></h4>
 <ul>
 <li><p>The instance was created with a volume of an 8gb default size.</p></li>
 <li><p>Stop the instance</p></li>
@@ -289,12 +429,36 @@ tmpfs            95M  4.0K   95M   1% /run/user/1000
 </ul>
 </section>
 </section>
+<section id="problem-failed-programming-external-connectivity">
+<h3>Problem: Failed programming external connectivity<a class="headerlink" href="#problem-failed-programming-external-connectivity" title="Link to this heading"></a></h3>
+<dl class="simple">
+<dt>[+] Running 6/5</dt><dd><p>✔ Network sp_network_default        Created                                                                                                                                                          0.1s
+✔ Network sp_network_nginx          Created                                                                                                                                                          0.1s
+✔ Container sp_network-front-end-1  Created                                                                                                                                                          0.2s
+✔ Container sp_network-broker-1     Created                                                                                                                                                          0.2s
+✔ Container sp_network-analyst-1    Created                                                                                                                                                          0.2s
+✔ Container sp_network-nginx-1      Created                                                                                                                                                          0.1s</p>
+</dd>
+</dl>
+<p>Attaching to analyst-1, broker-1, front-end-1, nginx-1
+Error response from daemon: driver failed programming external connectivity on endpoint
+sp_network-nginx-1 (1feeaa264a757ddf815a34db5dd541f48d3f57aa21ef104e3d5823efbb35f9ab):
+Error starting userland proxy: listen tcp4 0.0.0.0:80: bind: address already in use</p>
+<section id="id1">
+<h4>Solution<a class="headerlink" href="#id1" title="Link to this heading"></a></h4>
+<p>Stop apache2 on the host machine</p>
+</section>
+</section>
+</section>
 </section>
 
 
            </div>
           </div>
-          <footer>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="debugging.html" class="btn btn-neutral float-left" title="Debugging Flask and Docker instances" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="ssl_certificates.html" class="btn btn-neutral float-right" title="Specify Network SSL certificates" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
 
   <hr/>
 

@@ -1,37 +1,87 @@
-Authentication
+AWS Setup
 ####################
 
-Create an IAM role for the EC2/Redshift/S3 interaction
-***********************************************************
+Security
+**********************
 
-* Create a Role (Redshift-S3) for service Redshift to read/write to S3
+Create a Security Group for the region
+===========================================================
 
-  * Add a policy allowing read and write access to the specnet S3 bucket
-  * Step 1: Trusted entity type = AWS service, Use Case = Redshift - Customizable.
+* Test this group!
+* Create a security group for the instance (and all other instances in region)
+
+  * aimee.stewart_SG_useast1
+  * Must be tied to the region of instance
+  * inbound: SSH from campus (use VPN if elsewhere), HTTP/HTTPS from all
+
+* or use launch-wizard-1 security group (created by some EC2 instance creation in 2023)
+
+  * inbound rules IPv4:
+
+    * Custom TCP 8000
+    * Custom TCP 8080
+    * SSH 22
+    * HTTP 80
+    * HTTPS 443
+
+  * outbound rules IPv4, IPv6:
+
+    * All traffic all ports
+
+
+Create an IAM role for the EC2/Redshift/S3 interaction (specnet_ec2_role)
+===========================================================
+
+* Create a Role for EC2 instance access to Redshift and S3
+
+  1. Create Policy allowing FullAccess to SpecifyNetwork bucket
+     (specnet_S3bucket_FullAccess)
+  2. Trusted entity type = AWS service, Use Case = Redshift - Customizable.
 
     * TODO: change to Redshift - Scheduler when we automate the workflow
 
-  * Step 2: Add permissions
+  3. Add permissions
 
     * AmazonRedshiftAllCommandsFullAccess (AWS managed)
     * AmazonS3FullAccess (AWS managed)
+    * specnet_S3bucket_FullAccess
+
+  4. Save and name role (specnet_ec2_role)
+
+
+EC2
+******
 
 EC2 instance creation
 ===========================================================
 
-* Instance type t3.small
+* Future - create and save an AMI for consistent reproduction
+* via Console, without launch template:
 
-  * Build fails with t2.micro or t3.micro with 1gb RAM
-  * t3.small is 2gb RAM
+  * Ubuntu Server 24.04 LTS, SSD Volume Type (free tier eligible), Arm architecture
+  * Instance type t4g.small
 
-* Ubuntu Server 22.04 LTS, SSD Volume Type (free tier eligible), x86 architecture
-* Security Group: launch-wizard-1
-* 30 Gb General Purpose SSD (gp2)
-* For dev, Spot instance (in Advanced options)
-* Modify IAM role - for role created above (i.e. specnet_ec2_role)
+    * Build fails with t2.micro or t3.micro with 1gb RAM
+    * t4g.small is 2gb RAM
 
-For programmatic access to S3
+  * Security Group: launch-wizard-1
+  * 30 Gb General Purpose SSD (gp2)
+  * For dev, Spot instance (in Advanced options)
+  * Modify IAM role - to role created above (i.e. specnet_ec2_role)
+  * Use the security group created for this region (currently launch-wizard-1)
+
+* Launch
+  * Default user for ubuntu instance is `ubuntu`
+  * If you do not have a keypair, create one for SSH access (tied to region) on initial
+    EC2 launch
+
+    * One chance only: Download the private key (.pem file for Linux and OSX) to local
+      machine
+    * Set file permissions to 400
+
+Configure programmatic access to S3
 ===========================================================
+
 Configure AWS credentials either through
 
 * environment variables
@@ -46,137 +96,18 @@ I upgraded awscli (sudo apt install awscli), then upgraded boto3
 (pip install --upgrade boto3) , which installed 1.34.60.  Success
 
 
-Redshift
-===========================================================
+Elastic IP
+==============================================
 
-Overview
-*******************************
-
-* Redshift allows you to work with very large datasets in parallel very quickly.
-* Redshift acts as a database application, and can connect to databases created in
-  Redshift, Glue Data Catalogs, and mount tabular data in S3
-* The default new database is "dev", and it contains the "public" schema. The
-  schema contains Tables, Views, Functions, and Stored Procedures.
-* To mount S3 data, you must create an external schema in the database, and define
-  the new data, including all of its fields and its S3 location.  These functions are
-  included in the script rs_subset_gbif.sql
-* After mounting a table, you can filter the data into a new table in your public
-  schema, then drop the table in the external schema (the original S3 data).
-* We currently filter out data with missing latitude or longitude, taxonomic ranks above
-  species level, and records with a basis of record that is not observation, occurrence,
-  or preserved specimen.  This brings the full dataset from about 2.6 billion down to
-  2.3 billion.
-
-
-Create a new workgroup (and namespace)
-***********************************************************
-
-* In the Redshift dashbord, choose the button **Create workspace** to create a new
-  workgroup and namespace.  The resulting form shows 3 steps.
-
-  * Step 1, define the Workgroup name, Capacity, and Network and Security.
-    Choose a name, i.e. **specnet**, and keep the defaults for the Capacity, VPC, and
-    Subnets
-  * Step 2, set up a namespace.  Create a new one, i.e. **specnet** (we are using
-    the same name for the worksgroup and namespace).  Retain the first database name
-    (dev) and leave the Admin user credentials as the default (unchecked Customize
-    box).  Check the the default Associated IAM role or create a new role.
-    Leave Encryption and security settings unchanged.
-
-    * Make sure that the Associated IAM role has permission to access the bucket
-      you will write to (use Redshift-S3 created above)
-    * Make new Redshift-S3 Role the default for Redshift operations in this
-      namespace
-
-  * Step 3, review and create workspace.  This will take some time.
-
-Connect to new namespace in Query Editor
-***********************************************************
-
-* Choose **Query editor v2** in the Redshift dashboard left-side menu
-* Choose the new workgroup "Serverless: specnet" in the resource list
-
-  * From the resulting dialog, choose "Other ways to connect" and "Federated user"
-    then click the button "Create connection"
-  * The connection will become active, and the new "dev" database will
-      appear, as well as any other data catalogs your user account has access to.
-  * In the top of the right pane, click the + sign to open a new tab for writing
-      and executing commands.
-  * Paste in the contents of rs_create_sps_functions.sql to create functions and
-      stored procedures to be used in this workspace.
-
-
-Configure for data acquisition and analyses
-***********************************************************
-
-* Create a bucket to hold relevant data
-* Create output folders for tables to be written from rs_summarize_data.sql
-* Make sure that Redshift namespace/workgroup has permission to write to the S3 bucket
-
-
-Create a Security Group for the region
-===========================================================
-
-* Create a security group for the instance (and all other instances in region)
-  * Must be tied to the region of instance
-  * aimee.stewart_SG_useast1
-  * inbound: SSH from campus, HTTP/HTTPS from all
-
-
-Create AWS Elastic Compute Cloud (EC2) instance
-===========================================================
-
-* Create from AMI (or not for new config)
-* Use the security group created for this region
-* Default user for ubuntu instance is `ubuntu`
-* (opt) Request an Elastic IP and assign DNS to it
-  * Register FQDN (GoDaddy) to IP for public access
-
-Enable SSH access to EC2
-===========================================================
-
-AWS access: keypair
-***************************************
-
-* Create a keypair for SSH access (tied to region) on EC2 launch
-* One chance only: Download the private key (.pem file for Linux and OSX) to local machine
-* Set file permissions to 400
-
-
-Set up local/client
-***************************************
-
-* Copy SSH private key to each machine used for AWS access
-* Extend the SSH timeout in local ssh client config file ~/.ssh/config::
-
-    Host *
-        ServerAliveInterval 20
-
-
-* then login with private key::
-
-    ssh -i ~/.ssh/<your_aws_key>.pem ubuntu@xxx.xxx.xx.xx
-
-Connect and set EC2 SSH service timeout
-***************************************
-
-* Extend the SSH timeout (in AMI or instance?) in new config file (<proj_name>.conf)
-  under ssh config dir (/etc/ssh/sshd_config.d)::
-
-
-    ClientAliveInterval 1200
-    ClientAliveCountMax 3
-
-* Reload SSH with new configuration::
-
-    $ sudo systemctl reload sshd
+* If needed (not re-using an existing IP), create an Elastic IP for the EC2 instance
+* assign a DNS name to its FQDN in 3rd party (spcoco: GoDaddy)
+* in console, assign EC2 instance to the Elastic IP
 
 Install software on EC2
 ===========================================================
 
-Base software
-***************************************
-
+Baseline
+------------
 * update apt
 * install AWS client, awscli
 * install apache for getting/managing certificates
@@ -187,9 +118,18 @@ Base software
     $ sudo apt install apache2
     $ sudo apt install certbot
     $ sudo apt install plocate
+    $ sudo apt install unzip
+
+
+AWS Client tools
+--------------------
+
+* Use instructions to install the awscli package:
+  https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html.
+* Make sure to use the instructions with the right architecture (x86 vs Arm)
 
 Docker
-***************************************
+-----------
 
 Follow instructions at https://docs.docker.com/engine/install/ubuntu/
 
@@ -216,8 +156,9 @@ Follow instructions at https://docs.docker.com/engine/install/ubuntu/
     $ sudo apt-get update
     $ sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
-Add the Github repo to EC2 instance
-===========================================================
+
+Add the Specify Network software via Github
+-----------------------------------------------------
 
 * Generate a local ssh key::
 
@@ -241,7 +182,109 @@ Add the Github repo to EC2 instance
 
     git clone git@github.com:specifysystems/sp_network
 
-Enable S3 access from local machine and EC2
+
+
+
+Redshift
+***********************************
+
+Overview
+=================
+
+* Redshift allows you to work with very large datasets in parallel very quickly.
+* Redshift acts as a database application, and can connect to databases created in
+  Redshift, Glue Data Catalogs, and mount tabular data in S3
+* The default new database is "dev", and it contains the "public" schema. The
+  schema contains Tables, Views, Functions, and Stored Procedures.
+* To mount S3 data, you must create an external schema in the database, and define
+  the new data, including all of its fields and its S3 location.  These functions are
+  included in the script rs_subset_gbif.sql
+* After mounting a table, you can filter the data into a new table in your public
+  schema, then drop the table in the external schema (the original S3 data).
+* We currently filter out data with missing latitude or longitude, taxonomic ranks above
+  species level, and records with a basis of record that is not observation, occurrence,
+  or preserved specimen.  This brings the full dataset from about 2.6 billion down to
+  2.3 billion.
+
+
+Create a new workgroup (and namespace)
+=============================================
+* In the Redshift dashbord, choose the button **Create workspace** to create a new
+  workgroup and namespace.  The resulting form shows 3 steps.
+
+  * Step 1, define the Workgroup name, Capacity, and Network and Security.
+    Choose a name, i.e. **specnet**, and keep the defaults for the Capacity, VPC, and
+    Subnets
+  * Step 2, set up a namespace.  Create a new one, i.e. **specnet** (we are using
+    the same name for the worksgroup and namespace).  Retain the first database name
+    (dev) and leave the Admin user credentials as the default (unchecked Customize
+    box).  Check the the default Associated IAM role or create a new role.
+    Leave Encryption and security settings unchanged.
+
+    * Make sure that the Associated IAM role has permission to access the bucket
+      you will write to (use Redshift-S3 created above)
+    * Make new Redshift-S3 Role the default for Redshift operations in this
+      namespace
+
+  * Step 3, review and create workspace.  This will take some time.
+
+Connect to new namespace in Query Editor
+=============================================
+
+* Choose **Query editor v2** in the Redshift dashboard left-side menu
+* Choose the new workgroup "Serverless: specnet" in the resource list
+
+  * From the resulting dialog, choose "Other ways to connect" and "Federated user"
+    then click the button "Create connection"
+  * The connection will become active, and the new "dev" database will
+      appear, as well as any other data catalogs your user account has access to.
+  * In the top of the right pane, click the + sign to open a new tab for writing
+      and executing commands.
+  * Paste in the contents of rs_create_sps_functions.sql to create functions and
+      stored procedures to be used in this workspace.
+
+
+Configure S3/Redshift for data acquisition and analyses
+=====================================================================
+
+* Create a bucket to hold relevant data
+* Create output folders for tables to be written from rs_summarize_data.sql
+* Make sure that Redshift namespace/workgroup has permission to write to the S3 bucket
+
+
+
+Local client
+***************************************
+
+Configuration
+========================
+
+* Copy SSH private key to each machine used for AWS access
+* Extend the SSH timeout in local ssh client config file ~/.ssh/config::
+
+    Host *
+        ServerAliveInterval 20
+
+
+* then login with private key::
+
+    ssh -i ~/.ssh/<your_aws_key>.pem ubuntu@xxx.xxx.xx.xx
+
+
+Connect and set EC2 SSH service timeout
+===========================================
+
+* Extend the SSH timeout (in AMI or instance?) in new config file (<proj_name>.conf)
+  under ssh config dir (/etc/ssh/sshd_config.d)::
+
+    ClientAliveInterval 1200
+    ClientAliveCountMax 3
+
+* Reload SSH with new configuration::
+
+    $ sudo systemctl reload sshd
+
+Enable S3 access from local machine (and EC2?)
 ===========================================================
 
 * Configure AWS credentials and defaults
@@ -269,9 +312,12 @@ Enable S3 access from local machine and EC2
     $ aws s3 ls
     $ aws ec2 describe-instances
 
-Error: SSL
+
+Troubleshooting
 ***************************************
 
+Error: SSL
+==================
 First time:
 
 Error message ::
@@ -344,3 +390,4 @@ Workflow for Specify Network Analyst pre-computations
     * Upload data to S3, delete on Spot
 
 * template of common software configuration
+

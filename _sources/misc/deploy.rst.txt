@@ -1,5 +1,116 @@
-Docker
+Deploy Specify Network
 ##############################
+
+Install Specify Network code
+=======================================
+
+Create SSL certificates
+============================
+
+`SSL certificate installation <ssl_certificates>`_.
+
+
+Build/deploy Specify Network
+================================
+
+Environment status checks:
+--------------------------
+
+* Ensure the FQDN(s) in .env.*.conf and server/server_name in nginx.conf agree for each
+  subdomain deployment.
+
+  .env.analyst.conf::
+
+    FQDN=analyst.localhost
+
+  nginx.conf::
+
+    server {
+      ...
+      server_name  analyst.localhost;
+
+
+* Ensure no webserver (i.e. apache2) is running on the host machine
+* Ensure the SSL certificates are present on the host machine, and visible to the
+  containers.
+* Ensure that the port in the deployment command in the Dockerfile (for running
+  flask in the appropriate development or production flask container) matches the
+  appropriate docker-compose file.  The development and production commands point
+  to different flask applications via the variables FLASK_APP and FLASK_MANAGE, defined
+  in the docker compose files.  The command also indicates which port the app runs on:
+  5000 for FLASK_APP on production, DEBUG_PORT for FLASK_MANAGE on development.
+
+  Dockerfile::
+
+        # Production flask image from base
+        ...
+        CMD venv/bin/python -m gunicorn -w 4 --bind 0.0.0.0:5000 ${FLASK_APP}
+
+  docker-compose.yml::
+
+      services:
+        analyst:
+          ...
+          environment:
+            - FLASK_APP=flask_app.analyst.routes:app
+          ...
+        broker:
+          ...
+          environment:
+            - FLASK_APP=flask_app.broker.routes:app
+
+  Dockerfile::
+
+        # Development flask image from base
+        FROM base as dev-flask
+        ...
+        CMD venv/bin/python -m debugpy --listen 0.0.0.0:${DEBUG_PORT} -m ${FLASK_MANAGE} run --host=0.0.0.0
+
+  docker-compose.development.yml::
+
+      broker:
+        ...
+        ports:
+          - "5001:5001"
+        environment:
+          - FLASK_APP=flask_app.broker.routes:app
+          - FLASK_MANAGE=flask_app.broker.manage
+          - DEBUG_PORT=5001
+        ...
+
+      analyst:
+        ...
+        ports:
+          - "5002:5002"
+        environment:
+          - FLASK_APP=flask_app.analyst.routes:app
+          - FLASK_MANAGE=flask_app.analyst.manage
+          - DEBUG_PORT=5002
+
+
+* The proxy pass in nginx.conf points to the container
+  name (http://container:port) using http (even for SSL); it points to port 5000
+  for each container.  The Dockerfile command indicates which port the app runs on (5000
+  for FLASK_APP on production, DEBUG_PORT for FLASK_MANAGE on development.
+  (TODO: clarify this!
+  https://maxtsh.medium.com/a-practical-guide-to-implementing-reverse-proxy-using-dockerized-nginx-with-multiple-apps-ad80f6dfce17):
+
+nginx.conf::
+
+    # Broker
+    server {
+      listen 443 ssl;
+      location / {
+        ...
+        # pass queries to the broker container
+        proxy_pass http://broker:5000;
+      ...
+    # Analyst
+    server {
+      listen 443 ssl;
+      location / {
+        # pass queries to the analyst container
+        proxy_pass http://analyst:5000;
 
 Standard manipulation
 =================================
@@ -7,7 +118,8 @@ Standard manipulation
 Edit the docker environment files
 -------------------------------------------
 
-* Add the container domain name to the files .env.broker.conf and .env.analyst.conf
+* Add the deployments' FQDN to the files .env.broker.conf and .env.analyst.conf and
+  nginx.conf
 * Change the FQDN value to the fully qualified domain name of the server.
 
   * If this is a local testing deployment, it will be "localhost"
@@ -22,7 +134,10 @@ Start the containers with the Docker composition file::
 
     sudo docker compose -f docker-compose.yml up -d
 
-Specify Network is now available at [https://localhost/](https://localhost:443)
+Specify Network is now available at [https://localhost/](https://localhost:443)`
+
+Make sure the host machine is not running a webserver (apache2) which will bind
+the http/https ports and not allow the docker containers to use them.
 
 
 Run the containers (development)
@@ -116,7 +231,7 @@ Some strategies at:
 https://forums.docker.com/t/some-way-to-clean-up-identify-contents-of-var-lib-docker-overlay/30604/19
 
 Solution:
--------------------
+...........
 
 * The instance was created with a volume of an 8gb default size.
 * Stop the instance
@@ -205,3 +320,24 @@ Solution:
 
 * Stop apache2 if running
 * Rebuild the docker containers
+
+Problem: Failed programming external connectivity
+--------------------------------------------------------
+
+[+] Running 6/5
+ ✔ Network sp_network_default        Created                                                                                                                                                          0.1s
+ ✔ Network sp_network_nginx          Created                                                                                                                                                          0.1s
+ ✔ Container sp_network-front-end-1  Created                                                                                                                                                          0.2s
+ ✔ Container sp_network-broker-1     Created                                                                                                                                                          0.2s
+ ✔ Container sp_network-analyst-1    Created                                                                                                                                                          0.2s
+ ✔ Container sp_network-nginx-1      Created                                                                                                                                                          0.1s
+Attaching to analyst-1, broker-1, front-end-1, nginx-1
+Error response from daemon: driver failed programming external connectivity on endpoint
+sp_network-nginx-1 (1feeaa264a757ddf815a34db5dd541f48d3f57aa21ef104e3d5823efbb35f9ab):
+Error starting userland proxy: listen tcp4 0.0.0.0:80: bind: address already in use
+
+Solution
+...............
+
+Stop apache2 on the host machine
+
