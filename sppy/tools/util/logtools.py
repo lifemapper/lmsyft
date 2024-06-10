@@ -1,5 +1,5 @@
 """Standard logger for console and/or file logging."""
-import io
+from io import StringIO
 import logging
 from logging.handlers import RotatingFileHandler
 import os
@@ -83,7 +83,7 @@ def prettify_object(print_obj):
     Returns:
         formatted string representation of object
     """
-    strm = io.StringIO()
+    strm = StringIO()
     pp(print_obj, stream=strm)
     obj_str = strm.getvalue()
     return obj_str
