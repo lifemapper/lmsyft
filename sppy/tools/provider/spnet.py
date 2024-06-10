@@ -172,9 +172,10 @@ class SpNetAnalyses():
             for rec in recs_df.values:
                 recs.append(rec)
         return recs
+    
 
 # ----------------------------------------------------
-    def get_dataset_counts(self, dataset_key, format="JSON"):
+    def get_simple_dataset_counts(self, dataset_key, format="JSON"):
         """Query the S3 resource for occurrence and species counts for this dataset.
 
         Args:
