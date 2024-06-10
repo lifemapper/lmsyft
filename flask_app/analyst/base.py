@@ -53,8 +53,8 @@ class _AnalystService(_SpecifyNetworkService):
     # ...............................................
     @classmethod
     def _standardize_params(
-            cls, dataset_key=None, pub_org_key=None, count_by=None, order=None,
-            limit=10):
+            cls, dataset_key=None, pub_org_key=None, count_by=None, out_stats=None,
+            order=None, limit=10):
         """Standardize query parameters to send to appropriate service.
 
         Args:
@@ -77,6 +77,7 @@ class _AnalystService(_SpecifyNetworkService):
             "dataset_key": dataset_key,
             "pub_org_key": pub_org_key,
             "count_by": count_by,
+            "out_stats": out_stats,
             "order": order,
             "limit": limit
         }

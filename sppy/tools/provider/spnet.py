@@ -3,6 +3,7 @@ import boto3
 import json
 import pandas as pd
 
+from sppy.aws.aggregate_matrix import SparseMatrix
 from sppy.aws.aws_constants import (
     ENCODING, PROJ_BUCKET, REGION, SUMMARY_FOLDER, Summaries)
 from sppy.aws.aws_tools import get_current_datadate_str
