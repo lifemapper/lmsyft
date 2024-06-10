@@ -144,6 +144,12 @@ Test with https://broker.spcoco.org/api/v1/frontend/?occid=01493b05-4310-4f28-9d
     $ sudo docker system prune --all --volumes
     $ sudo docker compose up -d
 
+
+TODO: Autorenew SSL with Certbot/LetsEncrypt
+.........................................
+https://medium.com/swlh/dockerizing-two-web-servers-to-respond-to-the-same-domain-eb9c15734a68
+
+
 TODO: SSL through Amazon
 .........................................
 
