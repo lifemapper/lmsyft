@@ -1,4 +1,6 @@
 """Random tools used frequently in Specify Network."""
+from io import StringIO
+from pprint import pp
 import sys
 import traceback
 from uuid import UUID
@@ -95,3 +97,20 @@ def add_errinfo(errinfo, key, val):
         except KeyError:
             errinfo[key] = [val]
     return errinfo
+
+
+# ......................................................
+def prettify_object(print_obj):
+    """Format an object for output.
+
+    Args:
+        print_obj (obj): Object to pretty print in output
+
+    Returns:
+        formatted string representation of object
+    """
+    strm = StringIO()
+    pp(print_obj, stream=strm)
+    obj_str = strm.getvalue()
+    return obj_str
+
