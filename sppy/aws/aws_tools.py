@@ -1014,7 +1014,8 @@ def create_s3_dataset_lookup_from_tsv(
         columns.remove(c)
     smdf = df.drop(labels=columns, axis=1)
 
-    smdf.to_parquet(tmp_parquet_fname, engine="fastparquet", index=True)
+    # smdf.to_parquet(tmp_parquet_fname, engine="fastparquet", index=True)
+    smdf.to_parquet(tmp_parquet_fname, index=True)
     output_s3_path = f"{s3_folders}/{output_fname}"
     upload_to_s3(tmp_parquet_fname, bucket, output_s3_path)
 

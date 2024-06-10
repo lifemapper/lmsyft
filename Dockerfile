@@ -1,12 +1,18 @@
 # syntax=docker/dockerfile:1
 # ........................................................
 # Backend base image
-FROM python:3.12.2-alpine3.19 as base
+#FROM python:3.12.3-alpine3.20 as base
+FROM python:3.12-slim-bookworm as base
 
-LABEL maintainer="Specify Collections Consortium <github.com/specify>"
+LABEL maintainer="Specify Network <github.com/specifysystems>"
 
-RUN addgroup -S specify -g 888 \
- && adduser -S specify -G specify -u 888
+RUN apt-get update
+RUN apt-get install -y gcc
+RUN apt-get install -y git
+RUN apt-get install -y vim
+
+RUN addgroup --gid 888 specify \
+ && adduser --ingroup specify --uid 888 specify
 
 RUN mkdir -p /home/specify \
  && chown specify.specify /home/specify

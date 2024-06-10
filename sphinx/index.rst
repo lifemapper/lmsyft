@@ -27,7 +27,7 @@ Welcome to Specify Network's documentation!
    :caption: Misc:
 
    misc/debugging
-   misc/example_sp6_export
+   misc/deploy
    misc/ssl_certificates
    misc/taxonomy_tools
    misc/testing
