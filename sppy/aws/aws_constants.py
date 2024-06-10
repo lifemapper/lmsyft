@@ -83,8 +83,11 @@ class Summaries:
             SUMMARY_TABLE_TYPES.SPECIES_DATASET_MATRIX: {
                 "fname": "species_dataset_matrix_XXXX_XX_XX.npz",
                 "table_format": "NPZ",
+                # Axis 0
                 "row": "taxonkey_species",
+                # Axis 1
                 "column": "datasetkey",
+
                 "value": "occ_count",
             }
         }

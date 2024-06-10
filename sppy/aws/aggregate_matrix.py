@@ -467,15 +467,15 @@ class SparseMatrix:
     # .............................................................................
     @classmethod
     def init_from_s3(
-            cls, bucket, bucket_path, filename, table_type, local_path=None,
+            cls, bucket, bucket_path, table_type, data_datestr, local_path=None,
             region=REGION, logger=None):
         """Write a pd DataFrame to CSV or parquet on S3.
 
         Args:
             bucket (str): Bucket identifier on S3.
-            bucket_path (str): Folder path to the S3 output data.
-            filename (str): Filename of output data to write to S3.
+            bucket_path (str): Folder path to the S3 sparse matrix data.
             table_type (aws_constants.SUMMARY_TABLE_TYPES): type of aggregated data
+            data_datestr (str): date of data to query in format "yyyy-mm-dd"
             local_path (str): local path for temporary download of npz file.
             region (str): AWS region to query.
             logger (object): logger for saving relevant processing messages
@@ -488,8 +488,9 @@ class SparseMatrix:
         sparse_coo = None
         if local_path is None:
             local_path = os.getcwd()
+        base_fname = Summaries.get_filename(table_type, data_datestr)
         tmp_fname = download_from_s3(
-            bucket, bucket_path, filename, local_path, region=region, logger=logger,
+            bucket, bucket_path, base_fname, local_path, region=region, logger=logger,
             overwrite=True)
         try:
             sparse_coo = scipy.sparse.load_npz(tmp_fname)
@@ -1068,60 +1069,66 @@ if __name__ == "__main__":
         log_name, log_path=LOCAL_OUTDIR, log_console=True, log_level=INFO)
 
     in_table_type = SUMMARY_TABLE_TYPES.DATASET_SPECIES_LISTS
-    out_table_type = SUMMARY_TABLE_TYPES.SPECIES_DATASET_MATRIX
+    matrix_table_type = SUMMARY_TABLE_TYPES.SPECIES_DATASET_MATRIX
 
     data_datestr = get_current_datadate_str()
     table = Summaries.get_table(in_table_type, data_datestr)
-    # Datasets in rows/x/axis 1
-    stk_col_label_for_axis1 = table["key_fld"]
-    stk_col_label_for_val = table["value_fld"]
-    # Dict of new fields constructed from existing fields, just 1 for species key/name
-    fld_mods = table["combine_fields"]
-    # Species (taxonKey + name) in columns/y/axis 0
-    stk_col_label_for_axis0 = list(fld_mods.keys())[0]
-    (fld1, fld2) = fld_mods[stk_col_label_for_axis0]
 
-    # Read stacked (record) data directly into DataFrame
-    stk_df = read_s3_parquet_to_pandas(
-        PROJ_BUCKET, SUMMARY_FOLDER, table["fname"], tst_logger, s3_client=None
-    )
 
-    # .................................
-    # Combine key and species fields to ensure uniqueness
-    def _combine_columns(row):
-        return str(row[fld1]) + ' ' + str(row[fld2])
-    # ......................
-    stk_df[stk_col_label_for_axis0] = stk_df.apply(_combine_columns, axis=1)
-    # .................................
+    agg_sparse_mtx = SparseMatrix.init_from_s3(
+        PROJ_BUCKET, SUMMARY_FOLDER, matrix_table_type, data_datestr,
+        local_path="/tmp", region=REGION, logger=None)
 
-    # Create matrix from record data
-    agg_sparse_mtx = SparseMatrix.init_from_stacked_data(
-        stk_df, stk_col_label_for_axis1, stk_col_label_for_axis0, stk_col_label_for_val,
-        out_table_type, logger=tst_logger)
-
-    # Test raw counts between stacked data and sparse matrix
-    for stk_lbl, axis in ((stk_col_label_for_axis0, 0), (stk_col_label_for_axis1, 1)):
-        # Test stacked column used for axis 0/1 against sparse matrix axis 0/1
-        test_stacked_to_aggregate_sum(
-            stk_df, stk_lbl, stk_col_label_for_val, agg_sparse_mtx, agg_axis=axis,
-            test_count=5, logger=tst_logger)
-
-    # Test min/max values for rows/columns
-    for is_max in (False, True):
-        for axis in (0, 1):
-            test_stacked_to_aggregate_extremes(
-                stk_df, stk_col_label_for_axis0, stk_col_label_for_axis1,
-                stk_col_label_for_val, agg_sparse_mtx, agg_axis=axis, test_count=5,
-                logger=tst_logger, is_max=is_max)
-
-    # Save matrix to S3
-    out_filename = Summaries.get_filename(out_table_type, data_datestr)
-    agg_sparse_mtx.write_to_s3(PROJ_BUCKET, SUMMARY_FOLDER, out_filename, REGION)
-
-    # Copy logfile to S3
-    agg_sparse_mtx.write_to_s3(PROJ_BUCKET, SUMMARY_FOLDER, tst_logger.filename, REGION)
-    s3_logfile = agg_sparse_mtx.copy_logfile_to_s3(PROJ_BUCKET, SUMMARY_FOLDER, REGION)
-    print(s3_logfile)
+    # # Datasets in rows/x/axis 1
+    # stk_col_label_for_axis1 = table["key_fld"]
+    # stk_col_label_for_val = table["value_fld"]
+    # # Dict of new fields constructed from existing fields, just 1 for species key/name
+    # fld_mods = table["combine_fields"]
+    # # Species (taxonKey + name) in columns/y/axis 0
+    # stk_col_label_for_axis0 = list(fld_mods.keys())[0]
+    # (fld1, fld2) = fld_mods[stk_col_label_for_axis0]
+    #
+    # # Read stacked (record) data directly into DataFrame
+    # stk_df = read_s3_parquet_to_pandas(
+    #     PROJ_BUCKET, SUMMARY_FOLDER, table["fname"], tst_logger, s3_client=None
+    # )
+    #
+    # # .................................
+    # # Combine key and species fields to ensure uniqueness
+    # def _combine_columns(row):
+    #     return str(row[fld1]) + ' ' + str(row[fld2])
+    # # ......................
+    # stk_df[stk_col_label_for_axis0] = stk_df.apply(_combine_columns, axis=1)
+    # # .................................
+    #
+    # # Create matrix from record data
+    # agg_sparse_mtx = SparseMatrix.init_from_stacked_data(
+    #     stk_df, stk_col_label_for_axis1, stk_col_label_for_axis0, stk_col_label_for_val,
+    #     matrix_table_type, logger=tst_logger)
+    #
+    # # Test raw counts between stacked data and sparse matrix
+    # for stk_lbl, axis in ((stk_col_label_for_axis0, 0), (stk_col_label_for_axis1, 1)):
+    #     # Test stacked column used for axis 0/1 against sparse matrix axis 0/1
+    #     test_stacked_to_aggregate_sum(
+    #         stk_df, stk_lbl, stk_col_label_for_val, agg_sparse_mtx, agg_axis=axis,
+    #         test_count=5, logger=tst_logger)
+    #
+    # # Test min/max values for rows/columns
+    # for is_max in (False, True):
+    #     for axis in (0, 1):
+    #         test_stacked_to_aggregate_extremes(
+    #             stk_df, stk_col_label_for_axis0, stk_col_label_for_axis1,
+    #             stk_col_label_for_val, agg_sparse_mtx, agg_axis=axis, test_count=5,
+    #             logger=tst_logger, is_max=is_max)
+    #
+    # # Save matrix to S3
+    # out_filename = Summaries.get_filename(out_table_type, data_datestr)
+    # agg_sparse_mtx.write_to_s3(PROJ_BUCKET, SUMMARY_FOLDER, out_filename, REGION)
+    #
+    # # Copy logfile to S3
+    # agg_sparse_mtx.write_to_s3(PROJ_BUCKET, SUMMARY_FOLDER, tst_logger.filename, REGION)
+    # s3_logfile = agg_sparse_mtx.copy_logfile_to_s3(PROJ_BUCKET, SUMMARY_FOLDER, REGION)
+    # print(s3_logfile)
 """
 from sppy.aws.aggregate_matrix import *
 
