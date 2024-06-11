@@ -2,6 +2,7 @@
 import boto3
 from botocore.exceptions import ClientError, SSLError
 import io
+import json
 from logging import ERROR, INFO
 import numpy as np
 import os
@@ -9,6 +10,7 @@ import pandas as pd
 from pandas.api.types import CategoricalDtype
 import random
 import scipy.sparse
+from zipfile import ZipFile
 
 from sppy.aws.aws_constants import (
     LOCAL_OUTDIR, PROJ_BUCKET, REGION, SNKeys, SUMMARY_FOLDER,
@@ -412,15 +414,16 @@ class SparseMatrix:
         """Create a sparse matrix of rows by columns containing values from a table.
 
         Args:
-            stacked_df (pandas.DataFrame): DataFrame of records containing columns to be used
-                as the new rows, new columns, and values.
+            stacked_df (pandas.DataFrame): DataFrame of records containing columns to be
+                used as the new rows, new columns, and values.
             x_fld: column in the input dataframe containing values to be used as
                 columns (axis 1)
             y_fld: column in the input dataframe containing values to be used as rows
                 (axis 0)
             val_fld: : column in the input dataframe containing values to be used as
                 values for the intersection of x and y fields
-            table_type (aws_constants.SUMMARY_TABLE_TYPES): type of aggregated data
+            table_type (aws_constants.SUMMARY_TABLE_TYPES): table type of sparse matrix
+                aggregated data
             logger (object): logger for saving relevant processing messages
 
         Returns:
@@ -488,11 +491,14 @@ class SparseMatrix:
         sparse_coo = None
         if local_path is None:
             local_path = os.getcwd()
-        base_fname = Summaries.get_filename(table_type, data_datestr)
+        fname = Summaries.get_filename(table_type, data_datestr)
+        base_fname = f"{fname}.zip"
         tmp_fname = download_from_s3(
             bucket, bucket_path, base_fname, local_path, region=region, logger=logger,
             overwrite=True)
         try:
+            with ZipFile(tmp_fname, mode="r") as archive:
+                archive.extractall(f"{local_path}/")
             sparse_coo = scipy.sparse.load_npz(tmp_fname)
         except Exception as e:
             logit(logger, f"Failed to read {tmp_fname}: {e}", log_level=ERROR)
@@ -531,6 +537,18 @@ class SparseMatrix:
             raise Exception(f"2D sparse array does not have axis {axis}")
         category = categ.categories[code]
         return category
+
+
+    # ...............................................
+    def _export_categories(self, axis=0):
+        if axis == 0:
+            categ = self._row_categ
+        elif axis == 1:
+            categ = self._col_categ
+        else:
+            raise Exception(f"2D sparse array does not have axis {axis}")
+        cat_lst = categ.categories.tolist()
+        return cat_lst
 
     # ...............................................
     def _get_categories_from_code(self, code_list, axis=0):
@@ -1006,13 +1024,129 @@ class SparseMatrix:
         return s3_filename
 
     # .............................................................................
+    def compress_to_file(self, filename, local_path="/tmp"):
+        """Compress this SparseMatrix to a zipped npz and json file.
+
+        Args:
+            filename (str): Filename of output data to write.
+            local_path (str): Absolute path of local destination path
+
+        Returns:
+            zip_fname (str): Local output zip filename.
+
+        Raises:
+            Exception: on failure to write sparse matrix to NPZ file.
+            Exception: on failure to write row and column categories to JSON file.
+            Exception: on failure to write sparse matrix and category files to zipfile.
+        """
+        basename, _ext = os.path.splitext(filename)
+        mtx_fname = f"{local_path}/{basename}.npz"
+        meta_fname = f"{local_path}/{basename}.json"
+        zip_fname = f"{local_path}/{basename}.zip"
+        # Delete any local temp files
+        for fname in [mtx_fname, meta_fname, zip_fname]:
+            if os.path.exists(fname):
+                os.remove(fname)
+        # Save matrix to npz locally
+        try:
+            scipy.sparse.save_npz(mtx_fname, self._coo_array, compressed=True)
+        except Exception as e:
+            msg = f"Failed to write {mtx_fname}: {e}"
+            self._logme(msg, log_level=ERROR)
+            raise Exception(msg)
+        # Save table data and categories to json locally
+        metadata = Summaries.get_table(self._table_type)
+        metadata["row"] = self._row_categ.tolist()
+        metadata["column"] = self._col_categ.tolist()
+        try:
+            json.dump(metadata, meta_fname)
+        except Exception as e:
+            msg = f"Failed to write {meta_fname}: {e}"
+            self._logme(msg, log_level=ERROR)
+            raise Exception(msg)
+        # Compress matrix with categories
+        try:
+            with ZipFile(zip_fname, 'w') as zip:
+                for fname in [mtx_fname, meta_fname, zip_fname]:
+                    zip.write(fname, os.path.basename(fname))
+        except Exception as e:
+            msg = f"Failed to write {zip_fname}: {e}"
+            self._logme(msg, log_level=ERROR)
+            raise Exception(msg)
+
+        return zip_fname
+
+    # .............................................................................
+    @classmethod
+    def uncompress_zipped_sparsematrix(zip_filename, local_path="/tmp"):
+        """Uncompress a zipped SparseMatrix into a coo_array and row/column categories.
+
+        Args:
+            zip_filename (str): Filename of output data to write to S3.
+            local_path (str): Absolute path of local destination path
+
+        Returns:
+            coo_array (scipy.sparse.coo_array):
+            row_categories (pandas.api.types.CategoricalDtype): row categories
+            col_categories (pandas.api.types.CategoricalDtype): column categories.
+
+        Raises:
+            Exception: on missing input zipfile
+            Exception: on missing expected content from zipfile
+        TODO: write row and column categories to S3
+        """
+        if local_path is None:
+            local_path = os.getcwd()
+        if not os.path.exists(zip_filename):
+            raise Exception(f"Missing file {zip_filename}")
+        basename = os.path.basename(zip_filename)
+        fname, _ext = os.path.splitext(basename)
+        # Expected files
+        mtx_fname = f"{local_path}/{fname}.npz"
+        meta_fname = f"{local_path}/{fname}.json"
+        zip_fname = f"{local_path}/{fname}.zip"
+        # Delete any local temp files
+        for fname in [mtx_fname, meta_fname, zip_fname]:
+            if os.path.exists(fname):
+                os.remove(fname)
+        # Unzip to local dir
+        with ZipFile(zip_filename, mode="r") as archive:
+            archive.extractall(f"{local_path}/")
+        for fn in [mtx_fname, meta_fname]:
+            if not os.path.exists(fn):
+                raise Exception(f"Missing expected file {fn}")
+        # Save matrix to npz locally
+        try:
+            sparse_coo = scipy.sparse.load_npz(mtx_fname)
+        except Exception as e:
+            raise Exception(f"Failed to load {mtx_fname}: {e}")
+        # Save categories to json locally
+        try:
+            with open(meta_fname) as metafile:
+                meta_dict = json.load(metafile)
+        except Exception as e:
+            raise Exception(f"Failed to load {meta_fname}: {e}")
+        try:
+            row_catlst = meta_dict.pop("row")
+        except KeyError:
+            raise Exception(f"Missing row categories in {meta_fname}")
+        try:
+            col_catlst = meta_dict.pop("column")
+        except KeyError:
+            raise Exception(f"Missing column categories in {meta_fname}")
+
+        try:
+            table_type = Summaries.get_table_type_from_code(meta_dict["code"])
+        return sparse_coo, row_catlst, col_catlst, table_type
+
+    # .............................................................................
     def write_to_s3(self, bucket, bucket_path, filename, region):
         """Write a pd DataFrame to CSV or parquet on S3.
 
         Args:
             bucket (str): Bucket identifier on S3.
             bucket_path (str): Folder path to the S3 output data.
-            filename (str): Filename of output data to write to S3.
+            filename (str): Filename of local data to write to S3.
             region (str): AWS region to upload to.
 
         Returns:
@@ -1020,17 +1154,9 @@ class SparseMatrix:
 
         TODO: write row and column categories to S3
         """
-        s3_filename = None
-        tmp_fname = f"/tmp/{filename}"
-        if os.path.exists(tmp_fname):
-            os.remove(tmp_fname)
-        try:
-            scipy.sparse.save_npz(tmp_fname, self._coo_array, compressed=True)
-        except Exception as e:
-            self._logme(f"Failed to write {tmp_fname}: {e}", log_level=ERROR)
-        else:
-            s3_filename = self._upload_to_s3(tmp_fname, bucket, bucket_path, region)
-        return s3_filename
+        zip_fname = self.compress_to_file(filename, local_path="/tmp")
+        s3_fname = self._upload_to_s3(zip_fname, bucket, bucket_path, region)
+        return s3_fname
 
     # .............................................................................
     def copy_logfile_to_s3(self, bucket, bucket_path, region):
@@ -1060,6 +1186,7 @@ class SparseMatrix:
 # --------------------------------------------------------------------------------------
 if __name__ == "__main__":
     """Main script creates a SPECIES_DATASET_MATRIX from DATASET_SPECIES_LISTS."""
+    data_datestr = get_current_datadate_str()
     # Create a logger
     script_name = os.path.splitext(os.path.basename(__file__))[0]
     todaystr = get_today_str()
@@ -1068,67 +1195,65 @@ if __name__ == "__main__":
     tst_logger = Logger(
         log_name, log_path=LOCAL_OUTDIR, log_console=True, log_level=INFO)
 
-    in_table_type = SUMMARY_TABLE_TYPES.DATASET_SPECIES_LISTS
+    stacked_table_type = SUMMARY_TABLE_TYPES.DATASET_SPECIES_LISTS
     matrix_table_type = SUMMARY_TABLE_TYPES.SPECIES_DATASET_MATRIX
-
-    data_datestr = get_current_datadate_str()
-    table = Summaries.get_table(in_table_type, data_datestr)
-
 
     agg_sparse_mtx = SparseMatrix.init_from_s3(
         PROJ_BUCKET, SUMMARY_FOLDER, matrix_table_type, data_datestr,
-        local_path="/tmp", region=REGION, logger=None)
+        local_path="/tmp", region=REGION, logger=tst_logger)
 
-    # # Datasets in rows/x/axis 1
-    # stk_col_label_for_axis1 = table["key_fld"]
-    # stk_col_label_for_val = table["value_fld"]
-    # # Dict of new fields constructed from existing fields, just 1 for species key/name
-    # fld_mods = table["combine_fields"]
-    # # Species (taxonKey + name) in columns/y/axis 0
-    # stk_col_label_for_axis0 = list(fld_mods.keys())[0]
-    # (fld1, fld2) = fld_mods[stk_col_label_for_axis0]
-    #
-    # # Read stacked (record) data directly into DataFrame
-    # stk_df = read_s3_parquet_to_pandas(
-    #     PROJ_BUCKET, SUMMARY_FOLDER, table["fname"], tst_logger, s3_client=None
-    # )
-    #
-    # # .................................
-    # # Combine key and species fields to ensure uniqueness
-    # def _combine_columns(row):
-    #     return str(row[fld1]) + ' ' + str(row[fld2])
-    # # ......................
-    # stk_df[stk_col_label_for_axis0] = stk_df.apply(_combine_columns, axis=1)
-    # # .................................
-    #
-    # # Create matrix from record data
-    # agg_sparse_mtx = SparseMatrix.init_from_stacked_data(
-    #     stk_df, stk_col_label_for_axis1, stk_col_label_for_axis0, stk_col_label_for_val,
-    #     matrix_table_type, logger=tst_logger)
-    #
-    # # Test raw counts between stacked data and sparse matrix
-    # for stk_lbl, axis in ((stk_col_label_for_axis0, 0), (stk_col_label_for_axis1, 1)):
-    #     # Test stacked column used for axis 0/1 against sparse matrix axis 0/1
-    #     test_stacked_to_aggregate_sum(
-    #         stk_df, stk_lbl, stk_col_label_for_val, agg_sparse_mtx, agg_axis=axis,
-    #         test_count=5, logger=tst_logger)
-    #
-    # # Test min/max values for rows/columns
-    # for is_max in (False, True):
-    #     for axis in (0, 1):
-    #         test_stacked_to_aggregate_extremes(
-    #             stk_df, stk_col_label_for_axis0, stk_col_label_for_axis1,
-    #             stk_col_label_for_val, agg_sparse_mtx, agg_axis=axis, test_count=5,
-    #             logger=tst_logger, is_max=is_max)
-    #
-    # # Save matrix to S3
-    # out_filename = Summaries.get_filename(out_table_type, data_datestr)
-    # agg_sparse_mtx.write_to_s3(PROJ_BUCKET, SUMMARY_FOLDER, out_filename, REGION)
-    #
-    # # Copy logfile to S3
-    # agg_sparse_mtx.write_to_s3(PROJ_BUCKET, SUMMARY_FOLDER, tst_logger.filename, REGION)
-    # s3_logfile = agg_sparse_mtx.copy_logfile_to_s3(PROJ_BUCKET, SUMMARY_FOLDER, REGION)
-    # print(s3_logfile)
+    # Datasets in rows/x/axis 1
+    table = Summaries.get_table(stacked_table_type, data_datestr)
+    stk_col_label_for_axis1 = table["key_fld"]
+    stk_col_label_for_val = table["value_fld"]
+    # Dict of new fields constructed from existing fields, just 1 for species key/name
+    fld_mods = table["combine_fields"]
+    # Species (taxonKey + name) in columns/y/axis 0
+    stk_col_label_for_axis0 = list(fld_mods.keys())[0]
+    (fld1, fld2) = fld_mods[stk_col_label_for_axis0]
+
+    # Read stacked (record) data directly into DataFrame
+    stk_df = read_s3_parquet_to_pandas(
+        PROJ_BUCKET, SUMMARY_FOLDER, table["fname"], tst_logger, s3_client=None
+    )
+
+    # .................................
+    # Combine key and species fields to ensure uniqueness
+    def _combine_columns(row):
+        return str(row[fld1]) + ' ' + str(row[fld2])
+    # ......................
+    stk_df[stk_col_label_for_axis0] = stk_df.apply(_combine_columns, axis=1)
+    # .................................
+
+    # Create matrix from record data
+    agg_sparse_mtx = SparseMatrix.init_from_stacked_data(
+        stk_df, stk_col_label_for_axis1, stk_col_label_for_axis0, stk_col_label_for_val,
+        matrix_table_type, logger=tst_logger)
+
+    # Test raw counts between stacked data and sparse matrix
+    for stk_lbl, axis in ((stk_col_label_for_axis0, 0), (stk_col_label_for_axis1, 1)):
+        # Test stacked column used for axis 0/1 against sparse matrix axis 0/1
+        test_stacked_to_aggregate_sum(
+            stk_df, stk_lbl, stk_col_label_for_val, agg_sparse_mtx, agg_axis=axis,
+            test_count=5, logger=tst_logger)
+
+    # Test min/max values for rows/columns
+    for is_max in (False, True):
+        for axis in (0, 1):
+            test_stacked_to_aggregate_extremes(
+                stk_df, stk_col_label_for_axis0, stk_col_label_for_axis1,
+                stk_col_label_for_val, agg_sparse_mtx, agg_axis=axis, test_count=5,
+                logger=tst_logger, is_max=is_max)
+
+    # Save matrix to S3
+    out_filename = Summaries.get_filename(stacked_table_type, data_datestr)
+    out_base_filename, _ext = os.path.splitext(out_filename)
+    agg_sparse_mtx.write_to_s3(PROJ_BUCKET, SUMMARY_FOLDER, out_filename, REGION)
+
+    # Copy logfile to S3
+    agg_sparse_mtx.write_to_s3(PROJ_BUCKET, SUMMARY_FOLDER, tst_logger.filename, REGION)
+    s3_logfile = agg_sparse_mtx.copy_logfile_to_s3(PROJ_BUCKET, SUMMARY_FOLDER, REGION)
+    print(s3_logfile)
 """
 from sppy.aws.aggregate_matrix import *
 
@@ -1139,13 +1264,47 @@ log_name = f"{script_name}_{todaystr}"
 # Create logger with default INFO messages
 tst_logger = Logger(
     log_name, log_path=LOCAL_OUTDIR, log_console=True, log_level=INFO)
+test_count = 5
 
-in_table_type = SUMMARY_TABLE_TYPES.DATASET_SPECIES_LISTS
-out_table_type = SUMMARY_TABLE_TYPES.SPECIES_DATASET_MATRIX
+stacked_table_type = SUMMARY_TABLE_TYPES.DATASET_SPECIES_LISTS
+matrix_table_type = SUMMARY_TABLE_TYPES.SPECIES_DATASET_MATRIX
 
 data_datestr = get_current_datadate_str()
-table = Summaries.get_table(in_table_type, data_datestr)
-# Datasets in rows/x/axis 1
+
+
+
+
+
+
+
+
+
+#  ....................................................
+agg_sparse_mtx = SparseMatrix.init_from_s3(
+    PROJ_BUCKET, SUMMARY_FOLDER, matrix_table_type, data_datestr,
+    local_path="/tmp", region=REGION, logger=tst_logger)
+self = agg_sparse_mtx
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#  ....................................................
+# Datasets in rows/x/axis 
+table = Summaries.get_table(stacked_table_type, data_datestr)
 stk_col_label_for_axis1 = table["key_fld"]
 stk_col_label_for_val = table["value_fld"]
 # Dict of new fields constructed from existing fields, just 1 for species key/name
@@ -1171,12 +1330,8 @@ stk_df[stk_col_label_for_axis0] = stk_df.apply(_combine_columns, axis=1)
 # Create matrix from record data
 agg_sparse_mtx = SparseMatrix.init_from_stacked_data(
     stk_df, stk_col_label_for_axis1, stk_col_label_for_axis0, stk_col_label_for_val,
-    out_table_type, logger=tst_logger)
-
-
-
+    matrix_table_type, logger=tst_logger)
 self = agg_sparse_mtx
-test_count = 5
 
 # Test raw counts between stacked data and sparse matrix
 for stk_lbl, axis in ((stk_col_label_for_axis0, 0), (stk_col_label_for_axis1, 1)):
@@ -1196,7 +1351,7 @@ for is_max in (False, True):
 test_row_col_comparisons(agg_sparse_mtx, test_count=5, logger=tst_logger)
 
 # Save matrix to S3
-out_filename = Summaries.get_filename(out_table_type, data_datestr)
+out_filename = Summaries.get_filename(matrix_table_type, data_datestr)
 agg_sparse_mtx.write_to_s3(PROJ_BUCKET, SUMMARY_FOLDER, out_filename, REGION)
 
 # Copy logfile to S3

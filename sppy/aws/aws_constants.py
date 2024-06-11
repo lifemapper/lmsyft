@@ -59,13 +59,15 @@ class Summaries:
     """Constant metadata about aggregate tables."""
     TABLES = {
             SUMMARY_TABLE_TYPES.DATASET_COUNTS: {
-                "fname": "dataset_counts_XXXX_XX_XX_000.parquet",
+                "code": "dataset_counts",
+                "fname": "dataset_counts_XXXX_XX_XX_000",
                 "table_format": "Parquet",
                 "fields": ["datasetkey", "occ_count", "species_count"],
                 "key_fld": "datasetkey"
             },
             SUMMARY_TABLE_TYPES.DATASET_SPECIES_LISTS: {
-                "fname": "dataset_lists_XXXX_XX_XX_000.parquet",
+                "code": "dataset_lists",
+                "fname": "dataset_lists_XXXX_XX_XX_000",
                 "table_format": "Parquet",
                 "fields": ["datasetkey", "taxonkey", "species", "occ_count"],
                 "key_fld": "datasetkey",
@@ -74,20 +76,22 @@ class Summaries:
                 "value_fld": "occ_count",
             },
             SUMMARY_TABLE_TYPES.DATASET_META: {
-                "fname": "dataset_meta_XXXX_XX_XX.parquet",
+                "code": "dataset_meta",
+                "fname": "dataset_meta_XXXX_XX_XX",
                 "table_format": "Parquet",
                 "fields": [
                     "dataset_key", "publishing_organization_key", "title"],
                 "key_fld": "dataset_key"
             },
             SUMMARY_TABLE_TYPES.SPECIES_DATASET_MATRIX: {
-                "fname": "species_dataset_matrix_XXXX_XX_XX.npz",
+                "code": "species_dataset_matrix",
+                "fname": "species_dataset_matrix_XXXX_XX_XX",
                 "table_format": "NPZ",
                 # Axis 0
                 "row": "taxonkey_species",
                 # Axis 1
                 "column": "datasetkey",
-
+                # Matrix values
                 "value": "occ_count",
             }
         }
@@ -115,7 +119,7 @@ class Summaries:
 
     # ...............................................
     @classmethod
-    def get_table(cls, table_type, datestr):
+    def get_table(cls, table_type, datestr=None):
         """Update the filename in a metadata dictionary for one table, and return.
 
         Args:
@@ -130,9 +134,33 @@ class Summaries:
             cpy_table = copy.deepcopy(cls.TABLES[table_type])
         except KeyError:
             return None
-        fname_tmpl = cpy_table["fname"]
-        cpy_table["fname"] = fname_tmpl.replace("XXXX_XX_XX", datestr)
+        if datestr is not None:
+            fname_tmpl = cpy_table["fname"]
+            cpy_table["fname"] = fname_tmpl.replace("XXXX_XX_XX", datestr)
         return cpy_table
+
+    # ...............................................
+    @classmethod
+    def get_table_type_from_code(cls, table_code):
+        """Get the table type from the code inside the metadata.
+
+        Args:
+            table_code: code of SUMMARY_TABLE_TYPES to return.
+
+        Returns:
+            table_type (SUMMARY_TABLE_TYPES type): type of table.
+        """
+        table_type = None
+        for key, meta in cls.TABLES.items():
+            try:
+                meta[table_code]
+            except:
+                pass
+            else:
+                table_type = key
+        if table_type is None:
+            raise Exception(f"Table code {table_code} does not exist")
+        return table_type
 
     # ...............................................
     @classmethod
