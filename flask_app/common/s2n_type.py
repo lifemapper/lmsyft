@@ -212,7 +212,7 @@ class APIService:
                 "description":
                     "Describe the counts for this dataset or compare this dataset's"
                     "counts to min/max/mean/median counts in all other datasets.",
-                "default": None
+                "default": "describe"
             },
         },
         "description":

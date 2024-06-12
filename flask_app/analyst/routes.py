@@ -98,13 +98,13 @@ def dataset_endpoint():
             API response.
     """
     ds_arg = request.args.get("dataset_key", default=None, type=str)
-    count_arg = request.args.get("count_by", default=None, type=str)
-    stats_arg = request.args.get("out_stats", default=None, type=str)
+    count_arg = request.args.get("aggregate_by", default=None, type=str)
+    stats_arg = request.args.get("stat_type", default=None, type=str)
     if ds_arg is None:
         response = DatasetSvc.get_endpoint()
     else:
         response = DatasetSvc.get_counts(
-            dataset_key=ds_arg, count_by=count_arg, out_stats=stats_arg)
+            dataset_key=ds_arg, aggregate_by=count_arg, stat_type=stats_arg)
     return response
 
 # .....................................................................................
@@ -120,7 +120,7 @@ def rank_endpoint():
     order_arg = request.args.get("order", default=None, type=str)
     limit_arg = request.args.get("limit", default=10, type=int)
     print(
-        f"*** count_by_arg={count_by_arg}, order_arg={order_arg}, "
+        f"*** aggregate_by_arg={count_by_arg}, order_arg={order_arg}, "
         f"limit_arg={limit_arg} ***")
     # if coll_arg is None and org_arg is None:
     if count_by_arg is None:

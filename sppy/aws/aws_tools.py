@@ -375,19 +375,21 @@ def upload_trigger_to_s3(trigger_name, s3_bucket, s3_bucket_path, region=REGION)
 #     parquet_buffer.seek(0)
 #     s3_client.upload_fileobj(parquet_buffer, bucket, parquet_path)
 # .............................................................................
-def download_from_s3(bucket, bucket_path, filename, overwrite=True):
+def download_from_s3(bucket, bucket_path, filename, local_path=None, overwrite=True):
     """Download a file from S3 to a local file.
 
     Args:
         bucket (str): Bucket identifier on S3.
         bucket_path (str): Folder path to the S3 parquet data.
         filename (str): Filename of parquet data to read from S3.
+        local_path (str): Absolute path of the destination directory.
         overwrite (boolean):  flag indicating whether to overwrite an existing file.
 
     Returns:
         local_filename (str): full path to local filename containing downloaded data.
     """
-    local_path = os.getcwd()
+    if local_path is None:
+        local_path = os.getcwd()
     local_filename = os.path.join(local_path, filename)
     if os.path.exists(local_filename):
         if overwrite is True:

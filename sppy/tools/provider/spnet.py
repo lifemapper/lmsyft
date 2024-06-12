@@ -171,7 +171,7 @@ class SpNetAnalyses():
             for rec in recs_df.values:
                 recs.append(rec)
         return recs
-    
+
 
 # ----------------------------------------------------
     def get_simple_dataset_counts(self, dataset_key, format="JSON"):

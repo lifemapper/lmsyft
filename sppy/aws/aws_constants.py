@@ -1,5 +1,6 @@
 """Constants for Specnet AWS Resources."""
 import copy
+import os.path
 from enum import Enum
 
 PROJ_NAME = "specnet"
@@ -33,6 +34,7 @@ INSTANCE_TYPE = "t2.micro"
 # INSTANCE_TYPE = "a1.large"
 
 USER_DATA_TOKEN = "###SCRIPT_GOES_HERE###"
+DATESTR_TOKEN = "YYYY_MM_DD"
 
 
 # .............................................................................
@@ -51,23 +53,28 @@ class SUMMARY_TABLE_TYPES:
     DATASET_COUNTS = "dataset_counts"
     DATASET_SPECIES_LISTS = "dataset_species_lists"
     DATASET_META = "dataset_meta"
-    SPECIES_DATASET_MATRIX = "species_dataset"
+    SPECIES_DATASET_MATRIX = "species_dataset_matrix"
 
 
 # .............................................................................
 class Summaries:
-    """Constant metadata about aggregate tables."""
+    """Constant metadata about aggregate tables.
+
+    Note: All filenames follow the pattern
+        <datacontents>_<datatype>_<YYYY_MM_DD><_optional parquet extension>
+    Note: Table code is the same as <datacontents>_<datatype>
+    """
     TABLES = {
             SUMMARY_TABLE_TYPES.DATASET_COUNTS: {
-                "code": "dataset_counts",
-                "fname": "dataset_counts_XXXX_XX_XX_000",
+                "code": SUMMARY_TABLE_TYPES.DATASET_COUNTS,
+                "fname": f"dataset_counts_{DATESTR_TOKEN}_000",
                 "table_format": "Parquet",
                 "fields": ["datasetkey", "occ_count", "species_count"],
                 "key_fld": "datasetkey"
             },
             SUMMARY_TABLE_TYPES.DATASET_SPECIES_LISTS: {
-                "code": "dataset_lists",
-                "fname": "dataset_lists_XXXX_XX_XX_000",
+                "code": SUMMARY_TABLE_TYPES.DATASET_SPECIES_LISTS,
+                "fname": f"dataset_lists_{DATESTR_TOKEN}_000",
                 "table_format": "Parquet",
                 "fields": ["datasetkey", "taxonkey", "species", "occ_count"],
                 "key_fld": "datasetkey",
@@ -76,16 +83,16 @@ class Summaries:
                 "value_fld": "occ_count",
             },
             SUMMARY_TABLE_TYPES.DATASET_META: {
-                "code": "dataset_meta",
-                "fname": "dataset_meta_XXXX_XX_XX",
+                "code": SUMMARY_TABLE_TYPES.DATASET_META,
+                "fname": f"dataset_meta_{DATESTR_TOKEN}",
                 "table_format": "Parquet",
                 "fields": [
                     "dataset_key", "publishing_organization_key", "title"],
                 "key_fld": "dataset_key"
             },
             SUMMARY_TABLE_TYPES.SPECIES_DATASET_MATRIX: {
-                "code": "species_dataset_matrix",
-                "fname": "species_dataset_matrix_XXXX_XX_XX",
+                "code": SUMMARY_TABLE_TYPES.SPECIES_DATASET_MATRIX,
+                "fname": f"speciesxdataset_matrix_{DATESTR_TOKEN}",
                 "table_format": "NPZ",
                 # Axis 0
                 "row": "taxonkey_species",
@@ -113,7 +120,7 @@ class Summaries:
         for key, meta in cls.TABLES.items():
             meta_cpy = copy.deepcopy(meta)
             fname_tmpl = meta["fname"]
-            meta_cpy["fname"] = fname_tmpl.replace("XXXX_XX_XX", datestr)
+            meta_cpy["fname"] = fname_tmpl.replace(DATESTR_TOKEN, datestr)
             tables[key] = meta_cpy
         return tables
 
@@ -136,30 +143,31 @@ class Summaries:
             return None
         if datestr is not None:
             fname_tmpl = cpy_table["fname"]
-            cpy_table["fname"] = fname_tmpl.replace("XXXX_XX_XX", datestr)
+            cpy_table["fname"] = fname_tmpl.replace(DATESTR_TOKEN, datestr)
         return cpy_table
 
     # ...............................................
     @classmethod
-    def get_table_type_from_code(cls, table_code):
+    def get_tabletype_from_filename_prefix(cls, datacontents, datatype):
         """Get the table type from the code inside the metadata.
 
         Args:
-            table_code: code of SUMMARY_TABLE_TYPES to return.
+            datacontents (str): first part of filename indicating data in table.
+            datatype (str): second part of filename indicating form of data in table
+                (records, lists, matrix, etc).
 
         Returns:
             table_type (SUMMARY_TABLE_TYPES type): type of table.
         """
         table_type = None
         for key, meta in cls.TABLES.items():
-            try:
-                meta[table_code]
-            except:
-                pass
-            else:
+            fname = meta["fname"]
+            contents, dtp, _, _ = cls._parse_filename(fname)
+            if datacontents == contents and datatype == dtp:
                 table_type = key
         if table_type is None:
-            raise Exception(f"Table code {table_code} does not exist")
+            raise Exception(
+                f"Table with filename prefix {datacontents}_{datatype} does not exist")
         return table_type
 
     # ...............................................
@@ -176,8 +184,48 @@ class Summaries:
             tables: dictionary of summary table metadata.
         """
         fname_tmpl = cls.TABLES[table_type]["fname"]
-        fname = fname_tmpl.replace("XXXX_XX_XX", datestr)
+        fname = fname_tmpl.replace(DATESTR_TOKEN, datestr)
         return fname
+
+    # ...............................................
+    @classmethod
+    def _parse_filename(cls, filename):
+        # <datacontents>_<datatype>_<YYYY_MM_DD><_optional parquet extension>
+        fname = os.path.basename(filename)
+        fname_noext, _ext = os.path.splitext(fname)
+        fn_parts = fname_noext.split("_")
+        if len(fn_parts) >= 5:
+            datacontents = fn_parts[0]
+            datatype = fn_parts[1]
+            yr = fn_parts[2]
+            mo = fn_parts[3]
+            day = fn_parts[4]
+            rest = fn_parts[5:]
+            if len(yr) == 4 and len(mo) == 2 and len(day) == 2:
+                data_datestr = f"{yr}_{mo}_{day}"
+            else:
+                raise Exception(
+                    f"Length of elements year, month, day ({yr}, {mo}. {day}) should "
+                    "be 4, 2, and 2")
+        else:
+            raise Exception(f"{fname_noext} does not follow the expected pattern")
+        return datacontents, datatype, data_datestr, rest
+
+    # ...............................................
+    @classmethod
+    def get_tabletype_datestring_from_filename(cls, filename):
+        """Get the table type from the filename.
+
+        Args:
+            filename: relative or absolute filename of a SUMMARY data file.
+
+        Returns:
+            table_type (SUMMARY_TABLE_TYPES type): type of table.
+            data_datestr (str): date of data in "YYYY_MM_DD" format.
+        """
+        datacontents, datatype, data_datestr, _rest = cls._parse_filename(filename)
+        table_type = cls.get_tabletype_from_filename_prefix(datacontents, datatype)
+        return table_type, data_datestr
 
 
 # .............................................................................
