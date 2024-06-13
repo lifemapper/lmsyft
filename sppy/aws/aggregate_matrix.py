@@ -994,11 +994,13 @@ class SparseMatrix:
         return stats
 
     # ...............................................
-    def compare_column_to_others(self, col_label):
+    def compare_column_to_others(self, col_label, agg_type=None):
         """Compare the number of rows and counts in rows to those of other columns.
 
         Args:
             col_label: label on the column to compare.
+            agg_type: return stats on rows or values.  If None, return both.
+                (options: "axis", "value", None)
 
         Returns:
             comparisons (dict): comparison measures
@@ -1007,17 +1009,18 @@ class SparseMatrix:
         stats = self.get_column_stats(col_label)
         # Show this column totals and counts compared to min, max, mean of all columns
         all_stats = self.get_all_col_stats()
-        comparisons = {
-            self._keys[SNKeys.COL_TYPE]: col_label,
-            "Occurrences": {
+        comparisons = {self._keys[SNKeys.COL_TYPE]: col_label}
+        if agg_type in ("value", None):
+            comparisons["Occurrences"] = {
                 self._keys[SNKeys.COL_TOTAL]: stats[self._keys[SNKeys.COL_TOTAL]],
                 self._keys[SNKeys.COLS_TOTAL]: all_stats[self._keys[SNKeys.COLS_TOTAL]],
                 self._keys[SNKeys.COLS_MIN]: all_stats[self._keys[SNKeys.COLS_MIN]],
                 self._keys[SNKeys.COLS_MAX]: all_stats[self._keys[SNKeys.COLS_MAX]],
                 self._keys[SNKeys.COLS_MEAN]: all_stats[self._keys[SNKeys.COLS_MEAN]],
-                self._keys[SNKeys.COLS_MEDIAN]: all_stats[self._keys[SNKeys.COLS_MEDIAN]],
-            },
-            "Species": {
+                self._keys[SNKeys.COLS_MEDIAN]: all_stats[self._keys[SNKeys.COLS_MEDIAN]]
+            }
+        if agg_type in ("axis", None):
+            comparisons["Species"] = {
                 self._keys[SNKeys.COL_COUNT]: stats[self._keys[SNKeys.COL_COUNT]],
                 self._keys[SNKeys.COLS_COUNT]: all_stats[self._keys[SNKeys.COLS_COUNT]],
                 self._keys[SNKeys.COLS_COUNT_MIN]:
@@ -1029,15 +1032,16 @@ class SparseMatrix:
                 self._keys[SNKeys.COLS_COUNT_MEDIAN]:
                     all_stats[self._keys[SNKeys.COLS_COUNT_MEDIAN]]
             }
-        }
         return comparisons
 
     # ...............................................
-    def compare_row_to_others(self, row_label):
+    def compare_row_to_others(self, row_label, agg_type=None):
         """Compare the number of columns and counts in columns to those of other rows.
 
         Args:
             row_label: label on the row to compare.
+            agg_type: return stats on rows or values.  If None, return both.
+                (options: "axis", "value", None)
 
         Returns:
             comparisons (dict): comparison measures
@@ -1045,17 +1049,18 @@ class SparseMatrix:
         stats = self.get_row_stats(row_label)
         # Show this column totals and counts compared to min, max, mean of all columns
         all_stats = self.get_all_row_stats()
-        comparisons = {
-            self._keys[SNKeys.ROW_TYPE]: row_label,
-            "Occurrences": {
+        comparisons = {self._keys[SNKeys.ROW_TYPE]: row_label}
+        if agg_type in ("value", None):
+            comparisons["Occurrences"] = {
                 self._keys[SNKeys.ROW_TOTAL]: stats[self._keys[SNKeys.ROW_TOTAL]],
                 self._keys[SNKeys.ROWS_TOTAL]: all_stats[self._keys[SNKeys.ROWS_TOTAL]],
                 self._keys[SNKeys.ROWS_MIN]: all_stats[self._keys[SNKeys.ROWS_MIN]],
                 self._keys[SNKeys.ROWS_MAX]: all_stats[self._keys[SNKeys.ROWS_MAX]],
                 self._keys[SNKeys.ROWS_MEAN]: all_stats[self._keys[SNKeys.ROWS_MEAN]],
                 self._keys[SNKeys.ROWS_MEDIAN]: all_stats[self._keys[SNKeys.ROWS_MEDIAN]],
-            },
-            "Datasets": {
+            }
+        if agg_type in ("axis", None):
+                comparisons["Datasets"] = {
                 self._keys[SNKeys.ROW_COUNT]: stats[self._keys[SNKeys.ROW_COUNT]],
                 self._keys[SNKeys.ROWS_COUNT]: all_stats[self._keys[SNKeys.ROWS_COUNT]],
                 self._keys[SNKeys.ROWS_COUNT_MIN]:
@@ -1067,7 +1072,6 @@ class SparseMatrix:
                 self._keys[SNKeys.ROWS_COUNT_MEDIAN]:
                     all_stats[self._keys[SNKeys.ROWS_COUNT_MEDIAN]]
             }
-        }
         return comparisons
 
     # ...............................................
@@ -1117,7 +1121,8 @@ class SparseMatrix:
 
         Raises:
             Exception: on failure to write sparse matrix to NPZ file.
-            Exception: on failure to write row and column categories to JSON file.
+            Exception: on failure to serialize metadata as JSON.
+            Exception: on failure to write metadata json string to file.
             Exception: on failure to write sparse matrix and category files to zipfile.
         """
         basename = Summaries.get_filename(self._table_type, self._data_datestr)
@@ -1127,6 +1132,7 @@ class SparseMatrix:
         # Delete any local temp files
         for fname in [mtx_fname, meta_fname, zip_fname]:
             if os.path.exists(fname):
+                self._logme("Removing {fname}", log_level=INFO)
                 os.remove(fname)
         # Save matrix to npz locally
         try:
@@ -1140,15 +1146,23 @@ class SparseMatrix:
         metadata["row"] = self._row_categ.categories.tolist()
         metadata["column"] = self._col_categ.categories.tolist()
         try:
-            json.dump(metadata, meta_fname)
+            metastr = json.dumps(metadata)
         except Exception as e:
-            msg = f"Failed to write {meta_fname}: {e}"
+            msg = f"Failed to serialize metadata as JSON: {e}"
             self._logme(msg, log_level=ERROR)
             raise Exception(msg)
+        try:
+            with open(meta_fname, 'w') as outf:
+                outf.write(metastr)
+        except Exception as e:
+            msg = f"Failed to write metadata to {meta_fname}: {e}"
+            self._logme(msg, log_level=ERROR)
+            raise Exception(msg)
+
         # Compress matrix with categories
         try:
             with ZipFile(zip_fname, 'w') as zip:
-                for fname in [mtx_fname, meta_fname, zip_fname]:
+                for fname in [mtx_fname, meta_fname]:
                     zip.write(fname, os.path.basename(fname))
         except Exception as e:
             msg = f"Failed to write {zip_fname}: {e}"
@@ -1216,10 +1230,15 @@ class SparseMatrix:
             sparse_coo = scipy.sparse.load_npz(mtx_fname)
         except Exception as e:
             raise Exception(f"Failed to load {mtx_fname}: {e}")
-        # Save categories to json locally
+        # Read JSON dictionary as string
         try:
-            with open(meta_fname) as metafile:
-                meta_dict = json.load(metafile)
+            with open(meta_fname) as metaf:
+                meta_str = metaf.read()
+        except Exception as e:
+            raise Exception(f"Failed to load {meta_fname}: {e}")
+        # Load metadata from string
+        try:
+            meta_dict = json.loads(meta_str)
         except Exception as e:
             raise Exception(f"Failed to load {meta_fname}: {e}")
         try:
@@ -1234,13 +1253,6 @@ class SparseMatrix:
             raise Exception(f"Missing column categories in {meta_fname}")
         else:
             col_categ = CategoricalDtype(col_catlst, ordered=True)
-        # # Retrieve table type from metadata
-        # try:
-        #     table_type = Summaries.get_table_type_from_code(meta_dict["code"])
-        # except KeyError:
-        #     raise Exception(f"Missing table type code in {meta_fname}")
-        # except Exception as e:
-        #     raise Exception(f"Error in metadata in {meta_fname}: {e}")
 
         return sparse_coo, row_categ, col_categ, table_type, data_datestr
 
@@ -1256,8 +1268,6 @@ class SparseMatrix:
 
         Returns:
             s3_filename (str): S3 object with bucket and folders.
-
-        TODO: write row and column categories to S3
         """
         s3_fname = self._upload_to_s3(filename, bucket, bucket_path, region)
         return s3_fname
@@ -1331,7 +1341,7 @@ if __name__ == "__main__":
     # Create matrix from record data
     agg_sparse_mtx = SparseMatrix.init_from_stacked_data(
         stk_df, stk_col_label_for_axis1, stk_col_label_for_axis0, stk_col_label_for_val,
-        mtx_table_type, logger=tst_logger)
+        mtx_table_type, data_datestr, logger=tst_logger)
 
     # Test raw counts between stacked data and sparse matrix
     for stk_lbl, axis in ((stk_col_label_for_axis0, 0), (stk_col_label_for_axis1, 1)):
@@ -1423,7 +1433,7 @@ stk_df[stk_col_label_for_axis0] = stk_df.apply(_combine_columns, axis=1)
 # Create matrix from record data
 agg_sparse_mtx = SparseMatrix.init_from_stacked_data(
     stk_df, stk_col_label_for_axis1, stk_col_label_for_axis0, stk_col_label_for_val,
-    mtx_table_type, logger=tst_logger)
+    mtx_table_type, data_datestr, logger=tst_logger)
 
 # Test raw counts between stacked data and sparse matrix
 for stk_lbl, axis in ((stk_col_label_for_axis0, 0), (stk_col_label_for_axis1, 1)):
@@ -1446,77 +1456,32 @@ out_filename = agg_sparse_mtx.compress_to_file()
 agg_sparse_mtx.write_to_s3(PROJ_BUCKET, SUMMARY_FOLDER, out_filename, REGION)
 
 # Copy logfile to S3
-agg_sparse_mtx.write_to_s3(PROJ_BUCKET, SUMMARY_FOLDER, tst_logger.filename, REGION)
-s3_logfile = agg_sparse_mtx.copy_logfile_to_s3(PROJ_BUCKET, SUMMARY_FOLDER, REGION)
+s3_logfile = agg_sparse_mtx.write_to_s3(PROJ_BUCKET, SUMMARY_FOLDER, tst_logger.filename, REGION)
 print(s3_logfile)
 
-
-
-
-
-
-
-
-#  ....................................................
-# Datasets in rows/x/axis
-table = Summaries.get_table(stacked_table_type, data_datestr)
-stk_col_label_for_axis1 = table["key_fld"]
-stk_col_label_for_val = table["value_fld"]
-# Dict of new fields constructed from existing fields, just 1 for species key/name
-fld_mods = table["combine_fields"]
-# Species (taxonKey + name) in columns/y/axis 0
-stk_col_label_for_axis0 = list(fld_mods.keys())[0]
-(fld1, fld2) = fld_mods[stk_col_label_for_axis0]
-pqt_fname = f"{table['fname']}.parquet"
-
-# Read stacked (record) data directly into DataFrame
-stk_df = read_s3_parquet_to_pandas(
-    PROJ_BUCKET, SUMMARY_FOLDER, pqt_fname, tst_logger, s3_client=None
-)
+zip_filename = download_from_s3(
+    PROJ_BUCKET, SUMMARY_FOLDER, zip_fname, local_path=local_path,
+    overwrite=False)
 
 # .................................
-# Combine key and species fields to ensure uniqueness
-def _combine_columns(row):
-    return str(row[fld1]) + ' ' + str(row[fld2])
+# Read matrix from S3
+table = Summaries.get_table(mtx_table_type, data_datestr)
+zip_fname = f"{table['fname']}.zip"
+# Only download if file does not exist
+zip_filename = download_from_s3(
+    PROJ_BUCKET, SUMMARY_FOLDER, zip_fname, local_path=local_path,
+    overwrite=False)
+        
+# Only extract if files do not exist
+sparse_coo, row_categ, col_categ, table_type, new_data_datestr = \
+    SparseMatrix.uncompress_zipped_sparsematrix(
+        zip_filename, local_path=local_path, overwrite=False)
+        
+# Create
+sp_mtx = SparseMatrix(
+    sparse_coo, mtx_table_type, data_datestr, row_category=row_categ,
+    column_category=col_categ, logger=tst_logger)
 
-# ......................
-stk_df[stk_col_label_for_axis0] = stk_df.apply(_combine_columns, axis=1)
-# .................................
-
-# Create matrix from record data
-agg_sparse_mtx = SparseMatrix.init_from_stacked_data(
-    stk_df, stk_col_label_for_axis1, stk_col_label_for_axis0, stk_col_label_for_val,
-    mtx_table_type, data_datestr, logger=tst_logger)
-
-self = agg_sparse_mtx
-
-# # Test raw counts between stacked data and sparse matrix
-# for stk_lbl, axis in ((stk_col_label_for_axis0, 0), (stk_col_label_for_axis1, 1)):
-#     # Test stacked column used for axis 0/1 against sparse matrix axis 0/1
-#     test_stacked_to_aggregate_sum(
-#         stk_df, stk_lbl, stk_col_label_for_val, agg_sparse_mtx, agg_axis=axis,
-#         test_count=5, logger=tst_logger)
-# 
-# # Test min/max values for rows/columns
-# for is_max in (False, True):
-#     for axis in (0, 1):
-#         test_stacked_to_aggregate_extremes(
-#             stk_df, stk_col_label_for_axis0, stk_col_label_for_axis1,
-#             stk_col_label_for_val, agg_sparse_mtx, agg_axis=axis, test_count=5,
-#             logger=tst_logger, is_max=is_max)
-# 
-# test_row_col_comparisons(agg_sparse_mtx, test_count=5, logger=tst_logger)
-
-# Save matrix to S3
-out_filename = agg_sparse_mtx.compress_to_file()
-agg_sparse_mtx._upload_to_s3(out_filename, PROJ_BUCKET, SUMMARY_FOLDER, REGION)
-
-
-
-# Copy logfile to S3
-agg_sparse_mtx.write_to_s3(PROJ_BUCKET, SUMMARY_FOLDER, tst_logger.filename, REGION)
-s3_logfile = agg_sparse_mtx.copy_logfile_to_s3(PROJ_BUCKET, SUMMARY_FOLDER, REGION)
-print(s3_logfile)
 
 
 
