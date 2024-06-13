@@ -53,12 +53,16 @@ class _AnalystService(_SpecifyNetworkService):
     # ...............................................
     @classmethod
     def _standardize_params(
-            cls, dataset_key=None, pub_org_key=None, count_by=None, aggregate_by=None,
-            stat_type=None, order=None, limit=10):
+            cls, dataset_key=None, species_key=None, pub_org_key=None, count_by=None,
+            aggregate_by=None, stat_type=None, order=None, limit=10):
         """Standardize query parameters to send to appropriate service.
 
         Args:
             dataset_key: unique GBIF dataset identifier for comparisons
+            species_key: species_key: unique GBIF identifier of
+                accepted taxon concatenated with the species name.
+            aggregate_by: count occurrences (values), species (matrix axis 0) or
+                datasets (matrix axis 1)
             pub_org_key: unique publishing organization identifier for comparisons
             count_by: counts of "occurrence" or "species"
             order: sort records "descending" or "ascending"
@@ -75,6 +79,7 @@ class _AnalystService(_SpecifyNetworkService):
         """
         user_kwargs = {
             "dataset_key": dataset_key,
+            "species_key": species_key,
             "pub_org_key": pub_org_key,
             "count_by": count_by,
             "aggregate_by": aggregate_by,

@@ -14,6 +14,7 @@ class S2nKey:
     DESCRIPTION = "description"
     RECORD_FORMAT = "record_format"
     RECORDS = "records"
+    OUTPUT = "output"
     ERRORS = "errors"
     # output one service at a time
     SERVICE = "service"
@@ -200,13 +201,19 @@ class APIService:
                 "description": "GBIF Dataset Key",
                 "default": None
             },
-            "count_type": {
+            "species_key": {
+                "type": "",
+                "description":
+                    "GBIF Accepted Taxon Key concatenated with the species name",
+                "default": None
+            },
+            "aggregate_by": {
                 "type": "",
                 "options": ["species", "occurrences"],
                 "description": "Count of species or occurrences in datasets",
                 "default": None
             },
-            "out_stats": {
+            "stat_type": {
                 "type": "",
                 "options": ["describe", "compare"],
                 "description":
@@ -1138,26 +1145,26 @@ class AnalystOutput:
     errors: dict = {}
 
     # ...............................................
-    def __init__(self, service, description=None, records=None, errors=None):
+    def __init__(self, service, description=None, output=None, errors=None):
         """Constructor.
 
         Args:
             service: API Service this object is responding to.
             description: Description of the computation in this response.
-            records: Records (lists or dictionaries) in this response.
+            output: Statistics (dict) in this response.
             errors: Errors encountered when generating this response.
         """
         if errors is None:
             errors = {}
         if description is None:
             description = ""
-        if records is None:
-            records = []
+        if output is None:
+            output = {}
         # Dictionary is json-serializable
         self._response = {
             S2nKey.SERVICE: service,
             S2nKey.DESCRIPTION: description,
-            S2nKey.RECORDS: records,
+            S2nKey.OUTPUT: output,
             S2nKey.ERRORS: errors
         }
 

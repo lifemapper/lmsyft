@@ -233,8 +233,8 @@ class _SpecifyNetworkService:
                 pass
 
             # Do not edit namestr, maintain capitalization
-            elif key == "namestr":
-                good_params["namestr"] = val
+            elif key in ("namestr", "species_key"):
+                good_params[key] = val
 
             # Require one valid icon_status
             elif key == "icon_status":

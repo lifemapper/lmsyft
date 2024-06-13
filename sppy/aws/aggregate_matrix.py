@@ -298,36 +298,6 @@ def read_s3_multiple_parquets_to_pandas(
 
 
 # .............................................................................
-def read_npz_array_from_s3(
-        bucket, bucket_path, filename, local_path=None, region=REGION, logger=None):
-    """Write a pd DataFrame to CSV or parquet on S3.
-
-    Args:
-        bucket (str): Bucket identifier on S3.
-        bucket_path (str): Folder path to the S3 output data.
-        filename (str): Filename of output data to write to S3.
-        local_path (str): local path for temporary download of npz file.
-        region (str): AWS region to query.
-        logger (object): logger for saving relevant processing messages
-
-    Returns:
-        sparse_coo_array (scipy.coo_array): matrix in COO format.
-    """
-    sparse_coo = None
-    if local_path is None:
-        local_path = os.getcwd()
-    tmp_fname = download_from_s3(
-        bucket, bucket_path, filename, local_path, region=region, logger=logger,
-        overwrite=True)
-    try:
-        sparse_coo = scipy.sparse.load_npz(tmp_fname)
-    except Exception as e:
-        logit(logger, f"Failed to read {tmp_fname}: {e}", log_level=ERROR)
-
-    return sparse_coo
-
-
-# .............................................................................
 def download_from_s3(
         bucket, bucket_path, filename, local_path, region=REGION, logger=None,
         overwrite=True):
@@ -837,7 +807,7 @@ class SparseMatrix:
             self._keys[SNKeys.ROWS_MIN]: all_totals.min(),
             self._keys[SNKeys.ROWS_MAX]: all_totals.max(),
             self._keys[SNKeys.ROWS_MEAN]: all_totals.mean(),
-            self._keys[SNKeys.ROWS_MEDIAN]: np.median(all_totals, axis=0),
+            self._keys[SNKeys.ROWS_MEDIAN]: np.median(all_totals, axis=0)[0,0],
 
             self._keys[SNKeys.ROWS_COUNT_MIN]: all_counts.min(),
             self._keys[SNKeys.ROWS_COUNT_MAX]: all_counts.max(),
@@ -865,7 +835,7 @@ class SparseMatrix:
             self._keys[SNKeys.COLS_MIN]: all_totals.min(),
             self._keys[SNKeys.COLS_MAX]: all_totals.max(),
             self._keys[SNKeys.COLS_MEAN]: all_totals.mean(),
-            self._keys[SNKeys.COLS_MEDIAN]: np.median(all_totals, axis=0),
+            self._keys[SNKeys.COLS_MEDIAN]: np.median(all_totals, axis=1)[0,0],
 
             self._keys[SNKeys.COLS_COUNT_MIN]: all_counts.min(),
             self._keys[SNKeys.COLS_COUNT_MAX]: all_counts.max(),
