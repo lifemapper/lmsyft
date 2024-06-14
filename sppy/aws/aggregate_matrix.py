@@ -15,8 +15,10 @@ from zipfile import ZipFile
 from sppy.aws.aws_constants import (
     LOCAL_OUTDIR, PROJ_BUCKET, REGION, SNKeys, SUMMARY_FOLDER,
     Summaries, SUMMARY_TABLE_TYPES)
-from sppy.aws.aws_tools import get_current_datadate_str, get_today_str
+from sppy.aws.aws_tools import (
+    get_current_datadate_str, get_today_str, read_s3_parquet_to_pandas)
 from sppy.tools.util.logtools import Logger, logit
+from sppy.tools.s2n.utils import convert_np_vals_for_json
 
 
 # ...............................................
@@ -220,125 +222,17 @@ def test_stacked_to_aggregate_extremes(
 
 
 # .............................................................................
-def read_s3_parquet_to_pandas(
-        bucket, bucket_path, filename, logger=None, s3_client=None, region=REGION, **args):
-    """Read a parquet file from a folder on S3 into a pd DataFrame.
-
-    Args:
-        bucket (str): Bucket identifier on S3.
-        bucket_path (str): Folder path to the S3 parquet data.
-        filename (str): Filename of parquet data to read from S3.
-        logger (object): logger for saving relevant processing messages
-        s3_client (object): object for interacting with Amazon S3.
-        region (str): AWS region to query.
-        args: Additional arguments to be sent to the pd.read_parquet function.
-
-    Returns:
-        pd.DataFrame containing the tabular data.
-    """
-    dataframe = None
-    s3_key = f"{bucket_path}/{filename}"
-    if s3_client is None:
-        s3_client = boto3.client("s3", region_name=region)
-    try:
-        obj = s3_client.get_object(Bucket=bucket, Key=s3_key)
-    except SSLError:
-        logit(
-            logger, f"Failed with SSLError getting {bucket}/{s3_key} from S3",
-            log_level=ERROR)
-    except ClientError as e:
-        logit(
-            logger, f"Failed to get {bucket}/{s3_key} from S3, ({e})",
-            log_level=ERROR)
-    else:
-        logit(logger, f"Read {bucket}/{s3_key} from S3")
-        dataframe = pd.read_parquet(io.BytesIO(obj["Body"].read()), **args)
-    return dataframe
-
-
 # .............................................................................
-def read_s3_multiple_parquets_to_pandas(
-        bucket, bucket_path, logger=None, s3=None, s3_client=None, region=REGION, **args):
-    """Read multiple parquets from a folder on S3 into a pd DataFrame.
-
-    Args:
-        bucket (str): Bucket identifier on S3.
-        bucket_path (str): Parent folder path to the S3 parquet data.
-        logger (object): logger for saving relevant processing messages
-        s3 (object): Connection to the S3 resource
-        s3_client (object): object for interacting with Amazon S3.
-        region: AWS region to query.
-        args: Additional arguments to be sent to the pd.read_parquet function.
-
-    Returns:
-        pd.DataFrame containing the tabular data.
-    """
-    if not bucket_path.endswith("/"):
-        bucket_path = bucket_path + "/"
-    if s3_client is None:
-        s3_client = boto3.client("s3", region_name=region)
-    if s3 is None:
-        s3 = boto3.resource("s3", region_name=region)
-
-    s3_keys = [
-        item.key for item in s3.Bucket(bucket).objects.filter(Prefix=bucket_path)
-        if item.key.endswith(".parquet")]
-    if not s3_keys:
-        logit(
-            logger, f"No parquet found in {bucket} {bucket_path}",
-            log_level=ERROR)
-        return None
-
-    dfs = [
-        read_s3_parquet_to_pandas(
-            bucket, bucket_path, key, logger, s3_client=s3_client, region=region,
-            **args) for key in s3_keys
-    ]
-    return pd.concat(dfs, ignore_index=True)
-
-
-# .............................................................................
-def download_from_s3(
-        bucket, bucket_path, filename, local_path, region=REGION, logger=None,
-        overwrite=True):
-    """Download a file from S3 to a local file.
-
-    Args:
-        bucket (str): Bucket identifier on S3.
-        bucket_path (str): Folder path to the S3 parquet data.
-        filename (str): Filename of data to read from S3.
-        local_path (str): local path for download.
-        region (str): AWS region to query.
-        logger (object): logger for saving relevant processing messages
-        overwrite (boolean):  flag indicating whether to overwrite an existing file.
-
-    Returns:
-        local_filename (str): full path to local filename containing downloaded data.
-    """
-    local_filename = os.path.join(local_path, filename)
-    obj_name = f"{bucket_path}/{filename}"
-    # Delete if needed
-    if os.path.exists(local_filename):
-        if overwrite is True:
-            os.remove(local_filename)
+class MyEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        elif isinstance(obj, np.floating):
+            return float(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
         else:
-            print(f"{local_filename} already exists")
-    # Download current
-    if not os.path.exists(local_filename):
-        s3_client = boto3.client("s3", region_name=region)
-        try:
-            s3_client.download_file(bucket, obj_name, local_filename)
-        except SSLError:
-            logit(
-                logger, f"Failed with SSLError to download s3://{bucket}/{obj_name}",
-                log_level=ERROR)
-        except ClientError as e:
-            logit(
-                logger,
-                f"Failed to download s3://{bucket}/{obj_name}, ({e})")
-        else:
-            print(f"Downloaded {filename} from S3 to {local_filename}")
-    return local_filename
+            return super(MyEncoder, self).default(obj)
 
 
 # .............................................................................
@@ -651,6 +545,8 @@ class SparseMatrix:
             target = vals.max()
         else:
             target = vals.min()
+        target = convert_np_vals_for_json(target)
+
         # Get indexes of target value within NNZ vals
         tmp_idxs = np.where(vals == target)[0]
         tmp_idx_lst = [tmp_idxs[i] for i in range(len(tmp_idxs))]
@@ -688,16 +584,18 @@ class SparseMatrix:
         row_count = self._coo_array.shape[1]
         all_row_stats = {
             self._keys[SNKeys.ROWS_COUNT]: row_count,
-            self._keys[SNKeys.ROWS_TOTAL]: all_totals.sum(),
-            self._keys[SNKeys.ROWS_MIN]: all_totals.min(),
-            self._keys[SNKeys.ROWS_MAX]: all_totals.max(),
-            self._keys[SNKeys.ROWS_MEAN]: all_totals.mean(),
-            self._keys[SNKeys.ROWS_MEDIAN]: np.median(all_totals, axis=0)[0, 0],
+            self._keys[SNKeys.ROWS_TOTAL]: convert_np_vals_for_json(all_totals.sum()),
+            self._keys[SNKeys.ROWS_MIN]: convert_np_vals_for_json(all_totals.min()),
+            self._keys[SNKeys.ROWS_MAX]: convert_np_vals_for_json(all_totals.max()),
+            self._keys[SNKeys.ROWS_MEAN]: convert_np_vals_for_json(all_totals.mean()),
+            self._keys[SNKeys.ROWS_MEDIAN]: convert_np_vals_for_json(
+                np.median(all_totals, axis=0)[0, 0]),
 
-            self._keys[SNKeys.ROWS_COUNT_MIN]: all_counts.min(),
-            self._keys[SNKeys.ROWS_COUNT_MAX]: all_counts.max(),
-            self._keys[SNKeys.ROWS_COUNT_MEAN]: all_counts.mean(),
-            self._keys[SNKeys.ROWS_COUNT_MEDIAN]: np.median(all_counts, axis=0),
+            self._keys[SNKeys.ROWS_COUNT_MIN]: convert_np_vals_for_json(all_counts.min()),
+            self._keys[SNKeys.ROWS_COUNT_MAX]: convert_np_vals_for_json(all_counts.max()),
+            self._keys[SNKeys.ROWS_COUNT_MEAN]: convert_np_vals_for_json(all_counts.mean()),
+            self._keys[SNKeys.ROWS_COUNT_MEDIAN]: convert_np_vals_for_json(
+                np.median(all_counts, axis=0)),
         }
         return all_row_stats
 
@@ -716,16 +614,21 @@ class SparseMatrix:
         col_count = self._coo_array.shape[0]
         all_col_stats = {
             self._keys[SNKeys.COLS_COUNT]: col_count,
-            self._keys[SNKeys.COLS_TOTAL]: all_totals.sum(),
-            self._keys[SNKeys.COLS_MIN]: all_totals.min(),
-            self._keys[SNKeys.COLS_MAX]: all_totals.max(),
-            self._keys[SNKeys.COLS_MEAN]: all_totals.mean(),
-            self._keys[SNKeys.COLS_MEDIAN]: np.median(all_totals, axis=1)[0, 0],
+            self._keys[SNKeys.COLS_TOTAL]: convert_np_vals_for_json(all_totals.sum()),
+            self._keys[SNKeys.COLS_MIN]: convert_np_vals_for_json(all_totals.min()),
+            self._keys[SNKeys.COLS_MAX]: convert_np_vals_for_json(all_totals.max()),
+            self._keys[SNKeys.COLS_MEAN]: convert_np_vals_for_json(all_totals.mean()),
+            self._keys[SNKeys.COLS_MEDIAN]:
+                convert_np_vals_for_json(np.median(all_totals, axis=1)[0, 0]),
 
-            self._keys[SNKeys.COLS_COUNT_MIN]: all_counts.min(),
-            self._keys[SNKeys.COLS_COUNT_MAX]: all_counts.max(),
-            self._keys[SNKeys.COLS_COUNT_MEAN]: all_counts.mean(),
-            self._keys[SNKeys.COLS_COUNT_MEDIAN]: np.median(all_counts, axis=0),
+            self._keys[SNKeys.COLS_COUNT_MIN]:
+                convert_np_vals_for_json(all_counts.min()),
+            self._keys[SNKeys.COLS_COUNT_MAX]:
+                convert_np_vals_for_json(all_counts.max()),
+            self._keys[SNKeys.COLS_COUNT_MEAN]:
+                convert_np_vals_for_json(all_counts.mean()),
+            self._keys[SNKeys.COLS_COUNT_MEDIAN]:
+                convert_np_vals_for_json(np.median(all_counts, axis=0)),
         }
         return all_col_stats
 
@@ -753,7 +656,7 @@ class SparseMatrix:
         }
         if agg_type in ("axis", None):
             # Count of Species within this Dataset
-            stats[self._keys[SNKeys.COL_COUNT]] = col.nnz
+            stats[self._keys[SNKeys.COL_COUNT]] = convert_np_vals_for_json(col.nnz)
         if agg_type in ("value", None):
             # Largest/smallest occ count for dataset (column), and species (row)
             # containing that count
@@ -763,13 +666,13 @@ class SparseMatrix:
                 col_label, axis=1, is_max=False)
 
             # Total Occurrences for Dataset
-            stats[self._keys[SNKeys.COL_TOTAL]] = col.sum()
+            stats[self._keys[SNKeys.COL_TOTAL]] = convert_np_vals_for_json(col.sum())
             # Return min occurrence count in this dataset
-            stats[self._keys[SNKeys.COL_MIN_COUNT]] = minval
+            stats[self._keys[SNKeys.COL_MIN_COUNT]] = convert_np_vals_for_json(minval)
             # Return number of species containing same minimum count (too many to list)
             stats[self._keys[SNKeys.COL_MIN_LABELS]] = len(min_col_labels)
             # Return max occurrence count in this dataset
-            stats[self._keys[SNKeys.COL_MAX_COUNT]] = maxval
+            stats[self._keys[SNKeys.COL_MAX_COUNT]] = convert_np_vals_for_json(maxval)
             # Return species containing same maximum count
             stats[self._keys[SNKeys.COL_MAX_LABELS]] = max_col_labels
         return stats
@@ -802,9 +705,9 @@ class SparseMatrix:
             self._keys[SNKeys.COL_IDX]: col_idx,
             self._keys[SNKeys.COL_LABEL]: col_label,
             # Total Occurrences for Dataset
-            self._keys[SNKeys.COL_TOTAL]: col.sum(),
+            self._keys[SNKeys.COL_TOTAL]: convert_np_vals_for_json(col.sum()),
             # Count of Species within this Dataset
-            self._keys[SNKeys.COL_COUNT]: col.nnz,
+            self._keys[SNKeys.COL_COUNT]: convert_np_vals_for_json(col.nnz),
             # Return min/max count in this dataset and species for that count
             self._keys[SNKeys.COL_MIN_COUNT]: minval,
             # self._keys[SNKeys.COL_MIN_LABELS]: min_col_labels,
@@ -838,9 +741,9 @@ class SparseMatrix:
             self._keys[SNKeys.ROW_IDX]: row_idx,
             self._keys[SNKeys.ROW_LABEL]: row_label,
             # Total Occurrences for this Species
-            self._keys[SNKeys.ROW_TOTAL]: row.sum(),
+            self._keys[SNKeys.ROW_TOTAL]: convert_np_vals_for_json(row.sum()),
             # Count of Datasets containing this Species
-            self._keys[SNKeys.ROW_COUNT]: row.nnz,
+            self._keys[SNKeys.ROW_COUNT]: convert_np_vals_for_json(row.nnz),
             # Return min/max count in this species and datasets for that count
             self._keys[SNKeys.ROW_MIN_COUNT]: minval,
             # self._keys[SNKeys.ROW_MIN_LABELS]: min_row_labels,

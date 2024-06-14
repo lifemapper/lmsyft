@@ -93,7 +93,7 @@ class Summaries:
             SUMMARY_TABLE_TYPES.SPECIES_DATASET_MATRIX: {
                 "code": SUMMARY_TABLE_TYPES.SPECIES_DATASET_MATRIX,
                 "fname": f"speciesxdataset_matrix_{DATESTR_TOKEN}",
-                "table_format": "NPZ",
+                "table_format": "Zip",
                 # Axis 0
                 "row": "taxonkey_species",
                 # Axis 1
