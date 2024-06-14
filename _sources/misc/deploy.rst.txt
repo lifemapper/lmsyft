@@ -340,4 +340,3 @@ Solution
 ...............
 
 Stop apache2 on the host machine
-
