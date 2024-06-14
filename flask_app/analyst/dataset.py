@@ -6,7 +6,7 @@ from flask_app.common.s2n_type import APIService, AnalystOutput
 from flask_app.analyst.base import _AnalystService
 
 from sppy.aws.aws_constants import (
-    PROJ_BUCKET, Summaries, SUMMARY_FOLDER, SUMMARY_TABLE_TYPES, REGION
+    PROJ_BUCKET, Summaries, SUMMARY_FOLDER, SUMMARY_TABLE_TYPES
 )
 from sppy.aws.aggregate_matrix import SparseMatrix
 from sppy.aws.aws_tools import (
@@ -128,10 +128,9 @@ class DatasetSvc(_AnalystService):
                     errors["error"] = [HTTPStatus.INTERNAL_SERVER_ERROR, traceback]
 
         if species_key is not None:
-            if stat_type =="describe":
+            if stat_type == "describe":
                 try:
-                    sp_stat_dict = spnet_mtx.get_row_stats(
-                        species_key, agg_type=agg_type)
+                    sp_stat_dict = spnet_mtx.get_row_stats(species_key)
                 except Exception:
                     traceback = get_traceback()
                     errors["error"] = [HTTPStatus.INTERNAL_SERVER_ERROR, traceback]

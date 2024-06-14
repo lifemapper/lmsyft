@@ -149,7 +149,7 @@ class Summaries:
     # ...............................................
     @classmethod
     def get_tabletype_from_filename_prefix(cls, datacontents, datatype):
-        """Get the table type from the code inside the metadata.
+        """Get the table type from the file prefixes.
 
         Args:
             datacontents (str): first part of filename indicating data in table.
@@ -158,6 +158,9 @@ class Summaries:
 
         Returns:
             table_type (SUMMARY_TABLE_TYPES type): type of table.
+
+        Raises:
+            Exception: on invalid file prefix.
         """
         table_type = None
         for key, meta in cls.TABLES.items():

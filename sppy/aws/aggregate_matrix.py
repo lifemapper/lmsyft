@@ -441,78 +441,6 @@ class SparseMatrix:
             columns=self._col_categ.categories)
         return sdf
 
-    # # .............................................................................
-    # @classmethod
-    # def init_from_s3(
-    #         cls, bucket, bucket_path, table_type, data_datestr, local_path=None,
-    #         region=REGION, logger=None):
-    #     """Write a pd DataFrame to CSV or parquet on S3.
-    #
-    #     Args:
-    #         bucket (str): Bucket identifier on S3.
-    #         bucket_path (str): Folder path to the S3 sparse matrix data.
-    #         table_type (aws_constants.SUMMARY_TABLE_TYPES): type of aggregated data
-    #         data_datestr (str): date of data to query in format "yyyy-mm-dd"
-    #         local_path (str): local path for temporary download of npz file.
-    #         region (str): AWS region to query.
-    #         logger (object): logger for saving relevant processing messages
-    #
-    #     Returns:
-    #         sparse_coo_array (scipy.coo_array): matrix in COO format.
-    #
-    #     TODO: read row and column categories from S3
-    #     """
-    #     sparse_coo = None
-    #     if local_path is None:
-    #         local_path = os.getcwd()
-    #     fname = Summaries.get_filename(table_type, data_datestr)
-    #     base_fname = f"{fname}.zip"
-    #     tmp_fname = download_from_s3(
-    #         bucket, bucket_path, base_fname, local_path, region=region, logger=logger,
-    #         overwrite=True)
-    #     try:
-    #         with ZipFile(tmp_fname, mode="r") as archive:
-    #             archive.extractall(f"{local_path}/")
-    #         sparse_coo = scipy.sparse.load_npz(tmp_fname)
-    #     except Exception as e:
-    #         logit(logger, f"Failed to read {tmp_fname}: {e}", log_level=ERROR)
-    #
-    #     # TODO: read row and column categories from S3
-    #     sparse_matrix = SparseMatrix(sparse_coo, table_type, logger=logger)
-    #
-    #     return sparse_matrix
-
-
-    # # .............................................................................
-    # @classmethod
-    # def init_from_zipfile(cls, zip_filename, logger=None):
-    #     """Write a pd DataFrame to CSV or parquet on S3.
-    #
-    #     Args:
-    #         zip_filename (str): filename of zipped archive containing .npz file of
-    #             sparse matrix and .json file of table metadata, and row and column
-    #             categories.
-    #         logger (object): logger for saving relevant processing messages
-    #
-    #     Returns:
-    #         sparse_coo_array (scipy.coo_array): matrix in COO format.
-    #
-    #     TODO: read row and column categories from S3
-    #     """
-    #     sparse_coo = None
-    #     local_path = os.getcwd()
-    #     try:
-    #         with ZipFile(zip_filename, mode="r") as archive:
-    #             archive.extractall(f"{local_path}/")
-    #         sparse_coo = scipy.sparse.load_npz(tmp_fname)
-    #     except Exception as e:
-    #         logit(logger, f"Failed to read {tmp_fname}: {e}", log_level=ERROR)
-    #
-    #     # TODO: read row and column categories from S3
-    #     sparse_matrix = SparseMatrix(sparse_coo, table_type, logger=logger)
-    #
-    #     return sparse_matrix
-
     # ...............................................
     def _get_code_from_category(self, label, axis=0):
         if axis == 0:
@@ -542,7 +470,6 @@ class SparseMatrix:
             raise Exception(f"2D sparse array does not have axis {axis}")
         category = categ.categories[code]
         return category
-
 
     # ...............................................
     def _export_categories(self, axis=0):
@@ -637,34 +564,6 @@ class SparseMatrix:
         """
         return self._coo_array.shape[1]
 
-    # # ...............................................
-    # def get_column_from_label(self, col_label):
-    #     """Return the column with label `col_label`.
-    #
-    #     Args:
-    #         col_label: label for column of interest
-    #
-    #     Returns:
-    #         column(scipy.sparse.csr_array): 1-d array of the column for 'col_label'.
-    #     """
-    #     col_idx = self._get_code_from_category(col_label, axis=1)
-    #     column = self._coo_array.getcol(col_idx)
-    #     return column, col_idx
-    #
-    # # ...............................................
-    # def get_row_from_label(self, row_label):
-    #     """Return the row with label `row_label`.
-    #
-    #     Args:
-    #         row_label: label for row of interest
-    #
-    #     Returns:
-    #         row (scipy.sparse.csr_array): 1-d array of the row for 'row_label'.
-    #     """
-    #     row_idx = self._get_code_from_category(row_label, axis=0)
-    #     row = self._coo_array.getrow(row_idx)
-    #     return row, row_idx
-
     # ...............................................
     def get_vector_from_label(self, label, axis=0):
         """Return the row (axis 0) or column (axis 1) with label `label`.
@@ -728,20 +627,6 @@ class SparseMatrix:
             idxs_lst = [row_idxs[i] for i in tmp_idx_lst]
         row_labels = [self._get_category_from_code(idx, axis=0) for idx in idxs_lst]
         return row_labels
-
-    # # ...............................................
-    # def count_rows_in_column(self, col_label):
-    #     """Get the minimum or maximum NON-ZERO value and row label(s) for a column.
-    #
-    #     Args:
-    #         col_label: label on the column to find minimum or maximum.
-    #
-    #     Returns:
-    #         target: The minimum or maximum value for a column
-    #         row_labels: The labels of the rows containing the target value
-    #     """
-    #     col, _col_idx = self.get_column_from_label(col_label)
-    #     return col.nnz
 
     # ...............................................
     def get_extreme_val_labels_for_vector(self, label, axis=0, is_max=True):
@@ -807,7 +692,7 @@ class SparseMatrix:
             self._keys[SNKeys.ROWS_MIN]: all_totals.min(),
             self._keys[SNKeys.ROWS_MAX]: all_totals.max(),
             self._keys[SNKeys.ROWS_MEAN]: all_totals.mean(),
-            self._keys[SNKeys.ROWS_MEDIAN]: np.median(all_totals, axis=0)[0,0],
+            self._keys[SNKeys.ROWS_MEDIAN]: np.median(all_totals, axis=0)[0, 0],
 
             self._keys[SNKeys.ROWS_COUNT_MIN]: all_counts.min(),
             self._keys[SNKeys.ROWS_COUNT_MAX]: all_counts.max(),
@@ -835,7 +720,7 @@ class SparseMatrix:
             self._keys[SNKeys.COLS_MIN]: all_totals.min(),
             self._keys[SNKeys.COLS_MAX]: all_totals.max(),
             self._keys[SNKeys.COLS_MEAN]: all_totals.mean(),
-            self._keys[SNKeys.COLS_MEDIAN]: np.median(all_totals, axis=1)[0,0],
+            self._keys[SNKeys.COLS_MEDIAN]: np.median(all_totals, axis=1)[0, 0],
 
             self._keys[SNKeys.COLS_COUNT_MIN]: all_counts.min(),
             self._keys[SNKeys.COLS_COUNT_MAX]: all_counts.max(),
@@ -927,6 +812,7 @@ class SparseMatrix:
             # self._keys[SNKeys.COL_MAX_LABELS]: max_col_labels,
         }
         return stats
+
     # ...............................................
     def get_row_stats(self, row_label):
         """Get a dictionary of statistics for the row with this row_label.
@@ -1027,10 +913,11 @@ class SparseMatrix:
                 self._keys[SNKeys.ROWS_MIN]: all_stats[self._keys[SNKeys.ROWS_MIN]],
                 self._keys[SNKeys.ROWS_MAX]: all_stats[self._keys[SNKeys.ROWS_MAX]],
                 self._keys[SNKeys.ROWS_MEAN]: all_stats[self._keys[SNKeys.ROWS_MEAN]],
-                self._keys[SNKeys.ROWS_MEDIAN]: all_stats[self._keys[SNKeys.ROWS_MEDIAN]],
+                self._keys[SNKeys.ROWS_MEDIAN]:
+                    all_stats[self._keys[SNKeys.ROWS_MEDIAN]],
             }
         if agg_type in ("axis", None):
-                comparisons["Datasets"] = {
+            comparisons["Datasets"] = {
                 self._keys[SNKeys.ROW_COUNT]: stats[self._keys[SNKeys.ROW_COUNT]],
                 self._keys[SNKeys.ROWS_COUNT]: all_stats[self._keys[SNKeys.ROWS_COUNT]],
                 self._keys[SNKeys.ROWS_COUNT_MIN]:
@@ -1083,7 +970,6 @@ class SparseMatrix:
         """Compress this SparseMatrix to a zipped npz and json file.
 
         Args:
-            filename (str): Filename of output data to write.
             local_path (str): Absolute path of local destination path
 
         Returns:
@@ -1339,7 +1225,6 @@ if __name__ == "__main__":
     s3_logfile = agg_sparse_mtx.copy_logfile_to_s3(PROJ_BUCKET, SUMMARY_FOLDER, REGION)
     print(s3_logfile)
 
-
     # .................................
     table = Summaries.get_table(mtx_table_type, data_datestr)
     zip_fname = f"{table['fname']}.zip"
@@ -1441,19 +1326,16 @@ zip_fname = f"{table['fname']}.zip"
 zip_filename = download_from_s3(
     PROJ_BUCKET, SUMMARY_FOLDER, zip_fname, local_path=local_path,
     overwrite=False)
-        
+
 # Only extract if files do not exist
 sparse_coo, row_categ, col_categ, table_type, new_data_datestr = \
     SparseMatrix.uncompress_zipped_sparsematrix(
         zip_filename, local_path=local_path, overwrite=False)
-        
+
 # Create
 sp_mtx = SparseMatrix(
     sparse_coo, mtx_table_type, data_datestr, row_category=row_categ,
     column_category=col_categ, logger=tst_logger)
-
-
-
 
 # --------------------------------------------------------------------------------------
 # Testing
@@ -1471,7 +1353,5 @@ row_label = y
 col_label = x
 sp_mtx.get_row_stats(y)
 sp_mtx.get_column_stats(x)
-
-
 
 """

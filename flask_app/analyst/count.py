@@ -7,7 +7,7 @@ from flask_app.analyst.base import _AnalystService
 
 from sppy.aws.aws_constants import PROJ_BUCKET
 from sppy.tools.provider.spnet import SpNetAnalyses
-from sppy.tools.s2n.utils import (combine_errinfo, get_traceback)
+from sppy.tools.s2n.utils import (combine_errinfo, get_traceback, prettify_object)
 
 
 # .............................................................................
@@ -57,7 +57,7 @@ class CountSvc(_AnalystService):
         # Assemble
         full_out = AnalystOutput(
             cls.SERVICE_TYPE["name"], description=cls.SERVICE_TYPE["description"],
-            records=records, errors=errinfo)
+            output=records, errors=errinfo)
 
         return full_out.response
 
@@ -91,8 +91,6 @@ if __name__ == "__main__":
 
     svc = CountSvc()
     response = svc.get_endpoint()
-    AnalystOutput.print_output(response, do_print_rec=True)
-    # print(response)
+    print(prettify_object(response))
     response = svc.get_counts(dataset_key=dataset_key, pub_org_key=None)
-    AnalystOutput.print_output(response, do_print_rec=True)
-    # print(response)
+    print(prettify_object(response))

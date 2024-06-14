@@ -61,10 +61,15 @@ class _AnalystService(_SpecifyNetworkService):
             dataset_key: unique GBIF dataset identifier for comparisons
             species_key: species_key: unique GBIF identifier of
                 accepted taxon concatenated with the species name.
-            aggregate_by: count occurrences (values), species (matrix axis 0) or
-                datasets (matrix axis 1)
             pub_org_key: unique publishing organization identifier for comparisons
             count_by: counts of "occurrence" or "species"
+            aggregate_by: count occurrences (values), species (matrix axis 0) or
+                datasets (matrix axis 1)
+            stat_type: "describe" or "compare" indicating whether to
+                describe the
+                  * total for dataset or species count or
+                  * min and max count and dataset or species for occurrence count or
+                compare the above to the min/max/mean/median for all datasets
             order: sort records "descending" or "ascending"
             limit: integer indicating how many ranked records to return, value must
                 be less than QUERY_LIMIT.
