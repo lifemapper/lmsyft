@@ -7,7 +7,7 @@ from flask_app.analyst.base import _AnalystService
 
 from sppy.aws.aws_constants import PROJ_BUCKET
 from sppy.tools.provider.spnet import SpNetAnalyses
-from sppy.tools.s2n.utils import (combine_errinfo, get_traceback)
+from sppy.tools.s2n.utils import (combine_errinfo, get_traceback, prettify_object)
 
 
 # .............................................................................
@@ -46,7 +46,7 @@ class CountSvc(_AnalystService):
             # Query dataset counts
             if good_params["dataset_key"] is not None:
                 try:
-                    records, errors = cls._get_dataset_counts(
+                    records, errors = cls._get_simple_dataset_counts(
                         good_params["dataset_key"])
                 except Exception:
                     errors = {"error": [get_traceback()]}
@@ -57,13 +57,13 @@ class CountSvc(_AnalystService):
         # Assemble
         full_out = AnalystOutput(
             cls.SERVICE_TYPE["name"], description=cls.SERVICE_TYPE["description"],
-            records=records, errors=errinfo)
+            output=records, errors=errinfo)
 
         return full_out.response
 
 # ...............................................
     @classmethod
-    def _get_dataset_counts(cls, dataset_key):
+    def _get_simple_dataset_counts(cls, dataset_key):
         """Get counts for datasetKey.
 
         Args:
@@ -77,7 +77,7 @@ class CountSvc(_AnalystService):
         errors = {}
         s3 = SpNetAnalyses(PROJ_BUCKET)
         try:
-            records = s3.get_dataset_counts(dataset_key)
+            records = s3.get_simple_dataset_counts(dataset_key)
         except Exception:
             traceback = get_traceback()
             errors["error"] = [HTTPStatus.INTERNAL_SERVER_ERROR, traceback]
@@ -91,8 +91,6 @@ if __name__ == "__main__":
 
     svc = CountSvc()
     response = svc.get_endpoint()
-    AnalystOutput.print_output(response, do_print_rec=True)
-    # print(response)
+    print(prettify_object(response))
     response = svc.get_counts(dataset_key=dataset_key, pub_org_key=None)
-    AnalystOutput.print_output(response, do_print_rec=True)
-    # print(response)
+    print(prettify_object(response))

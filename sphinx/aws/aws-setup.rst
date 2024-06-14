@@ -390,4 +390,3 @@ Workflow for Specify Network Analyst pre-computations
     * Upload data to S3, delete on Spot
 
 * template of common software configuration
-

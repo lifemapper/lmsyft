@@ -60,6 +60,22 @@ class SpNetAnalyses():
         return False
 
     # ----------------------------------------------------
+    def _get_s3_fname_serialization(self, tbl_format, fname):
+        tbl_format = tbl_format.lower()
+        # S3 file extension, input S3 serialization parameter
+        if tbl_format in ("parquet", "csv", "zip"):
+            s3_fname = f"{fname}.{tbl_format}"
+            if tbl_format == "parquet":
+                in_serialization = {"Parquet": {}}
+            elif tbl_format == "csv":
+                in_serialization = {"CSV": {"FileHeaderInfo": "Use"}}
+            else:
+                in_serialization = {}
+        else:
+            raise Exception(f"Not yet implemented for table_format {tbl_format}")
+        return s3_fname, in_serialization
+
+    # ----------------------------------------------------
     def _query_summary_table(self, table, query_str, format):
         """Query the S3 resource defined for this class.
 
@@ -79,15 +95,10 @@ class SpNetAnalyses():
             raise(Exception(f"Unsupported output format {format}"))
 
         recs = []
-        # Table properties
-        tbl_format = table["table_format"]
-        s3_path = f"{self._summary_path}/{table['fname']}"
-
-        # Input S3 serialization
-        if tbl_format == "CSV":
-            in_serialization = {"CSV": {"FileHeaderInfo": "Use"}}
-        else:
-            in_serialization = {"Parquet": {}}
+        # S3 file extension, input S3 serialization parameter
+        s3_fname, in_serialization = self._get_s3_fname_serialization(
+            table["table_format"], table["fname"])
+        s3_path = f"{self._summary_path}/{s3_fname}"
 
         # Output serialization
         if format == "JSON":
@@ -154,7 +165,9 @@ class SpNetAnalyses():
         Returns:
              ordered list of records matching the query
         """
-        s3_path = f"{self._summary_path}/{table['fname']}"
+        s3_fname, _ = self._get_s3_fname_serialization(
+            table["table_format"], table["fname"])
+        s3_path = f"{self._summary_path}/{s3_fname}"
         df = self._create_dataframe_from_s3obj(s3_path)
         # Sort rows (Axis 0/index) by values in sort_field (column)
         sorted_df = df.sort_values(
@@ -173,7 +186,7 @@ class SpNetAnalyses():
         return recs
 
 # ----------------------------------------------------
-    def get_dataset_counts(self, dataset_key, format="JSON"):
+    def get_simple_dataset_counts(self, dataset_key, format="JSON"):
         """Query the S3 resource for occurrence and species counts for this dataset.
 
         Args:
@@ -185,7 +198,7 @@ class SpNetAnalyses():
         """
         table = self._summary_tables["dataset_counts"]
         query_str = (
-            f"SELECT * FROM s3object s WHERE s.{table['key']} = '{dataset_key}'"
+            f"SELECT * FROM s3object s WHERE s.{table['key_fld']} = '{dataset_key}'"
         )
         # Returns empty list or list of 1 record
         records = self._query_summary_table(table, query_str, format)
@@ -322,6 +335,6 @@ if __name__ == "__main__":
     format = "JSON"
     dataset_key = "0000e36f-d0e9-46b0-aa23-cc1980f00515"
     s3q = SpNetAnalyses(PROJ_BUCKET)
-    recs = s3q.get_dataset_counts(dataset_key, format=format)
+    recs = s3q.get_simple_dataset_counts(dataset_key, format=format)
     for r in recs:
         print(r)

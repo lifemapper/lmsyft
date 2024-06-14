@@ -14,6 +14,7 @@ class S2nKey:
     DESCRIPTION = "description"
     RECORD_FORMAT = "record_format"
     RECORDS = "records"
+    OUTPUT = "output"
     ERRORS = "errors"
     # output one service at a time
     SERVICE = "service"
@@ -76,10 +77,13 @@ class APIEndpoint:
     Root = "api/v1"
     Analyst = "analyst"
     Broker = "broker"
+    # Broker services
     Badge = "badge"
     Name = "name"
     Occurrence = "occ"
     Frontend = "frontend"
+    # Analyst services
+    Dataset = "dataset"
     Count = "count"
     Rank = "rank"
 
@@ -92,7 +96,12 @@ class APIEndpoint:
                 and Broker.
         """
         return {
-            cls.Analyst: [cls.Count, cls.Rank],
+            cls.Analyst:
+                [
+                    cls.Dataset,
+                    cls.Count,
+                    cls.Rank
+                ],
             cls.Broker:
                 [
                     cls.Badge,
@@ -181,6 +190,43 @@ class APIService:
         },
         "description": "Return an icon for the given data provider service.",
         S2nKey.RECORD_FORMAT: "image/png"
+    }
+    # Analyst Dataset stats
+    Dataset = {
+        "name": APIEndpoint.Dataset,
+        "endpoint": f"{APIEndpoint.Root}/{APIEndpoint.Dataset}",
+        "params": {
+            "dataset_key": {
+                "type": "",
+                "description": "GBIF Dataset Key",
+                "default": None
+            },
+            "species_key": {
+                "type": "",
+                "description":
+                    "GBIF Accepted Taxon Key concatenated with the species name",
+                "default": None
+            },
+            "aggregate_by": {
+                "type": "",
+                "options": ["species", "occurrences"],
+                "description": "Count of species or occurrences in datasets",
+                "default": None
+            },
+            "stat_type": {
+                "type": "",
+                "options": ["describe", "compare"],
+                "description":
+                    "Describe the counts for this dataset or compare this dataset's"
+                    "counts to min/max/mean/median counts in all other datasets.",
+                "default": None
+            },
+        },
+        "description":
+            "Return occurrence or species counts for the given dataset, totals and "
+            "statistics or comparisons between this dataset and all other datasets.",
+        S2nKey.RECORD_FORMAT: ""
+
     }
     # Counts
     Count = {
@@ -1099,26 +1145,26 @@ class AnalystOutput:
     errors: dict = {}
 
     # ...............................................
-    def __init__(self, service, description=None, records=None, errors=None):
+    def __init__(self, service, description=None, output=None, errors=None):
         """Constructor.
 
         Args:
             service: API Service this object is responding to.
             description: Description of the computation in this response.
-            records: Records (lists or dictionaries) in this response.
+            output: Statistics (dict) in this response.
             errors: Errors encountered when generating this response.
         """
         if errors is None:
             errors = {}
         if description is None:
             description = ""
-        if records is None:
-            records = []
+        if output is None:
+            output = {}
         # Dictionary is json-serializable
         self._response = {
             S2nKey.SERVICE: service,
             S2nKey.DESCRIPTION: description,
-            S2nKey.RECORDS: records,
+            S2nKey.OUTPUT: output,
             S2nKey.ERRORS: errors
         }
 

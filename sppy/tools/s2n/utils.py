@@ -1,7 +1,33 @@
 """Random tools used frequently in Specify Network."""
+from io import StringIO
+from numpy import integer as np_int, floating as np_float, ndarray
+from pprint import pp
 import sys
 import traceback
 from uuid import UUID
+
+
+# ......................................................
+def convert_np_vals_for_json(obj):
+    """Encode numpy values (from matrix operations) for JSON output.
+
+    Args:
+        obj: a simple numpy object, value or array
+
+    Returns:
+        an object serializable by JSON
+
+    Note:
+        from https://stackoverflow.com/questions/27050108/convert-numpy-type-to-python
+    """
+    if isinstance(obj, np_int):
+        return int(obj)
+    elif isinstance(obj, np_float):
+        return float(obj)
+    elif isinstance(obj, ndarray):
+        return obj.tolist()
+    else:
+        return obj
 
 
 # ......................................................
@@ -95,3 +121,19 @@ def add_errinfo(errinfo, key, val):
         except KeyError:
             errinfo[key] = [val]
     return errinfo
+
+
+# ......................................................
+def prettify_object(print_obj):
+    """Format an object for output.
+
+    Args:
+        print_obj (obj): Object to pretty print in output
+
+    Returns:
+        formatted string representation of object
+    """
+    strm = StringIO()
+    pp(print_obj, stream=strm)
+    obj_str = strm.getvalue()
+    return obj_str

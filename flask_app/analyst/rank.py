@@ -61,7 +61,7 @@ class RankSvc(_AnalystService):
         # Assemble
         full_out = AnalystOutput(
             cls.SERVICE_TYPE["name"], description=cls.SERVICE_TYPE["description"],
-            records=records, errors=errinfo)
+            output=records, errors=errinfo)
 
         return full_out.response
 

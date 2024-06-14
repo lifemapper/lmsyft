@@ -4,23 +4,23 @@
 # --------------------------------------------------------------------------------------
 import base64
 import boto3
-from botocore.exceptions import ClientError
+from botocore.exceptions import ClientError, SSLError
 import csv
 import certifi
 import datetime as DT
 from http import HTTPStatus
+from io import BytesIO
 import json
-import logging
-from logging.handlers import RotatingFileHandler
+from logging import ERROR
 import pandas as pd
 import os
 import requests
 import xml.etree.ElementTree as ET
 
 from sppy.aws.aws_constants import (
-    ENCODING, INSTANCE_TYPE, KEY_NAME, LOG,
-    PROJ_BUCKET, PROJ_NAME, REGION, SECURITY_GROUP_ID, SPOT_TEMPLATE_BASENAME,
-    SUMMARY_FOLDER, USER_DATA_TOKEN)
+    ENCODING, INSTANCE_TYPE, KEY_NAME, PROJ_BUCKET, PROJ_NAME, REGION,
+    SECURITY_GROUP_ID, SPOT_TEMPLATE_BASENAME, SUMMARY_FOLDER, USER_DATA_TOKEN)
+from sppy.tools.util.logtools import logit
 
 
 # --------------------------------------------------------------------------------------
@@ -375,31 +375,44 @@ def upload_trigger_to_s3(trigger_name, s3_bucket, s3_bucket_path, region=REGION)
 #     parquet_buffer.seek(0)
 #     s3_client.upload_fileobj(parquet_buffer, bucket, parquet_path)
 # .............................................................................
-def download_from_s3(bucket, bucket_path, filename, overwrite=True):
+def download_from_s3(
+        bucket, bucket_path, filename, local_path, region=REGION, logger=None,
+        overwrite=True):
     """Download a file from S3 to a local file.
 
     Args:
         bucket (str): Bucket identifier on S3.
         bucket_path (str): Folder path to the S3 parquet data.
-        filename (str): Filename of parquet data to read from S3.
+        filename (str): Filename of data to read from S3.
+        local_path (str): local path for download.
+        region (str): AWS region to query.
+        logger (object): logger for saving relevant processing messages
         overwrite (boolean):  flag indicating whether to overwrite an existing file.
 
     Returns:
         local_filename (str): full path to local filename containing downloaded data.
     """
-    local_path = os.getcwd()
     local_filename = os.path.join(local_path, filename)
+    obj_name = f"{bucket_path}/{filename}"
+    # Delete if needed
     if os.path.exists(local_filename):
         if overwrite is True:
             os.remove(local_filename)
         else:
             print(f"{local_filename} already exists")
-    else:
-        s3_client = boto3.client("s3")
+    # Download current
+    if not os.path.exists(local_filename):
+        s3_client = boto3.client("s3", region_name=region)
         try:
-            s3_client.download_file(bucket, f"{bucket_path}/{filename}", local_filename)
+            s3_client.download_file(bucket, obj_name, local_filename)
+        except SSLError:
+            logit(
+                logger, f"Failed with SSLError to download s3://{bucket}/{obj_name}",
+                log_level=ERROR)
         except ClientError as e:
-            print(f"Failed to download {filename} from {bucket}/{bucket_path}, ({e})")
+            logit(
+                logger,
+                f"Failed to download s3://{bucket}/{obj_name}, ({e})")
         else:
             print(f"Downloaded {filename} from S3 to {local_filename}")
     return local_filename
@@ -624,40 +637,6 @@ def delete_instance(instance_id, region=REGION):
     ec2_client = boto3.client("ec2", region_name=region)
     response = ec2_client.delete_instance(InstanceId=instance_id)
     return response
-
-
-# ----------------------------------------------------
-def get_logger(log_name, log_dir=None, log_level=logging.INFO):
-    """Get a logger for writing logging messages to file and console.
-
-    Args:
-        log_name: Name for the log object and output log file.
-        log_dir: absolute path for the logfile.
-        log_level: logging constant error level (logging.INFO, logging.DEBUG,
-                logging.WARNING, logging.ERROR)
-
-    Returns:
-        logger: logging.Logger object
-    """
-    filename = f"{log_name}.log"
-    if log_dir is not None:
-        filename = os.path.join(log_dir, f"{filename}")
-        os.makedirs(log_dir, exist_ok=True)
-    # create file handler
-    handler = RotatingFileHandler(
-        filename, mode="w", maxBytes=LOG.FILE_MAX_BYTES, backupCount=10,
-        encoding=ENCODING
-    )
-    formatter = logging.Formatter(LOG.FORMAT, LOG.DATE_FORMAT)
-    handler.setLevel(log_level)
-    handler.setFormatter(formatter)
-    # Get logger
-    logger = logging.getLogger(log_name)
-    logger.setLevel(logging.DEBUG)
-    # Add handler to logger
-    logger.addHandler(handler)
-    logger.propagate = False
-    return logger
 
 
 # ----------------------------------------------------
@@ -1018,6 +997,84 @@ def create_s3_dataset_lookup_from_tsv(
     smdf.to_parquet(tmp_parquet_fname, index=True)
     output_s3_path = f"{s3_folders}/{output_fname}"
     upload_to_s3(tmp_parquet_fname, bucket, output_s3_path)
+
+
+# .............................................................................
+def read_s3_parquet_to_pandas(
+        bucket, bucket_path, filename, logger=None, s3_client=None, region=REGION, **args):
+    """Read a parquet file from a folder on S3 into a pd DataFrame.
+
+    Args:
+        bucket (str): Bucket identifier on S3.
+        bucket_path (str): Folder path to the S3 parquet data.
+        filename (str): Filename of parquet data to read from S3.
+        logger (object): logger for saving relevant processing messages
+        s3_client (object): object for interacting with Amazon S3.
+        region (str): AWS region to query.
+        args: Additional arguments to be sent to the pd.read_parquet function.
+
+    Returns:
+        pd.DataFrame containing the tabular data.
+    """
+    dataframe = None
+    s3_key = f"{bucket_path}/{filename}"
+    if s3_client is None:
+        s3_client = boto3.client("s3", region_name=region)
+    try:
+        obj = s3_client.get_object(Bucket=bucket, Key=s3_key)
+    except SSLError:
+        logit(
+            logger, f"Failed with SSLError getting {bucket}/{s3_key} from S3",
+            log_level=ERROR)
+    except ClientError as e:
+        logit(
+            logger, f"Failed to get {bucket}/{s3_key} from S3, ({e})",
+            log_level=ERROR)
+    else:
+        logit(logger, f"Read {bucket}/{s3_key} from S3")
+        dataframe = pd.read_parquet(BytesIO(obj["Body"].read()), **args)
+    return dataframe
+
+
+# .............................................................................
+def read_s3_multiple_parquets_to_pandas(
+        bucket, bucket_path, logger=None, s3=None, s3_client=None, region=REGION, **args):
+    """Read multiple parquets from a folder on S3 into a pd DataFrame.
+
+    Args:
+        bucket (str): Bucket identifier on S3.
+        bucket_path (str): Parent folder path to the S3 parquet data.
+        logger (object): logger for saving relevant processing messages
+        s3 (object): Connection to the S3 resource
+        s3_client (object): object for interacting with Amazon S3.
+        region: AWS region to query.
+        args: Additional arguments to be sent to the pd.read_parquet function.
+
+    Returns:
+        pd.DataFrame containing the tabular data.
+    """
+    if not bucket_path.endswith("/"):
+        bucket_path = bucket_path + "/"
+    if s3_client is None:
+        s3_client = boto3.client("s3", region_name=region)
+    if s3 is None:
+        s3 = boto3.resource("s3", region_name=region)
+
+    s3_keys = [
+        item.key for item in s3.Bucket(bucket).objects.filter(Prefix=bucket_path)
+        if item.key.endswith(".parquet")]
+    if not s3_keys:
+        logit(
+            logger, f"No parquet found in {bucket} {bucket_path}",
+            log_level=ERROR)
+        return None
+
+    dfs = [
+        read_s3_parquet_to_pandas(
+            bucket, bucket_path, key, logger, s3_client=s3_client, region=region,
+            **args) for key in s3_keys
+    ]
+    return pd.concat(dfs, ignore_index=True)
 
 
 # .............................................................................
