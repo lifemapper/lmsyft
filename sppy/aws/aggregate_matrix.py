@@ -1,7 +1,6 @@
 """Tools to compute dataset x species statistics from S3 data."""
 import boto3
 from botocore.exceptions import ClientError, SSLError
-import io
 import json
 from logging import ERROR, INFO
 import numpy as np
@@ -14,9 +13,12 @@ from zipfile import ZipFile
 
 from sppy.aws.aws_constants import (
     LOCAL_OUTDIR, PROJ_BUCKET, REGION, SNKeys, SUMMARY_FOLDER,
-    Summaries, SUMMARY_TABLE_TYPES)
+    Summaries, SUMMARY_TABLE_TYPES
+)
 from sppy.aws.aws_tools import (
-    get_current_datadate_str, get_today_str, read_s3_parquet_to_pandas)
+    download_from_s3, get_current_datadate_str, get_today_str,
+    read_s3_parquet_to_pandas
+)
 from sppy.tools.util.logtools import Logger, logit
 from sppy.tools.s2n.utils import convert_np_vals_for_json
 

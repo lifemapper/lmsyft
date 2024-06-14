@@ -9,18 +9,18 @@ import csv
 import certifi
 import datetime as DT
 from http import HTTPStatus
+from io import BytesIO
 import json
-from logging import ERROR, INFO
+from logging import ERROR
 import pandas as pd
 import os
 import requests
 import xml.etree.ElementTree as ET
 
 from sppy.aws.aws_constants import (
-    ENCODING, INSTANCE_TYPE, KEY_NAME, LOG,
-    PROJ_BUCKET, PROJ_NAME, REGION, SECURITY_GROUP_ID, SPOT_TEMPLATE_BASENAME,
-    SUMMARY_FOLDER, USER_DATA_TOKEN)
-from sppy.tools.util.logtools import Logger, logit
+    ENCODING, INSTANCE_TYPE, KEY_NAME, PROJ_BUCKET, PROJ_NAME, REGION,
+    SECURITY_GROUP_ID, SPOT_TEMPLATE_BASENAME, SUMMARY_FOLDER, USER_DATA_TOKEN)
+from sppy.tools.util.logtools import logit
 
 
 # --------------------------------------------------------------------------------------
@@ -1032,7 +1032,7 @@ def read_s3_parquet_to_pandas(
             log_level=ERROR)
     else:
         logit(logger, f"Read {bucket}/{s3_key} from S3")
-        dataframe = pd.read_parquet(io.BytesIO(obj["Body"].read()), **args)
+        dataframe = pd.read_parquet(BytesIO(obj["Body"].read()), **args)
     return dataframe
 
 
@@ -1075,6 +1075,7 @@ def read_s3_multiple_parquets_to_pandas(
             **args) for key in s3_keys
     ]
     return pd.concat(dfs, ignore_index=True)
+
 
 # .............................................................................
 if __name__ == "__main__":
