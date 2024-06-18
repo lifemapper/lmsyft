@@ -15,6 +15,7 @@ from logging import ERROR
 import pandas as pd
 import os
 import requests
+from time import sleep
 import xml.etree.ElementTree as ET
 
 from sppy.aws.aws_constants import (
@@ -391,6 +392,11 @@ def download_from_s3(
 
     Returns:
         local_filename (str): full path to local filename containing downloaded data.
+
+    Raises:
+        Exception: on failure with SSL error to download from S3
+        Exception: on failure with AWS error to download from S3
+        Exception: on failure to save file locally
     """
     local_filename = os.path.join(local_path, filename)
     obj_name = f"{bucket_path}/{filename}"
@@ -399,22 +405,26 @@ def download_from_s3(
         if overwrite is True:
             os.remove(local_filename)
         else:
-            print(f"{local_filename} already exists")
+            logit(logger, f"{local_filename} already exists")
     # Download current
     if not os.path.exists(local_filename):
         s3_client = boto3.client("s3", region_name=region)
         try:
             s3_client.download_file(bucket, obj_name, local_filename)
         except SSLError:
-            logit(
-                logger, f"Failed with SSLError to download s3://{bucket}/{obj_name}",
-                log_level=ERROR)
+            raise Exception(f"Failed with SSLError to download s3://{bucket}/{obj_name}")
         except ClientError as e:
-            logit(
-                logger,
-                f"Failed to download s3://{bucket}/{obj_name}, ({e})")
+            raise Exception(f"Failed to download s3://{bucket}/{obj_name}, ({e})")
         else:
-            print(f"Downloaded {filename} from S3 to {local_filename}")
+            # Do not return until download to complete, allow max 5 min
+            count = 0
+            while not os.path.exists(local_filename) and count < 10:
+                sleep(seconds=30)
+            if not os.path.exists(local_filename):
+                raise Exception(f"Unable to download from S3 to {local_filename}")
+            else:
+                logit(logger, f"Downloaded from S3 to {local_filename}")
+
     return local_filename
 
 
