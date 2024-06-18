@@ -225,9 +225,15 @@ class Summaries:
         Returns:
             table_type (SUMMARY_TABLE_TYPES type): type of table.
             data_datestr (str): date of data in "YYYY_MM_DD" format.
+
+        Raises:
+            Exception: on failure to get tabletype and datestring from this filename.
         """
-        datacontents, datatype, data_datestr, _rest = cls._parse_filename(filename)
-        table_type = cls.get_tabletype_from_filename_prefix(datacontents, datatype)
+        try:
+            datacontents, datatype, data_datestr, _rest = cls._parse_filename(filename)
+            table_type = cls.get_tabletype_from_filename_prefix(datacontents, datatype)
+        except Exception:
+            raise
         return table_type, data_datestr
 
 
