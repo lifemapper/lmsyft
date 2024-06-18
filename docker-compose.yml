@@ -48,6 +48,7 @@ services:
       - "80:80"
       - "443:443"
     volumes:
+      - "scratch-path:/scratch-path"
       - "static-files:/volumes/static-files:ro"
       - "webpack-output:/volumes/webpack-output:ro"
 
