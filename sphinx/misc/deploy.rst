@@ -340,3 +340,35 @@ Solution
 ...............
 
 Stop apache2 on the host machine
+
+
+Problem: Permission denied for downloading/accessing S3 data
+---------------------------------------
+
+For now, we are using a local configuration file in the home directory with
+aws_access_key_id and aws_secret_access_key.
+
+Solution
+......................
+
+Create an .aws directory in the user directory, and create the files
+credentials and config.  In the credentials file, put the
+permitted user's access key and secret access key::
+
+    [default]
+    aws_access_key_id = <access_key>
+    aws_secret_access_key = <secret key>
+
+The config file should contain::
+
+    [default]
+    region = us-east-1
+    output = json
+
+General debug messages for the flask container
+----------------------------------------------
+
+* Print logs::
+
+  sudo docker logs sp_network-nginx-1 --tail 100
+
