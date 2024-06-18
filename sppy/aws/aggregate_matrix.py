@@ -346,7 +346,6 @@ class SparseMatrix:
         else:
             raise Exception(f"2D sparse array does not have axis {axis}")
 
-        code = None
         # returns a tuple of a single 1-dimensional array of locations
         arr = np.where(categ.categories == label)[0]
         try:
@@ -968,8 +967,11 @@ class SparseMatrix:
             raise Exception(f"Missing file {zip_filename}")
         basename = os.path.basename(zip_filename)
         fname, _ext = os.path.splitext(basename)
-        table_type, data_datestr = Summaries.get_tabletype_datestring_from_filename(
-            zip_filename)
+        try:
+            table_type, data_datestr = Summaries.get_tabletype_datestring_from_filename(
+                zip_filename)
+        except Exception:
+            raise
         # Expected files from archive
         mtx_fname = f"{local_path}/{fname}.npz"
         meta_fname = f"{local_path}/{fname}.json"
