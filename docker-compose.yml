@@ -13,6 +13,9 @@ services:
       ./.env.analyst.conf
     restart: unless-stopped
     volumes:
+      # bind mounts
+      - /home/ubuntu/aws_data:/volumes/aws_data:ro
+      # volumes
       - "scratch-path:/scratch-path"
       - "webpack-output:/volumes/webpack-output"
       - "static-files:/home/specify/sppy/frontend/static"

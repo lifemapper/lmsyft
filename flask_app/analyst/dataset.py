@@ -19,6 +19,7 @@ from sppy.tools.s2n.utils import (
 from sppy.tools.util.logtools import Logger
 
 LOCAL_PATH = os.environ["WORKING_DIRECTORY"]
+INPUT_DATA_PATH = os.environ["AWS_DATA_DIRECTORY"]
 LOG_PATH = os.path.join(LOCAL_PATH, "log")
 
 # .............................................................................
@@ -88,13 +89,16 @@ class DatasetSvc(_AnalystService):
         mtx_table_type = SUMMARY_TABLE_TYPES.SPECIES_DATASET_MATRIX
         table = Summaries.get_table(mtx_table_type, data_datestr)
         zip_fname = f"{table['fname']}.zip"
-        # Only download if file does not exist
-        try:
-            zip_filename = download_from_s3(
-                PROJ_BUCKET, SUMMARY_FOLDER, zip_fname, local_path=LOCAL_PATH,
-                overwrite=False)
-        except Exception as e:
-            errinfo["error"] = [str(e)]
+        zip_filename = os.path.join(INPUT_DATA_PATH, zip_fname)
+        if not os.path.exists(zip_filename):
+            errinfo["error"] = [f"Missing input data file {zip_filename}"]
+        # Download matrix if file does not exist
+        # try:
+        #     zip_filename = download_from_s3(
+        #         PROJ_BUCKET, SUMMARY_FOLDER, zip_fname, local_path=LOCAL_PATH,
+        #         overwrite=False)
+        # except Exception as e:
+        #     errinfo["error"] = [str(e)]
         else:
             # Only extract if files do not exist
             try:
