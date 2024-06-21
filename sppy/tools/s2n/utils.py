@@ -116,10 +116,12 @@ def add_errinfo(errinfo, key, val):
     if errinfo is None:
         errinfo = {}
     if key in ("error", "warning", "info"):
+        if isinstance(val, str):
+            val_lst = [val]
         try:
-            errinfo[key].extend(list(val))
+            errinfo[key].extend(val_lst)
         except KeyError:
-            errinfo[key] = list(val)
+            errinfo[key] = val_lst
     return errinfo
 
 
