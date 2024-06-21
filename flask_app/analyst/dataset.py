@@ -54,8 +54,9 @@ class DatasetSvc(_AnalystService):
             good_params, errinfo = cls._standardize_params(
                 dataset_key=dataset_key, species_key=species_key,
                 aggregate_by=aggregate_by, stat_type=stat_type)
-
         except BadRequest as e:
+            errinfo = {"error": [e.description]}
+        except Exception as e:
             errinfo = {"error": [e.description]}
 
         else:
@@ -90,7 +91,7 @@ class DatasetSvc(_AnalystService):
                 PROJ_BUCKET, SUMMARY_FOLDER, zip_fname, local_path=LOCAL_PATH,
                 overwrite=False)
         except Exception as e:
-            errinfo["error"] = [e]
+            errinfo["error"] = [e.description]
         else:
             # Only extract if files do not exist
             try:
@@ -98,7 +99,7 @@ class DatasetSvc(_AnalystService):
                     SparseMatrix.uncompress_zipped_sparsematrix(
                         zip_filename, local_path=LOCAL_PATH, overwrite=False)
             except Exception as e:
-                errinfo = add_errinfo(errinfo, "error", e)
+                errinfo = add_errinfo(errinfo, "error", e.description)
             # Create
             else:
                 sp_mtx = SparseMatrix(
