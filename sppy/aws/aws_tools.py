@@ -416,7 +416,12 @@ def download_from_s3(
                 f"Failed with SSLError to download s3://{bucket}/{obj_name}")
         except ClientError as e:
             raise Exception(
-                f"Failed with ClientError to download s3://{bucket}/{obj_name}, ({e})")
+                f"Failed with ClientError to download s3://{bucket}/{obj_name}, "
+                f"({e.description})")
+        except Exception as e:
+            raise Exception(
+                f"Failed with unknown Exception to download s3://{bucket}/{obj_name}, "
+                f"({e.description})")
         else:
             # Do not return until download to complete, allow max 5 min
             count = 0
