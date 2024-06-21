@@ -365,6 +365,13 @@ The config file should contain::
     region = us-east-1
     output = json
 
+Better Solution
+.....................
+
+Create an IAM role for S3 access, attach it to the EC2 instance, then verify:
+https://repost.aws/knowledge-center/ec2-instance-access-s3-bucket
+
+
 General debug messages for the flask container
 ----------------------------------------------
 
