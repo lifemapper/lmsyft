@@ -33,7 +33,7 @@ def get_secret(secret_name, region):
 
     Args:
         secret_name: name of the secret to retrieve.
-        region: AWS region containint the secret.
+        region: AWS region containing the secret.
 
     Returns:
         a dictionary containing the secret data.
@@ -412,16 +412,18 @@ def download_from_s3(
         try:
             s3_client.download_file(bucket, obj_name, local_filename)
         except SSLError:
-            raise Exception(f"Failed with SSLError to download s3://{bucket}/{obj_name}")
+            raise Exception(
+                f"Failed with SSLError to download s3://{bucket}/{obj_name}")
         except ClientError as e:
-            raise Exception(f"Failed to download s3://{bucket}/{obj_name}, ({e})")
+            raise Exception(
+                f"Failed with ClientError to download s3://{bucket}/{obj_name}, ({e})")
         else:
             # Do not return until download to complete, allow max 5 min
             count = 0
             while not os.path.exists(local_filename) and count < 10:
                 sleep(seconds=30)
             if not os.path.exists(local_filename):
-                raise Exception(f"Unable to download from S3 to {local_filename}")
+                raise Exception(f"Failed to download from S3 to {local_filename}")
             else:
                 logit(logger, f"Downloaded from S3 to {local_filename}")
 
