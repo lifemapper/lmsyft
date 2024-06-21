@@ -60,7 +60,7 @@ class DatasetSvc(_AnalystService):
         except BadRequest as e:
             errinfo = {"error": [e.description]}
         except Exception as e:
-            errinfo = {"error": [e.description]}
+            errinfo = {"error": [get_traceback()]}
 
         else:
             try:
@@ -94,7 +94,7 @@ class DatasetSvc(_AnalystService):
                 PROJ_BUCKET, SUMMARY_FOLDER, zip_fname, local_path=LOCAL_PATH,
                 overwrite=False)
         except Exception as e:
-            errinfo["error"] = [e.description]
+            errinfo["error"] = [str(e)]
         else:
             # Only extract if files do not exist
             try:
