@@ -348,7 +348,7 @@ Problem: Permission denied for downloading/accessing S3 data
 For now, we are using a local configuration file in the home directory with
 aws_access_key_id and aws_secret_access_key.
 
-Solution
+Configuration Solution
 ......................
 
 Create an .aws directory in the user directory, and create the files
@@ -365,11 +365,17 @@ The config file should contain::
     region = us-east-1
     output = json
 
-Better Solution
+This works for the host EC2 instance, but still getting ClientError Forbidden in
+analyst code on container.
+
+IAM Role Solution
 .....................
 
 Create an IAM role for S3 access, attach it to the EC2 instance, then verify:
 https://repost.aws/knowledge-center/ec2-instance-access-s3-bucket
+
+This works for the host EC2 instance, but still getting ClientError Forbidden in
+analyst code on container.
 
 
 General debug messages for the flask container
@@ -379,3 +385,38 @@ General debug messages for the flask container
 
   sudo docker logs sp_network-nginx-1 --tail 100
 
+Problem: Only broker endpoints are active
+--------------------------------------------
+
+Specify network uses 2 flask apps, broker and analyst, each with their own subdomain.
+The Docker file and docker-compose files must be configured for the correct flask app
+to send API requests from a subdomain to the appropriate docker container.
+
+Solution:
+..................
+
+Make sure that the following 3 files have the correct FQDN values in them:
+
+  * .env.analyst.conf: contains the analyst FQDN (i.e. FQDN=analyst(-dev).<domain>)
+  * .env.broker.conf: contains the broker FQDN (i.e. FQDN=broker(-dev).<domain>)
+  * config/nginx.conf: contains the server_name and proxy_pass (to container) for each
+    flask app.::
+
+    # Broker
+    server {
+      listen 443 ssl;
+      index index.html;
+      server_name  broker-dev.<domain>;
+      location / {
+        ...
+        # pass queries to the broker container
+        proxy_pass http://broker:5000;
+      ...
+    # Analyst
+    server {
+      listen 443 ssl;
+      index index.html;
+      server_name  analyst-dev.<domain>;
+      location / {
+        # pass queries to the analyst container
+        proxy_pass http://analyst:5000;
