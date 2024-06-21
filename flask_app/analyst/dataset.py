@@ -1,5 +1,6 @@
 """Class for the Specify Network Name API service."""
 from http import HTTPStatus
+from logging import ERROR, INFO, WARNING
 import os
 from werkzeug.exceptions import BadRequest
 
@@ -11,12 +12,14 @@ from sppy.aws.aws_constants import (
 )
 from sppy.aws.aggregate_matrix import SparseMatrix
 from sppy.aws.aws_tools import (
-    download_from_s3, get_current_datadate_str
+    download_from_s3, get_current_datadate_str, get_today_str
 )
 from sppy.tools.s2n.utils import (
     add_errinfo, combine_errinfo, get_traceback, prettify_object)
+from sppy.tools.util.logtools import Logger
 
 LOCAL_PATH = os.environ["WORKING_DIRECTORY"]
+LOG_PATH = os.path.join(LOCAL_PATH, "log")
 
 # .............................................................................
 class DatasetSvc(_AnalystService):
@@ -102,9 +105,15 @@ class DatasetSvc(_AnalystService):
                 errinfo = add_errinfo(errinfo, "error", e.description)
             # Create
             else:
+                script_name = os.path.splitext(os.path.basename(__file__))[0]
+                todaystr = get_today_str()
+                log_name = f"{script_name}_{todaystr}"
+                # Create logger if we get this far
+                logger = Logger(
+                    log_name, log_path=LOG_PATH, log_console=True, log_level=INFO)
                 sp_mtx = SparseMatrix(
                     sparse_coo, mtx_table_type, data_datestr, row_category=row_categ,
-                    column_category=col_categ, logger=None)
+                    column_category=col_categ, logger=logger)
         return sp_mtx, errinfo
 
     # ...............................................
