@@ -225,20 +225,6 @@ def test_stacked_to_aggregate_extremes(
 
 # .............................................................................
 # .............................................................................
-class MyEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, np.integer):
-            return int(obj)
-        elif isinstance(obj, np.floating):
-            return float(obj)
-        elif isinstance(obj, np.ndarray):
-            return obj.tolist()
-        else:
-            return super(MyEncoder, self).default(obj)
-
-
-# .............................................................................
-# .............................................................................
 class SparseMatrix:
     """Class for managing computations for counts of aggregator0 x aggregator1."""
 

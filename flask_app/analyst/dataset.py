@@ -1,26 +1,20 @@
 """Class for the Specify Network Name API service."""
 from http import HTTPStatus
-from logging import ERROR, INFO, WARNING
 import os
 from werkzeug.exceptions import BadRequest
 
 from flask_app.common.s2n_type import APIService, AnalystOutput
 from flask_app.analyst.base import _AnalystService
 
-from sppy.aws.aws_constants import (
-    PROJ_BUCKET, Summaries, SUMMARY_FOLDER, SUMMARY_TABLE_TYPES
-)
+from sppy.aws.aws_constants import (Summaries, SUMMARY_TABLE_TYPES)
 from sppy.aws.aggregate_matrix import SparseMatrix
-from sppy.aws.aws_tools import (
-    download_from_s3, get_current_datadate_str, get_today_str
-)
+from sppy.aws.aws_tools import get_current_datadate_str
 from sppy.tools.s2n.utils import (
     add_errinfo, combine_errinfo, get_traceback, prettify_object)
-from sppy.tools.util.logtools import Logger
 
 LOCAL_PATH = os.environ["WORKING_DIRECTORY"]
 INPUT_DATA_PATH = os.environ["AWS_DATA_DIRECTORY"]
-LOG_PATH = os.path.join(LOCAL_PATH, "log")
+
 
 # .............................................................................
 class DatasetSvc(_AnalystService):
@@ -60,7 +54,7 @@ class DatasetSvc(_AnalystService):
                 aggregate_by=aggregate_by, stat_type=stat_type)
         except BadRequest as e:
             errinfo = {"error": [e.description]}
-        except Exception as e:
+        except Exception:
             errinfo = {"error": [get_traceback()]}
 
         else:
@@ -92,32 +86,19 @@ class DatasetSvc(_AnalystService):
         zip_filename = os.path.join(INPUT_DATA_PATH, zip_fname)
         if not os.path.exists(zip_filename):
             errinfo["error"] = [f"Missing input data file {zip_filename}"]
-        # Download matrix if file does not exist
-        # try:
-        #     zip_filename = download_from_s3(
-        #         PROJ_BUCKET, SUMMARY_FOLDER, zip_fname, local_path=LOCAL_PATH,
-        #         overwrite=False)
-        # except Exception as e:
-        #     errinfo["error"] = [str(e)]
         else:
-            # Only extract if files do not exist
+            # Will only extract if matrix and metadata files do not exist yet
             try:
                 sparse_coo, row_categ, col_categ, table_type, _data_datestr = \
                     SparseMatrix.uncompress_zipped_sparsematrix(
                         zip_filename, local_path=LOCAL_PATH, overwrite=False)
             except Exception as e:
-                errinfo = add_errinfo(errinfo, "error", e.description)
+                errinfo = add_errinfo(errinfo, "error", str(e))
             # Create
             else:
-                script_name = os.path.splitext(os.path.basename(__file__))[0]
-                todaystr = get_today_str()
-                log_name = f"{script_name}_{todaystr}"
-                # Create logger if we get this far
-                logger = Logger(
-                    log_name, log_path=LOG_PATH, log_console=True, log_level=INFO)
                 sp_mtx = SparseMatrix(
                     sparse_coo, mtx_table_type, data_datestr, row_category=row_categ,
-                    column_category=col_categ, logger=logger)
+                    column_category=col_categ, logger=None)
         return sp_mtx, errinfo
 
     # ...............................................

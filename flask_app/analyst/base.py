@@ -1,9 +1,17 @@
 """Parent Class for the Specify Network API services."""
+from logging import INFO
+import os
 from werkzeug.exceptions import BadRequest
 
 from flask_app.common.base import _SpecifyNetworkService
 from flask_app.common.s2n_type import AnalystOutput, APIService
+
+from sppy.aws.aws_tools import get_today_str
 from sppy.tools.s2n.utils import get_traceback
+from sppy.tools.util.logtools import Logger
+
+LOCAL_PATH = os.environ["WORKING_DIRECTORY"]
+LOG_PATH = os.path.join(LOCAL_PATH, "log")
 
 
 # .............................................................................
@@ -49,6 +57,16 @@ class _AnalystService(_SpecifyNetworkService):
         output = AnalystOutput(
             svc, description=cls.SERVICE_TYPE["description"], errors=info)
         return output
+
+    # ...............................................
+    @classmethod
+    def _init_logger(cls):
+        script_name = os.path.splitext(os.path.basename(__file__))[0]
+        todaystr = get_today_str()
+        log_name = f"{script_name}_{todaystr}"
+        logger = Logger(
+            log_name, log_path=LOG_PATH, log_console=True, log_level=INFO)
+        return logger
 
     # ...............................................
     @classmethod
