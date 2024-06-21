@@ -348,7 +348,7 @@ Problem: Permission denied for downloading/accessing S3 data
 For now, we are using a local configuration file in the home directory with
 aws_access_key_id and aws_secret_access_key.
 
-Configuration Solution
+Configuration Solution (fail)
 ......................
 
 Create an .aws directory in the user directory, and create the files
@@ -368,7 +368,7 @@ The config file should contain::
 This works for the host EC2 instance, but still getting ClientError Forbidden in
 analyst code on container.
 
-IAM Role Solution
+IAM Role Solution (fail)
 .....................
 
 Create an IAM role for S3 access, attach it to the EC2 instance, then verify:
@@ -377,6 +377,29 @@ https://repost.aws/knowledge-center/ec2-instance-access-s3-bucket
 This works for the host EC2 instance, but still getting ClientError Forbidden in
 analyst code on container.
 
+Bind-mount solution (success!)
+.....................
+
+Using the aws cli and the command::
+
+ aws s3 cp s3://specnet-us-east-1/summary/speciesxdataset_matrix_2024_02_01.zip /tmp/
+
+The EC2 instance successfully used the Configuration Solution (~/.aws/credentials)
+above to download files from S3.
+
+However, when using only the IAM Role Solution, with the EC2 instance having a role
+full access to the specnet-us-east-1 bucket, the EC2 instance got::
+
+  "fatal error: An error occurred (403) when calling the HeadObject operation: Forbidden"
+
+
+Chose to download the data to the EC2 instance, and bind-mount that directory to the
+container.
+
+TODO: In the future, this should be done as soon as new data from GBIF has
+been processed at the first of the month.  The API will query for the data named with
+the date as the first of the current month (aka, on July 2, 2024, search for
+<datatype>_2024-07-01.<ext>)
 
 General debug messages for the flask container
 ----------------------------------------------
