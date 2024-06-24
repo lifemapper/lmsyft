@@ -340,3 +340,106 @@ Solution
 ...............
 
 Stop apache2 on the host machine
+
+
+Problem: Permission denied for downloading/accessing S3 data
+---------------------------------------
+
+For now, we are using a local configuration file in the home directory with
+aws_access_key_id and aws_secret_access_key.
+
+Configuration Solution (fail)
+......................
+
+Create an .aws directory in the user directory, and create the files
+credentials and config.  In the credentials file, put the
+permitted user's access key and secret access key::
+
+    [default]
+    aws_access_key_id = <access_key>
+    aws_secret_access_key = <secret key>
+
+The config file should contain::
+
+    [default]
+    region = us-east-1
+    output = json
+
+This works for the host EC2 instance, but still getting ClientError Forbidden in
+analyst code on container.
+
+IAM Role Solution (fail)
+.....................
+
+Create an IAM role for S3 access, attach it to the EC2 instance, then verify:
+https://repost.aws/knowledge-center/ec2-instance-access-s3-bucket
+
+This works for the host EC2 instance, but still getting ClientError Forbidden in
+analyst code on container.
+
+Bind-mount solution (success!)
+.....................
+
+Using the aws cli and the command::
+
+ aws s3 cp s3://specnet-us-east-1/summary/speciesxdataset_matrix_2024_02_01.zip /tmp/
+
+The EC2 instance successfully used the Configuration Solution (~/.aws/credentials)
+above to download files from S3.
+
+However, when using only the IAM Role Solution, with the EC2 instance having a role
+full access to the specnet-us-east-1 bucket, the EC2 instance got::
+
+  "fatal error: An error occurred (403) when calling the HeadObject operation: Forbidden"
+
+
+Chose to download the data to the EC2 instance, and bind-mount that directory to the
+container.
+
+TODO: In the future, this should be done as soon as new data from GBIF has
+been processed at the first of the month.  The API will query for the data named with
+the date as the first of the current month (aka, on July 2, 2024, search for
+<datatype>_2024-07-01.<ext>)
+
+General debug messages for the flask container
+----------------------------------------------
+
+* Print logs::
+
+  sudo docker logs sp_network-nginx-1 --tail 100
+
+Problem: Only broker endpoints are active
+--------------------------------------------
+
+Specify network uses 2 flask apps, broker and analyst, each with their own subdomain.
+The Docker file and docker-compose files must be configured for the correct flask app
+to send API requests from a subdomain to the appropriate docker container.
+
+Solution:
+..................
+
+Make sure that the following 3 files have the correct FQDN values in them:
+
+  * .env.analyst.conf: contains the analyst FQDN (i.e. FQDN=analyst(-dev).<domain>)
+  * .env.broker.conf: contains the broker FQDN (i.e. FQDN=broker(-dev).<domain>)
+  * config/nginx.conf: contains the server_name and proxy_pass (to container) for each
+    flask app.::
+
+    # Broker
+    server {
+      listen 443 ssl;
+      index index.html;
+      server_name  broker-dev.<domain>;
+      location / {
+        ...
+        # pass queries to the broker container
+        proxy_pass http://broker:5000;
+      ...
+    # Analyst
+    server {
+      listen 443 ssl;
+      index index.html;
+      server_name  analyst-dev.<domain>;
+      location / {
+        # pass queries to the analyst container
+        proxy_pass http://analyst:5000;

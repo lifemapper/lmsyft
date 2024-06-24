@@ -84,6 +84,17 @@
 <li class="toctree-l4"><a class="reference internal" href="#id1">Solution</a></li>
 </ul>
 </li>
+<li class="toctree-l3"><a class="reference internal" href="#problem-permission-denied-for-downloading-accessing-s3-data">Problem: Permission denied for downloading/accessing S3 data</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#configuration-solution-fail">Configuration Solution (fail)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#iam-role-solution-fail">IAM Role Solution (fail)</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#bind-mount-solution-success">Bind-mount solution (success!)</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#general-debug-messages-for-the-flask-container">General debug messages for the flask container</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#problem-only-broker-endpoints-are-active">Problem: Only broker endpoints are active</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#id2">Solution:</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -447,6 +458,112 @@ Error starting userland proxy: listen tcp4 0.0.0.0:80: bind: address already in 
 <section id="id1">
 <h4>Solution<a class="headerlink" href="#id1" title="Link to this heading"></a></h4>
 <p>Stop apache2 on the host machine</p>
+</section>
+</section>
+<section id="problem-permission-denied-for-downloading-accessing-s3-data">
+<h3>Problem: Permission denied for downloading/accessing S3 data<a class="headerlink" href="#problem-permission-denied-for-downloading-accessing-s3-data" title="Link to this heading"></a></h3>
+<p>For now, we are using a local configuration file in the home directory with
+aws_access_key_id and aws_secret_access_key.</p>
+<section id="configuration-solution-fail">
+<h4>Configuration Solution (fail)<a class="headerlink" href="#configuration-solution-fail" title="Link to this heading"></a></h4>
+<p>Create an .aws directory in the user directory, and create the files
+credentials and config.  In the credentials file, put the
+permitted user’s access key and secret access key:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">default</span><span class="p">]</span>
+<span class="n">aws_access_key_id</span> <span class="o">=</span> <span class="o">&lt;</span><span class="n">access_key</span><span class="o">&gt;</span>
+<span class="n">aws_secret_access_key</span> <span class="o">=</span> <span class="o">&lt;</span><span class="n">secret</span> <span class="n">key</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+<p>The config file should contain:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">default</span><span class="p">]</span>
+<span class="n">region</span> <span class="o">=</span> <span class="n">us</span><span class="o">-</span><span class="n">east</span><span class="o">-</span><span class="mi">1</span>
+<span class="n">output</span> <span class="o">=</span> <span class="n">json</span>
+</pre></div>
+</div>
+<p>This works for the host EC2 instance, but still getting ClientError Forbidden in
+analyst code on container.</p>
+</section>
+<section id="iam-role-solution-fail">
+<h4>IAM Role Solution (fail)<a class="headerlink" href="#iam-role-solution-fail" title="Link to this heading"></a></h4>
+<p>Create an IAM role for S3 access, attach it to the EC2 instance, then verify:
+<a class="reference external" href="https://repost.aws/knowledge-center/ec2-instance-access-s3-bucket">https://repost.aws/knowledge-center/ec2-instance-access-s3-bucket</a></p>
+<p>This works for the host EC2 instance, but still getting ClientError Forbidden in
+analyst code on container.</p>
+</section>
+<section id="bind-mount-solution-success">
+<h4>Bind-mount solution (success!)<a class="headerlink" href="#bind-mount-solution-success" title="Link to this heading"></a></h4>
+<p>Using the aws cli and the command:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">aws</span> <span class="n">s3</span> <span class="n">cp</span> <span class="n">s3</span><span class="p">:</span><span class="o">//</span><span class="n">specnet</span><span class="o">-</span><span class="n">us</span><span class="o">-</span><span class="n">east</span><span class="o">-</span><span class="mi">1</span><span class="o">/</span><span class="n">summary</span><span class="o">/</span><span class="n">speciesxdataset_matrix_2024_02_01</span><span class="o">.</span><span class="n">zip</span> <span class="o">/</span><span class="n">tmp</span><span class="o">/</span>
+</pre></div>
+</div>
+<p>The EC2 instance successfully used the Configuration Solution (~/.aws/credentials)
+above to download files from S3.</p>
+<p>However, when using only the IAM Role Solution, with the EC2 instance having a role
+full access to the specnet-us-east-1 bucket, the EC2 instance got:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;fatal error: An error occurred (403) when calling the HeadObject operation: Forbidden&quot;</span>
+</pre></div>
+</div>
+<p>Chose to download the data to the EC2 instance, and bind-mount that directory to the
+container.</p>
+<p>TODO: In the future, this should be done as soon as new data from GBIF has
+been processed at the first of the month.  The API will query for the data named with
+the date as the first of the current month (aka, on July 2, 2024, search for
+&lt;datatype&gt;_2024-07-01.&lt;ext&gt;)</p>
+</section>
+</section>
+<section id="general-debug-messages-for-the-flask-container">
+<h3>General debug messages for the flask container<a class="headerlink" href="#general-debug-messages-for-the-flask-container" title="Link to this heading"></a></h3>
+<ul>
+<li><p>Print logs:</p>
+<p>sudo docker logs sp_network-nginx-1 –tail 100</p>
+</li>
+</ul>
+</section>
+<section id="problem-only-broker-endpoints-are-active">
+<h3>Problem: Only broker endpoints are active<a class="headerlink" href="#problem-only-broker-endpoints-are-active" title="Link to this heading"></a></h3>
+<p>Specify network uses 2 flask apps, broker and analyst, each with their own subdomain.
+The Docker file and docker-compose files must be configured for the correct flask app
+to send API requests from a subdomain to the appropriate docker container.</p>
+<section id="id2">
+<h4>Solution:<a class="headerlink" href="#id2" title="Link to this heading"></a></h4>
+<p>Make sure that the following 3 files have the correct FQDN values in them:</p>
+<blockquote>
+<div><ul>
+<li><p>.env.analyst.conf: contains the analyst FQDN (i.e. FQDN=analyst(-dev).&lt;domain&gt;)</p></li>
+<li><p>.env.broker.conf: contains the broker FQDN (i.e. FQDN=broker(-dev).&lt;domain&gt;)</p></li>
+<li><p>config/nginx.conf: contains the server_name and proxy_pass (to container) for each
+flask app.:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Broker</span>
+</pre></div>
+</div>
+<dl>
+<dt>server {</dt><dd><p>listen 443 ssl;
+index index.html;
+server_name  broker-dev.&lt;domain&gt;;
+location / {</p>
+<blockquote>
+<div><p>…
+# pass queries to the broker container
+proxy_pass <a class="reference external" href="http://broker:5000">http://broker:5000</a>;</p>
+</div></blockquote>
+<p>…</p>
+</dd>
+</dl>
+<p># Analyst
+server {</p>
+<blockquote>
+<div><p>listen 443 ssl;
+index index.html;
+server_name  analyst-dev.&lt;domain&gt;;
+location / {</p>
+<blockquote>
+<div><p># pass queries to the analyst container
+proxy_pass <a class="reference external" href="http://analyst:5000">http://analyst:5000</a>;</p>
+</div></blockquote>
+</div></blockquote>
+</li>
+</ul>
+</div></blockquote>
 </section>
 </section>
 </section>
