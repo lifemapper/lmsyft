@@ -225,20 +225,6 @@ def test_stacked_to_aggregate_extremes(
 
 # .............................................................................
 # .............................................................................
-class MyEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, np.integer):
-            return int(obj)
-        elif isinstance(obj, np.floating):
-            return float(obj)
-        elif isinstance(obj, np.ndarray):
-            return obj.tolist()
-        else:
-            return super(MyEncoder, self).default(obj)
-
-
-# .............................................................................
-# .............................................................................
 class SparseMatrix:
     """Class for managing computations for counts of aggregator0 x aggregator1."""
 
@@ -346,7 +332,6 @@ class SparseMatrix:
         else:
             raise Exception(f"2D sparse array does not have axis {axis}")
 
-        code = None
         # returns a tuple of a single 1-dimensional array of locations
         arr = np.where(categ.categories == label)[0]
         try:
@@ -968,8 +953,11 @@ class SparseMatrix:
             raise Exception(f"Missing file {zip_filename}")
         basename = os.path.basename(zip_filename)
         fname, _ext = os.path.splitext(basename)
-        table_type, data_datestr = Summaries.get_tabletype_datestring_from_filename(
-            zip_filename)
+        try:
+            table_type, data_datestr = Summaries.get_tabletype_datestring_from_filename(
+                zip_filename)
+        except Exception:
+            raise
         # Expected files from archive
         mtx_fname = f"{local_path}/{fname}.npz"
         meta_fname = f"{local_path}/{fname}.json"

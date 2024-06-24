@@ -74,6 +74,6 @@ Then rebuild/restart::
 Examine container
 -------------------------------------------
 
-To examine containers at a shell prompt::
+To examine flask container at a shell prompt::
 
     sudo docker exec -it sp_network-nginx-1 /bin/sh
