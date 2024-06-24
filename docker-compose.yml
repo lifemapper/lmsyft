@@ -13,7 +13,7 @@ services:
       ./.env.analyst.conf
     restart: unless-stopped
     volumes:
-      # bind mounts
+      # bind mount
       - /home/ubuntu/aws_data:/volumes/aws_data:ro
       # volumes
       - "scratch-path:/scratch-path"
@@ -51,7 +51,6 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - "scratch-path:/scratch-path"
       - "static-files:/volumes/static-files:ro"
       - "webpack-output:/volumes/webpack-output:ro"
 

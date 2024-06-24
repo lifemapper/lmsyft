@@ -112,6 +112,23 @@ nginx.conf::
         # pass queries to the analyst container
         proxy_pass http://analyst:5000;
 
+Host machine preparation
+----------------------------
+These tasks should be set up on the EC2 host, possibly in the userdata
+script run on instantiation.
+
+* Create a directory on the host machine to share data with docker containers.
+
+  * /home/ubuntu/aws_data directory on the host will contain data downloaded from S3
+    for data analysis outputs used by the SpecifyNetwork Analyst APIs.
+
+    * docker-compose.yml bind-mounts this host directory to the /volumes/aws_data
+      directory as Read-Only on the analyst container.
+    * AWS_INPUT_DATA in the .env.analyst.conf file points to this volume
+    * INPUT_DATA_PATH references the AWS_INPUT_DATA environment variable in the
+      flask_app/analyst/dataset.py service
+
+
 Standard manipulation
 =================================
 
