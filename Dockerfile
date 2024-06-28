@@ -7,6 +7,7 @@ FROM python:3.12-slim-bookworm as base
 LABEL maintainer="Specify Network <github.com/specifysystems>"
 
 RUN apt-get update
+RUN apt-get install -y awscli
 RUN apt-get install -y gcc
 RUN apt-get install -y git
 RUN apt-get install -y vim
