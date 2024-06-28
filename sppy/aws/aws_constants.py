@@ -36,6 +36,8 @@ INSTANCE_TYPE = "t2.micro"
 USER_DATA_TOKEN = "###SCRIPT_GOES_HERE###"
 DATESTR_TOKEN = "YYYY_MM_DD"
 
+DATASET_GBIF_KEY = "datasetkey"
+
 
 # .............................................................................
 class LOG:
@@ -63,21 +65,22 @@ class Summaries:
     Note: All filenames follow the pattern
         <datacontents>_<datatype>_<YYYY_MM_DD><_optional parquet extension>
     Note: Table code is the same as <datacontents>_<datatype>
+    Note: "datasetkey" is the original GBIF field
     """
     TABLES = {
             SUMMARY_TABLE_TYPES.DATASET_COUNTS: {
                 "code": SUMMARY_TABLE_TYPES.DATASET_COUNTS,
                 "fname": f"dataset_counts_{DATESTR_TOKEN}_000",
                 "table_format": "Parquet",
-                "fields": ["datasetkey", "occ_count", "species_count"],
-                "key_fld": "datasetkey"
+                "fields": [DATASET_GBIF_KEY, "occ_count", "species_count"],
+                "key_fld": DATASET_GBIF_KEY
             },
             SUMMARY_TABLE_TYPES.DATASET_SPECIES_LISTS: {
                 "code": SUMMARY_TABLE_TYPES.DATASET_SPECIES_LISTS,
                 "fname": f"dataset_lists_{DATESTR_TOKEN}_000",
                 "table_format": "Parquet",
-                "fields": ["datasetkey", "taxonkey", "species", "occ_count"],
-                "key_fld": "datasetkey",
+                "fields": [DATASET_GBIF_KEY, "taxonkey", "species", "occ_count"],
+                "key_fld": DATASET_GBIF_KEY,
                 "species_fld": "species",
                 "combine_fields": {"taxonkey_species": ("taxonkey", "species")},
                 "value_fld": "occ_count",
@@ -97,7 +100,7 @@ class Summaries:
                 # Axis 0
                 "row": "taxonkey_species",
                 # Axis 1
-                "column": "datasetkey",
+                "column": DATASET_GBIF_KEY,
                 # Matrix values
                 "value": "occ_count",
             }

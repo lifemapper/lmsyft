@@ -19,7 +19,7 @@ from time import sleep
 import xml.etree.ElementTree as ET
 
 from sppy.aws.aws_constants import (
-    ENCODING, INSTANCE_TYPE, KEY_NAME, PROJ_BUCKET, PROJ_NAME, REGION,
+    DATASET_GBIF_KEY, ENCODING, INSTANCE_TYPE, KEY_NAME, PROJ_BUCKET, PROJ_NAME, REGION,
     SECURITY_GROUP_ID, SPOT_TEMPLATE_BASENAME, SUMMARY_FOLDER, USER_DATA_TOKEN)
 from sppy.tools.util.logtools import logit
 
@@ -961,7 +961,7 @@ def create_dataframe_from_api(base_url, response_keys, output_columns):
 def _get_dataset_keys(bucket, s3_folders, input_fname, is_test):
     # Get keys for dataset resolution
     s3_path = f"{s3_folders}/{input_fname}"
-    query_str = "SELECT datasetkey from s3object s"
+    query_str = f"SELECT {DATASET_GBIF_KEY} from s3object s"
     key_records = _query_table(bucket, s3_path, query_str, format="CSV")
     keys = [r[0] for r in key_records]
     if is_test:

@@ -57,6 +57,8 @@ $$
 
 -- -------------------------------------------------------
 -- Mount latest GBIF data in Amazon Registry of Open Data
+-- Note that this uses GBIF fieldnames, including DATASET_GBIF_KEY defined in
+--     sppy.aws.aws_constants
 CREATE OR REPLACE PROCEDURE public.mount_gbif ()
 AS $$
     DECLARE datestr VARCHAR := CALL public.sp_get_current_gbif_date();
