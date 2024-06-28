@@ -54,8 +54,9 @@ class SpNetAnalyses():
 
     # ----------------------------------------------------
     def _dataset_metadata_exists(self):
-        fnames = self._list_summaries()
-        if self._summary_tables["dataset_meta"]["fname"] in fnames:
+        meta_fname = f"{self._summary_tables['dataset_meta']['fname']}.parquet"
+        all_fnames = self._list_summaries()
+        if meta_fname in all_fnames:
             return True
         return False
 
@@ -217,11 +218,12 @@ class SpNetAnalyses():
         """
         # Metadata table info
         meta_table = self._summary_tables["dataset_meta"]
-        meta_fields = meta_table["fields"]
         meta_key_fld = meta_table["key_fld"]
-        meta_key_idx = meta_fields.index(meta_key_fld)
-        meta_fields.pop(meta_key_idx)
-        qry_flds = ", ".join(meta_fields)
+        # Copy the list so we can remove an element before query
+        meta_fields_cpy = meta_table["fields"].copy()
+        meta_key_idx = meta_fields_cpy.index(meta_key_fld)
+        meta_fields_cpy.pop(meta_key_idx)
+        qry_flds = ", ".join(meta_fields_cpy)
 
         # Record info
         rec_fields = rec_table["fields"]
