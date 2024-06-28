@@ -55,6 +55,8 @@ EC2
 EC2 instance creation
 ===========================================================
 
+Creation Settings
+--------------------
 * Future - create and save an AMI for consistent reproduction
 * via Console, without launch template:
 
@@ -70,7 +72,21 @@ EC2 instance creation
   * Modify IAM role - to role created above (i.e. specnet_ec2_role)
   * Use the security group created for this region (currently launch-wizard-1)
 
-* Launch
+Allow docker containers to use host credentials
+------------------------------------------------
+* Extend the hop limit for getting metadata about permissions to 2
+  host --> dockercontainer --> metadata
+  https://specifydev.slack.com/archives/DQSAVMMHN/p1717706137817839
+  From the ec2 instance, run ::
+
+    aws ec2 modify-instance-metadata-options \
+        --instance-id i-082e751b94e476987 \
+        --http-put-response-hop-limit 2 \
+        --http-endpoint enabled
+
+Launch
+---------------
+
   * Default user for ubuntu instance is `ubuntu`
   * If you do not have a keypair, create one for SSH access (tied to region) on initial
     EC2 launch
@@ -364,6 +380,54 @@ pip install certifi
 import certifi
 certifi.where()
 
+Error accessing AWS console and/or CLI
+===========================================================
+You need permissions
+
+Signature not yet current: 20240624T205810Z is still later than 20240624T205725Z (20240624T205225Z + 5 min.)
+
+Solution:
+-----------------
+Make sure that the local time is correct and is syncing regularly from time.ku.edu.
+
+* Check systemd_timesyncd.service::
+
+    $ sudo systemctl status systemd-timesyncd
+    ● systemd-timesyncd.service - Network Time Synchronization
+         Loaded: loaded (/lib/systemd/system/systemd-timesyncd.service; enabled; vendor preset: enabled)
+         Active: active (running) since Mon 2024-05-13 11:22:01 CDT; 1 months 12 days ago
+           Docs: man:systemd-timesyncd.service(8)
+       Main PID: 1049 (systemd-timesyn)
+         Status: "Idle."
+          Tasks: 2 (limit: 154130)
+         Memory: 1.4M
+         CGroup: /system.slice/systemd-timesyncd.service
+                 └─1049 /lib/systemd/systemd-timesyncd
+
+    Jun 25 13:01:19 murderbot systemd-timesyncd[1049]: Timed out waiting for reply from 185.125.190.57:123 (ntp.ubuntu.com).
+    Jun 25 13:01:30 murderbot systemd-timesyncd[1049]: Timed out waiting for reply from 91.189.91.157:123 (ntp.ubuntu.com).
+    Jun 25 13:35:48 murderbot systemd-timesyncd[1049]: Timed out waiting for reply from 185.125.190.57:123 (ntp.ubuntu.com).
+    Jun 25 13:35:58 murderbot systemd-timesyncd[1049]: Timed out waiting for reply from 185.125.190.56:123 (ntp.ubuntu.com).
+    Jun 25 13:36:09 murderbot systemd-timesyncd[1049]: Timed out waiting for reply from 185.125.190.58:123 (ntp.ubuntu.com).
+    Jun 25 13:36:19 murderbot systemd-timesyncd[1049]: Timed out waiting for reply from 91.189.91.157:123 (ntp.ubuntu.com).
+    Jun 25 14:10:37 murderbot systemd-timesyncd[1049]: Timed out waiting for reply from 91.189.91.157:123 (ntp.ubuntu.com).
+    Jun 25 14:10:48 murderbot systemd-timesyncd[1049]: Timed out waiting for reply from 185.125.190.57:123 (ntp.ubuntu.com).
+    Jun 25 14:10:58 murderbot systemd-timesyncd[1049]: Timed out waiting for reply from 185.125.190.58:123 (ntp.ubuntu.com).
+    Jun 25 14:11:08 murderbot systemd-timesyncd[1049]: Timed out waiting for reply from 185.125.190.56:123 (ntp.ubuntu.com).
+
+* Update the reference server in /etc/systemd/timesyncd.conf to point to time.ku.edu.
+  Change the NTP value, and leave others as defaults, uncomment if necessary.::
+
+    [Time]
+    NTP=time.ku.edu
+    FallbackNTP=ntp.ubuntu.com
+    RootDistanceMaxSec=5
+    PollIntervalMinSec=32
+    PollIntervalMaxSec=2048
+
+* Restart systemd_timesyncd.service::
+
+    $ sudo systemctl restart systemd-timesyncd
 
 
 Workflow for Specify Network Analyst pre-computations

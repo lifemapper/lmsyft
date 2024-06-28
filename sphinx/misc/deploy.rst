@@ -1,6 +1,9 @@
 Deploy Specify Network
 ##############################
 
+Create an EC2 instance
+========================
+
 Install Specify Network code
 =======================================
 
