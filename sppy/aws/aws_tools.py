@@ -1055,7 +1055,7 @@ def read_s3_parquet_to_pandas(
 
 # .............................................................................
 def read_s3_multiple_parquets_to_pandas(
-        bucket, bucket_path, logger=None, s3=None, s3_client=None, region=REGION, **args):
+        bucket, bucket_path, logger=None, s3_conn=None, s3_client=None, region=REGION, **args):
     """Read multiple parquets from a folder on S3 into a pd DataFrame.
 
     Args:
@@ -1072,13 +1072,11 @@ def read_s3_multiple_parquets_to_pandas(
     """
     if not bucket_path.endswith("/"):
         bucket_path = bucket_path + "/"
-    if s3_client is None:
-        s3_client = boto3.client("s3", region_name=region)
-    if s3 is None:
-        s3 = boto3.resource("s3", region_name=region)
+    if s3_conn is None:
+        s3_conn = boto3.resource("s3", region_name=region)
 
     s3_keys = [
-        item.key for item in s3.Bucket(bucket).objects.filter(Prefix=bucket_path)
+        item.key for item in s3_conn.Bucket(bucket).objects.filter(Prefix=bucket_path)
         if item.key.endswith(".parquet")]
     if not s3_keys:
         logit(
@@ -1086,6 +1084,8 @@ def read_s3_multiple_parquets_to_pandas(
             log_level=ERROR)
         return None
 
+    if s3_client is None:
+        s3_client = boto3.client("s3", region_name=region)
     dfs = [
         read_s3_parquet_to_pandas(
             bucket, bucket_path, key, logger, s3_client=s3_client, region=region,

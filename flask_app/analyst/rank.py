@@ -69,9 +69,9 @@ class RankSvc(_AnalystService):
     @classmethod
     def _get_ordered_counts(cls, count_by, order, limit):
         records = []
-        s3 = SpNetAnalyses(PROJ_BUCKET)
+        spnet = SpNetAnalyses(PROJ_BUCKET)
         try:
-            records, errinfo = s3.rank_dataset_counts(count_by, order, limit)
+            records, errinfo = spnet.rank_dataset_counts(count_by, order, limit)
 
         except Exception:
             errinfo = {"error": [get_traceback()]}
@@ -94,23 +94,29 @@ if __name__ == "__main__":
     # print(response)
 
 """
-from werkzeug.exceptions import BadRequest
-
-from flask_app.common.s2n_type import APIService, AnalystOutput
-from flask_app.analyst.base import _AnalystService
 from flask_app.analyst.rank import *
-
-from sppy.aws.aws_constants import PROJ_BUCKET
-from sppy.tools.provider.spnet import SpNetAnalyses
-from sppy.tools.s2n.utils import (combine_errinfo, get_traceback)
-
+from flask_app.analyst.count import *
 dataset_key = "0000e36f-d0e9-46b0-aa23-cc1980f00515"
+
+# ..............................
+# Count
+svc = CountSvc()
+response = svc.get_endpoint()
+print(prettify_object(response))
+response = svc.get_counts(dataset_key=dataset_key, pub_org_key=None)
+print(prettify_object(response))
+
+
+# ..............................
+# Rank
 count_by = "species"
 order = "descending"
 limit = 5
 
+
 svc = RankSvc()
 response = svc.rank_counts(count_by)
-AnalystOutput.print_output(response, do_print_rec=True)
+print(prettify_object(response))
 
+records, errors = svc._get_ordered_counts(count_by, order, limit)
 """

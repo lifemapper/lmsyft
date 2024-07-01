@@ -10,7 +10,11 @@ from sppy.aws.aws_tools import get_today_str
 from sppy.tools.s2n.utils import get_traceback
 from sppy.tools.util.logtools import Logger
 
-LOCAL_PATH = os.environ["WORKING_DIRECTORY"]
+# For local debugging
+try:
+    LOCAL_PATH = os.environ["WORKING_DIRECTORY"]
+except KeyError:
+    LOCAL_PATH = '/tmp'
 LOG_PATH = os.path.join(LOCAL_PATH, "log")
 
 
