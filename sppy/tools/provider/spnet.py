@@ -169,6 +169,7 @@ class SpNetAnalyses():
         s3_fname, _ = self._get_s3_fname_serialization(
             table["table_format"], table["fname"])
         s3_path = f"{self._summary_path}/{s3_fname}"
+        # TODO: download parquet and possibly write DF in NPZ format locally
         df = self._create_dataframe_from_s3obj(s3_path)
         # Sort rows (Axis 0/index) by values in sort_field (column)
         sorted_df = df.sort_values(

@@ -56,6 +56,8 @@ class SUMMARY_TABLE_TYPES:
     DATASET_SPECIES_LISTS = "dataset_species_lists"
     DATASET_META = "dataset_meta"
     SPECIES_DATASET_MATRIX = "species_dataset_matrix"
+    SPECIES_DATASET_SUMMARY = "species_dataset_summary"
+    DATASET_SPECIES_SUMMARY = "dataset_species_summary"
 
 
 # .............................................................................
@@ -103,8 +105,30 @@ class Summaries:
                 "column": DATASET_GBIF_KEY,
                 # Matrix values
                 "value": "occ_count",
+            },
+            SUMMARY_TABLE_TYPES.SPECIES_DATASET_SUMMARY: {
+                "code": SUMMARY_TABLE_TYPES.SPECIES_DATASET_SUMMARY,
+                "fname": f"speciesxdataset_summary{DATESTR_TOKEN}",
+                "table_format": "Zip",
+                # Axis 0
+                "row": "taxonkey_species",
+                # Axis 1
+                "column": "count_type",
+                # Matrix values
+                "value": "count",
+            },
+            SUMMARY_TABLE_TYPES.DATASET_SPECIES_SUMMARY: {
+                "code": SUMMARY_TABLE_TYPES.DATASET_SPECIES_SUMMARY,
+                "fname": f"datasetxspecies_summary_{DATESTR_TOKEN}",
+                "table_format": "Zip",
+                # Axis 0
+                "row": "count_type",
+                # Axis 1
+                "column": DATASET_GBIF_KEY,
+                # Matrix values
+                "value": "count",
             }
-        }
+    }
 
     # ...............................................
     @classmethod
