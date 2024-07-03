@@ -13,8 +13,10 @@ from sppy.tools.util.logtools import Logger
 # For local debugging
 try:
     LOCAL_PATH = os.environ["WORKING_DIRECTORY"]
+    INPUT_DATA_PATH = os.environ["AWS_DATA_DIRECTORY"]
 except KeyError:
     LOCAL_PATH = '/tmp'
+    INPUT_DATA_PATH = LOCAL_PATH
 LOG_PATH = os.path.join(LOCAL_PATH, "log")
 
 

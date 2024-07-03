@@ -1101,11 +1101,11 @@ if __name__ == "__main__":
     # .................................
     # Save matrix to S3
     out_filename = agg_sparse_mtx.compress_to_file()
-    agg_sparse_mtx._upload_to_s3(out_filename, PROJ_BUCKET, SUMMARY_FOLDER, REGION)
+    agg_sparse_mtx.upload_to_s3(out_filename, PROJ_BUCKET, SUMMARY_FOLDER, REGION)
     # agg_sparse_mtx.write_to_s3(PROJ_BUCKET, SUMMARY_FOLDER, out_filename, REGION)
 
     # Copy logfile to S3
-    agg_sparse_mtx.write_to_s3(PROJ_BUCKET, SUMMARY_FOLDER, tst_logger.filename, REGION)
+    agg_sparse_mtx.upload_to_s3(tst_logger.filename, PROJ_BUCKET, SUMMARY_FOLDER, REGION)
     s3_logfile = agg_sparse_mtx.copy_logfile_to_s3(PROJ_BUCKET, SUMMARY_FOLDER, REGION)
     print(s3_logfile)
 

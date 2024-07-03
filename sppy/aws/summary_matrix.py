@@ -1,4 +1,5 @@
 """Matrix to summarize each of 2 dimensions of data by counts of the other and a third."""
+from collections import OrderedDict
 import boto3
 from botocore.exceptions import ClientError, SSLError
 import json
@@ -18,6 +19,7 @@ from sppy.tools.s2n.utils import convert_np_vals_for_json
 
 COUNT_FLD = "count"
 TOTAL_FLD = "total"
+
 # .............................................................................
 class SummaryMatrix:
     """Class for holding summary counts of each of 2 dimensions of data."""
@@ -95,11 +97,175 @@ class SummaryMatrix:
             sdf, sp_mtx.table_type, sp_mtx.data_datestr, logger=logger)
         return summary_matrix
 
+    # # .............................................................................
+    # def compress_to_file(self, local_path="/tmp"):
+    #     """Compress this SparseMatrix to a zipped npz and json file.
+    #
+    #     Args:
+    #         local_path (str): Absolute path of local destination path
+    #
+    #     Returns:
+    #         zip_fname (str): Local output zip filename.
+    #
+    #     Raises:
+    #         Exception: on failure to write sparse matrix to NPZ file.
+    #         Exception: on failure to serialize metadata as JSON.
+    #         Exception: on failure to write metadata json string to file.
+    #         Exception: on failure to write sparse matrix and category files to zipfile.
+    #     """
+    #     basename = Summaries.get_filename(self._table_type, self._data_datestr)
+    #     mtx_fname = f"{local_path}/{basename}.npz"
+    #     meta_fname = f"{local_path}/{basename}.json"
+    #     zip_fname = f"{local_path}/{basename}.zip"
+    #     # Delete any local temp files
+    #     for fname in [mtx_fname, meta_fname, zip_fname]:
+    #         if os.path.exists(fname):
+    #             self._logme("Removing {fname}", log_level=INFO)
+    #             os.remove(fname)
+    #     # Save matrix to npz locally
+    #     try:
+    #         scipy.sparse.save_npz(mtx_fname, self._coo_array, compressed=True)
+    #     except Exception as e:
+    #         msg = f"Failed to write {mtx_fname}: {e}"
+    #         self._logme(msg, log_level=ERROR)
+    #         raise Exception(msg)
+    #     # Save table data and categories to json locally
+    #     metadata = Summaries.get_table(self._table_type)
+    #     metadata["row"] = self._row_categ.categories.tolist()
+    #     metadata["column"] = self._col_categ.categories.tolist()
+    #     try:
+    #         metastr = json.dumps(metadata)
+    #     except Exception as e:
+    #         msg = f"Failed to serialize metadata as JSON: {e}"
+    #         self._logme(msg, log_level=ERROR)
+    #         raise Exception(msg)
+    #     try:
+    #         with open(meta_fname, 'w') as outf:
+    #             outf.write(metastr)
+    #     except Exception as e:
+    #         msg = f"Failed to write metadata to {meta_fname}: {e}"
+    #         self._logme(msg, log_level=ERROR)
+    #         raise Exception(msg)
+    #
+    #     # Compress matrix with categories
+    #     try:
+    #         with ZipFile(zip_fname, 'w') as zip:
+    #             for fname in [mtx_fname, meta_fname]:
+    #                 zip.write(fname, os.path.basename(fname))
+    #     except Exception as e:
+    #         msg = f"Failed to write {zip_fname}: {e}"
+    #         self._logme(msg, log_level=ERROR)
+    #         raise Exception(msg)
+    #
+    #     return zip_fname
+    #
+    # # .............................................................................
+    # @classmethod
+    # def uncompress_zipped_sparsematrix(
+    #         cls, zip_filename, local_path="/tmp", overwrite=False):
+    #     """Uncompress a zipped SparseMatrix into a coo_array and row/column categories.
+    #
+    #     Args:
+    #         zip_filename (str): Filename of output data to write to S3.
+    #         local_path (str): Absolute path of local destination path
+    #         overwrite (bool): Flag indicating whether to use existing files unzipped
+    #             from the zip_filename.
+    #
+    #     Returns:
+    #         coo_array (scipy.sparse.coo_array):
+    #         row_categories (pandas.api.types.CategoricalDtype): row categories
+    #         col_categories (pandas.api.types.CategoricalDtype): column categories.
+    #
+    #     Raises:
+    #         Exception: on missing input zipfile
+    #         Exception: on missing expected file from zipfile
+    #         Exception: on unable to load NPZ file
+    #         Exception: on unable to load JSON metadata file
+    #         Exception: on missing row categories in JSON
+    #         Exception: on missing column categories in JSON
+    #         Exception: on missing table_type code in JSON
+    #         Exception: on bad table_type code in JSON
+    #
+    #     Note:
+    #         All filenames have the same basename with extensions indicating which data
+    #             they contain. The filename contains a string like YYYY-MM-DD which
+    #             indicates which GBIF data dump the statistics were built upon.
+    #     """
+    #     if not os.path.exists(zip_filename):
+    #         raise Exception(f"Missing file {zip_filename}")
+    #     basename = os.path.basename(zip_filename)
+    #     fname, _ext = os.path.splitext(basename)
+    #     try:
+    #         table_type, data_datestr = Summaries.get_tabletype_datestring_from_filename(
+    #             zip_filename)
+    #     except Exception:
+    #         raise
+    #     # Expected files from archive
+    #     mtx_fname = f"{local_path}/{fname}.npz"
+    #     meta_fname = f"{local_path}/{fname}.json"
+    #
+    #     # Delete local data files if overwrite
+    #     for fname in [mtx_fname, meta_fname]:
+    #         if os.path.exists(fname) and overwrite is True:
+    #             os.remove(fname)
+    #
+    #     # Unzip to local dir
+    #     with ZipFile(zip_filename, mode="r") as archive:
+    #         archive.extractall(f"{local_path}/")
+    #     for fn in [mtx_fname, meta_fname]:
+    #         if not os.path.exists(fn):
+    #             raise Exception(f"Missing expected file {fn}")
+    #
+    #     # Save matrix to npz locally
+    #     try:
+    #         sparse_coo = scipy.sparse.load_npz(mtx_fname)
+    #     except Exception as e:
+    #         raise Exception(f"Failed to load {mtx_fname}: {e}")
+    #     # Read JSON dictionary as string
+    #     try:
+    #         with open(meta_fname) as metaf:
+    #             meta_str = metaf.read()
+    #     except Exception as e:
+    #         raise Exception(f"Failed to load {meta_fname}: {e}")
+    #     # Load metadata from string
+    #     try:
+    #         meta_dict = json.loads(meta_str)
+    #     except Exception as e:
+    #         raise Exception(f"Failed to load {meta_fname}: {e}")
+    #     try:
+    #         row_catlst = meta_dict.pop("row")
+    #     except KeyError:
+    #         raise Exception(f"Missing row categories in {meta_fname}")
+    #     else:
+    #         row_categ = CategoricalDtype(row_catlst, ordered=True)
+    #     try:
+    #         col_catlst = meta_dict.pop("column")
+    #     except KeyError:
+    #         raise Exception(f"Missing column categories in {meta_fname}")
+    #     else:
+    #         col_categ = CategoricalDtype(col_catlst, ordered=True)
+    #
+    #     return sparse_coo, row_categ, col_categ, table_type, data_datestr
 
     # ...........................
     def rank_summary_counts(self, sort_by=COUNT_FLD, order="descending", limit=10):
+        """Order records by sort_by field and return the top or bottom limit records.
+
+        Args:
+            sort_by (str): field containing value to sort on.
+            order (str): return records, sorted from top (descending) or bottom
+                (ascending).
+            limit (int): number of records to return.
+
+        Returns:
+            ordered_rec_dict (OrderedDict): records containing all fields, sorted by the
+                sort_by field.
+        """
+        # One per axis
         measure_flds = [COUNT_FLD, TOTAL_FLD]
-        if sort_by not in measure_flds:
+        try:
+            measure_flds.remove(sort_by)
+        except ValueError:
             raise Exception(
                 f"Field {sort_by} does not exist; sort by {COUNT_FLD} or {TOTAL_FLD}")
         if order == "descending":
@@ -110,13 +276,15 @@ class SummaryMatrix:
             raise Exception(
                 f"Order {sort_by} does not exist, use 'ascending' or 'descending')")
         rec_dict =  sorted_df.to_dict()
-        flds = rec_dict.keys()
-        # for k, v in rec_dict[sort_by]:
-        #     r = {"name": k, sort_by: val}
-        #     for item_name, val in valdict.items():
-        #         r = {item_name:}
-        recs = []
-        return recs
+        ordered_rec_dict = OrderedDict()
+        for k, v in rec_dict[sort_by]:
+            # Insert records from sorted field first, in order returned
+            ordered_rec_dict[k] = {sort_by: v}
+            # measure_flds now contains all but sort_by
+            # add other fields and values to the new records
+            for other_fld in measure_flds:
+                ordered_rec_dict[k][other_fld] = rec_dict[other_fld][k]
+        return ordered_rec_dict
 
 
 

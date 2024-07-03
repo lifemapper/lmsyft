@@ -648,7 +648,7 @@ class SparseMatrix:
         return comparisons
 
     # ...............................................
-    def _upload_to_s3(self, full_filename, bucket, bucket_path, region):
+    def upload_to_s3(self, full_filename, bucket, bucket_path, region):
         """Upload a file to S3.
 
         Args:
@@ -832,22 +832,6 @@ class SparseMatrix:
         return sparse_coo, row_categ, col_categ, table_type, data_datestr
 
     # .............................................................................
-    def write_to_s3(self, bucket, bucket_path, filename, region):
-        """Write a pd DataFrame to CSV or parquet on S3.
-
-        Args:
-            bucket (str): Bucket identifier on S3.
-            bucket_path (str): Folder path to the S3 output data.
-            filename (str): Filename of local data to write to S3.
-            region (str): AWS region to upload to.
-
-        Returns:
-            s3_filename (str): S3 object with bucket and folders.
-        """
-        s3_fname = self._upload_to_s3(filename, bucket, bucket_path, region)
-        return s3_fname
-
-    # .............................................................................
     def copy_logfile_to_s3(self, bucket, bucket_path, region):
         """Write a the logfile to S3.
 
@@ -865,6 +849,6 @@ class SparseMatrix:
         if self._logger is None:
             raise Exception("No logfile to write")
 
-        s3_filename = self._upload_to_s3(
+        s3_filename = self.upload_to_s3(
             self._logger.filename, bucket, bucket_path, region)
         return s3_filename
