@@ -6,8 +6,8 @@ from werkzeug.exceptions import BadRequest
 from flask_app.common.s2n_type import APIService, AnalystOutput
 from flask_app.analyst.base import _AnalystService, INPUT_DATA_PATH, LOCAL_PATH
 
-from sppy.aws.aws_constants import (Summaries, SUMMARY_TABLE_TYPES)
-from sppy.tools.s2n.aggregate_matrix import SparseMatrix
+from sppy.tools.s2n.constants import (Summaries, SUMMARY_TABLE_TYPES)
+from sppy.tools.s2n.sparse_matrix import SparseMatrix
 from sppy.aws.aws_tools import get_current_datadate_str
 from sppy.tools.util.utils import (
     add_errinfo, combine_errinfo, get_traceback, prettify_object)
@@ -87,7 +87,7 @@ class DatasetSvc(_AnalystService):
             # Will only extract if matrix and metadata files do not exist yet
             try:
                 sparse_coo, row_categ, col_categ, table_type, _data_datestr = \
-                    SparseMatrix.uncompress_zipped_sparsematrix(
+                    SparseMatrix.uncompress_zipped_data(
                         zip_filename, local_path=LOCAL_PATH, overwrite=False)
             except Exception as e:
                 errinfo = add_errinfo(errinfo, "error", str(e))
@@ -202,7 +202,7 @@ zip_filename = download_from_s3(
     overwrite=False)
 # Only extract if files do not exist
 sparse_coo, row_categ, col_categ, table_type, _data_datestr = \
-    SparseMatrix.uncompress_zipped_sparsematrix(
+    SparseMatrix.uncompress_zipped_data(
         zip_filename, local_path=local_path, overwrite=False)
 # Create
 sp_mtx = SparseMatrix(

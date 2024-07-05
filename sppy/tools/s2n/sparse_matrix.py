@@ -9,7 +9,7 @@ import random
 import scipy.sparse
 from zipfile import ZipFile
 
-from sppy.aws.aws_constants import (SNKeys, Summaries)
+from sppy.tools.s2n.constants import (SNKeys, Summaries)
 from sppy.tools.s2n.sparse_matrix import SparseMatrix
 from sppy.tools.util.logtools import logit
 from sppy.tools.util.utils import convert_np_vals_for_json, upload_to_s3
@@ -743,7 +743,7 @@ class SparseMatrix:
 
     # .............................................................................
     @classmethod
-    def uncompress_zipped_sparsematrix(
+    def uncompress_zipped_data(
             cls, zip_filename, local_path="/tmp", overwrite=False):
         """Uncompress a zipped SparseMatrix into a coo_array and row/column categories.
 
@@ -754,9 +754,11 @@ class SparseMatrix:
                 from the zip_filename.
 
         Returns:
-            coo_array (scipy.sparse.coo_array):
-            row_categories (pandas.api.types.CategoricalDtype): row categories
-            col_categories (pandas.api.types.CategoricalDtype): column categories.
+            sparse_coo (scipy.sparse.coo_array): Sparse Matrix containing data.
+            row_categ (pandas.api.types.CategoricalDtype): row categories
+            col_categ (pandas.api.types.CategoricalDtype): column categories
+            table_type (aws.aws_constants.SUMMARY_TABLE_TYPES): type of table data
+            data_datestr (str): date string in format YYYY_MM_DD
 
         Raises:
             Exception: on missing input zipfile
@@ -798,7 +800,7 @@ class SparseMatrix:
             if not os.path.exists(fn):
                 raise Exception(f"Missing expected file {fn}")
 
-        # Save matrix to npz locally
+        # Read sparse matrix from local npz file
         try:
             sparse_coo = scipy.sparse.load_npz(mtx_fname)
         except Exception as e:
