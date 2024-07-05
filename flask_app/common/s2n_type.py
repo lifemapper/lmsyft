@@ -215,10 +215,11 @@ class APIService:
             },
             "stat_type": {
                 "type": "",
-                "options": ["describe", "compare"],
+                "options": ["describe", "compare", "rank"],
                 "description":
                     "Describe the counts for this dataset or compare this dataset's"
-                    "counts to min/max/mean/median counts in all other datasets.",
+                    "counts to min/max/mean/median counts in all other datasets, or "
+                    "rank this dataset's counts top down or bottom up.",
                 "default": None
             },
         },
