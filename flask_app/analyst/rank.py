@@ -2,10 +2,10 @@
 from werkzeug.exceptions import BadRequest
 
 from flask_app.common.s2n_type import APIService, AnalystOutput
-from flask_app.analyst.base import _AnalystService, INPUT_DATA_PATH, LOCAL_PATH
+from flask_app.analyst.base import _AnalystService
 
 from sppy.aws.aws_constants import PROJ_BUCKET
-from sppy.tools.provider.spnet import SpNetAnalyses
+from sppy.tools.s2n.spnet import SpNetAnalyses
 from sppy.tools.s2n.utils import (combine_errinfo, get_traceback)
 
 

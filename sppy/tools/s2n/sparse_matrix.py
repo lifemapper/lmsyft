@@ -12,7 +12,7 @@ import scipy.sparse
 from zipfile import ZipFile
 
 from sppy.aws.aws_constants import (SNKeys, Summaries)
-from sppy.aws.sparse_matrix import SparseMatrix
+from sppy.tools.s2n.sparse_matrix import SparseMatrix
 from sppy.tools.util.logtools import logit
 from sppy.tools.s2n.utils import convert_np_vals_for_json
 

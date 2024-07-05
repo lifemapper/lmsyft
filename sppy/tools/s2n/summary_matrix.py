@@ -1,21 +1,9 @@
 """Matrix to summarize each of 2 dimensions of data by counts of the other and a third."""
 from collections import OrderedDict
-import boto3
-from botocore.exceptions import ClientError, SSLError
-import json
-from logging import ERROR, INFO
-import numpy as np
-import os
 import pandas as pd
 from pandas.api.types import CategoricalDtype
-import random
-import scipy.sparse
-from zipfile import ZipFile
 
-from sppy.aws.aws_constants import (SNKeys, Summaries)
-from sppy.aws.sparse_matrix import SparseMatrix
-from sppy.tools.util.logtools import logit
-from sppy.tools.s2n.utils import convert_np_vals_for_json
+from sppy.aws.aws_constants import (SNKeys)
 
 COUNT_FLD = "count"
 TOTAL_FLD = "total"
