@@ -8,7 +8,7 @@ from pandas.api.types import CategoricalDtype
 from zipfile import ZipFile
 
 from sppy.tools.s2n.constants import (
-    MATRIX_SEPARATOR, SNKeys, SUMMARY_FIELDS, Summaries
+    MATRIX_SEPARATOR, SNKeys, SUMMARY_FIELDS, Summaries, SUMMARY_TABLE_TYPES
 )
 from sppy.tools.util.logtools import logit
 from sppy.tools.util.utils import upload_to_s3
@@ -79,15 +79,19 @@ class SummaryMatrix:
         counts = sp_mtx.get_counts(axis=axis)
         data = {SUMMARY_FIELDS.COUNT: counts, SUMMARY_FIELDS.TOTAL: totals}
 
+        # TODO: get table type from row/column (axis) input matrix (sp_mtx.table_type)
+        # Note: this assumes the summary matrix is built from SPECIES_DATASET_MATRIX
         if axis == 0:
             index = sp_mtx.column_category.categories
+            table_type = SUMMARY_TABLE_TYPES.SPECIES_DATASET_SUMMARY
         elif axis == 1:
             index = sp_mtx.row_category.categories
+            table_type = SUMMARY_TABLE_TYPES.DATASET_SPECIES_SUMMARY
 
         sdf = pd.DataFrame(data=data, index=index)
 
         summary_matrix = SummaryMatrix(
-            sdf, sp_mtx.table_type, sp_mtx.data_datestr, logger=logger)
+            sdf, table_type, sp_mtx.data_datestr, logger=logger)
         return summary_matrix
 
     # .............................................................................
@@ -113,7 +117,7 @@ class SummaryMatrix:
         # Delete any local temp files
         for fname in [mtx_fname, meta_fname, zip_fname]:
             if os.path.exists(fname):
-                self._logme("Removing {fname}", log_level=INFO)
+                self._logme(f"Removing {fname}", log_level=INFO)
                 os.remove(fname)
         # Save matrix to csv locally
         try:

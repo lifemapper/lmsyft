@@ -11,6 +11,7 @@ from sppy.tools.s2n.constants import (Summaries, SUMMARY_TABLE_TYPES)
 from sppy.tools.s2n.sparse_matrix import SparseMatrix
 from sppy.tools.s2n.summary_matrix import SummaryMatrix
 from sppy.tools.util.logtools import Logger, logit
+from sppy.tools.util.utils import upload_to_s3
 
 
 # ...............................................
@@ -279,11 +280,11 @@ if __name__ == "__main__":
     # .................................
     # Save matrix to S3
     out_filename = agg_sparse_mtx.compress_to_file()
-    agg_sparse_mtx.upload_to_s3(out_filename, PROJ_BUCKET, SUMMARY_FOLDER, REGION)
+    upload_to_s3(out_filename, PROJ_BUCKET, SUMMARY_FOLDER, REGION)
     # agg_sparse_mtx.write_to_s3(PROJ_BUCKET, SUMMARY_FOLDER, out_filename, REGION)
 
     # Copy logfile to S3
-    agg_sparse_mtx.upload_to_s3(tst_logger.filename, PROJ_BUCKET, SUMMARY_FOLDER, REGION)
+    upload_to_s3(tst_logger.filename, PROJ_BUCKET, SUMMARY_FOLDER, REGION)
     s3_logfile = agg_sparse_mtx.copy_logfile_to_s3(PROJ_BUCKET, SUMMARY_FOLDER, REGION)
     print(s3_logfile)
 
@@ -306,8 +307,15 @@ if __name__ == "__main__":
 
     sp_sum_mtx = SummaryMatrix.init_from_sparse_matrix(sp_mtx, axis=0, logger=tst_logger)
 
+    out_filename = sp_sum_mtx.compress_to_file()
+    upload_to_s3(out_filename, PROJ_BUCKET, SUMMARY_FOLDER, REGION)
+
+    SummaryMatrix.uncompress_zipped_data()
+
 """
 from sppy.aws.aggregate_matrix import *
+from sppy.aws.sparse_matrix import *
+from sppy.aws.summary_matrix import *
 
 # Create a logger
 script_name = "testing"
@@ -400,6 +408,10 @@ sparse_coo, row_categ, col_categ, table_type, new_data_datestr = \
 sp_mtx = SparseMatrix(
     sparse_coo, mtx_table_type, data_datestr, row_category=row_categ,
     column_category=col_categ, logger=tst_logger)
+
+# .................................
+# Create summary matrix from sparse matrix
+
 
 # --------------------------------------------------------------------------------------
 # Testing

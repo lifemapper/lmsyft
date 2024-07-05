@@ -10,7 +10,6 @@ import scipy.sparse
 from zipfile import ZipFile
 
 from sppy.tools.s2n.constants import (SNKeys, Summaries)
-from sppy.tools.s2n.sparse_matrix import SparseMatrix
 from sppy.tools.util.logtools import logit
 from sppy.tools.util.utils import convert_np_vals_for_json, upload_to_s3
 
@@ -702,7 +701,7 @@ class SparseMatrix:
         # Delete any local temp files
         for fname in [mtx_fname, meta_fname, zip_fname]:
             if os.path.exists(fname):
-                self._logme("Removing {fname}", log_level=INFO)
+                self._logme(f"Removing {fname}", log_level=INFO)
                 os.remove(fname)
         # Save matrix to npz locally
         try:
@@ -833,7 +832,7 @@ class SparseMatrix:
 
     # .............................................................................
     def copy_logfile_to_s3(self, bucket, bucket_path, region):
-        """Write a the logfile to S3.
+        """Write the logfile to S3.
 
         Args:
             bucket (str): Bucket identifier on S3.
