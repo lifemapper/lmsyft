@@ -1,6 +1,4 @@
 """Matrix to summarize 2 dimensions of data by counts of a third in a sparse matrix."""
-import boto3
-from botocore.exceptions import ClientError, SSLError
 import json
 from logging import ERROR, INFO
 import numpy as np
@@ -14,7 +12,7 @@ from zipfile import ZipFile
 from sppy.aws.aws_constants import (SNKeys, Summaries)
 from sppy.tools.s2n.sparse_matrix import SparseMatrix
 from sppy.tools.util.logtools import logit
-from sppy.tools.s2n.utils import convert_np_vals_for_json
+from sppy.tools.util.utils import convert_np_vals_for_json, upload_to_s3
 
 # .............................................................................
 class SparseMatrix:
@@ -647,39 +645,39 @@ class SparseMatrix:
             }
         return comparisons
 
-    # ...............................................
-    def upload_to_s3(self, full_filename, bucket, bucket_path, region):
-        """Upload a file to S3.
-
-        Args:
-            full_filename (str): Full filename to the file to upload.
-            bucket (str): Bucket identifier on S3.
-            bucket_path (str): Parent folder path to the S3 data.
-            region (str): AWS region to upload to.
-
-        Returns:
-            s3_filename (str): path including bucket, bucket_folder, and filename for the
-                uploaded data
-        """
-        s3_filename = None
-        s3_client = boto3.client("s3", region_name=region)
-        obj_name = os.path.basename(full_filename)
-        if bucket_path:
-            obj_name = f"{bucket_path}/{obj_name}"
-        try:
-            s3_client.upload_file(full_filename, bucket, obj_name)
-        except SSLError:
-            self._logme(
-                f"Failed with SSLError to upload {obj_name} to {bucket}",
-                log_level=ERROR)
-        except ClientError as e:
-            self._logme(
-                f"Failed to upload {obj_name} to {bucket}, ({e})",
-                log_level=ERROR)
-        else:
-            s3_filename = f"s3://{bucket}/{obj_name}"
-            self._logme(f"Uploaded {s3_filename} to S3")
-        return s3_filename
+    # # ...............................................
+    # def upload_to_s3(self, full_filename, bucket, bucket_path, region):
+    #     """Upload a file to S3.
+    #
+    #     Args:
+    #         full_filename (str): Full filename to the file to upload.
+    #         bucket (str): Bucket identifier on S3.
+    #         bucket_path (str): Parent folder path to the S3 data.
+    #         region (str): AWS region to upload to.
+    #
+    #     Returns:
+    #         s3_filename (str): path including bucket, bucket_folder, and filename for the
+    #             uploaded data
+    #     """
+    #     s3_filename = None
+    #     s3_client = boto3.client("s3", region_name=region)
+    #     obj_name = os.path.basename(full_filename)
+    #     if bucket_path:
+    #         obj_name = f"{bucket_path}/{obj_name}"
+    #     try:
+    #         s3_client.upload_file(full_filename, bucket, obj_name)
+    #     except SSLError:
+    #         self._logme(
+    #             f"Failed with SSLError to upload {obj_name} to {bucket}",
+    #             log_level=ERROR)
+    #     except ClientError as e:
+    #         self._logme(
+    #             f"Failed to upload {obj_name} to {bucket}, ({e})",
+    #             log_level=ERROR)
+    #     else:
+    #         s3_filename = f"s3://{bucket}/{obj_name}"
+    #         self._logme(f"Uploaded {s3_filename} to S3")
+    #     return s3_filename
 
     # .............................................................................
     def compress_to_file(self, local_path="/tmp"):
@@ -849,6 +847,6 @@ class SparseMatrix:
         if self._logger is None:
             raise Exception("No logfile to write")
 
-        s3_filename = self.upload_to_s3(
+        s3_filename = upload_to_s3(
             self._logger.filename, bucket, bucket_path, region)
         return s3_filename

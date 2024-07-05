@@ -6,7 +6,7 @@ import pandas as pd
 from sppy.aws.aws_constants import (
     ENCODING, PROJ_BUCKET, REGION, SUMMARY_FOLDER, Summaries)
 from sppy.aws.aws_tools import get_current_datadate_str
-from sppy.tools.s2n.utils import get_traceback
+from sppy.tools.util.utils import get_traceback
 
 
 # .............................................................................

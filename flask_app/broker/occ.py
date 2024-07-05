@@ -7,7 +7,7 @@ from flask_app.common.s2n_type import (
 from sppy.tools.provider.gbif import GbifAPI
 from sppy.tools.provider.idigbio import IdigbioAPI
 from sppy.tools.provider.mopho import MorphoSourceAPI
-from sppy.tools.s2n.utils import get_traceback
+from sppy.tools.util.utils import get_traceback
 
 
 class OccurrenceSvc(_BrokerService):

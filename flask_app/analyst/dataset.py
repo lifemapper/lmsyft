@@ -9,7 +9,7 @@ from flask_app.analyst.base import _AnalystService, INPUT_DATA_PATH, LOCAL_PATH
 from sppy.aws.aws_constants import (Summaries, SUMMARY_TABLE_TYPES)
 from sppy.tools.s2n.aggregate_matrix import SparseMatrix
 from sppy.aws.aws_tools import get_current_datadate_str
-from sppy.tools.s2n.utils import (
+from sppy.tools.util.utils import (
     add_errinfo, combine_errinfo, get_traceback, prettify_object)
 
 

@@ -12,7 +12,7 @@ from flask_app.common.constants import URL_ESCAPES, ENCODING
 
 from sppy.tools.util.logtools import logit
 from sppy.tools.provider.api import APIQuery
-from sppy.tools.s2n.utils import add_errinfo
+from sppy.tools.util.utils import add_errinfo
 
 
 # .............................................................................

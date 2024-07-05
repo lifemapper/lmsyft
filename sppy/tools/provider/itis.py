@@ -9,7 +9,7 @@ from flask_app.common.s2n_type import (
 from flask_app.common.constants import URL_ESCAPES
 
 from sppy.tools.provider.api import APIQuery
-from sppy.tools.s2n.utils import get_traceback, add_errinfo
+from sppy.tools.util.utils import get_traceback, add_errinfo
 
 
 # .............................................................................

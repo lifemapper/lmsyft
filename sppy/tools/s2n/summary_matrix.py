@@ -4,6 +4,7 @@ import pandas as pd
 from pandas.api.types import CategoricalDtype
 
 from sppy.aws.aws_constants import (SNKeys)
+from sppy.tools.util.utils import upload_to_s3
 
 COUNT_FLD = "count"
 TOTAL_FLD = "total"

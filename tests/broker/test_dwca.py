@@ -5,7 +5,7 @@ import time
 
 from sppy.tools.util.dwca import (
     assemble_download_filename, DwCArchive, get_dwca_urls, download_dwca)
-from sppy.tools.s2n.utils import is_valid_uuid
+from sppy.tools.util.utils import is_valid_uuid
 from flask_app.broker.constants import (DWCA, TST_VALUES)
 
 today = time.localtime()

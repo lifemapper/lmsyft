@@ -9,7 +9,7 @@ from flask_app.broker.constants import DWCA, TST_VALUES
 
 from sppy.tools.fileop.ready_file import ready_filename
 from sppy.tools.provider.api import APIQuery
-from sppy.tools.s2n.utils import is_valid_uuid
+from sppy.tools.util.utils import is_valid_uuid
 from sppy.tools.util.logtools import Logger, logit
 
 INCR_KEY = 0

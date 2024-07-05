@@ -7,7 +7,7 @@ from flask_app.common.base import _SpecifyNetworkService
 from flask_app.common.s2n_type import AnalystOutput, APIService
 
 from sppy.aws.aws_tools import get_today_str
-from sppy.tools.s2n.utils import get_traceback
+from sppy.tools.util.utils import get_traceback
 from sppy.tools.util.logtools import Logger
 
 # For local debugging

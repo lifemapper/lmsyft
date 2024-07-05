@@ -9,7 +9,7 @@ from flask_app.common.constants import ENCODING, URL_ESCAPES
 
 from sppy.tools.util.logtools import logit
 from sppy.tools.s2n.lm_xml import fromstring, deserialize
-from sppy.tools.s2n.utils import add_errinfo, get_traceback
+from sppy.tools.util.utils import add_errinfo, get_traceback
 
 
 # .............................................................................
