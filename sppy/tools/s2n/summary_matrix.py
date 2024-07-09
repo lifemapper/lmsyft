@@ -78,15 +78,16 @@ class SummaryMatrix:
         totals = sp_mtx.get_totals(axis=axis)
         counts = sp_mtx.get_counts(axis=axis)
         data = {SUMMARY_FIELDS.COUNT: counts, SUMMARY_FIELDS.TOTAL: totals}
+        input_table_meta = Summaries.get_table(sp_mtx.table_type)
 
-        # TODO: get table type from row/column (axis) input matrix (sp_mtx.table_type)
-        # Note: this assumes the summary matrix is built from SPECIES_DATASET_MATRIX
+        # Axis 0 summarizes the values for each row
         if axis == 0:
             index = sp_mtx.column_category.categories
-            table_type = SUMMARY_TABLE_TYPES.SPECIES_DATASET_SUMMARY
+            table_type = input_table_meta["column_summary_table"]
+        # Axis 1 summarizes the values in columns for each row
         elif axis == 1:
             index = sp_mtx.row_category.categories
-            table_type = SUMMARY_TABLE_TYPES.DATASET_SPECIES_SUMMARY
+            table_type = input_table_meta["row_summary_table"]
 
         sdf = pd.DataFrame(data=data, index=index)
 

@@ -70,16 +70,18 @@ class Summaries:
                 "table_format": "Zip",
                 # Axis 0
                 "row": "taxonkey_species",
+                "row_summary_table": SUMMARY_TABLE_TYPES.SPECIES_DATASET_SUMMARY,
                 # Axis 1
                 "column": DATASET_GBIF_KEY,
+                "column_summary_table": SUMMARY_TABLE_TYPES.DATASET_SPECIES_SUMMARY,
                 # Matrix values
                 "value": "occ_count",
             },
             SUMMARY_TABLE_TYPES.SPECIES_DATASET_SUMMARY: {
                 "code": SUMMARY_TABLE_TYPES.SPECIES_DATASET_SUMMARY,
-                "fname": f"speciesxdataset_summary{DATESTR_TOKEN}",
+                "fname": f"speciesxdataset_summary_{DATESTR_TOKEN}",
                 "table_format": "Zip",
-                # Axis 0
+                # Axis 0, matches row (axis 0) in SPECIES_DATASET_MATRIX
                 "row": "taxonkey_species",
                 # Axis 1
                 "column": "count_type",
@@ -91,7 +93,7 @@ class Summaries:
                 "code": SUMMARY_TABLE_TYPES.DATASET_SPECIES_SUMMARY,
                 "fname": f"datasetxspecies_summary_{DATESTR_TOKEN}",
                 "table_format": "Zip",
-                # Axis 0
+                # Axis 0, matches column (axis 1) in SPECIES_DATASET_MATRIX
                 "row": DATASET_GBIF_KEY,
                 # Axis 1
                 "column": "count_type",
