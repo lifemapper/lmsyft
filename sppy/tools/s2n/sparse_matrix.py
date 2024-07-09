@@ -122,7 +122,7 @@ class SparseMatrix:
     # ...........................
     @property
     def column_category(self):
-        return self._row_categ
+        return self._col_categ
 
     # .............................................................................
     def _to_dataframe(self):
@@ -434,6 +434,7 @@ class SparseMatrix:
         #     axis 0 - sum all values in each row for column totals
         #     axis 1 - sum all values in each column for row totals
         all_totals = self._coo_array.sum(axis=axis)
+        return all_totals
 
     # ...............................................
     def get_counts(self, axis):
@@ -441,6 +442,7 @@ class SparseMatrix:
         #     axis 0 - count non-zero values in each row for column totals
         #     axis 1 - count non-zero values in each column for row totals
         all_counts = self._coo_array.getnnz(axis=axis)
+        return all_counts
 
     # ...............................................
     def get_column_stats(self, col_label, agg_type=None):
@@ -829,25 +831,3 @@ class SparseMatrix:
             col_categ = CategoricalDtype(col_catlst, ordered=True)
 
         return sparse_coo, row_categ, col_categ, table_type, data_datestr
-
-    # .............................................................................
-    def copy_logfile_to_s3(self, bucket, bucket_path, region):
-        """Write the logfile to S3.
-
-        Args:
-            bucket (str): Bucket identifier on S3.
-            bucket_path (str): Folder path to the S3 output data.
-            region (str): AWS region to upload to.
-
-        Returns:
-            s3_filename (str): S3 object with bucket and folders.
-
-        Raises:
-            Exception: if logger is not present.
-        """
-        if self._logger is None:
-            raise Exception("No logfile to write")
-
-        s3_filename = upload_to_s3(
-            self._logger.filename, bucket, bucket_path, region)
-        return s3_filename
