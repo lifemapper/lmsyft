@@ -281,12 +281,8 @@ if __name__ == "__main__":
     # Save matrix to S3
     out_filename = agg_sparse_mtx.compress_to_file()
     upload_to_s3(out_filename, PROJ_BUCKET, SUMMARY_FOLDER, REGION)
-    # agg_sparse_mtx.write_to_s3(PROJ_BUCKET, SUMMARY_FOLDER, out_filename, REGION)
-
     # Copy logfile to S3
     upload_to_s3(tst_logger.filename, PROJ_BUCKET, SUMMARY_FOLDER, REGION)
-    s3_logfile = agg_sparse_mtx.copy_logfile_to_s3(PROJ_BUCKET, SUMMARY_FOLDER, REGION)
-    print(s3_logfile)
 
     # .................................
     table = Summaries.get_table(mtx_table_type, data_datestr)
@@ -306,16 +302,19 @@ if __name__ == "__main__":
         column_category=col_categ, logger=tst_logger)
 
     sp_sum_mtx = SummaryMatrix.init_from_sparse_matrix(sp_mtx, axis=0, logger=tst_logger)
-
     out_filename = sp_sum_mtx.compress_to_file()
+    upload_to_s3(out_filename, PROJ_BUCKET, SUMMARY_FOLDER, REGION)
+
+    ds_sum_mtx = SummaryMatrix.init_from_sparse_matrix(sp_mtx, axis=1, logger=tst_logger)
+    out_filename = ds_sum_mtx.compress_to_file()
     upload_to_s3(out_filename, PROJ_BUCKET, SUMMARY_FOLDER, REGION)
 
     SummaryMatrix.uncompress_zipped_data()
 
 """
-from sppy.aws.aggregate_matrix import *
-from sppy.aws.sparse_matrix import *
-from sppy.aws.summary_matrix import *
+from sppy.tools.s2n.aggregate_matrix import *
+from sppy.tools.s2n.sparse_matrix import *
+from sppy.tools.s2n.summary_matrix import *
 
 # Create a logger
 script_name = "testing"
@@ -380,18 +379,13 @@ for is_max in (False, True):
 # .................................
 # Save matrix to S3
 out_filename = agg_sparse_mtx.compress_to_file()
-agg_sparse_mtx.write_to_s3(PROJ_BUCKET, SUMMARY_FOLDER, out_filename, REGION)
-
+upload_to_s3(out_filename, PROJ_BUCKET, SUMMARY_FOLDER, REGION)
 # Copy logfile to S3
-s3_logfile = agg_sparse_mtx.write_to_s3(PROJ_BUCKET, SUMMARY_FOLDER, tst_logger.filename, REGION)
-print(s3_logfile)
-
-zip_filename = download_from_s3(
-    PROJ_BUCKET, SUMMARY_FOLDER, zip_fname, local_path=local_path,
-    overwrite=False)
+upload_to_s3(tst_logger.filename, PROJ_BUCKET, SUMMARY_FOLDER, REGION)
 
 # .................................
-# Read matrix from S3
+# .................................
+# .................................
 table = Summaries.get_table(mtx_table_type, data_datestr)
 zip_fname = f"{table['fname']}.zip"
 # Only download if file does not exist
@@ -400,7 +394,7 @@ zip_filename = download_from_s3(
     overwrite=False)
 
 # Only extract if files do not exist
-sparse_coo, row_categ, col_categ, table_type, new_data_datestr = \
+sparse_coo, row_categ, col_categ, table_type, _data_datestr = \
     SparseMatrix.uncompress_zipped_data(
         zip_filename, local_path=local_path, overwrite=False)
 
@@ -410,24 +404,15 @@ sp_mtx = SparseMatrix(
     column_category=col_categ, logger=tst_logger)
 
 # .................................
-# Create summary matrix from sparse matrix
+sp_sum_mtx = SummaryMatrix.init_from_sparse_matrix(sp_mtx, axis=0, logger=tst_logger)
+out_filename = sp_sum_mtx.compress_to_file()
+upload_to_s3(out_filename, PROJ_BUCKET, SUMMARY_FOLDER, REGION)
 
+ds_sum_mtx = SummaryMatrix.init_from_sparse_matrix(sp_mtx, axis=1, logger=tst_logger)
+out_filename = ds_sum_mtx.compress_to_file()
+upload_to_s3(out_filename, PROJ_BUCKET, SUMMARY_FOLDER, REGION)
 
-# --------------------------------------------------------------------------------------
-# Testing
-# --------------------------------------------------------------------------------------
+SummaryMatrix.uncompress_zipped_data()
 
-x_vals = get_random_values_from_stacked_data(stk_df, x_col_label, test_count)
-y_vals = get_random_values_from_stacked_data(stk_df, y_col_label, test_count)
-
-y_vals = agg_sparse_mtx.get_random_labels(test_count, axis=0)
-x_vals = agg_sparse_mtx.get_random_labels(test_count, axis=1)
-
-x = x_vals[0]
-y = y_vals[0]
-row_label = y
-col_label = x
-sp_mtx.get_row_stats(y)
-sp_mtx.get_column_stats(x)
 
 """
