@@ -29,13 +29,14 @@ class DatasetSvc(_AnalystService):
             dataset_key: URL parameter for unique GBIF identifier of dataset.
             species_key: URL parameter for unique GBIF identifier of accepted taxon
                 concatenated with the species name.
-            aggregate_by: URL parameter for measuring counts of occurrences, datasets,
-                or species.
+            aggregate_by: URL parameter for measuring counts of occurrences or species.
             stat_type: URL parameter for "describe" or "compare" indicating whether to
                 describe the
-                  * total for dataset or species count or
-                  * min and max count and dataset or species for occurrence count or
-                compare the above to the min/max/mean/median for all datasets
+                  * total for occurrence and dataset/species count or
+                  * min and max occurrence and dataset/species count OR
+                compare occurrence and dataset/species counts to the
+                    min/max/mean/median for all OR
+                rank occurrence or dataset/species counts in ascending/descending order
 
         Returns:
             full_output (flask_app.common.s2n_type.AnalystOutput): including a
@@ -55,14 +56,24 @@ class DatasetSvc(_AnalystService):
             errinfo = {"error": [get_traceback()]}
 
         else:
-            try:
-                stat_dict, errors = cls._get_speciesxdataset_counts(
-                    good_params["dataset_key"], good_params["species_key"],
-                    good_params["aggregate_by"], good_params["stat_type"])
-            except Exception:
-                errinfo = add_errinfo(errinfo, "error", get_traceback())
-            else:
-                errinfo = combine_errinfo(errinfo, errors)
+            if good_params["stat_type"] in ("describe", "compare"):
+                try:
+                    stat_dict, errors = cls._get_speciesxdataset_counts(
+                        good_params["dataset_key"], good_params["species_key"],
+                        good_params["aggregate_by"], good_params["stat_type"])
+                except Exception:
+                    errinfo = add_errinfo(errinfo, "error", get_traceback())
+                else:
+                    errinfo = combine_errinfo(errinfo, errors)
+            elif good_params["stat_type"] == "rank":
+                try:
+                    rank_dict, errors = cls._get_speciesxdataset_ranks(
+                        good_params["dataset_key"], good_params["species_key"],
+                        good_params["aggregate_by"])
+                except Exception:
+                    errinfo = add_errinfo(errinfo, "error", get_traceback())
+                else:
+                    errinfo = combine_errinfo(errinfo, errors)
 
         # Assemble
         full_out = AnalystOutput(
@@ -157,6 +168,11 @@ class DatasetSvc(_AnalystService):
 
         return stat_dict, errinfo
 
+    # ...............................................
+    @classmethod
+    def _get_speciesxdataset_ranks(
+            cls, dataset_key, species_key, aggregate_by, order, limit):
+        pass
 
 # .............................................................................
 if __name__ == "__main__":

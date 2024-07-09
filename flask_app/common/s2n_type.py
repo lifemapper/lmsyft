@@ -222,10 +222,17 @@ class APIService:
                     "rank this dataset's counts top down or bottom up.",
                 "default": None
             },
+            "order": {
+                "type": "",
+                "options": ["ascending", "descending"],
+                "default": "descending"
+            },
+            "limit": {"type": 2, "default": 10, "min": 1, "max": 500},
         },
         "description":
-            "Return occurrence or species counts for the given dataset, totals and "
-            "statistics or comparisons between this dataset and all other datasets.",
+            "Return occurrence or species counts for the given dataset, OR comparisons "
+            "between this dataset and all other datasets, OR rank datasets, ascending "
+            "or descending, by occurrence or species counts.",
         S2nKey.RECORD_FORMAT: ""
 
     }
