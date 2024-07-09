@@ -19,7 +19,7 @@ class SummaryMatrix:
 
     # ...........................
     def __init__(
-            self, summary_df, table_type, data_datestr, axis, category=None,
+            self, summary_df, table_type, data_datestr, category=None,
             logger=None):
         """Constructor for species by dataset comparisons.
 
@@ -31,7 +31,6 @@ class SummaryMatrix:
                 * Row 2 contains the total of values in that row.
             table_type (aws_constants.SUMMARY_TABLE_TYPES): type of aggregated data
             data_datestr (str): date of the source data in YYYY_MM_DD format.
-            axis (int): row (0) or column (1) for summaries.
             category (CategoricalDtype): category of unique labels with ordered
                 indices/codes for rows (y, axis 0) or columns (x, axis 1)
             logger (object): An optional local logger to use for logging output
@@ -45,7 +44,6 @@ class SummaryMatrix:
         self._table_type = table_type
         self._data_datestr = data_datestr
         self._keys = SNKeys.get_keys_for_table(self._table_type)
-        self._axis = axis
         self._categ = category
         self._logger = logger
         self._report = {}
@@ -75,20 +73,21 @@ class SummaryMatrix:
         """
         # Column counts and totals (count along axis 0, each row)
         # Row counts and totals (count along axis 1, each column)
-        totals = sp_mtx.get_totals(axis=axis)
-        counts = sp_mtx.get_counts(axis=axis)
+        totals = sp_mtx.get_totals(axis=axis).tolist()
+        counts = sp_mtx.get_counts(axis=axis).tolist()
         data = {SUMMARY_FIELDS.COUNT: counts, SUMMARY_FIELDS.TOTAL: totals}
         input_table_meta = Summaries.get_table(sp_mtx.table_type)
 
-        # Axis 0 summarizes the values for each row
+        # Axis 0 summarizes each column (down axis 0) of sparse matrix
         if axis == 0:
             index = sp_mtx.column_category.categories
             table_type = input_table_meta["column_summary_table"]
-        # Axis 1 summarizes the values in columns for each row
+        # Axis 1 summarizes each row (across axis 1) of sparse matrix
         elif axis == 1:
             index = sp_mtx.row_category.categories
             table_type = input_table_meta["row_summary_table"]
 
+        # summary fields = columns, sparse matrix axis = rows
         sdf = pd.DataFrame(data=data, index=index)
 
         summary_matrix = SummaryMatrix(
