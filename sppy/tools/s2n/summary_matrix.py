@@ -7,6 +7,7 @@ import pandas as pd
 from pandas.api.types import CategoricalDtype
 from zipfile import ZipFile
 
+from sppy.tools.s2n.aggregate_data_matrix import _AggregateDataMatrix
 from sppy.tools.s2n.constants import (
     MATRIX_SEPARATOR, SNKeys, SUMMARY_FIELDS, Summaries, SUMMARY_TABLE_TYPES
 )
@@ -14,39 +15,29 @@ from sppy.tools.util.logtools import logit
 from sppy.tools.util.utils import upload_to_s3
 
 # .............................................................................
-class SummaryMatrix:
+class SummaryMatrix(_AggregateDataMatrix):
     """Class for holding summary counts of each of 2 dimensions of data."""
 
     # ...........................
     def __init__(
-            self, summary_df, table_type, data_datestr, category=None,
-            logger=None):
+            self, summary_df, table_type, data_datestr, logger=None):
         """Constructor for species by dataset comparisons.
 
         Args:
-            summary_df (pandas.DataFrame): DataFrame with 2 rows and 2 columns of data.
+            summary_df (pandas.DataFrame): DataFrame with a row for each element in
+                category, and 2 columns of data.  Rows headers and column headers are
+                labeled.
                 * Column 1 contains the count of the number of columns in  that row
                 * Column 2 contains the total of values in that row.
-                * Row 1 contains the count of the number of rows in that column
-                * Row 2 contains the total of values in that row.
             table_type (aws_constants.SUMMARY_TABLE_TYPES): type of aggregated data
             data_datestr (str): date of the source data in YYYY_MM_DD format.
             category (CategoricalDtype): category of unique labels with ordered
-                indices/codes for rows (y, axis 0) or columns (x, axis 1)
+                indices/codes for rows in the summary matrix.
             logger (object): An optional local logger to use for logging output
                 with consistent options
-
-        Note: in the first implementation, summaries are stored on the axis of the
-            original sparse matrix.  Species are generally far more numerous, so rows
-            are always species, columns are datasets.
         """
         self._df = summary_df
-        self._table_type = table_type
-        self._data_datestr = data_datestr
-        self._keys = SNKeys.get_keys_for_table(self._table_type)
-        self._categ = category
-        self._logger = logger
-        self._report = {}
+        _AggregateDataMatrix.__init__(self, table_type, data_datestr, logger=logger)
 
     # ...........................
     @classmethod
@@ -94,6 +85,43 @@ class SummaryMatrix:
             sdf, table_type, sp_mtx.data_datestr, logger=logger)
         return summary_matrix
 
+    # ...............................................
+    @property
+    def num_y_values(self):
+        """Get the number of rows.
+
+        Returns:
+            int: The count of rows
+        """
+        return self._df.shape[0]
+
+    # ...............................................
+    @property
+    def num_x_values(self):
+        """Get the number of columns.
+
+        Returns:
+            int: The count of columns
+        """
+        return self._df.shape[1]
+    # ...............................................
+    def get_random_row_labels(self, count):
+        """Get random values from the labels on axis 0 of matrix.
+
+        Args:
+            count (int): number of values to return
+
+        Returns:
+            labels (list): random row headers
+        """
+        import random
+        size = len(self._df.index)
+        # Get a random sample of category indexes (0-based)
+        idxs = random.sample(range(size), count)
+        labels = [self._df.index(i) for i in idxs]
+        return labels
+
+
     # .............................................................................
     def compress_to_file(self, local_path="/tmp"):
         """Compress this SparseMatrix to a zipped npz and json file.
@@ -106,19 +134,12 @@ class SummaryMatrix:
 
         Raises:
             Exception: on failure to write dataframe to CSV file.
-            Exception: on failure to serialize metadata as JSON.
-            Exception: on failure to write metadata json string to file.
-            Exception: on failure to write CSV and JSON files to zipfile.
+            Exception: on failure to serialize or write metadata as JSON.
+            Exception: on failure to write matrix and metadata files to zipfile.
         """
-        basename = Summaries.get_filename(self._table_type, self._data_datestr)
-        mtx_fname = f"{local_path}/{basename}.csv"
-        meta_fname = f"{local_path}/{basename}.json"
-        zip_fname = f"{local_path}/{basename}.zip"
-        # Delete any local temp files
-        for fname in [mtx_fname, meta_fname, zip_fname]:
-            if os.path.exists(fname):
-                self._logme(f"Removing {fname}", log_level=INFO)
-                os.remove(fname)
+        mtx_fname, meta_fname, zip_fname = self._get_input_files(
+            local_path="/tmp", do_delete=True)
+
         # Save matrix to csv locally
         try:
             self._df.to_csv(mtx_fname, sep=MATRIX_SEPARATOR)
@@ -126,34 +147,22 @@ class SummaryMatrix:
             msg = f"Failed to write {mtx_fname}: {e}"
             self._logme(msg, log_level=ERROR)
             raise Exception(msg)
+
         # Save table data and categories to json locally
         metadata = Summaries.get_table(self._table_type)
         try:
-            metastr = json.dumps(metadata)
-        except Exception as e:
-            msg = f"Failed to serialize metadata as JSON: {e}"
-            self._logme(msg, log_level=ERROR)
-            raise Exception(msg)
-        try:
-            with open(meta_fname, 'w') as outf:
-                outf.write(metastr)
-        except Exception as e:
-            msg = f"Failed to write metadata to {meta_fname}: {e}"
-            self._logme(msg, log_level=ERROR)
-            raise Exception(msg)
+            self._dump_metadata(metadata, meta_fname)
+        except Exception:
+            raise
 
         # Compress matrix with metadata
         try:
-            with ZipFile(zip_fname, 'w') as zip:
-                for fname in [mtx_fname, meta_fname]:
-                    zip.write(fname, os.path.basename(fname))
-        except Exception as e:
-            msg = f"Failed to write {zip_fname}: {e}"
-            self._logme(msg, log_level=ERROR)
-            raise Exception(msg)
+            self._compress_files([mtx_fname, meta_fname], zip_fname)
+        except Exception:
+            raise
 
         return zip_fname
-    #
+
     # .............................................................................
     @classmethod
     def uncompress_zipped_data(
@@ -184,30 +193,8 @@ class SummaryMatrix:
                 they contain. The filename contains a string like YYYY-MM-DD which
                 indicates which GBIF data dump the statistics were built upon.
         """
-        if not os.path.exists(zip_filename):
-            raise Exception(f"Missing file {zip_filename}")
-        basename = os.path.basename(zip_filename)
-        fname, _ext = os.path.splitext(basename)
-        try:
-            table_type, data_datestr = Summaries.get_tabletype_datestring_from_filename(
-                zip_filename)
-        except Exception:
-            raise
-        # Expected files from archive
-        mtx_fname = f"{local_path}/{fname}.csv"
-        meta_fname = f"{local_path}/{fname}.json"
-
-        # Delete local data files if overwrite
-        for fname in [mtx_fname, meta_fname]:
-            if os.path.exists(fname) and overwrite is True:
-                os.remove(fname)
-
-        # Unzip to local dir
-        with ZipFile(zip_filename, mode="r") as archive:
-            archive.extractall(f"{local_path}/")
-        for fn in [mtx_fname, meta_fname]:
-            if not os.path.exists(fn):
-                raise Exception(f"Missing expected file {fn}")
+        mtx_fname, meta_fname, table_type, data_datestr = cls._uncompress_files(
+            zip_filename, local_path, overwrite=overwrite)
 
         # Read dataframe from local CSV file
         try:
@@ -216,17 +203,11 @@ class SummaryMatrix:
             raise Exception(f"Failed to load {mtx_fname}: {e}")
         # Read JSON dictionary as string
         try:
-            with open(meta_fname) as metaf:
-                meta_str = metaf.read()
-        except Exception as e:
-            raise Exception(f"Failed to load {meta_fname}: {e}")
-        # Test metadata load, but not currently using this
-        try:
-            meta_dict = json.loads(meta_str)
-        except Exception as e:
-            raise Exception(f"Failed to load {meta_fname}: {e}")
+            meta_dict = cls.load_metadata(meta_fname)
+        except Exception:
+            raise
 
-        return dataframe, table_type, data_datestr
+        return dataframe, meta_dict, table_type, data_datestr
 
     # ...........................
     def rank_summary_counts(self, sort_by, order="descending", limit=10):

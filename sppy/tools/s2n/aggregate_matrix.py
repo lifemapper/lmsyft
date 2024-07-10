@@ -220,6 +220,7 @@ def test_stacked_to_aggregate_extremes(
 if __name__ == "__main__":
     """Main script creates a SPECIES_DATASET_MATRIX from DATASET_SPECIES_LISTS."""
     data_datestr = get_current_datadate_str()
+    overwrite = True
     # Create a logger
     script_name = os.path.splitext(os.path.basename(__file__))[0]
     todaystr = get_today_str()
@@ -253,6 +254,7 @@ if __name__ == "__main__":
     # Combine key and species fields to ensure uniqueness
     def _combine_columns(row):
         return str(row[fld1]) + ' ' + str(row[fld2])
+
     # ......................
     stk_df[stk_col_label_for_axis0] = stk_df.apply(_combine_columns, axis=1)
     # .................................
@@ -278,50 +280,82 @@ if __name__ == "__main__":
                 logger=tst_logger, is_max=is_max)
 
     # .................................
-    # Save matrix to S3
+    # Save sparse matrix to S3
+    # .................................
     out_filename = agg_sparse_mtx.compress_to_file()
     upload_to_s3(out_filename, PROJ_BUCKET, SUMMARY_FOLDER, REGION)
     # Copy logfile to S3
     upload_to_s3(tst_logger.filename, PROJ_BUCKET, SUMMARY_FOLDER, REGION)
 
     # .................................
+    # Download data and recreate sparse matrix
+    # .................................
     table = Summaries.get_table(mtx_table_type, data_datestr)
     zip_fname = f"{table['fname']}.zip"
     # Only download if file does not exist
     zip_filename = download_from_s3(
         PROJ_BUCKET, SUMMARY_FOLDER, zip_fname, local_path=local_path,
-        overwrite=False)
+        overwrite=overwrite)
 
     # Only extract if files do not exist
     sparse_coo, row_categ, col_categ, table_type, _data_datestr = \
         SparseMatrix.uncompress_zipped_data(
-            zip_filename, local_path=local_path, overwrite=False)
+            zip_filename, local_path=local_path, overwrite=overwrite)
+
     # Create
     sp_mtx = SparseMatrix(
         sparse_coo, mtx_table_type, data_datestr, row_category=row_categ,
         column_category=col_categ, logger=tst_logger)
 
+    # .................................
+    # Create 2 summary matrices from sparse matrix and upload
+    # .................................
     sp_sum_mtx = SummaryMatrix.init_from_sparse_matrix(sp_mtx, axis=0, logger=tst_logger)
+    spsum_table_type = sp_sum_mtx.table_type
     out_filename = sp_sum_mtx.compress_to_file()
     upload_to_s3(out_filename, PROJ_BUCKET, SUMMARY_FOLDER, REGION)
 
     ds_sum_mtx = SummaryMatrix.init_from_sparse_matrix(sp_mtx, axis=1, logger=tst_logger)
+    dssum_table_type = ds_sum_mtx.table_type
     out_filename = ds_sum_mtx.compress_to_file()
     upload_to_s3(out_filename, PROJ_BUCKET, SUMMARY_FOLDER, REGION)
 
-    SummaryMatrix.uncompress_zipped_data()
+    # .................................
+    # Download data and recreate 2 summary matrices
+    # .................................
+    sp_table = Summaries.get_table(spsum_table_type, data_datestr)
+    sp_zip_fname = f"{sp_table['fname']}.zip"
+    # Only download if file does not exist
+    sp_zip_filename = download_from_s3(
+        PROJ_BUCKET, SUMMARY_FOLDER, sp_zip_fname, local_path=local_path,
+        overwrite=overwrite)
+
+    sp_dataframe, sp_meta_dict, sp_table_type, data_datestr = \
+        SummaryMatrix.uncompress_zipped_data(
+            sp_zip_filename, local_path=local_path, overwrite=overwrite)
+
+    ds_table = Summaries.get_table(dssum_table_type, data_datestr)
+    ds_zip_fname = f"{ds_table['fname']}.zip"
+    # Only download if file does not exist
+    ds_zip_filename = download_from_s3(
+        PROJ_BUCKET, SUMMARY_FOLDER, ds_zip_fname, local_path=local_path,
+        overwrite=overwrite)
+
+    ds_dataframe, ds_meta_dict, ds_table_type, data_datestr = \
+        SummaryMatrix.uncompress_zipped_data(
+            ds_zip_filename, local_path=local_path, overwrite=overwrite)
 
 """
 from sppy.tools.s2n.aggregate_matrix import *
 from sppy.tools.s2n.sparse_matrix import *
 from sppy.tools.s2n.summary_matrix import *
 
+data_datestr = get_current_datadate_str()
+overwrite = True
 # Create a logger
-script_name = "testing"
+script_name = "tester"
 todaystr = get_today_str()
 log_name = f"{script_name}_{todaystr}"
-data_datestr = get_current_datadate_str()
-
 # Create logger with default INFO messages
 tst_logger = Logger(
     log_name, log_path=LOCAL_OUTDIR, log_console=True, log_level=INFO)
@@ -377,26 +411,27 @@ for is_max in (False, True):
             logger=tst_logger, is_max=is_max)
 
 # .................................
-# Save matrix to S3
+# Save sparse matrix to S3
+# .................................
 out_filename = agg_sparse_mtx.compress_to_file()
 upload_to_s3(out_filename, PROJ_BUCKET, SUMMARY_FOLDER, REGION)
 # Copy logfile to S3
 upload_to_s3(tst_logger.filename, PROJ_BUCKET, SUMMARY_FOLDER, REGION)
 
 # .................................
-# .................................
+# Download data and recreate sparse matrix
 # .................................
 table = Summaries.get_table(mtx_table_type, data_datestr)
 zip_fname = f"{table['fname']}.zip"
 # Only download if file does not exist
 zip_filename = download_from_s3(
     PROJ_BUCKET, SUMMARY_FOLDER, zip_fname, local_path=local_path,
-    overwrite=False)
+    overwrite=overwrite)
 
 # Only extract if files do not exist
 sparse_coo, row_categ, col_categ, table_type, _data_datestr = \
     SparseMatrix.uncompress_zipped_data(
-        zip_filename, local_path=local_path, overwrite=False)
+        zip_filename, local_path=local_path, overwrite=overwrite)
 
 # Create
 sp_mtx = SparseMatrix(
@@ -404,15 +439,53 @@ sp_mtx = SparseMatrix(
     column_category=col_categ, logger=tst_logger)
 
 # .................................
-sp_sum_mtx = SummaryMatrix.init_from_sparse_matrix(sp_mtx, axis=0, logger=tst_logger)
+# Create 2 summary matrices from sparse matrix and upload
+# .................................
+axis = 0
+
+totals = sp_mtx.get_totals(axis=axis).tolist()
+counts = sp_mtx.get_counts(axis=axis).tolist()
+data = {SUMMARY_FIELDS.COUNT: counts, SUMMARY_FIELDS.TOTAL: totals}
+input_table_meta = Summaries.get_table(sp_mtx.table_type)
+
+# Axis 0 summarizes each column (down axis 0) of sparse matrix
+if axis == 0:
+    index = sp_mtx.column_category.categories
+    table_type = input_table_meta["column_summary_table"]
+
+sp_sum_mtx = SummaryMatrix.init_from_sparse_matrix(sp_mtx, axis=axis, logger=tst_logger)
+spsum_table_type = sp_sum_mtx.table_type
 out_filename = sp_sum_mtx.compress_to_file()
 upload_to_s3(out_filename, PROJ_BUCKET, SUMMARY_FOLDER, REGION)
 
-ds_sum_mtx = SummaryMatrix.init_from_sparse_matrix(sp_mtx, axis=1, logger=tst_logger)
+axis = 1
+ds_sum_mtx = SummaryMatrix.init_from_sparse_matrix(sp_mtx, axis=axis, logger=tst_logger)
+dssum_table_type = ds_sum_mtx.table_type
 out_filename = ds_sum_mtx.compress_to_file()
 upload_to_s3(out_filename, PROJ_BUCKET, SUMMARY_FOLDER, REGION)
 
-SummaryMatrix.uncompress_zipped_data()
+# .................................
+# Download data and recreate 2 summary matrices
+# .................................
+sp_table = Summaries.get_table(spsum_table_type, data_datestr)
+sp_zip_fname = f"{sp_table['fname']}.zip"
+# Only download if file does not exist
+sp_zip_filename = download_from_s3(
+    PROJ_BUCKET, SUMMARY_FOLDER, sp_zip_fname, local_path=local_path,
+    overwrite=overwrite)
 
+sp_dataframe, sp_meta_dict, sp_table_type, data_datestr = \
+    SummaryMatrix.uncompress_zipped_data(
+        sp_zip_filename, local_path=local_path, overwrite=overwrite)
 
+ds_table = Summaries.get_table(dssum_table_type, data_datestr)
+ds_zip_fname = f"{ds_table['fname']}.zip"
+# Only download if file does not exist
+ds_zip_filename = download_from_s3(
+    PROJ_BUCKET, SUMMARY_FOLDER, ds_zip_fname, local_path=local_path,
+    overwrite=overwrite)
+
+ds_dataframe, ds_meta_dict, ds_table_type, data_datestr = \
+    SummaryMatrix.uncompress_zipped_data(
+        ds_zip_filename, local_path=local_path, overwrite=overwrite)
 """

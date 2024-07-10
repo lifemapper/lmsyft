@@ -9,12 +9,12 @@ import random
 import scipy.sparse
 from zipfile import ZipFile
 
+from sppy.tools.s2n.aggregate_data_matrix import _AggregateDataMatrix
 from sppy.tools.s2n.constants import (SNKeys, Summaries)
-from sppy.tools.util.logtools import logit
-from sppy.tools.util.utils import convert_np_vals_for_json, upload_to_s3
+from sppy.tools.util.utils import convert_np_vals_for_json
 
 # .............................................................................
-class SparseMatrix:
+class SparseMatrix(_AggregateDataMatrix):
     """Class for managing computations for counts of aggregator0 x aggregator1."""
 
     # ...........................
@@ -29,10 +29,6 @@ class SparseMatrix:
                 aggregator1 (i.e. dataset) columns (axis 1) to use for computations.
             table_type (aws_constants.SUMMARY_TABLE_TYPES): type of aggregated data
             data_datestr (str): date of the source data in YYYY_MM_DD format.
-            row_category (CategoricalDtype): category of unique labels with ordered
-                indices/codes for rows (y, axis 0)
-            column_category (CategoricalDtype): category of unique labels with ordered
-                indices/codes for columns (x, axis 1)
             logger (object): An optional local logger to use for logging output
                 with consistent options
 
@@ -42,13 +38,9 @@ class SparseMatrix:
             columns.
         """
         self._coo_array = sparse_coo_array
-        self._table_type = table_type
-        self._data_datestr = data_datestr
-        self._keys = SNKeys.get_keys_for_table(self._table_type)
         self._row_categ = row_category
         self._col_categ = column_category
-        self._logger = logger
-        self._report = {}
+        _AggregateDataMatrix.__init__(self, table_type, data_datestr, logger=logger)
 
     # ...........................
     @classmethod
@@ -103,16 +95,6 @@ class SparseMatrix:
             sparse_coo, table_type, data_datestr, row_category=y_categ,
             column_category=x_categ, logger=logger)
         return sparse_matrix
-
-    # ...........................
-    @property
-    def table_type(self):
-        return self._table_type
-
-    # ...........................
-    @property
-    def data_datestr(self):
-        return self._data_datestr
 
     # ...........................
     @property
@@ -185,10 +167,6 @@ class SparseMatrix:
             category_labels.append(categ.categories[code])
         return category_labels
 
-    # ...............................................
-    def _logme(self, msg, refname="", log_level=None):
-        logit(self._logger, msg, refname=refname, log_level=log_level)
-
     # ...........................
     def _to_csr(self):
         # Convert to CSR format for efficient row slicing
@@ -253,6 +231,32 @@ class SparseMatrix:
             with data, this should ALWAYS equal the number of columns
         """
         return self._coo_array.shape[1]
+
+    # ...............................................
+    def get_random_labels(self, count, axis=0):
+        """Get random values from the labels on an axis of a sparse matrix.
+
+        Args:
+            count (int): number of values to return
+            axis (int): row (0) or column (1) header for labels to gather.
+
+        Returns:
+            labels (list): random row or column headers
+
+        Raises:
+            Exception: on axis not in (0, 1)
+        """
+        if axis == 0:
+            categ = self._row_categ
+        elif axis == 1:
+            categ = self._col_categ
+        else:
+            raise Exception(f"2D sparse array does not have axis {axis}")
+        # Get a random sample of category indexes
+        # TODO: verify this is 1-based
+        idxs = random.sample(range(1, len(categ.categories)), count)
+        labels = [self._get_category_from_code(i, axis=axis) for i in idxs]
+        return labels
 
     # ...............................................
     def get_vector_from_label(self, label, axis=0):
@@ -646,40 +650,6 @@ class SparseMatrix:
             }
         return comparisons
 
-    # # ...............................................
-    # def upload_to_s3(self, full_filename, bucket, bucket_path, region):
-    #     """Upload a file to S3.
-    #
-    #     Args:
-    #         full_filename (str): Full filename to the file to upload.
-    #         bucket (str): Bucket identifier on S3.
-    #         bucket_path (str): Parent folder path to the S3 data.
-    #         region (str): AWS region to upload to.
-    #
-    #     Returns:
-    #         s3_filename (str): path including bucket, bucket_folder, and filename for the
-    #             uploaded data
-    #     """
-    #     s3_filename = None
-    #     s3_client = boto3.client("s3", region_name=region)
-    #     obj_name = os.path.basename(full_filename)
-    #     if bucket_path:
-    #         obj_name = f"{bucket_path}/{obj_name}"
-    #     try:
-    #         s3_client.upload_file(full_filename, bucket, obj_name)
-    #     except SSLError:
-    #         self._logme(
-    #             f"Failed with SSLError to upload {obj_name} to {bucket}",
-    #             log_level=ERROR)
-    #     except ClientError as e:
-    #         self._logme(
-    #             f"Failed to upload {obj_name} to {bucket}, ({e})",
-    #             log_level=ERROR)
-    #     else:
-    #         s3_filename = f"s3://{bucket}/{obj_name}"
-    #         self._logme(f"Uploaded {s3_filename} to S3")
-    #     return s3_filename
-
     # .............................................................................
     def compress_to_file(self, local_path="/tmp"):
         """Compress this SparseMatrix to a zipped npz and json file.
@@ -692,19 +662,12 @@ class SparseMatrix:
 
         Raises:
             Exception: on failure to write sparse matrix to NPZ file.
-            Exception: on failure to serialize metadata as JSON.
-            Exception: on failure to write metadata json string to file.
-            Exception: on failure to write sparse matrix and category files to zipfile.
+            Exception: on failure to serialize or write metadata.
+            Exception: on failure to write matrix and metadata files to zipfile.
         """
-        basename = Summaries.get_filename(self._table_type, self._data_datestr)
-        mtx_fname = f"{local_path}/{basename}.npz"
-        meta_fname = f"{local_path}/{basename}.json"
-        zip_fname = f"{local_path}/{basename}.zip"
-        # Delete any local temp files
-        for fname in [mtx_fname, meta_fname, zip_fname]:
-            if os.path.exists(fname):
-                self._logme(f"Removing {fname}", log_level=INFO)
-                os.remove(fname)
+        mtx_fname, meta_fname, zip_fname = self._get_input_files(
+            local_path="/tmp", do_delete=True)
+
         # Save matrix to npz locally
         try:
             scipy.sparse.save_npz(mtx_fname, self._coo_array, compressed=True)
@@ -712,33 +675,21 @@ class SparseMatrix:
             msg = f"Failed to write {mtx_fname}: {e}"
             self._logme(msg, log_level=ERROR)
             raise Exception(msg)
+
         # Save table data and categories to json locally
         metadata = Summaries.get_table(self._table_type)
         metadata["row"] = self._row_categ.categories.tolist()
         metadata["column"] = self._col_categ.categories.tolist()
         try:
-            metastr = json.dumps(metadata)
-        except Exception as e:
-            msg = f"Failed to serialize metadata as JSON: {e}"
-            self._logme(msg, log_level=ERROR)
-            raise Exception(msg)
-        try:
-            with open(meta_fname, 'w') as outf:
-                outf.write(metastr)
-        except Exception as e:
-            msg = f"Failed to write metadata to {meta_fname}: {e}"
-            self._logme(msg, log_level=ERROR)
-            raise Exception(msg)
+            self._dump_metadata(metadata, meta_fname)
+        except Exception:
+            raise
 
-        # Compress matrix with categories
+        # Compress matrix with metadata
         try:
-            with ZipFile(zip_fname, 'w') as zip:
-                for fname in [mtx_fname, meta_fname]:
-                    zip.write(fname, os.path.basename(fname))
-        except Exception as e:
-            msg = f"Failed to write {zip_fname}: {e}"
-            self._logme(msg, log_level=ERROR)
-            raise Exception(msg)
+            self._compress_files([mtx_fname, meta_fname], zip_fname)
+        except Exception:
+            raise
 
         return zip_fname
 
@@ -762,8 +713,6 @@ class SparseMatrix:
             data_datestr (str): date string in format YYYY_MM_DD
 
         Raises:
-            Exception: on missing input zipfile
-            Exception: on missing expected file from zipfile
             Exception: on unable to load NPZ file
             Exception: on unable to load JSON metadata file
             Exception: on missing row categories in JSON
@@ -776,47 +725,22 @@ class SparseMatrix:
                 they contain. The filename contains a string like YYYY-MM-DD which
                 indicates which GBIF data dump the statistics were built upon.
         """
-        if not os.path.exists(zip_filename):
-            raise Exception(f"Missing file {zip_filename}")
-        basename = os.path.basename(zip_filename)
-        fname, _ext = os.path.splitext(basename)
-        try:
-            table_type, data_datestr = Summaries.get_tabletype_datestring_from_filename(
-                zip_filename)
-        except Exception:
-            raise
-        # Expected files from archive
-        mtx_fname = f"{local_path}/{fname}.npz"
-        meta_fname = f"{local_path}/{fname}.json"
-
-        # Delete local data files if overwrite
-        for fname in [mtx_fname, meta_fname]:
-            if os.path.exists(fname) and overwrite is True:
-                os.remove(fname)
-
-        # Unzip to local dir
-        with ZipFile(zip_filename, mode="r") as archive:
-            archive.extractall(f"{local_path}/")
-        for fn in [mtx_fname, meta_fname]:
-            if not os.path.exists(fn):
-                raise Exception(f"Missing expected file {fn}")
+        mtx_fname, meta_fname, table_type, data_datestr = cls._uncompress_files(
+            zip_filename, local_path=local_path, overwrite=overwrite)
 
         # Read sparse matrix from local npz file
         try:
             sparse_coo = scipy.sparse.load_npz(mtx_fname)
         except Exception as e:
             raise Exception(f"Failed to load {mtx_fname}: {e}")
+
         # Read JSON dictionary as string
         try:
-            with open(meta_fname) as metaf:
-                meta_str = metaf.read()
-        except Exception as e:
-            raise Exception(f"Failed to load {meta_fname}: {e}")
-        # Load metadata from string
-        try:
-            meta_dict = json.loads(meta_str)
-        except Exception as e:
-            raise Exception(f"Failed to load {meta_fname}: {e}")
+            meta_dict = cls.load_metadata(meta_fname)
+        except Exception:
+            raise
+
+        # Parse metadata into objects for matrix construction
         try:
             row_catlst = meta_dict.pop("row")
         except KeyError:

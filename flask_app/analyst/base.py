@@ -77,23 +77,15 @@ class _AnalystService(_SpecifyNetworkService):
     # ...............................................
     @classmethod
     def _standardize_params(
-            cls, dataset_key=None, species_key=None, pub_org_key=None, count_by=None,
-            aggregate_by=None, stat_type=None, order=None, limit=10):
+            cls, summary_type=None, summary_key=None, rank_by=None, order=None,
+            limit=10):
         """Standardize query parameters to send to appropriate service.
 
         Args:
-            dataset_key: unique GBIF dataset identifier for comparisons
-            species_key: species_key: unique GBIF identifier of
-                accepted taxon concatenated with the species name.
-            pub_org_key: unique publishing organization identifier for comparisons
-            count_by: counts of "occurrence" or "species"
-            aggregate_by: count occurrences (values), species (matrix axis 0) or
-                datasets (matrix axis 1)
-            stat_type: "describe" or "compare" indicating whether to
-                describe the
-                  * total for dataset or species count or
-                  * min and max count and dataset or species for occurrence count or
-                compare the above to the min/max/mean/median for all datasets
+            summary_type: data dimension for summary, comparisons, rank
+            summary_key: unique identifier for the data dimension being examined.
+            rank_by: rank by occurrence counts or measurement of another dimension of
+                the data
             order: sort records "descending" or "ascending"
             limit: integer indicating how many ranked records to return, value must
                 be less than QUERY_LIMIT.
@@ -107,12 +99,9 @@ class _AnalystService(_SpecifyNetworkService):
                 user specified parameters.
         """
         user_kwargs = {
-            "dataset_key": dataset_key,
-            "species_key": species_key,
-            "pub_org_key": pub_org_key,
-            "count_by": count_by,
-            "aggregate_by": aggregate_by,
-            "stat_type": stat_type,
+            "summary_type": summary_type,
+            "summary_key": summary_key,
+            "rank_by": rank_by,
             "order": order,
             "limit": limit
         }

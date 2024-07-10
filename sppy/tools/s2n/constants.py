@@ -68,6 +68,7 @@ class Summaries:
                 "code": SUMMARY_TABLE_TYPES.SPECIES_DATASET_MATRIX,
                 "fname": f"speciesxdataset_matrix_{DATESTR_TOKEN}",
                 "table_format": "Zip",
+                "matrix_extension": ".npz",
                 # Axis 0
                 "row": "taxonkey_species",
                 "row_summary_table": SUMMARY_TABLE_TYPES.SPECIES_DATASET_SUMMARY,
@@ -81,6 +82,7 @@ class Summaries:
                 "code": SUMMARY_TABLE_TYPES.SPECIES_DATASET_SUMMARY,
                 "fname": f"speciesxdataset_summary_{DATESTR_TOKEN}",
                 "table_format": "Zip",
+                "matrix_extension": ".csv",
                 # Axis 0, matches row (axis 0) in SPECIES_DATASET_MATRIX
                 "row": "taxonkey_species",
                 # Axis 1
@@ -93,6 +95,7 @@ class Summaries:
                 "code": SUMMARY_TABLE_TYPES.DATASET_SPECIES_SUMMARY,
                 "fname": f"datasetxspecies_summary_{DATESTR_TOKEN}",
                 "table_format": "Zip",
+                "matrix_extension": ".csv",
                 # Axis 0, matches column (axis 1) in SPECIES_DATASET_MATRIX
                 "row": DATASET_GBIF_KEY,
                 # Axis 1
@@ -245,26 +248,37 @@ class SNKeys(Enum):
     """
     # ----------------------------------------------------------------------
     # Column: type of aggregation
-    (COL_TYPE,) = range(0, 1)
+    (COL_TYPE,) = range(5000, 5001)
     # Column: One x
     (COL_IDX, COL_LABEL, COL_COUNT, COL_TOTAL,
      COL_MIN_COUNT, COL_MIN_LABELS, COL_MIN_INDEXES,
      COL_MAX_COUNT, COL_MAX_LABELS, COL_MAX_INDEXES
-     ) = range(100, 110)
+     ) = range(5100, 5110)
     # Column: All x
     (COLS_TOTAL, COLS_MIN, COLS_MAX, COLS_MEAN, COLS_MEDIAN,
      COLS_COUNT, COLS_COUNT_MIN, COLS_COUNT_MAX, COLS_COUNT_MEAN, COLS_COUNT_MEDIAN
-     ) = range(200, 210)
+     ) = range(5200, 5210)
     # Row: aggregation of what type of data
-    (ROW_TYPE,) = range(1000, 1001)
+    (ROW_TYPE,) = range(6000, 6001)
     # Row: One y
     (ROW_IDX, ROW_LABEL, ROW_COUNT, ROW_TOTAL,
      ROW_MIN_COUNT, ROW_MIN_LABELS, ROW_MIN_INDEXES,
      ROW_MAX_COUNT, ROW_MAX_LABELS, ROW_MAX_INDEXES
-     ) = range(1100, 1110)
+     ) = range(6100, 6110)
     (ROWS_TOTAL, ROWS_MIN, ROWS_MAX, ROWS_MEAN, ROWS_MEDIAN,
      ROWS_COUNT, ROWS_COUNT_MIN, ROWS_COUNT_MAX, ROWS_COUNT_MEAN, ROWS_COUNT_MEDIAN
-     ) = range(1200, 1210)
+     ) = range(6200, 6210)
+    # Type of aggregation
+    (TYPE,) = range(0, 1)
+    # One field of row/column header
+    (ONE_IDX, ONE_LABEL, ONE_COUNT, ONE_TOTAL,
+     ONE_MIN_COUNT, ONE_MIN_LABELS, ONE_MIN_INDEXES,
+     ONE_MAX_COUNT, ONE_MAX_LABELS, ONE_MAX_INDEXES
+     ) = range(100, 110)
+    # Column: All row/column headers
+    (ALL_TOTAL, ALL_MIN, ALL_MAX, ALL_MEAN, ALL_MEDIAN,
+     ALL_COUNT, ALL_COUNT_MIN, ALL_COUNT_MAX, ALL_COUNT_MEAN, ALL_COUNT_MEDIAN
+     ) = range(200, 210)
 
     @classmethod
     def get_keys_for_table(cls, table_type):
@@ -358,6 +372,88 @@ class SNKeys(Enum):
                 cls.ROWS_COUNT_MAX: "max_dataset_count_for_all_species",
                 cls.ROWS_COUNT_MEAN: "mean_dataset_count_for_all_species",
                 cls.ROWS_COUNT_MEDIAN: "median_dataset_count_for_all_species",
+            }
+        elif table_type == SUMMARY_TABLE_TYPES.DATASET_SPECIES_SUMMARY:
+            keys = {
+                # ----------------------------------------------------------------------
+                # Column
+                # -----------------------------
+                cls.TYPE: "dataset",
+                # One dataset
+                cls.ONE_IDX: "dataset_index",
+                cls.ONE_LABEL: "dataset_label",
+                # Count (non-zero elements in column)
+                cls.ONE_COUNT: "total_species_for_dataset",
+                # Values (total of values in column)
+                cls.ONE_TOTAL: "total_occurrences_for_dataset",
+                # Values: Minimum occurrence count for one dataset, species labels, indexes
+                cls.ONE_MIN_COUNT: "min_occurrence_count_for_dataset",
+                cls.ONE_MIN_LABELS: "species_with_min_occurrence_count_for_dataset",
+                cls.ONE_MIN_INDEXES: "species_indexes_with_min_occurrence_count_for_dataset",
+                # Values: Maximum occurrence count for one dataset, species labels, indexes
+                cls.ONE_MAX_COUNT: "max_occurrence_count_for_dataset",
+                cls.ONE_MAX_LABELS: "species_with_max_occurrence_count_for_dataset",
+                cls.ONE_MAX_INDEXES: "species_indexes_with_max_occurrence_count_for_dataset",
+                # -----------------------------
+                # All datasets
+                # ------------
+                # COMPARES TO:  cls.ONE_TOTAL: "total_occurrences_for_dataset",
+                # Values: Total of all occurrences for all datasets - stats
+                cls.ALL_TOTAL: "total_occurrences_for_all_datasets",
+                cls.ALL_MIN: "min_occurrences_for_all_datasets",
+                cls.ALL_MAX: "max_occurrences_for_all_datasets",
+                cls.ALL_MEAN: "mean_occurrences_for_all_datasets",
+                cls.ALL_MEDIAN: "median_occurrences_for_all_datasets",
+                # ------------
+                # COMPARES TO: cls.ONE_COUNT: "total_species_for_dataset",
+                # Counts: Count of all species (from all columns/datasets)
+                cls.ALL_COUNT: "total_species_count",
+                # Species counts for all datasets - stats
+                cls.ALL_COUNT_MIN: "min_species_count_for_all_datasets",
+                cls.ALL_COUNT_MAX: "max_species_count_for_all_datasets",
+                cls.ALL_COUNT_MEAN: "mean_species_count_for_all_datasets",
+                cls.ALL_COUNT_MEDIAN: "median_species_count_for_all_datasets",
+            }
+        elif table_type == SUMMARY_TABLE_TYPES.SPECIES_DATASET_SUMMARY:
+            keys = {
+                # ----------------------------------------------------------------------
+                # Row
+                # -----------------------------
+                cls.TYPE: "species",
+                # One species
+                cls.ONE_IDX: "species_index",
+                cls.ONE_LABEL: "species_label",
+                # Count (non-zero elements in row)
+                cls.ONE_COUNT: "total_datasets_for_species",
+                # Values (total of values in row)
+                cls.ONE_TOTAL: "total_occurrences_for_species",
+                # Values: Minimum occurrence count for one species, dataset labels, indexes
+                cls.ONE_MIN_COUNT: "min_occurrence_count_for_species",
+                cls.ONE_MIN_LABELS: "datasets_with_min_count_for_species",
+                cls.ONE_MIN_INDEXES: "dataset_indexes_with_min_count_for_species",
+                # Values: Maximum occurrence count for one species, dataset labels, indexes
+                cls.ONE_MAX_COUNT: "max_occurrence_count_for_species",
+                cls.ONE_MAX_LABELS: "datasets_with_max_count_for_species",
+                cls.ONE_MAX_INDEXES: "dataset_indexes_with_max_count_for_species",
+                # -----------------------------
+                # All species
+                # ------------
+                # COMPARES TO: cls.ONE_TOTAL: "total_occurrences_for_species",
+                # Values: Total of all occurrences for all species - stats
+                cls.ALL_TOTAL: "total_occurrences_for_all_species",
+                cls.ALL_MIN: "min_occurrences_for_all_species",
+                cls.ALL_MAX: "max_occurrences_for_all_species",
+                cls.ALL_MEAN: "mean_occurrences_for_all_species",
+                cls.ALL_MEDIAN: "median_occurrences_for_all_species",
+                # ------------
+                # COMPARES TO: cls.ONE_COUNT: "total_datasets_for_species",
+                # Counts: Count of all datasets (from all rows/species)
+                cls.ALL_COUNT: "total_dataset_count",
+                # Dataset counts for all species - stats
+                cls.ALL_COUNT_MIN: "min_dataset_count_for_all_species",
+                cls.ALL_COUNT_MAX: "max_dataset_count_for_all_species",
+                cls.ALL_COUNT_MEAN: "mean_dataset_count_for_all_species",
+                cls.ALL_COUNT_MEDIAN: "median_dataset_count_for_all_species",
             }
         else:
             raise Exception(f"Keys not defined for table {table_type}")

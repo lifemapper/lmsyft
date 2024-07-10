@@ -83,8 +83,9 @@ class APIEndpoint:
     Occurrence = "occ"
     Frontend = "frontend"
     # Analyst services
-    Dataset = "dataset"
-    Count = "count"
+    Compare = "compare"
+    Summary = "summary"
+    # Count = "count"
     Rank = "rank"
 
     @classmethod
@@ -98,8 +99,8 @@ class APIEndpoint:
         return {
             cls.Analyst:
                 [
-                    cls.Dataset,
-                    cls.Count,
+                    cls.Compare,
+                    cls.Summary,
                     cls.Rank
                 ],
             cls.Broker:
@@ -172,6 +173,99 @@ class APIService:
         "description": "",
         S2nKey.RECORD_FORMAT: None
     }
+    # Analyst Summary stats
+    Compare = {
+        "name": APIEndpoint.Compare,
+        "endpoint": f"{APIEndpoint.Root}/{APIEndpoint.Compare}",
+        "params": {
+            # TODO: extend dimensions to other measurements
+            "summary_type": {
+                "type": "",
+                "description":
+                    "Type or dimension of data to compare (i.e: species, dataset)",
+                "options": ["dataset", "species"],
+                "default": "dataset"
+            },
+            "summary_key": {
+                "type": "",
+                "description":
+                    "Key of type of data to compare (i.e: species_key, dataset_key)",
+                "default": None
+            },
+        },
+        "description":
+            "Compare the counts for one item in of all dimensions of the "
+            "occurrence data against the counts of all other items.",
+        S2nKey.RECORD_FORMAT: ""
+    }
+    # Analyst Summary stats
+    Summary = {
+        "name": APIEndpoint.Summary,
+        "endpoint": f"{APIEndpoint.Root}/{APIEndpoint.Summary}",
+        "params": {
+            # TODO: extend dimensions to other measurements
+            "summary_type": {
+                "type": "",
+                "description":
+                    "Type or dimension of data to summarize (i.e: species, dataset)",
+                "options": ["dataset", "species"],
+                "default": "dataset"
+            },
+            "summary_key": {
+                "type": "",
+                "description":
+                    "Key of type of data to summarize (i.e: species_key, dataset_key)",
+                "default": None
+            },
+        },
+        "description":
+            "Summarize the counts for one or all items of all dimensions of the "
+            "occurrence data.",
+        S2nKey.RECORD_FORMAT: ""
+
+    }
+    # Rankings
+    Rank = {
+        "name": APIEndpoint.Rank,
+        "endpoint": f"{APIEndpoint.Root}/{APIEndpoint.Rank}",
+        "params": {
+            "summary_type": {
+                "type": "",
+                "description":
+                    "Type or dimension of data to summarize (i.e: species, dataset)",
+                "options": ["dataset", "species"],
+                "default": "dataset"
+            },
+            "summary_key": {
+                "type": "",
+                "description":
+                    "Key of type of data to summarize (i.e: species_key, dataset_key)",
+                "default": None
+            },
+            "rank_by": {
+                "type": "",
+                "description":
+                    "Measurement or dimension of data to rank by (i.e: occurrence "
+                    "counts or other dimension)",
+                # TODO: extend dimensions to other measurements
+                "options": ["occurrence", "dataset", "species"],
+                # None will resolve to the other dimension while there are only 2
+                "default": "occurrence",
+            },
+            "order": {
+                "type": "",
+                "options": ["ascending", "descending"],
+                "default": "descending"
+            },
+            "limit": {"type": 2, "default": 10, "min": 1, "max": 500},
+        },
+        "description":
+            "Return an ordered list of summaries of one type/dimension of data, ranked "
+            "by occurrence counts or another dimension of the data for the top X "
+            "(descending) or bottom X (ascending) datasets",
+        S2nKey.RECORD_FORMAT: ""
+    }
+    # Broker endpoints
     # Icons for service providers
     Badge = {
         "name": APIEndpoint.Badge,
@@ -190,95 +284,6 @@ class APIService:
         },
         "description": "Return an icon for the given data provider service.",
         S2nKey.RECORD_FORMAT: "image/png"
-    }
-    # Analyst Dataset stats
-    Dataset = {
-        "name": APIEndpoint.Dataset,
-        "endpoint": f"{APIEndpoint.Root}/{APIEndpoint.Dataset}",
-        "params": {
-            "dataset_key": {
-                "type": "",
-                "description": "GBIF Dataset Key",
-                "default": None
-            },
-            "species_key": {
-                "type": "",
-                "description":
-                    "GBIF Accepted Taxon Key concatenated with the species name",
-                "default": None
-            },
-            "aggregate_by": {
-                "type": "",
-                "options": ["species", "occurrences"],
-                "description": "Count of species or occurrences in datasets",
-                "default": None
-            },
-            "stat_type": {
-                "type": "",
-                "options": ["describe", "compare", "rank"],
-                "description":
-                    "Describe the counts for this dataset or compare this dataset's"
-                    "counts to min/max/mean/median counts in all other datasets, or "
-                    "rank this dataset's counts top down or bottom up.",
-                "default": None
-            },
-            "order": {
-                "type": "",
-                "options": ["ascending", "descending"],
-                "default": "descending"
-            },
-            "limit": {"type": 2, "default": 10, "min": 1, "max": 500},
-        },
-        "description":
-            "Return occurrence or species counts for the given dataset, OR comparisons "
-            "between this dataset and all other datasets, OR rank datasets, ascending "
-            "or descending, by occurrence or species counts.",
-        S2nKey.RECORD_FORMAT: ""
-
-    }
-    # Counts
-    Count = {
-        "name": APIEndpoint.Count,
-        "endpoint": f"{APIEndpoint.Root}/{APIEndpoint.Count}",
-        "params": {
-            "dataset_key": {
-                "type": "",
-                "description": "GBIF Dataset Key",
-                "default": None
-            },
-            "pub_org_key": {
-                "type": "",
-                "description": "GBIF Publishing Organization Key",
-                "default": None
-            },
-        },
-        "description":
-            "Return occurrence and species counts for the given dataset or "
-            "publishing organization.",
-        S2nKey.RECORD_FORMAT: ""
-    }
-    # Rankings
-    Rank = {
-        "name": APIEndpoint.Rank,
-        "endpoint": f"{APIEndpoint.Root}/{APIEndpoint.Rank}",
-        "params": {
-            "count_by": {
-                "type": "",
-                "options": ["occurrence", "species"],
-                "default": None
-            },
-            "order": {
-                "type": "",
-                "options": ["ascending", "descending"],
-                "default": "descending"
-            },
-            "limit": {"type": 2, "default": 10, "min": 1, "max": 500},
-        },
-        "description":
-            "Return an ordered list of datasets with occurrence and species counts "
-            "ranked by occurrence or species counts for the top X (descending) "
-            "or bottom X (ascending) datasets",
-        S2nKey.RECORD_FORMAT: ""
     }
     # Taxonomic Resolution
     Name = {
