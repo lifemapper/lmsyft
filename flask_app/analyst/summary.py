@@ -78,7 +78,7 @@ class SummarySvc(_AnalystService):
         zip_filename = os.path.join(INPUT_DATA_PATH, zip_fname)
 
         if not os.path.exists(zip_filename):
-            errinfo["error"] = [f"Missing input data file {zip_filename}"]
+            errinfo["info"] = [f"Downloaded input data file {zip_filename}"]
             # TODO: download this as part of AWS workflow
             _ = download_from_s3(
                 PROJ_BUCKET, SUMMARY_FOLDER, zip_fname, local_path=LOCAL_PATH,
@@ -87,28 +87,27 @@ class SummarySvc(_AnalystService):
         else:
             # Will only extract if matrix and metadata files do not exist yet
             try:
-                dataframe, _table_type, _data_datestr = \
+                dataframe, _meta_dict, _table_type, _data_datestr = \
                     SummaryMatrix.uncompress_zipped_data(
                         zip_filename, local_path=LOCAL_PATH, overwrite=False)
             except Exception as e:
                 errinfo = add_errinfo(errinfo, "error", str(e))
             # Create
             else:
-                sp_mtx = SummaryMatrix(
-                    dataframe, mtx_table_type, data_datestr, category=row_categ,
-                    column_category=col_categ, logger=None)
-        return sp_mtx, errinfo
+                summary_mtx = SummaryMatrix(
+                    dataframe, mtx_table_type, data_datestr, logger=None)
+        return summary_mtx, errinfo
 
     # ...............................................
     @classmethod
     def _get_all_measurements(cls, summary_type, summary_key):
         stat_dict = {}
-        spnet_mtx, errinfo = cls._init_summary_matrix(summary_type)
-        if spnet_mtx is not None:
+        summary_mtx, errinfo = cls._init_summary_matrix(summary_type)
+        if summary_mtx is not None:
             if summary_key is not None:
                 try:
-                    stat_dict = spnet_mtx.get_column_stats(
-                        dataset_key, agg_type=agg_type)
+                    stat_dict = summary_mtx.get_column_stats(
+                        summary_key, agg_type=agg_type)
                 except Exception:
                     errinfo = {
                         "error": [HTTPStatus.INTERNAL_SERVER_ERROR, get_traceback()]

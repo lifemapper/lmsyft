@@ -5,8 +5,10 @@ import pandas as pd
 from pandas.api.types import CategoricalDtype
 
 from sppy.tools.s2n.aggregate_data_matrix import _AggregateDataMatrix
-from sppy.tools.s2n.constants import (MATRIX_SEPARATOR, SUMMARY_FIELDS, Summaries)
+from sppy.tools.s2n.constants import (
+    MATRIX_SEPARATOR, SNKeys, SUMMARY_FIELDS, Summaries)
 from sppy.tools.util.logtools import logit
+from sppy.tools.util.utils import convert_np_vals_for_json
 
 # .............................................................................
 class SummaryMatrix(_AggregateDataMatrix):
@@ -195,6 +197,25 @@ class SummaryMatrix(_AggregateDataMatrix):
             raise
 
         return dataframe, meta_dict, table_type, data_datestr
+
+    # ...............................................
+    def get_column_stats(self, summary_key):
+        """Get a dictionary of statistics for the summary row with this label.
+
+        Args:
+            summary_key: label on the row to gather stats for.
+
+        Returns:
+            stats (dict): quantitative measures of the item.
+        """
+        # Get measurements (pandas series)
+        measures = self._df.loc[summary_key]
+        stats = {
+            self._keys[SNKeys.ONE_LABEL]: summary_key,
+            self._keys[SNKeys.ONE_COUNT]: measures.loc['count'],
+            self._keys[SNKeys.ONE_TOTAL]: measures.loc['total']
+        }
+        return stats
 
     # ...........................
     def rank_summary_counts(self, sort_by, order="descending", limit=10):
