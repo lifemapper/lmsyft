@@ -31,6 +31,11 @@ class _AggregateDataMatrix:
             numerous, rows are always species, columns are datasets.  This allows
             easier exporting to other formats (i.e. Excel), which allows more rows than
             columns.
+
+        Note:
+            All filenames have the same basename with extensions indicating which data
+                they contain. The filename contains a string like YYYY-MM-DD which
+                indicates which GBIF data dump the statistics were built upon.
         """
         self._table_type = table_type
         self._data_datestr = data_datestr
@@ -103,17 +108,15 @@ class _AggregateDataMatrix:
         return category_labels
 
     # ...............................................
-    def _logme(self, msg, refname="", log_level=None):
+    def _logme(self, msg, refname="", log_level=INFO):
         logit(self._logger, msg, refname=refname, log_level=log_level)
 
-
     # ...............................................
-    def _get_input_files(self, local_path="/tmp", do_delete=True):
+    def _get_input_files(self, local_path="/tmp"):
         """Return the files that comprise local input data, optionally delete.
 
         Args:
             local_path (str): Absolute path of local destination path
-            do_delete (bool): Flag indicating whether to delete local files.
 
         Returns:
             mtx_fname (str): absolute path for local matrix data file.
@@ -125,18 +128,12 @@ class _AggregateDataMatrix:
         mtx_fname = f"{local_path}/{basename}{mtx_ext}"
         meta_fname = f"{local_path}/{basename}.json"
         zip_fname = f"{local_path}/{basename}.zip"
-        # Delete any local temp files
-        if do_delete is True:
-            for fname in [mtx_fname, meta_fname, zip_fname]:
-                if os.path.exists(fname):
-                    self._logme(f"Removing {fname}", log_level=INFO)
-                    os.remove(fname)
         return mtx_fname, meta_fname, zip_fname
 
     # ...............................................
     @classmethod
     def _dump_metadata(self, metadata, meta_fname):
-        """Write metadata to a json file.
+        """Write metadata to a json file, deleting it first if exists.
 
         Args:
             metadata (dict): metadata about matrix
@@ -146,19 +143,19 @@ class _AggregateDataMatrix:
             Exception: on failure to serialize metadata as JSON.
             Exception: on failure to write metadata json string to file.
         """
+        if os.path.exists(meta_fname):
+            os.remove(meta_fname)
+            print(f"Removed file {meta_fname}.")
+
         try:
             metastr = json.dumps(metadata)
         except Exception as e:
-            msg = f"Failed to serialize metadata as JSON: {e}"
-            self._logme(msg, log_level=ERROR)
-            raise Exception(msg)
+            raise Exception(f"Failed to serialize metadata as JSON: {e}")
         try:
             with open(meta_fname, 'w') as outf:
                 outf.write(metastr)
         except Exception as e:
-            msg = f"Failed to write metadata to {meta_fname}: {e}"
-            self._logme(msg, log_level=ERROR)
-            raise Exception(msg)
+            raise Exception(f"Failed to write metadata to {meta_fname}: {e}")
 
     # ...............................................
     @classmethod
@@ -190,16 +187,39 @@ class _AggregateDataMatrix:
         return meta_dict
 
     # ...............................................
+    @classmethod
+    def _check_for_existing_files(cls, expected_files, overwrite):
+        deleted_files = []
+        # Are local files already present?
+        files_present = [fname for fname in expected_files if os.path.exists(fname)]
+        # Delete if overwrite is true or if not all expected files are present
+        if overwrite is True or len(files_present) < len(expected_files):
+            deleted_files = files_present
+            for fname in files_present:
+                os.remove(fname)
+            print(f"Removed files {', '.join(deleted_files)}.")
+        # Who remains?
+        files_present = [fname for fname in expected_files if os.path.exists(fname)]
+        all_exist = len(files_present) == len(expected_files)
+        return all_exist, deleted_files
+
+    # ...............................................
     def _compress_files(self, input_fnames, zip_fname):
-        """Compress this SparseMatrix to a zipped npz and json file.
+        """Compress this SparseMatrix to a zipfile, deleting first if necessary.
 
         Args:
             input_fnames (str): Absolute path of local data files
             zip_fname (str): Absolute path of destination zipfile.
+            overwrite (bool): Flag indicating whether to use or delete existing zipfile
+                prior to compressing.
 
         Raises:
             Exception: on failure to write sparse matrix and category files to zipfile.
         """
+        if os.path.exists(zip_fname):
+            os.remove(zip_fname)
+            self._logme(f"Removed file {zip_fname}.")
+
         try:
             with ZipFile(zip_fname, 'w') as zip:
                 for fname in input_fnames:
@@ -208,7 +228,18 @@ class _AggregateDataMatrix:
             msg = f"Failed to write {zip_fname}: {e}"
             self._logme(msg, log_level=ERROR)
             raise Exception(msg)
-
+            
+    # .............................................................................
+    def _remove_expected_files(self, local_path="/tmp"):
+        # Always delete local files before compressing this data.
+        overwrite = True
+        [mtx_fname, meta_fname, zip_fname] = self._get_input_files(local_path=local_path)
+        all_exist, deleted_files = self._check_for_existing_files(
+            [mtx_fname, meta_fname, zip_fname], overwrite)
+        if deleted_files:
+            self._logme(f"Deleted existing files {','.join(deleted_files)}.")
+        return [mtx_fname, meta_fname, zip_fname]
+            
     # .............................................................................
     @classmethod
     def _uncompress_files(
@@ -218,8 +249,8 @@ class _AggregateDataMatrix:
         Args:
             zip_filename (str): Filename of output data to write to S3.
             local_path (str): Absolute path of local destination path
-            overwrite (bool): Flag indicating whether to use existing files unzipped
-                from the zip_filename.
+            overwrite (bool): Flag indicating whether to use or delete existing files
+                prior to unzipping.
 
         Returns:
             sparse_coo (scipy.sparse.coo_array): Sparse Matrix containing data.
@@ -232,11 +263,6 @@ class _AggregateDataMatrix:
             Exception: on missing input zipfile
             Exception: on failure to parse filename
             Exception: on missing expected file from zipfile
-
-        Note:
-            All filenames have the same basename with extensions indicating which data
-                they contain. The filename contains a string like YYYY-MM-DD which
-                indicates which GBIF data dump the statistics were built upon.
         """
         if not os.path.exists(zip_filename):
             raise Exception(f"Missing file {zip_filename}")
@@ -254,17 +280,20 @@ class _AggregateDataMatrix:
         mtx_fname = f"{local_path}/{fname}{mtx_ext}"
         meta_fname = f"{local_path}/{fname}.json"
 
-        # Delete local data files if overwrite
-        for fname in [mtx_fname, meta_fname]:
-            if os.path.exists(fname) and overwrite is True:
-                os.remove(fname)
+        # Are local files already present?
+        expected_files = [mtx_fname, meta_fname]
+        all_exist, _deleted_files = cls._check_for_existing_files(
+            expected_files, overwrite)
 
-        # Unzip to local dir
-        with ZipFile(zip_filename, mode="r") as archive:
-            archive.extractall(f"{local_path}/")
-        for fn in [mtx_fname, meta_fname]:
-            if not os.path.exists(fn):
-                raise Exception(f"Missing expected file {fn}")
+        if all_exist and overwrite is False:
+            print(f"Expected files {', '.join(expected_files)} already exist.")
+        else:
+            # Unzip to local dir
+            with ZipFile(zip_filename, mode="r") as archive:
+                archive.extractall(f"{local_path}/")
+            for fn in [mtx_fname, meta_fname]:
+                if not os.path.exists(fn):
+                    raise Exception(f"Missing expected file {fn}")
 
         return mtx_fname, meta_fname, table_type, data_datestr
 

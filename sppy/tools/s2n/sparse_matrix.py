@@ -1,13 +1,10 @@
 """Matrix to summarize 2 dimensions of data by counts of a third in a sparse matrix."""
-import json
-from logging import ERROR, INFO
+from logging import ERROR
 import numpy as np
-import os
 import pandas as pd
 from pandas.api.types import CategoricalDtype
 import random
 import scipy.sparse
-from zipfile import ZipFile
 
 from sppy.tools.s2n.aggregate_data_matrix import _AggregateDataMatrix
 from sppy.tools.s2n.constants import (SNKeys, Summaries)
@@ -434,17 +431,34 @@ class SparseMatrix(_AggregateDataMatrix):
 
     # ...............................................
     def get_totals(self, axis):
-        # Sum along the axis for total of values; for each column to return a vector
-        #     axis 0 - sum all values in each row for column totals
-        #     axis 1 - sum all values in each column for row totals
-        all_totals = self._coo_array.sum(axis=axis)
+        """Get a list of totals along the requested axis, down axis 0, across axis 1.
+
+        Args:
+            axis (int): Axis to sum.
+
+        Returns:
+            all_totals (list): list of values for the axis.
+        """
+        mtx = self._coo_array.sum(axis=axis)
+        # 2d Matrix is a list of rows
+        # Axis 0 produces a matrix shape (1, col_count), 1 row
+        # Axis 1 produces matrix shape (row_count, 1), row_count rows
+        if axis == 0:
+            all_totals = mtx.tolist()[0]
+        elif axis == 1:
+            all_totals = mtx.T.tolist()[0]
         return all_totals
 
     # ...............................................
     def get_counts(self, axis):
-        # Count all non-zero values along the axis
-        #     axis 0 - count non-zero values in each row for column totals
-        #     axis 1 - count non-zero values in each column for row totals
+        """Count non-zero values along the requested axis, down axis 0, across axis 1.
+
+        Args:
+            axis (int): Axis to count non-zero values for.
+
+        Returns:
+            all_counts (list): list of values for the axis.
+        """
         all_counts = self._coo_array.getnnz(axis=axis)
         return all_counts
 
@@ -665,8 +679,9 @@ class SparseMatrix(_AggregateDataMatrix):
             Exception: on failure to serialize or write metadata.
             Exception: on failure to write matrix and metadata files to zipfile.
         """
-        mtx_fname, meta_fname, zip_fname = self._get_input_files(
-            local_path="/tmp", do_delete=True)
+        # Always delete local files before compressing this data.
+        [mtx_fname, meta_fname, zip_fname] = self._remove_expected_files(
+            local_path=local_path)
 
         # Save matrix to npz locally
         try:

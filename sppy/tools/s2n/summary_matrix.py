@@ -1,18 +1,12 @@
 """Matrix to summarize each of 2 dimensions of data by counts of the other and a third."""
 from collections import OrderedDict
-import json
-from logging import ERROR, INFO
-import os
+from logging import ERROR
 import pandas as pd
 from pandas.api.types import CategoricalDtype
-from zipfile import ZipFile
 
 from sppy.tools.s2n.aggregate_data_matrix import _AggregateDataMatrix
-from sppy.tools.s2n.constants import (
-    MATRIX_SEPARATOR, SNKeys, SUMMARY_FIELDS, Summaries, SUMMARY_TABLE_TYPES
-)
+from sppy.tools.s2n.constants import (MATRIX_SEPARATOR, SUMMARY_FIELDS, Summaries)
 from sppy.tools.util.logtools import logit
-from sppy.tools.util.utils import upload_to_s3
 
 # .............................................................................
 class SummaryMatrix(_AggregateDataMatrix):
@@ -64,8 +58,8 @@ class SummaryMatrix(_AggregateDataMatrix):
         """
         # Column counts and totals (count along axis 0, each row)
         # Row counts and totals (count along axis 1, each column)
-        totals = sp_mtx.get_totals(axis=axis).tolist()
-        counts = sp_mtx.get_counts(axis=axis).tolist()
+        totals = sp_mtx.get_totals(axis=axis)
+        counts = sp_mtx.get_counts(axis=axis)
         data = {SUMMARY_FIELDS.COUNT: counts, SUMMARY_FIELDS.TOTAL: totals}
         input_table_meta = Summaries.get_table(sp_mtx.table_type)
 
@@ -137,8 +131,9 @@ class SummaryMatrix(_AggregateDataMatrix):
             Exception: on failure to serialize or write metadata as JSON.
             Exception: on failure to write matrix and metadata files to zipfile.
         """
-        mtx_fname, meta_fname, zip_fname = self._get_input_files(
-            local_path="/tmp", do_delete=True)
+        # Always delete local files before compressing this data.
+        [mtx_fname, meta_fname, zip_fname] = self._remove_expected_files(
+            local_path=local_path)
 
         # Save matrix to csv locally
         try:
@@ -177,28 +172,20 @@ class SummaryMatrix(_AggregateDataMatrix):
 
         Returns:
             dataframe (pandas.DataFrame): dataframe containing summary matrix data.
+            meta_dict (dict): metadata for the matrix
             table_type (aws.aws_constants.SUMMARY_TABLE_TYPES): type of table data
             data_datestr (str): date string in format YYYY_MM_DD
 
         Raises:
-            Exception: on missing input zipfile
-            Exception: on missing expected file from zipfile
             Exception: on unable to load CSV file
-            Exception: on unable to load JSON metadata file
-            Exception: on missing table_type code in JSON
-            Exception: on bad table_type code in JSON
-
-        Note:
-            All filenames have the same basename with extensions indicating which data
-                they contain. The filename contains a string like YYYY-MM-DD which
-                indicates which GBIF data dump the statistics were built upon.
+            Exception: on unable to load JSON metadata
         """
         mtx_fname, meta_fname, table_type, data_datestr = cls._uncompress_files(
             zip_filename, local_path, overwrite=overwrite)
 
         # Read dataframe from local CSV file
         try:
-            dataframe = pd.read_csv(mtx_fname, sep=MATRIX_SEPARATOR)
+            dataframe = pd.read_csv(mtx_fname, sep=MATRIX_SEPARATOR, index_col=0)
         except Exception as e:
             raise Exception(f"Failed to load {mtx_fname}: {e}")
         # Read JSON dictionary as string
