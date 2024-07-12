@@ -18,33 +18,32 @@ class CountSvc(_AnalystService):
 
     # ...............................................
     @classmethod
-    def get_counts(cls, dataset_key=None, pub_org_key=None):
-        """Return occurrence and species counts for dataset/organization identifiers.
+    def compare_measures(cls, summary_type=None, summary_key=None):
+        """Compare descriptive measurements for one identifier against all others.
 
-        Args:
-            dataset_key: URL parameter for unique GBIF identifier of dataset.
-            pub_org_key: URL parameter for unique GBIF identifier of
-                publishingOrganization.
+                Args:
+                    summary_type: data dimension for summary, ("species" or "dataset")
+                    summary_key: unique identifier for the data dimension being examined.
 
-        Returns:
-            full_output (flask_app.common.s2n_type.AnalystOutput): including records
-                as a list of one list (CSV) or dictionary (JSON) of a record
-                containing dataset_key,  occurrence count, and species count.
-        """
-        if dataset_key is None and pub_org_key is None:
+                Returns:
+                    full_output (flask_app.common.s2n_type.AnalystOutput): including a
+                        dictionary (JSON) of a record containing keywords with values.
+                """
+        if summary_type is None and summary_key is None:
             return cls.get_endpoint()
 
         records = []
         try:
             good_params, errinfo = cls._standardize_params(
-                dataset_key=dataset_key, pub_org_key=pub_org_key)
-
+                summary_type=summary_type, summary_key=summary_key)
         except BadRequest as e:
             errinfo = {"error": [e.description]}
+        except Exception:
+            errinfo = {"error": [get_traceback()]}
 
         else:
             # Query dataset counts
-            if good_params["dataset_key"] is not None:
+            if good_params["summary_type"] is not None:
                 try:
                     records, errors = cls._get_simple_dataset_counts(
                         good_params["dataset_key"])

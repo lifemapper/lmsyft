@@ -86,10 +86,10 @@ class Summaries:
                 # Axis 0, matches row (axis 0) in SPECIES_DATASET_MATRIX
                 "row": "taxonkey_species",
                 # Axis 1
-                "column": "count_type",
+                "column": "measurement_type",
                 "fields": [SUMMARY_FIELDS.COUNT, SUMMARY_FIELDS.TOTAL],
                 # Matrix values
-                "value": "count",
+                "value": "measure",
             },
             SUMMARY_TABLE_TYPES.DATASET_SPECIES_SUMMARY: {
                 "code": SUMMARY_TABLE_TYPES.DATASET_SPECIES_SUMMARY,
@@ -99,9 +99,10 @@ class Summaries:
                 # Axis 0, matches column (axis 1) in SPECIES_DATASET_MATRIX
                 "row": DATASET_GBIF_KEY,
                 # Axis 1
-                "column": "count_type",
+                "column": "measurement_type",
+                "fields": [SUMMARY_FIELDS.COUNT, SUMMARY_FIELDS.TOTAL],
                 # Matrix values
-                "value": "count",
+                "value": "measure",
             }
     }
 

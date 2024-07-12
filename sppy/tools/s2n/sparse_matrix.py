@@ -126,7 +126,7 @@ class SparseMatrix(_AggregateDataMatrix):
             # labels are unique in categories so there will be 0 or 1 value in the array
             code = arr[0]
         except IndexError:
-            raise Exception(f"Category {label} does not exist in axis {axis}")
+            raise
         return code
 
     # ...............................................
@@ -268,9 +268,13 @@ class SparseMatrix(_AggregateDataMatrix):
             idx (int): index for the vector (zeros and non-zeros) in the sparse matrix
 
         Raises:
+            IndexError: on label does not exist in category
             Exception: on axis not in (0, 1)
         """
-        idx = self._get_code_from_category(label, axis=axis)
+        try:
+            idx = self._get_code_from_category(label, axis=axis)
+        except IndexError:
+            raise
         if axis == 0:
             vector = self._coo_array.getrow(idx)
         elif axis == 1:
@@ -289,8 +293,14 @@ class SparseMatrix(_AggregateDataMatrix):
 
         Returns:
             int: The total of all values in one column
+
+        Raises:
+            IndexError: on label not present in vector header
         """
-        vector, _idx = self.get_vector_from_label(label, axis=axis)
+        try:
+            vector, _idx = self.get_vector_from_label(label, axis=axis)
+        except IndexError:
+            raise
         total = vector.sum()
         return total
 
@@ -320,11 +330,11 @@ class SparseMatrix(_AggregateDataMatrix):
         return row_labels
 
     # ...............................................
-    def get_extreme_val_labels_for_vector(self, label, axis=0, is_max=True):
+    def get_extreme_val_labels_for_vector(self, vector, axis=0, is_max=True):
         """Get the minimum or maximum NON-ZERO value and row label(s) for a column.
 
         Args:
-            label: label on the row(0)/column(1) to find minimum or maximum.
+            vector (numpy.array): 1 dimensional array for a row or column.
             is_max (bool): flag indicating whether to get maximum (T) or minimum (F)
             axis (int): row (0) or column (1) header for extreme value and labels.
 
@@ -335,7 +345,6 @@ class SparseMatrix(_AggregateDataMatrix):
         Raises:
             Exception: on axis not in (0, 1)
         """
-        vector, _idx = self.get_vector_from_label(label, axis=axis)
         # Returns row_idxs, col_idxs, vals of NNZ values in row
         row_idxs, col_idxs, vals = scipy.sparse.find(vector)
         if is_max is True:
@@ -364,6 +373,53 @@ class SparseMatrix(_AggregateDataMatrix):
         labels = [
             self._get_category_from_code(idx, axis=label_axis) for idx in idxs_lst]
         return target, labels
+
+    # ...............................................
+    def get_row_stats(self, row_label=None):
+        if row_label is None:
+            stats = self.get_all_row_stats()
+        else:
+            stats = self.get_one_row_stats(row_label)
+        return stats
+
+    # ...............................................
+    def get_one_row_stats(self, row_label):
+        """Get a dictionary of statistics for the row with this row_label.
+
+        Args:
+            row_label: label on the row to gather stats for.
+
+        Returns:
+            stats (dict): quantitative measures of the row.
+
+        Note:
+            Inline comments are specific to a SUMMARY_TABLE_TYPES.SPECIES_DATASET_MATRIX
+                with row/column/value = species/dataset/occ_count
+        """
+        # Get row (sparse array), and its index
+        try:
+            row, row_idx = self.get_vector_from_label(row_label, axis=0)
+        except IndexError:
+            raise
+        # Largest Occurrence count for this Species, and datasets that contain it
+        maxval, max_row_labels = self.get_extreme_val_labels_for_vector(
+            row, axis=0, is_max=True)
+        minval, min_row_labels = self.get_extreme_val_labels_for_vector(
+            row, axis=0, is_max=False)
+        stats = {
+            self._keys[SNKeys.ROW_IDX]: row_idx,
+            self._keys[SNKeys.ROW_LABEL]: row_label,
+            # Total Occurrences for this Species
+            self._keys[SNKeys.ROW_TOTAL]: convert_np_vals_for_json(row.sum()),
+            # Count of Datasets containing this Species
+            self._keys[SNKeys.ROW_COUNT]: convert_np_vals_for_json(row.nnz),
+            # Return min/max count in this species and datasets for that count
+            self._keys[SNKeys.ROW_MIN_COUNT]: minval,
+            # TODO: is there a good way to optionally return many labels
+            self._keys[SNKeys.ROW_MAX_COUNT]: maxval,
+            self._keys[SNKeys.ROW_MAX_LABELS]: max_row_labels,
+        }
+        return stats
 
     # ...............................................
     def get_all_row_stats(self):
@@ -397,7 +453,65 @@ class SparseMatrix(_AggregateDataMatrix):
         return all_row_stats
 
     # ...............................................
-    def get_all_col_stats(self):
+    def get_column_stats(self, col_label=None):
+        if col_label is None:
+            stats = self.get_all_column_stats()
+        else:
+            try:
+                stats = self.get_one_column_stats(col_label)
+            except IndexError:
+                raise
+        return stats
+
+    # ...............................................
+    def get_one_column_stats(self, col_label):
+        """Get a dictionary of statistics for this col_label or all columns.
+
+        Args:
+            col_label: label on the column to gather stats for.
+
+        Returns:
+            stats (dict): quantitative measures of the column.
+
+        Raises:
+            IndexError: on label not present in column header
+
+        Note:
+            Inline comments are specific to a SUMMARY_TABLE_TYPES.SPECIES_DATASET_MATRIX
+                with row/column/value = species/dataset/occ_count
+        """
+        # Get column (sparse array), and its index
+        try:
+            col, col_idx = self.get_vector_from_label(col_label, axis=1)
+        except IndexError:
+            raise
+        stats = {
+            self._keys[SNKeys.COL_IDX]: col_idx,
+            self._keys[SNKeys.COL_LABEL]: col_label,
+        }
+        # Count of non-zero rows (Species) within this column (Dataset)
+        stats[self._keys[SNKeys.COL_COUNT]] = convert_np_vals_for_json(col.nnz)
+        # Largest/smallest occ count for dataset (column), and species (row)
+        # containing that count
+        maxval, max_col_labels = self.get_extreme_val_labels_for_vector(
+            col, axis=1, is_max=True)
+        minval, min_col_labels = self.get_extreme_val_labels_for_vector(
+            col, axis=1, is_max=False)
+
+        # Total Occurrences for Dataset
+        stats[self._keys[SNKeys.COL_TOTAL]] = convert_np_vals_for_json(col.sum())
+        # Return min occurrence count in this dataset
+        stats[self._keys[SNKeys.COL_MIN_COUNT]] = convert_np_vals_for_json(minval)
+        # Return number of species containing same minimum count (too many to list)
+        stats[self._keys[SNKeys.COL_MIN_LABELS]] = len(min_col_labels)
+        # Return max occurrence count in this dataset
+        stats[self._keys[SNKeys.COL_MAX_COUNT]] = convert_np_vals_for_json(maxval)
+        # Return species containing same maximum count
+        stats[self._keys[SNKeys.COL_MAX_LABELS]] = max_col_labels
+        return stats
+
+    # ...............................................
+    def get_all_column_stats(self):
         """Return stats (min, max, mean, median) of totals and counts for all columns.
 
         Returns:
@@ -463,126 +577,6 @@ class SparseMatrix(_AggregateDataMatrix):
         return all_counts
 
     # ...............................................
-    def get_column_stats(self, col_label, agg_type=None):
-        """Get a dictionary of statistics for the column with this col_label.
-
-        Args:
-            col_label: label on the column to gather stats for.
-            agg_type: return stats on rows or values.  If None, return both.
-                (options: "axis", "value", None)
-
-        Returns:
-            stats (dict): quantitative measures of the column.
-
-        Note:
-            Inline comments are specific to a SUMMARY_TABLE_TYPES.SPECIES_DATASET_MATRIX
-                with row/column/value = species/dataset/occ_count
-        """
-        # Get column (sparse array), and its index
-        col, col_idx = self.get_vector_from_label(col_label, axis=1)
-        stats = {
-            self._keys[SNKeys.COL_IDX]: col_idx,
-            self._keys[SNKeys.COL_LABEL]: col_label,
-        }
-        if agg_type in ("axis", None):
-            # Count of Species within this Dataset
-            stats[self._keys[SNKeys.COL_COUNT]] = convert_np_vals_for_json(col.nnz)
-        if agg_type in ("value", None):
-            # Largest/smallest occ count for dataset (column), and species (row)
-            # containing that count
-            maxval, max_col_labels = self.get_extreme_val_labels_for_vector(
-                col_label, axis=1, is_max=True)
-            minval, min_col_labels = self.get_extreme_val_labels_for_vector(
-                col_label, axis=1, is_max=False)
-
-            # Total Occurrences for Dataset
-            stats[self._keys[SNKeys.COL_TOTAL]] = convert_np_vals_for_json(col.sum())
-            # Return min occurrence count in this dataset
-            stats[self._keys[SNKeys.COL_MIN_COUNT]] = convert_np_vals_for_json(minval)
-            # Return number of species containing same minimum count (too many to list)
-            stats[self._keys[SNKeys.COL_MIN_LABELS]] = len(min_col_labels)
-            # Return max occurrence count in this dataset
-            stats[self._keys[SNKeys.COL_MAX_COUNT]] = convert_np_vals_for_json(maxval)
-            # Return species containing same maximum count
-            stats[self._keys[SNKeys.COL_MAX_LABELS]] = max_col_labels
-        return stats
-
-    # ...............................................
-    def get_column_counts(self, col_label, agg_type=None):
-        """Get a dictionary of statistics for the column with this col_label.
-
-        Args:
-            col_label: label on the column to gather stats for.
-            agg_type: return stats on rows or values.  If None, return both.
-                (options: "axis", "value", None)
-
-        Returns:
-            stats (dict): quantitative measures of the column.
-
-        Note:
-            Inline comments are specific to a SUMMARY_TABLE_TYPES.SPECIES_DATASET_MATRIX
-                with row/column/value = species/dataset/occ_count
-        """
-        # Get column (sparse array), and its index
-        col, col_idx = self.get_vector_from_label(col_label, axis=1)
-        # Largest occ count for dataset (column), species (row) containing that count
-        maxval, max_col_labels = self.get_extreme_val_labels_for_vector(
-            col_label, axis=1, is_max=True)
-        minval, min_col_labels = self.get_extreme_val_labels_for_vector(
-            col_label, axis=1, is_max=False)
-
-        stats = {
-            self._keys[SNKeys.COL_IDX]: col_idx,
-            self._keys[SNKeys.COL_LABEL]: col_label,
-            # Total Occurrences for Dataset
-            self._keys[SNKeys.COL_TOTAL]: convert_np_vals_for_json(col.sum()),
-            # Count of Species within this Dataset
-            self._keys[SNKeys.COL_COUNT]: convert_np_vals_for_json(col.nnz),
-            # Return min/max count in this dataset and species for that count
-            self._keys[SNKeys.COL_MIN_COUNT]: minval,
-            # self._keys[SNKeys.COL_MIN_LABELS]: min_col_labels,
-            self._keys[SNKeys.COL_MAX_COUNT]: maxval,
-            # self._keys[SNKeys.COL_MAX_LABELS]: max_col_labels,
-        }
-        return stats
-
-    # ...............................................
-    def get_row_stats(self, row_label):
-        """Get a dictionary of statistics for the row with this row_label.
-
-        Args:
-            row_label: label on the row to gather stats for.
-
-        Returns:
-            stats (dict): quantitative measures of the row.
-
-        Note:
-            Inline comments are specific to a SUMMARY_TABLE_TYPES.SPECIES_DATASET_MATRIX
-                with row/column/value = species/dataset/occ_count
-        """
-        # Get row (sparse array), and its index
-        row, row_idx = self.get_vector_from_label(row_label, axis=0)
-        # Largest Occurrence count for this Species, and datasets that contain it
-        maxval, max_row_labels = self.get_extreme_val_labels_for_vector(
-            row_label, axis=0, is_max=True)
-        minval, min_row_labels = self.get_extreme_val_labels_for_vector(
-            row_label, axis=0, is_max=False)
-        stats = {
-            self._keys[SNKeys.ROW_IDX]: row_idx,
-            self._keys[SNKeys.ROW_LABEL]: row_label,
-            # Total Occurrences for this Species
-            self._keys[SNKeys.ROW_TOTAL]: convert_np_vals_for_json(row.sum()),
-            # Count of Datasets containing this Species
-            self._keys[SNKeys.ROW_COUNT]: convert_np_vals_for_json(row.nnz),
-            # Return min/max count in this species and datasets for that count
-            self._keys[SNKeys.ROW_MIN_COUNT]: minval,
-            # self._keys[SNKeys.ROW_MIN_LABELS]: min_row_labels,
-            self._keys[SNKeys.ROW_MAX_COUNT]: maxval,
-            # self._keys[SNKeys.ROW_MAX_LABELS]: max_row_labels,
-        }
-        return stats
-
-    # ...............................................
     def compare_column_to_others(self, col_label, agg_type=None):
         """Compare the number of rows and counts in rows to those of other columns.
 
@@ -595,9 +589,9 @@ class SparseMatrix(_AggregateDataMatrix):
             comparisons (dict): comparison measures
         """
         # Get this column stats
-        stats = self.get_column_stats(col_label)
+        stats = self.get_one_column_stats(col_label)
         # Show this column totals and counts compared to min, max, mean of all columns
-        all_stats = self.get_all_col_stats()
+        all_stats = self.get_all_column_stats()
         comparisons = {self._keys[SNKeys.COL_TYPE]: col_label}
         if agg_type in ("value", None):
             comparisons["Occurrences"] = {
@@ -635,7 +629,7 @@ class SparseMatrix(_AggregateDataMatrix):
         Returns:
             comparisons (dict): comparison measures
         """
-        stats = self.get_row_stats(row_label)
+        stats = self.get_one_row_stats(row_label)
         # Show this column totals and counts compared to min, max, mean of all columns
         all_stats = self.get_all_row_stats()
         comparisons = {self._keys[SNKeys.ROW_TYPE]: row_label}

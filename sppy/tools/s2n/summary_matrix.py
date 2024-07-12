@@ -83,8 +83,8 @@ class SummaryMatrix(_AggregateDataMatrix):
 
     # ...............................................
     @property
-    def num_y_values(self):
-        """Get the number of rows.
+    def num_items(self):
+        """Get the number of rows (each with measurements).
 
         Returns:
             int: The count of rows
@@ -93,13 +93,14 @@ class SummaryMatrix(_AggregateDataMatrix):
 
     # ...............................................
     @property
-    def num_x_values(self):
-        """Get the number of columns.
+    def num_measures(self):
+        """Get the number of columns (measurements).
 
         Returns:
             int: The count of columns
         """
         return self._df.shape[1]
+
     # ...............................................
     def get_random_row_labels(self, count):
         """Get random values from the labels on axis 0 of matrix.
@@ -199,7 +200,7 @@ class SummaryMatrix(_AggregateDataMatrix):
         return dataframe, meta_dict, table_type, data_datestr
 
     # ...............................................
-    def get_column_stats(self, summary_key):
+    def get_measures(self, summary_key):
         """Get a dictionary of statistics for the summary row with this label.
 
         Args:
@@ -212,17 +213,58 @@ class SummaryMatrix(_AggregateDataMatrix):
         measures = self._df.loc[summary_key]
         stats = {
             self._keys[SNKeys.ONE_LABEL]: summary_key,
-            self._keys[SNKeys.ONE_COUNT]: measures.loc['count'],
-            self._keys[SNKeys.ONE_TOTAL]: measures.loc['total']
+            self._keys[SNKeys.ONE_COUNT]: measures.loc[SUMMARY_FIELDS.COUNT],
+            self._keys[SNKeys.ONE_TOTAL]: measures.loc[SUMMARY_FIELDS.TOTAL]
         }
         return stats
 
+    # ...............................................
+    def compare_measures_one_to_all(self, summary_key):
+        """Compare the measures of one row item to those of all other rows.
+
+        Args:
+            summary_key: label on the row to compare.
+
+        Returns:
+            comparisons (dict): comparison measures
+        """
+        stats = self.get_row_stats(summary_key)
+        # Show this column totals and counts compared to min, max, mean of all columns
+        all_stats = self._df
+        comparisons = {self._keys[SNKeys.ROW_TYPE]: row_label}
+        if agg_type in ("value", None):
+            comparisons["Occurrences"] = {
+                self._keys[SNKeys.ROW_TOTAL]: stats[self._keys[SNKeys.ROW_TOTAL]],
+                self._keys[SNKeys.ROWS_TOTAL]: all_stats[self._keys[SNKeys.ROWS_TOTAL]],
+                self._keys[SNKeys.ROWS_MIN]: all_stats[self._keys[SNKeys.ROWS_MIN]],
+                self._keys[SNKeys.ROWS_MAX]: all_stats[self._keys[SNKeys.ROWS_MAX]],
+                self._keys[SNKeys.ROWS_MEAN]: all_stats[self._keys[SNKeys.ROWS_MEAN]],
+                self._keys[SNKeys.ROWS_MEDIAN]:
+                    all_stats[self._keys[SNKeys.ROWS_MEDIAN]],
+            }
+        if agg_type in ("axis", None):
+            comparisons["Datasets"] = {
+                self._keys[SNKeys.ROW_COUNT]: stats[self._keys[SNKeys.ROW_COUNT]],
+                self._keys[SNKeys.ROWS_COUNT]: all_stats[self._keys[SNKeys.ROWS_COUNT]],
+                self._keys[SNKeys.ROWS_COUNT_MIN]:
+                    all_stats[self._keys[SNKeys.ROWS_COUNT_MIN]],
+                self._keys[SNKeys.ROWS_COUNT_MAX]:
+                    all_stats[self._keys[SNKeys.ROWS_COUNT_MAX]],
+                self._keys[SNKeys.ROWS_COUNT_MEAN]:
+                    all_stats[self._keys[SNKeys.ROWS_COUNT_MEAN]],
+                self._keys[SNKeys.ROWS_COUNT_MEDIAN]:
+                    all_stats[self._keys[SNKeys.ROWS_COUNT_MEDIAN]]
+            }
+        return comparisons
+
+
     # ...........................
-    def rank_summary_counts(self, sort_by, order="descending", limit=10):
+    def rank_measures(self, sort_by, order="descending", limit=10):
         """Order records by sort_by field and return the top or bottom limit records.
 
         Args:
-            sort_by (str): field containing value to sort on.
+            sort_by (str): field containing measurement to sort on
+                (options: SUMMARY_FIELDS.COUNT, SUMMARY_FIELDS.TOTAL).
             order (str): return records, sorted from top (descending) or bottom
                 (ascending).
             limit (int): number of records to return.
@@ -231,27 +273,29 @@ class SummaryMatrix(_AggregateDataMatrix):
             ordered_rec_dict (OrderedDict): records containing all fields, sorted by the
                 sort_by field.
         """
-        # One per axis
         measure_flds = self._keys["fields"].copy()
         try:
             measure_flds.remove(sort_by)
         except ValueError:
             raise Exception(
                 f"Field {sort_by} does not exist; sort by one of {self._keys['fields']}")
+        # Get largest and down
         if order == "descending":
             sorted_df = self._df.nlargest(limit, sort_by, keep="all")
+        # Get smallest and up
         elif order == "ascending":
             sorted_df = self._df.nsmallest(limit, sort_by, keep="all")
         else:
             raise Exception(
                 f"Order {sort_by} does not exist, use 'ascending' or 'descending')")
+        # Returns dict with each measurement in a separate dictionary, so re-arrange
         rec_dict =  sorted_df.to_dict()
         ordered_rec_dict = OrderedDict()
+        # Create records from the sorted measurement first, in order returned
         for k, v in rec_dict[sort_by]:
-            # Insert records from sorted field first, in order returned
             ordered_rec_dict[k] = {sort_by: v}
-            # measure_flds now contains all but sort_by
-            # add other fields and values to the new records
+            # measure_flds now contains all fields except sort_by
+            #   add remaining fields and values to the new ordered records
             for other_fld in measure_flds:
                 ordered_rec_dict[k][other_fld] = rec_dict[other_fld][k]
         return ordered_rec_dict

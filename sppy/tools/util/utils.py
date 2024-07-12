@@ -167,6 +167,9 @@ def prettify_object(print_obj):
 
     Returns:
         formatted string representation of object
+
+    Note: this splits a string containing spaces in a list to multiple strings in the
+        list.
     """
     strm = StringIO()
     pp(print_obj, stream=strm)

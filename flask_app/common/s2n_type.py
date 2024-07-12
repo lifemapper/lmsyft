@@ -84,7 +84,7 @@ class APIEndpoint:
     Frontend = "frontend"
     # Analyst services
     Compare = "compare"
-    Summary = "summary"
+    Describe = "describe"
     # Count = "count"
     Rank = "rank"
 
@@ -184,7 +184,7 @@ class APIService:
                 "description":
                     "Type or dimension of data to compare (i.e: species, dataset)",
                 "options": ["dataset", "species"],
-                "default": "dataset"
+                "default": None
             },
             "summary_key": {
                 "type": "",
@@ -199,9 +199,9 @@ class APIService:
         S2nKey.RECORD_FORMAT: ""
     }
     # Analyst Summary stats
-    Summary = {
-        "name": APIEndpoint.Summary,
-        "endpoint": f"{APIEndpoint.Root}/{APIEndpoint.Summary}",
+    Describe = {
+        "name": APIEndpoint.Describe,
+        "endpoint": f"{APIEndpoint.Root}/{APIEndpoint.Describe}",
         "params": {
             # TODO: extend dimensions to other measurements
             "summary_type": {
@@ -209,7 +209,7 @@ class APIService:
                 "description":
                     "Type or dimension of data to summarize (i.e: species, dataset)",
                 "options": ["dataset", "species"],
-                "default": "dataset"
+                "default": None
             },
             "summary_key": {
                 "type": "",

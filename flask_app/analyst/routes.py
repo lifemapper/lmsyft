@@ -2,8 +2,8 @@
 from flask import Blueprint, Flask, render_template, request
 import os
 
-from flask_app.analyst.count import CountSvc
-from flask_app.analyst.dataset import DatasetSvc
+from flask_app.analyst.compare import CountSvc
+from flask_app.analyst.describe import DescribeSvc
 from flask_app.analyst.rank import RankSvc
 from flask_app.common.constants import (
     STATIC_DIR, TEMPLATE_DIR, SCHEMA_DIR, SCHEMA_ANALYST_FNAME)
@@ -72,41 +72,38 @@ def display_raw_schema():
 
 
 # .....................................................................................
-@app.route("/api/v1/count/")
-def count_endpoint():
-    """Get the available counts.
-
-    Returns:
-        response: A flask_app.analyst API response object containing the count
-            API response.
-    """
-    ds_arg = request.args.get("dataset_key", default=None, type=str)
-    if ds_arg is None:
-        response = CountSvc.get_endpoint()
-    else:
-        response = CountSvc.get_counts(ds_arg)
-    return response
-
-
-# .....................................................................................
-@app.route("/api/v1/dataset/")
-def dataset_endpoint():
-    """Get the statistics for dataset counts of occurrences or species.
+@app.route("/api/v1/describe/")
+def describe_endpoint():
+    """Get the statistics for descriptive measures of some dimension of occurrence data.
 
     Returns:
         response: A flask_app.analyst API response object containing the dataset
             API response.
     """
-    ds_arg = request.args.get("dataset_key", default=None, type=str)
-    sp_arg = request.args.get("species_key", default=None, type=str)
-    count_arg = request.args.get("aggregate_by", default=None, type=str)
-    stats_arg = request.args.get("stat_type", default=None, type=str)
+    ds_arg = request.args.get("summary_type", default=None, type=str)
+    sp_arg = request.args.get("summary_key", default=None, type=str)
     if ds_arg is None:
-        response = DatasetSvc.get_endpoint()
+        response = DescribeSvc.get_endpoint()
     else:
-        response = DatasetSvc.get_dataset_counts(
-            dataset_key=ds_arg, species_key=sp_arg, aggregate_by=count_arg,
-            stat_type=stats_arg)
+        response = DescribeSvc.get_dataset_counts(dataset_key=ds_arg, species_key=sp_arg)
+    return response
+
+
+# .....................................................................................
+@app.route("/api/v1/compare/")
+def compare_endpoint():
+    """Comare the statistics for descriptive measures of some dimension of occurrence data.
+
+    Returns:
+        response: A flask_app.analyst API response object containing the dataset
+            API response.
+    """
+    ds_arg = request.args.get("summary_type", default=None, type=str)
+    sp_arg = request.args.get("summary_key", default=None, type=str)
+    if ds_arg is None:
+        response = DescribeSvc.get_endpoint()
+    else:
+        response = DescribeSvc.get_dataset_counts(dataset_key=ds_arg, species_key=sp_arg)
     return response
 
 
