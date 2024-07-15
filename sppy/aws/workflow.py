@@ -356,6 +356,8 @@ def upload_to_s3(local_path, filename, bucket, s3_path):
         filename: filename of the data to upload.
         bucket (str): Bucket identifier on S3.
         s3_path (str): Destination path to the S3 data.
+
+    TODO: Use aws_tools method here
     """
     s3_client = boto3.client("s3")
     local_filename = os.path.join(local_path, filename)

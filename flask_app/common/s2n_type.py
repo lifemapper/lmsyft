@@ -100,8 +100,8 @@ class APIEndpoint:
             cls.Analyst:
                 [
                     cls.Compare,
-                    cls.Summary,
-                    cls.Rank
+                    cls.Describe,
+                    # cls.Rank
                 ],
             cls.Broker:
                 [
@@ -224,47 +224,47 @@ class APIService:
         S2nKey.RECORD_FORMAT: ""
 
     }
-    # Rankings
-    Rank = {
-        "name": APIEndpoint.Rank,
-        "endpoint": f"{APIEndpoint.Root}/{APIEndpoint.Rank}",
-        "params": {
-            "summary_type": {
-                "type": "",
-                "description":
-                    "Type or dimension of data to summarize (i.e: species, dataset)",
-                "options": ["dataset", "species"],
-                "default": "dataset"
-            },
-            "summary_key": {
-                "type": "",
-                "description":
-                    "Key of type of data to summarize (i.e: species_key, dataset_key)",
-                "default": None
-            },
-            "rank_by": {
-                "type": "",
-                "description":
-                    "Measurement or dimension of data to rank by (i.e: occurrence "
-                    "counts or other dimension)",
-                # TODO: extend dimensions to other measurements
-                "options": ["occurrence", "dataset", "species"],
-                # None will resolve to the other dimension while there are only 2
-                "default": "occurrence",
-            },
-            "order": {
-                "type": "",
-                "options": ["ascending", "descending"],
-                "default": "descending"
-            },
-            "limit": {"type": 2, "default": 10, "min": 1, "max": 500},
-        },
-        "description":
-            "Return an ordered list of summaries of one type/dimension of data, ranked "
-            "by occurrence counts or another dimension of the data for the top X "
-            "(descending) or bottom X (ascending) datasets",
-        S2nKey.RECORD_FORMAT: ""
-    }
+    # # Rankings
+    # Rank = {
+    #     "name": APIEndpoint.Rank,
+    #     "endpoint": f"{APIEndpoint.Root}/{APIEndpoint.Rank}",
+    #     "params": {
+    #         "summary_type": {
+    #             "type": "",
+    #             "description":
+    #                 "Type or dimension of data to summarize (i.e: species, dataset)",
+    #             "options": ["dataset", "species"],
+    #             "default": "dataset"
+    #         },
+    #         "summary_key": {
+    #             "type": "",
+    #             "description":
+    #                 "Key of type of data to summarize (i.e: species_key, dataset_key)",
+    #             "default": None
+    #         },
+    #         "rank_by": {
+    #             "type": "",
+    #             "description":
+    #                 "Measurement or dimension of data to rank by (i.e: occurrence "
+    #                 "counts or other dimension)",
+    #             # TODO: extend dimensions to other measurements
+    #             "options": ["occurrence", "dataset", "species"],
+    #             # None will resolve to the other dimension while there are only 2
+    #             "default": "occurrence",
+    #         },
+    #         "order": {
+    #             "type": "",
+    #             "options": ["ascending", "descending"],
+    #             "default": "descending"
+    #         },
+    #         "limit": {"type": 2, "default": 10, "min": 1, "max": 500},
+    #     },
+    #     "description":
+    #         "Return an ordered list of summaries of one type/dimension of data, ranked "
+    #         "by occurrence counts or another dimension of the data for the top X "
+    #         "(descending) or bottom X (ascending) datasets",
+    #     S2nKey.RECORD_FORMAT: ""
+    # }
     # Broker endpoints
     # Icons for service providers
     Badge = {
@@ -1149,7 +1149,7 @@ class BrokerOutput(object):
 
 
 # .............................................................................
-class AnalystOutput:
+class AnalystOutput(object):
     """Response type for a Specify Network Analyst query."""
     service: str
     description: str = ""

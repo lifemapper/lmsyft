@@ -1,36 +1,9 @@
 """Random tools used frequently in Specify Network."""
-import boto3
-from botocore.exceptions import ClientError, SSLError
 from io import StringIO
-from numpy import integer as np_int, floating as np_float, ndarray
-import os
 from pprint import pp
 import sys
 import traceback
 from uuid import UUID
-
-
-# ......................................................
-def convert_np_vals_for_json(obj):
-    """Encode numpy values (from matrix operations) for JSON output.
-
-    Args:
-        obj: a simple numpy object, value or array
-
-    Returns:
-        an object serializable by JSON
-
-    Note:
-        from https://stackoverflow.com/questions/27050108/convert-numpy-type-to-python
-    """
-    if isinstance(obj, np_int):
-        return int(obj)
-    elif isinstance(obj, np_float):
-        return float(obj)
-    elif isinstance(obj, ndarray):
-        return obj.tolist()
-    else:
-        return obj
 
 
 # ......................................................
@@ -126,36 +99,6 @@ def add_errinfo(errinfo, key, val):
         except KeyError:
             errinfo[key] = val_lst
     return errinfo
-
-# ...............................................
-def upload_to_s3(full_filename, bucket, bucket_path, region):
-    """Upload a file to S3.
-
-    Args:
-        full_filename (str): Full filename to the file to upload.
-        bucket (str): Bucket identifier on S3.
-        bucket_path (str): Parent folder path to the S3 data.
-        region (str): AWS region to upload to.
-
-    Returns:
-        s3_filename (str): path including bucket, bucket_folder, and filename for the
-            uploaded data
-    """
-    s3_filename = None
-    s3_client = boto3.client("s3", region_name=region)
-    obj_name = os.path.basename(full_filename)
-    if bucket_path:
-        obj_name = f"{bucket_path}/{obj_name}"
-    try:
-        s3_client.upload_file(full_filename, bucket, obj_name)
-    except SSLError:
-        raise Exception(f"Failed with SSLError to upload {obj_name} to {bucket}")
-    except ClientError as e:
-        raise Exception(f"Failed to upload {obj_name} to {bucket}, ({e})")
-    else:
-        s3_filename = f"s3://{bucket}/{obj_name}"
-        print(f"Uploaded {s3_filename} to S3")
-    return s3_filename
 
 
 # ......................................................

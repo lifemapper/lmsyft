@@ -8,7 +8,7 @@ import scipy.sparse
 
 from sppy.tools.s2n.aggregate_data_matrix import _AggregateDataMatrix
 from sppy.tools.s2n.constants import (SNKeys, Summaries)
-from sppy.tools.util.utils import convert_np_vals_for_json
+
 
 # .............................................................................
 class SparseMatrix(_AggregateDataMatrix):
@@ -26,6 +26,10 @@ class SparseMatrix(_AggregateDataMatrix):
                 aggregator1 (i.e. dataset) columns (axis 1) to use for computations.
             table_type (aws_constants.SUMMARY_TABLE_TYPES): type of aggregated data
             data_datestr (str): date of the source data in YYYY_MM_DD format.
+            row_category (pandas.api.types.CategoricalDtype): ordered row labels used
+                to identify axis 0/rows.
+            column_category (pandas.api.types.CategoricalDtype): ordered column labels
+                used to identify axis 1/columns.
             logger (object): An optional local logger to use for logging output
                 with consistent options
 
@@ -71,20 +75,21 @@ class SparseMatrix(_AggregateDataMatrix):
                 datasetkey (for the column labels/x), species (for the row labels/y),
                 and occurrence count.
         """
-        # Get unique values to use as categories for scipy column and row indexes, remove None
+        # Get unique values to use as categories for scipy column and row indexes,
+        # remove None
         unique_x_vals = list(stacked_df[x_fld].dropna().unique())
         unique_y_vals = list(stacked_df[y_fld].dropna().unique())
         # Categories allow using codes as the integer index for scipy matrix
         y_categ = CategoricalDtype(unique_y_vals, ordered=True)
         x_categ = CategoricalDtype(unique_x_vals, ordered=True)
-        # Create a list of category codes matching original stacked data records to replace
-        #   column names from stacked data dataframe with integer codes for row and column
-        #   indexes in the new scipy matrix
+        # Create a list of category codes matching original stacked data to replace
+        #   column names from stacked data dataframe with integer codes for row and
+        #   column indexes in the new scipy matrix
         col_idx = stacked_df[x_fld].astype(x_categ).cat.codes
         row_idx = stacked_df[y_fld].astype(y_categ).cat.codes
-        # This creates a new matrix in Coordinate list (COO) format.  COO stores a list of
-        # (row, column, value) tuples.  Convert to CSR or CSC for efficient Row or Column
-        # slicing, respectively
+        # This creates a new matrix in Coordinate list (COO) format.  COO stores a list
+        # of (row, column, value) tuples.  Convert to CSR or CSC for efficient Row or
+        # Column slicing, respectively
         sparse_coo = scipy.sparse.coo_array(
             (stacked_df[val_fld], (row_idx, col_idx)),
             shape=(y_categ.categories.size, x_categ.categories.size))
@@ -96,11 +101,23 @@ class SparseMatrix(_AggregateDataMatrix):
     # ...........................
     @property
     def row_category(self):
+        """Return the data structure representing the row category.
+
+        Returns:
+            self._row_categ (pandas.api.types.CategoricalDtype): ordered row labels used
+                to identify axis 0/rows.
+        """
         return self._row_categ
 
     # ...........................
     @property
     def column_category(self):
+        """Return the data structure representing the column category.
+
+        Returns:
+            self._col_categ (pandas.api.types.CategoricalDtype): ordered column labels
+                used to identify axis 1/columns.
+        """
         return self._col_categ
 
     # .............................................................................
@@ -230,32 +247,6 @@ class SparseMatrix(_AggregateDataMatrix):
         return self._coo_array.shape[1]
 
     # ...............................................
-    def get_random_labels(self, count, axis=0):
-        """Get random values from the labels on an axis of a sparse matrix.
-
-        Args:
-            count (int): number of values to return
-            axis (int): row (0) or column (1) header for labels to gather.
-
-        Returns:
-            labels (list): random row or column headers
-
-        Raises:
-            Exception: on axis not in (0, 1)
-        """
-        if axis == 0:
-            categ = self._row_categ
-        elif axis == 1:
-            categ = self._col_categ
-        else:
-            raise Exception(f"2D sparse array does not have axis {axis}")
-        # Get a random sample of category indexes
-        # TODO: verify this is 1-based
-        idxs = random.sample(range(1, len(categ.categories)), count)
-        labels = [self._get_category_from_code(i, axis=axis) for i in idxs]
-        return labels
-
-    # ...............................................
     def get_vector_from_label(self, label, axis=0):
         """Return the row (axis 0) or column (axis 1) with label `label`.
 
@@ -281,6 +272,7 @@ class SparseMatrix(_AggregateDataMatrix):
             vector = self._coo_array.getcol(idx)
         else:
             raise Exception(f"2D sparse array does not have axis {axis}")
+        idx = self.convert_np_vals_for_json(idx)
         return vector, idx
 
     # ...............................................
@@ -351,7 +343,7 @@ class SparseMatrix(_AggregateDataMatrix):
             target = vals.max()
         else:
             target = vals.min()
-        target = convert_np_vals_for_json(target)
+        target = self.convert_np_vals_for_json(target)
 
         # Get indexes of target value within NNZ vals
         tmp_idxs = np.where(vals == target)[0]
@@ -376,8 +368,23 @@ class SparseMatrix(_AggregateDataMatrix):
 
     # ...............................................
     def get_row_stats(self, row_label=None):
+        """Get row statistics for one or all rows.
+
+        Args:
+            row_label (str): label for one row of data to examine.
+
+        Returns:
+            stats (dict): quantitative measures of one or all rows.
+
+        Raises:
+            IndexError: on row_label not found in data.
+        """
+
         if row_label is None:
-            stats = self.get_all_row_stats()
+            try:
+                stats = self.get_all_row_stats()
+            except IndexError:
+                raise
         else:
             stats = self.get_one_row_stats(row_label)
         return stats
@@ -391,6 +398,9 @@ class SparseMatrix(_AggregateDataMatrix):
 
         Returns:
             stats (dict): quantitative measures of the row.
+
+        Raises:
+            IndexError: on row_label not found in data.
 
         Note:
             Inline comments are specific to a SUMMARY_TABLE_TYPES.SPECIES_DATASET_MATRIX
@@ -410,9 +420,9 @@ class SparseMatrix(_AggregateDataMatrix):
             self._keys[SNKeys.ROW_IDX]: row_idx,
             self._keys[SNKeys.ROW_LABEL]: row_label,
             # Total Occurrences for this Species
-            self._keys[SNKeys.ROW_TOTAL]: convert_np_vals_for_json(row.sum()),
+            self._keys[SNKeys.ROW_TOTAL]: self.convert_np_vals_for_json(row.sum()),
             # Count of Datasets containing this Species
-            self._keys[SNKeys.ROW_COUNT]: convert_np_vals_for_json(row.nnz),
+            self._keys[SNKeys.ROW_COUNT]: self.convert_np_vals_for_json(row.nnz),
             # Return min/max count in this species and datasets for that count
             self._keys[SNKeys.ROW_MIN_COUNT]: minval,
             # TODO: is there a good way to optionally return many labels
@@ -437,18 +447,25 @@ class SparseMatrix(_AggregateDataMatrix):
         row_count = self._coo_array.shape[1]
         all_row_stats = {
             self._keys[SNKeys.ROWS_COUNT]: row_count,
-            self._keys[SNKeys.ROWS_TOTAL]: convert_np_vals_for_json(all_totals.sum()),
-            self._keys[SNKeys.ROWS_MIN]: convert_np_vals_for_json(all_totals.min()),
-            self._keys[SNKeys.ROWS_MAX]: convert_np_vals_for_json(all_totals.max()),
-            self._keys[SNKeys.ROWS_MEAN]: convert_np_vals_for_json(all_totals.mean()),
-            self._keys[SNKeys.ROWS_MEDIAN]: convert_np_vals_for_json(
+            self._keys[SNKeys.ROWS_TOTAL]:
+                self.convert_np_vals_for_json(all_totals.sum()),
+            self._keys[SNKeys.ROWS_MIN]:
+                self.convert_np_vals_for_json(all_totals.min()),
+            self._keys[SNKeys.ROWS_MAX]:
+                self.convert_np_vals_for_json(all_totals.max()),
+            self._keys[SNKeys.ROWS_MEAN]:
+                self.convert_np_vals_for_json(all_totals.mean()),
+            self._keys[SNKeys.ROWS_MEDIAN]: self.convert_np_vals_for_json(
                 np.median(all_totals, axis=0)[0, 0]),
 
-            self._keys[SNKeys.ROWS_COUNT_MIN]: convert_np_vals_for_json(all_counts.min()),
-            self._keys[SNKeys.ROWS_COUNT_MAX]: convert_np_vals_for_json(all_counts.max()),
-            self._keys[SNKeys.ROWS_COUNT_MEAN]: convert_np_vals_for_json(all_counts.mean()),
-            self._keys[SNKeys.ROWS_COUNT_MEDIAN]: convert_np_vals_for_json(
-                np.median(all_counts, axis=0)),
+            self._keys[SNKeys.ROWS_COUNT_MIN]:
+                self.convert_np_vals_for_json(all_counts.min()),
+            self._keys[SNKeys.ROWS_COUNT_MAX]:
+                self.convert_np_vals_for_json(all_counts.max()),
+            self._keys[SNKeys.ROWS_COUNT_MEAN]:
+                self.convert_np_vals_for_json(all_counts.mean()),
+            self._keys[SNKeys.ROWS_COUNT_MEDIAN]:
+                self.convert_np_vals_for_json(np.median(all_counts, axis=0)),
         }
         return all_row_stats
 
@@ -490,7 +507,7 @@ class SparseMatrix(_AggregateDataMatrix):
             self._keys[SNKeys.COL_LABEL]: col_label,
         }
         # Count of non-zero rows (Species) within this column (Dataset)
-        stats[self._keys[SNKeys.COL_COUNT]] = convert_np_vals_for_json(col.nnz)
+        stats[self._keys[SNKeys.COL_COUNT]] = self.convert_np_vals_for_json(col.nnz)
         # Largest/smallest occ count for dataset (column), and species (row)
         # containing that count
         maxval, max_col_labels = self.get_extreme_val_labels_for_vector(
@@ -499,13 +516,13 @@ class SparseMatrix(_AggregateDataMatrix):
             col, axis=1, is_max=False)
 
         # Total Occurrences for Dataset
-        stats[self._keys[SNKeys.COL_TOTAL]] = convert_np_vals_for_json(col.sum())
+        stats[self._keys[SNKeys.COL_TOTAL]] = self.convert_np_vals_for_json(col.sum())
         # Return min occurrence count in this dataset
-        stats[self._keys[SNKeys.COL_MIN_COUNT]] = convert_np_vals_for_json(minval)
+        stats[self._keys[SNKeys.COL_MIN_COUNT]] = self.convert_np_vals_for_json(minval)
         # Return number of species containing same minimum count (too many to list)
         stats[self._keys[SNKeys.COL_MIN_LABELS]] = len(min_col_labels)
         # Return max occurrence count in this dataset
-        stats[self._keys[SNKeys.COL_MAX_COUNT]] = convert_np_vals_for_json(maxval)
+        stats[self._keys[SNKeys.COL_MAX_COUNT]] = self.convert_np_vals_for_json(maxval)
         # Return species containing same maximum count
         stats[self._keys[SNKeys.COL_MAX_LABELS]] = max_col_labels
         return stats
@@ -525,21 +542,25 @@ class SparseMatrix(_AggregateDataMatrix):
         col_count = self._coo_array.shape[0]
         all_col_stats = {
             self._keys[SNKeys.COLS_COUNT]: col_count,
-            self._keys[SNKeys.COLS_TOTAL]: convert_np_vals_for_json(all_totals.sum()),
-            self._keys[SNKeys.COLS_MIN]: convert_np_vals_for_json(all_totals.min()),
-            self._keys[SNKeys.COLS_MAX]: convert_np_vals_for_json(all_totals.max()),
-            self._keys[SNKeys.COLS_MEAN]: convert_np_vals_for_json(all_totals.mean()),
+            self._keys[SNKeys.COLS_TOTAL]:
+                self.convert_np_vals_for_json(all_totals.sum()),
+            self._keys[SNKeys.COLS_MIN]:
+                self.convert_np_vals_for_json(all_totals.min()),
+            self._keys[SNKeys.COLS_MAX]:
+                self.convert_np_vals_for_json(all_totals.max()),
+            self._keys[SNKeys.COLS_MEAN]:
+                self.convert_np_vals_for_json(all_totals.mean()),
             self._keys[SNKeys.COLS_MEDIAN]:
-                convert_np_vals_for_json(np.median(all_totals, axis=1)[0, 0]),
+                self.convert_np_vals_for_json(np.median(all_totals, axis=1)[0, 0]),
 
             self._keys[SNKeys.COLS_COUNT_MIN]:
-                convert_np_vals_for_json(all_counts.min()),
+                self.convert_np_vals_for_json(all_counts.min()),
             self._keys[SNKeys.COLS_COUNT_MAX]:
-                convert_np_vals_for_json(all_counts.max()),
+                self.convert_np_vals_for_json(all_counts.max()),
             self._keys[SNKeys.COLS_COUNT_MEAN]:
-                convert_np_vals_for_json(all_counts.mean()),
+                self.convert_np_vals_for_json(all_counts.mean()),
             self._keys[SNKeys.COLS_COUNT_MEDIAN]:
-                convert_np_vals_for_json(np.median(all_counts, axis=0)),
+                self.convert_np_vals_for_json(np.median(all_counts, axis=0)),
         }
         return all_col_stats
 

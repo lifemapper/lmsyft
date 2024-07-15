@@ -4,8 +4,10 @@ import json
 import pandas as pd
 
 from sppy.aws.aws_constants import (
-    ENCODING, PROJ_BUCKET, REGION, SUMMARY_FOLDER, Summaries)
+    ENCODING, PROJ_BUCKET, REGION, SUMMARY_FOLDER)
 from sppy.aws.aws_tools import get_current_datadate_str
+from sppy.tools.s2n.constants import Summaries
+
 from sppy.tools.util.utils import get_traceback
 
 
@@ -256,21 +258,6 @@ class SpNetAnalyses():
                     rec.extend(meta)
         print(records)
 
-    # # ----------------------------------------------------
-    # def get_org_counts(self, pub_org_key):
-    #     """Query S3 for occurrence and species counts for this organization.
-    #
-    #     Args:
-    #         pub_org_key: unique GBIF identifier for organization of interest.
-    #
-    #     Returns:
-    #          records: empty list or list of 1 record containing occ_count, species_count
-    #
-    #     TODO: implement this?
-    #     """
-    #     (occ_count, species_count) = (0,0)
-    #     return (occ_count, species_count)
-
     # ----------------------------------------------------
     def rank_dataset_counts(self, count_by, order, limit, format="JSON"):
         """Return the top or bottom datasets, with counts, ranked by number of species.
@@ -304,6 +291,53 @@ class SpNetAnalyses():
             self._add_dataset_lookup_vals(records, table, format)
 
         return records, errors
+
+    # # ----------------------------------------------------
+    # def get_org_counts(self, pub_org_key):
+    #     """Query S3 for occurrence and species counts for this organization.
+    #
+    #     Args:
+    #         pub_org_key: unique GBIF identifier for organization of interest.
+    #
+    #     Returns:
+    #          records: empty list or list of 1 record containing occ_count, species_count
+    #
+    #     TODO: implement this?
+    #     """
+    #     (occ_count, species_count) = (0,0)
+    #     return (occ_count, species_count)
+
+    # ----------------------------------------------------
+    def get_dataset_lookup_vals(self, dataset_keys, rec_table):
+        """Return dataset metadata for a list of dataset_keys.
+
+        Args:
+            dataset_keys: list of dataset GUIDs to return names for.
+            rec_table: dictionary of fieldnames, filename, format for a summary table
+
+        Returns:
+            recs (list): list of dictionaries with metadata for each dataset_key.
+        """
+        # Metadata table info
+        meta_table = self._summary_tables["dataset_meta"]
+        meta_key_fld = meta_table["key_fld"]
+        # Copy the list so we can remove an element before query
+        meta_fields_cpy = meta_table["fields"].copy()
+        meta_key_idx = meta_fields_cpy.index(meta_key_fld)
+        meta_fields_cpy.pop(meta_key_idx)
+        qry_flds = ", ".join(meta_fields_cpy)
+
+        for dataset_key in dataset_keys:
+            query_str = (
+                f"SELECT {qry_flds} FROM s3object s WHERE s.{meta_key_fld} = '{dataset_key}'"
+            )
+            # Returns empty list or list of 1 record
+            meta_recs = self._query_summary_table(meta_table, query_str, format)
+            try:
+                meta = meta_recs[0]
+            except IndexError:
+                meta = {}
+        return meta
 
     # # ----------------------------------------------------
     # def rank_species_counts(self, order, limit, format="JSON"):

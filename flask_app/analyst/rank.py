@@ -6,7 +6,6 @@ from flask_app.analyst.base import _AnalystService
 
 from sppy.aws.aws_constants import PROJ_BUCKET
 from sppy.tools.s2n.spnet import SpNetAnalyses
-
 from sppy.tools.util.utils import (combine_errinfo, get_traceback)
 
 

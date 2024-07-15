@@ -435,19 +435,53 @@ def download_from_s3(
     return local_filename
 
 
-# ----------------------------------------------------
-def upload_to_s3(local_filename, bucket, s3_path, region=REGION):
+# ...............................................
+def upload_to_s3(full_filename, bucket, bucket_path, region=REGION):
     """Upload a file to S3.
 
     Args:
-        local_filename: Full path to local file for upload.
-        bucket: name of the S3 bucket destination.
-        s3_path: the data destination inside the S3 bucket with filename.
-        region: AWS region to query.
+        full_filename (str): Full filename to the file to upload.
+        bucket (str): Bucket identifier on S3.
+        bucket_path (str): Parent folder path to the S3 data (without filename).
+        region (str): AWS region to upload to.
+
+    Returns:
+        s3_filename (str): path including bucket, bucket_folder, and filename for the
+            uploaded data
+
+    Raises:
+        Exception: on SSLError
+        Exception: on ClientError
     """
     s3_client = boto3.client("s3", region_name=region)
-    s3_client.upload_file(local_filename, bucket, s3_path)
-    print(f"Successfully uploaded s3://{bucket}/{s3_path}")
+    obj_name = os.path.basename(full_filename)
+    if bucket_path:
+        obj_name = f"{bucket_path}/{obj_name}"
+    try:
+        s3_client.upload_file(full_filename, bucket, obj_name)
+    except SSLError:
+        raise Exception(f"Failed with SSLError to upload {obj_name} to {bucket}")
+    except ClientError as e:
+        raise Exception(f"Failed to upload {obj_name} to {bucket}, ({e})")
+    else:
+        s3_filename = f"s3://{bucket}/{obj_name}"
+        print(f"Uploaded {s3_filename} to S3")
+    return s3_filename
+
+
+# # ----------------------------------------------------
+# def upload_to_s3(local_filename, bucket, s3_path, region=REGION):
+#     """Upload a file to S3.
+#
+#     Args:
+#         local_filename: Full path to local file for upload.
+#         bucket: name of the S3 bucket destination.
+#         s3_path: the data destination inside the S3 bucket with filename.
+#         region: AWS region to query.
+#     """
+#     s3_client = boto3.client("s3", region_name=region)
+#     s3_client.upload_file(local_filename, bucket, s3_path)
+#     print(f"Successfully uploaded s3://{bucket}/{s3_path}")
 
 
 # ----------------------------------------------------

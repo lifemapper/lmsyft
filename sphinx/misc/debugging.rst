@@ -28,8 +28,12 @@ flask run
     * http://127.0.0.1:5000/api/v1/badge/?provider=mopho
 
   * Analyst:
-    http://127.0.0.1:5000/api/v1/count/?dataset_key=0000e36f-d0e9-46b0-aa23-cc1980f00515
-    http://127.0.0.1:5000/api/v1/rank/?by_species=true
+    http://127.0.0.1:5000/api/v1/describe/?summary_type=dataset&summary_key=3e2d26d9-2776-4bec-bdc7-bab3842ffb6b
+    http://127.0.0.1:5000/api/v1/compare/?summary_type=dataset&summary_key=3e2d26d9-2776-4bec-bdc7-bab3842ffb6b
+    http://127.0.0.1:5000/api/v1/describe/?summary_type=dataset&summary_key=0000e36f-d0e9-46b0-aa23-cc1980f00515
+    http://127.0.0.1:5000/api/v1/compare/?summary_type=dataset&summary_key=0000e36f-d0e9-46b0-aa23-cc1980f00515
+    http://127.0.0.1:5000/api/v1/describe/?summary_type=species&summary_key=8277078 Carcharodus alceae
+    http://127.0.0.1:5000/api/v1/compare/?summary_type=species&summary_key=3e2d26d9-2776-4bec-bdc7-bab3842ffb6b
 
 * Flask will auto-update on file save.
 * Refresh browser after changes

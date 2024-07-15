@@ -1,17 +1,13 @@
 """Matrix to summarize 2 dimensions of data by counts of a third in a sparse matrix."""
 import json
 from logging import ERROR, INFO
-import numpy as np
+from numpy import integer as np_int, floating as np_float, ndarray
 import os
-import pandas as pd
-from pandas.api.types import CategoricalDtype
-import random
-import scipy.sparse
 from zipfile import ZipFile
 
 from sppy.tools.s2n.constants import (SNKeys, Summaries)
 from sppy.tools.util.logtools import logit
-from sppy.tools.util.utils import convert_np_vals_for_json, upload_to_s3
+
 
 # .............................................................................
 class _AggregateDataMatrix:
@@ -55,59 +51,6 @@ class _AggregateDataMatrix:
         return self._data_datestr
 
     # ...............................................
-    def _get_code_from_category(self, label, axis=0):
-        if axis == 0:
-            categ = self._row_categ
-        elif axis == 1:
-            categ = self._col_categ
-        else:
-            raise Exception(f"2D sparse array does not have axis {axis}")
-
-        # returns a tuple of a single 1-dimensional array of locations
-        arr = np.where(categ.categories == label)[0]
-        try:
-            # labels are unique in categories so there will be 0 or 1 value in the array
-            code = arr[0]
-        except IndexError:
-            raise Exception(f"Category {label} does not exist in axis {axis}")
-        return code
-
-    # ...............................................
-    def _get_category_from_code(self, code, axis=0):
-        if axis == 0:
-            categ = self._row_categ
-        elif axis == 1:
-            categ = self._col_categ
-        else:
-            raise Exception(f"2D sparse array does not have axis {axis}")
-        category = categ.categories[code]
-        return category
-
-    # ...............................................
-    def _export_categories(self, axis=0):
-        if axis == 0:
-            categ = self._row_categ
-        elif axis == 1:
-            categ = self._col_categ
-        else:
-            raise Exception(f"2D sparse array does not have axis {axis}")
-        cat_lst = categ.categories.tolist()
-        return cat_lst
-
-    # ...............................................
-    def _get_categories_from_code(self, code_list, axis=0):
-        if axis == 0:
-            categ = self._row_categ
-        elif axis == 1:
-            categ = self._col_categ
-        else:
-            raise Exception(f"2D sparse array does not have axis {axis}")
-        category_labels = []
-        for code in code_list:
-            category_labels.append(categ.categories[code])
-        return category_labels
-
-    # ...............................................
     def _logme(self, msg, refname="", log_level=INFO):
         logit(self._logger, msg, refname=refname, log_level=log_level)
 
@@ -129,6 +72,29 @@ class _AggregateDataMatrix:
         meta_fname = f"{local_path}/{basename}.json"
         zip_fname = f"{local_path}/{basename}.zip"
         return mtx_fname, meta_fname, zip_fname
+
+    # ......................................................
+    @staticmethod
+    def convert_np_vals_for_json(obj):
+        """Encode numpy values (from matrix operations) for JSON output.
+
+        Args:
+            obj: a simple numpy object, value or array
+
+        Returns:
+            an object serializable by JSON
+
+        Note:
+            from https://stackoverflow.com/questions/27050108/convert-numpy-type-to-python
+        """
+        if isinstance(obj, np_int):
+            return int(obj)
+        elif isinstance(obj, np_float):
+            return float(obj)
+        elif isinstance(obj, ndarray):
+            return obj.tolist()
+        else:
+            return obj
 
     # ...............................................
     @classmethod
@@ -205,17 +171,6 @@ class _AggregateDataMatrix:
 
     # ...............................................
     def _compress_files(self, input_fnames, zip_fname):
-        """Compress this SparseMatrix to a zipfile, deleting first if necessary.
-
-        Args:
-            input_fnames (str): Absolute path of local data files
-            zip_fname (str): Absolute path of destination zipfile.
-            overwrite (bool): Flag indicating whether to use or delete existing zipfile
-                prior to compressing.
-
-        Raises:
-            Exception: on failure to write sparse matrix and category files to zipfile.
-        """
         if os.path.exists(zip_fname):
             os.remove(zip_fname)
             self._logme(f"Removed file {zip_fname}.")
@@ -228,7 +183,7 @@ class _AggregateDataMatrix:
             msg = f"Failed to write {zip_fname}: {e}"
             self._logme(msg, log_level=ERROR)
             raise Exception(msg)
-            
+
     # .............................................................................
     def _remove_expected_files(self, local_path="/tmp"):
         # Always delete local files before compressing this data.
@@ -239,7 +194,7 @@ class _AggregateDataMatrix:
         if deleted_files:
             self._logme(f"Deleted existing files {','.join(deleted_files)}.")
         return [mtx_fname, meta_fname, zip_fname]
-            
+
     # .............................................................................
     @classmethod
     def _uncompress_files(
@@ -296,4 +251,3 @@ class _AggregateDataMatrix:
                     raise Exception(f"Missing expected file {fn}")
 
         return mtx_fname, meta_fname, table_type, data_datestr
-

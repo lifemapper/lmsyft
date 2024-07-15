@@ -5,13 +5,12 @@ import os
 from sppy.aws.aws_constants import (LOCAL_OUTDIR, PROJ_BUCKET, REGION, SUMMARY_FOLDER)
 from sppy.aws.aws_tools import (
     download_from_s3, get_current_datadate_str, get_today_str,
-    read_s3_parquet_to_pandas
+    read_s3_parquet_to_pandas, upload_to_s3
 )
 from sppy.tools.s2n.constants import (Summaries, SUMMARY_TABLE_TYPES)
 from sppy.tools.s2n.sparse_matrix import SparseMatrix
 from sppy.tools.s2n.summary_matrix import SummaryMatrix
 from sppy.tools.util.logtools import Logger, logit
-from sppy.tools.util.utils import upload_to_s3
 
 
 # ...............................................

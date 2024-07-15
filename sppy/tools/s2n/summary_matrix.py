@@ -2,13 +2,12 @@
 from collections import OrderedDict
 from logging import ERROR
 import pandas as pd
-from pandas.api.types import CategoricalDtype
 
 from sppy.tools.s2n.aggregate_data_matrix import _AggregateDataMatrix
 from sppy.tools.s2n.constants import (
     MATRIX_SEPARATOR, SNKeys, SUMMARY_FIELDS, Summaries)
 from sppy.tools.util.logtools import logit
-from sppy.tools.util.utils import convert_np_vals_for_json
+
 
 # .............................................................................
 class SummaryMatrix(_AggregateDataMatrix):
@@ -27,8 +26,6 @@ class SummaryMatrix(_AggregateDataMatrix):
                 * Column 2 contains the total of values in that row.
             table_type (aws_constants.SUMMARY_TABLE_TYPES): type of aggregated data
             data_datestr (str): date of the source data in YYYY_MM_DD format.
-            category (CategoricalDtype): category of unique labels with ordered
-                indices/codes for rows in the summary matrix.
             logger (object): An optional local logger to use for logging output
                 with consistent options
         """
@@ -117,7 +114,6 @@ class SummaryMatrix(_AggregateDataMatrix):
         idxs = random.sample(range(size), count)
         labels = [self._df.index(i) for i in idxs]
         return labels
-
 
     # .............................................................................
     def compress_to_file(self, local_path="/tmp"):
@@ -218,46 +214,6 @@ class SummaryMatrix(_AggregateDataMatrix):
         }
         return stats
 
-    # ...............................................
-    def compare_measures_one_to_all(self, summary_key):
-        """Compare the measures of one row item to those of all other rows.
-
-        Args:
-            summary_key: label on the row to compare.
-
-        Returns:
-            comparisons (dict): comparison measures
-        """
-        stats = self.get_row_stats(summary_key)
-        # Show this column totals and counts compared to min, max, mean of all columns
-        all_stats = self._df
-        comparisons = {self._keys[SNKeys.ROW_TYPE]: row_label}
-        if agg_type in ("value", None):
-            comparisons["Occurrences"] = {
-                self._keys[SNKeys.ROW_TOTAL]: stats[self._keys[SNKeys.ROW_TOTAL]],
-                self._keys[SNKeys.ROWS_TOTAL]: all_stats[self._keys[SNKeys.ROWS_TOTAL]],
-                self._keys[SNKeys.ROWS_MIN]: all_stats[self._keys[SNKeys.ROWS_MIN]],
-                self._keys[SNKeys.ROWS_MAX]: all_stats[self._keys[SNKeys.ROWS_MAX]],
-                self._keys[SNKeys.ROWS_MEAN]: all_stats[self._keys[SNKeys.ROWS_MEAN]],
-                self._keys[SNKeys.ROWS_MEDIAN]:
-                    all_stats[self._keys[SNKeys.ROWS_MEDIAN]],
-            }
-        if agg_type in ("axis", None):
-            comparisons["Datasets"] = {
-                self._keys[SNKeys.ROW_COUNT]: stats[self._keys[SNKeys.ROW_COUNT]],
-                self._keys[SNKeys.ROWS_COUNT]: all_stats[self._keys[SNKeys.ROWS_COUNT]],
-                self._keys[SNKeys.ROWS_COUNT_MIN]:
-                    all_stats[self._keys[SNKeys.ROWS_COUNT_MIN]],
-                self._keys[SNKeys.ROWS_COUNT_MAX]:
-                    all_stats[self._keys[SNKeys.ROWS_COUNT_MAX]],
-                self._keys[SNKeys.ROWS_COUNT_MEAN]:
-                    all_stats[self._keys[SNKeys.ROWS_COUNT_MEAN]],
-                self._keys[SNKeys.ROWS_COUNT_MEDIAN]:
-                    all_stats[self._keys[SNKeys.ROWS_COUNT_MEDIAN]]
-            }
-        return comparisons
-
-
     # ...........................
     def rank_measures(self, sort_by, order="descending", limit=10):
         """Order records by sort_by field and return the top or bottom limit records.
@@ -272,6 +228,9 @@ class SummaryMatrix(_AggregateDataMatrix):
         Returns:
             ordered_rec_dict (OrderedDict): records containing all fields, sorted by the
                 sort_by field.
+
+        Raises:
+            Exception: on sort field does not exist in data.
         """
         measure_flds = self._keys["fields"].copy()
         try:
@@ -289,7 +248,7 @@ class SummaryMatrix(_AggregateDataMatrix):
             raise Exception(
                 f"Order {sort_by} does not exist, use 'ascending' or 'descending')")
         # Returns dict with each measurement in a separate dictionary, so re-arrange
-        rec_dict =  sorted_df.to_dict()
+        rec_dict = sorted_df.to_dict()
         ordered_rec_dict = OrderedDict()
         # Create records from the sorted measurement first, in order returned
         for k, v in rec_dict[sort_by]:
@@ -304,15 +263,16 @@ class SummaryMatrix(_AggregateDataMatrix):
     def _logme(self, msg, refname="", log_level=None):
         logit(self._logger, msg, refname=refname, log_level=log_level)
 
+
 """
 import pandas as pd
 import scipy
 from sppy.aws.sparse_matrix import *
 
 d = {
-    'a': [10, 0, 1, 6, 0], 
-    'b': [0, 2, 13, 0, 2], 
-    'c': [5, 0, 0, 0, 6], 
+    'a': [10, 0, 1, 6, 0],
+    'b': [0, 2, 13, 0, 2],
+    'c': [5, 0, 0, 0, 6],
     'd': [0, 0, 15, 0, 0]
 }
 
@@ -333,7 +293,7 @@ order="descending"
 
 sorted_df = sdf0.sort_values(by=COUNT_FLD, axis=0, ascending=(order == "ascending"))
 recs_df = sorted_df.head(limit)
-        
+
 axis = 1
 totals1 = sp_mtx.sum(axis=axis)
 counts1 = sp_mtx.getnnz(axis=axis)

@@ -1,16 +1,10 @@
 """Class for the Specify Network Name API service."""
 from http import HTTPStatus
-import os
 from werkzeug.exceptions import BadRequest
 
 from flask_app.common.s2n_type import APIService, AnalystOutput
-from flask_app.analyst.base import _AnalystService, INPUT_DATA_PATH
+from flask_app.analyst.base import _AnalystService
 
-from sppy.aws.aws_constants import PROJ_BUCKET, SUMMARY_FOLDER
-from sppy.aws.aws_tools import download_from_s3, get_current_datadate_str
-
-from sppy.tools.s2n.constants import (Summaries, SUMMARY_TABLE_TYPES)
-from sppy.tools.s2n.sparse_matrix import SparseMatrix
 from sppy.tools.util.utils import (
     add_errinfo, combine_errinfo, get_traceback, prettify_object)
 
@@ -70,38 +64,6 @@ class DescribeSvc(_AnalystService):
 
     # ...............................................
     @classmethod
-    def _init_sparse_matrix(cls):
-        errinfo = {}
-        sp_mtx = None
-        data_datestr = get_current_datadate_str()
-        mtx_table_type = SUMMARY_TABLE_TYPES.SPECIES_DATASET_MATRIX
-        table = Summaries.get_table(mtx_table_type, data_datestr)
-        zip_fname = f"{table['fname']}.zip"
-        zip_filename = os.path.join(INPUT_DATA_PATH, zip_fname)
-        # Download if necessary
-        if not os.path.exists(zip_filename):
-            errinfo["info"] = [f"Download input file {zip_filename}"]
-            # Download if file does not exist
-            _zip_filename = download_from_s3(
-                PROJ_BUCKET, SUMMARY_FOLDER, zip_fname, local_path=INPUT_DATA_PATH,
-                overwrite=False)
-
-        # Extract if matrix and metadata files do not exist, create objects
-        try:
-            sparse_coo, row_categ, col_categ, table_type, _data_datestr = \
-                SparseMatrix.uncompress_zipped_data(
-                    zip_filename, local_path=INPUT_DATA_PATH, overwrite=False)
-        except Exception as e:
-            errinfo = add_errinfo(errinfo, "error", str(e))
-        # Create
-        else:
-            sp_mtx = SparseMatrix(
-                sparse_coo, mtx_table_type, data_datestr, row_category=row_categ,
-                column_category=col_categ, logger=None)
-        return sp_mtx, errinfo
-
-    # ...............................................
-    @classmethod
     def _get_measures(cls, summary_type, summary_key):
         stat_dict = {}
         spnet_mtx, errinfo = cls._init_sparse_matrix()
@@ -132,6 +94,7 @@ class DescribeSvc(_AnalystService):
 
         out_dict = {f"{summary_type.capitalize()} Statistics":  stat_dict}
         return out_dict, errinfo
+
 
 # .............................................................................
 if __name__ == "__main__":

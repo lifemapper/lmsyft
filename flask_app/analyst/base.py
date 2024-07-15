@@ -6,9 +6,16 @@ from werkzeug.exceptions import BadRequest
 from flask_app.common.base import _SpecifyNetworkService
 from flask_app.common.s2n_type import AnalystOutput, APIService
 
-from sppy.aws.aws_tools import get_today_str
-from sppy.tools.util.utils import get_traceback
+from sppy.aws.aws_constants import PROJ_BUCKET, SUMMARY_FOLDER
+from sppy.aws.aws_tools import (
+    download_from_s3, get_current_datadate_str, get_today_str)
+
+from sppy.tools.s2n.constants import (Summaries, SUMMARY_TABLE_TYPES)
+from sppy.tools.s2n.sparse_matrix import SparseMatrix
+from sppy.tools.s2n.summary_matrix import SummaryMatrix
+from sppy.tools.util.utils import add_errinfo, get_traceback
 from sppy.tools.util.logtools import Logger
+
 
 # For local debugging
 try:
@@ -119,6 +126,76 @@ class _AnalystService(_SpecifyNetworkService):
             pass
 
         return usr_params, errinfo
+
+    # ...............................................
+    @classmethod
+    def _init_sparse_matrix(cls):
+        errinfo = {}
+        sp_mtx = None
+        data_datestr = get_current_datadate_str()
+        mtx_table_type = SUMMARY_TABLE_TYPES.SPECIES_DATASET_MATRIX
+        table = Summaries.get_table(mtx_table_type, data_datestr)
+        zip_fname = f"{table['fname']}.zip"
+        zip_filename = os.path.join(INPUT_DATA_PATH, zip_fname)
+        # Download if necessary
+        if not os.path.exists(zip_filename):
+            errinfo["info"] = [f"Download input file {zip_filename}"]
+            # Download if file does not exist
+            try:
+                _ = download_from_s3(
+                    PROJ_BUCKET, SUMMARY_FOLDER, zip_fname, local_path=INPUT_DATA_PATH,
+                    overwrite=False)
+            except Exception as e:
+                errinfo = add_errinfo(errinfo, "error", str(e))
+
+        if os.path.exists(zip_filename):
+            # Extract if matrix and metadata files do not exist, create objects
+            try:
+                sparse_coo, row_categ, col_categ, table_type, _data_datestr = \
+                    SparseMatrix.uncompress_zipped_data(
+                        zip_filename, local_path=INPUT_DATA_PATH, overwrite=False)
+            except Exception as e:
+                errinfo = add_errinfo(errinfo, "error", str(e))
+            # Create
+            sp_mtx = SparseMatrix(
+                sparse_coo, mtx_table_type, data_datestr, row_category=row_categ,
+                column_category=col_categ, logger=None)
+        return sp_mtx, errinfo
+
+    # ...............................................
+    @classmethod
+    def _init_summary_matrix(cls, summary_type):
+        errinfo = {}
+        data_datestr = get_current_datadate_str()
+        if summary_type == "dataset":
+            mtx_table_type = SUMMARY_TABLE_TYPES.DATASET_SPECIES_SUMMARY
+        else:
+            mtx_table_type = SUMMARY_TABLE_TYPES.SPECIES_DATASET_SUMMARY
+
+        table = Summaries.get_table(mtx_table_type, data_datestr)
+        zip_fname = f"{table['fname']}.zip"
+        zip_filename = os.path.join(INPUT_DATA_PATH, zip_fname)
+
+        if not os.path.exists(zip_filename):
+            errinfo["info"] = [f"Downloaded input data file {zip_filename}"]
+            # TODO: pre-download this as part of AWS workflow
+            _ = download_from_s3(
+                PROJ_BUCKET, SUMMARY_FOLDER, zip_fname, local_path=LOCAL_PATH,
+                overwrite=False)
+
+        if os.path.exists(zip_filename):
+            # Will only extract if matrix and metadata files do not exist yet
+            try:
+                dataframe, _meta_dict, _table_type, _data_datestr = \
+                    SummaryMatrix.uncompress_zipped_data(
+                        zip_filename, local_path=LOCAL_PATH, overwrite=False)
+            except Exception as e:
+                errinfo = add_errinfo(errinfo, "error", str(e))
+            # Create
+            else:
+                summary_mtx = SummaryMatrix(
+                    dataframe, mtx_table_type, data_datestr, logger=None)
+        return summary_mtx, errinfo
 
 
 # .............................................................................

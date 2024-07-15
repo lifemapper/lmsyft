@@ -5,15 +5,14 @@ from werkzeug.exceptions import BadRequest
 from flask_app.common.s2n_type import APIService, AnalystOutput
 from flask_app.analyst.base import _AnalystService
 
-from sppy.aws.aws_constants import PROJ_BUCKET
-from sppy.tools.s2n.spnet import SpNetAnalyses
-from sppy.tools.util.utils import (combine_errinfo, get_traceback, prettify_object)
+from sppy.tools.util.utils import (
+    add_errinfo, combine_errinfo, get_traceback, prettify_object)
 
 
 # .............................................................................
-class CountSvc(_AnalystService):
+class CompareSvc(_AnalystService):
     """Specify Network API service for retrieving taxonomic information."""
-    SERVICE_TYPE = APIService.Count
+    SERVICE_TYPE = APIService.Compare
     ORDERED_FIELDNAMES = []
 
     # ...............................................
@@ -21,18 +20,18 @@ class CountSvc(_AnalystService):
     def compare_measures(cls, summary_type=None, summary_key=None):
         """Compare descriptive measurements for one identifier against all others.
 
-                Args:
-                    summary_type: data dimension for summary, ("species" or "dataset")
-                    summary_key: unique identifier for the data dimension being examined.
+        Args:
+            summary_type: data dimension for summary, ("species" or "dataset")
+            summary_key: unique identifier for the data dimension being examined.
 
-                Returns:
-                    full_output (flask_app.common.s2n_type.AnalystOutput): including a
-                        dictionary (JSON) of a record containing keywords with values.
-                """
+        Returns:
+            full_output (flask_app.common.s2n_type.AnalystOutput): including a
+                dictionary (JSON) of a record containing keywords with values.
+        """
         if summary_type is None and summary_key is None:
             return cls.get_endpoint()
 
-        records = []
+        stat_dict = {}
         try:
             good_params, errinfo = cls._standardize_params(
                 summary_type=summary_type, summary_key=summary_key)
@@ -45,8 +44,8 @@ class CountSvc(_AnalystService):
             # Query dataset counts
             if good_params["summary_type"] is not None:
                 try:
-                    records, errors = cls._get_simple_dataset_counts(
-                        good_params["dataset_key"])
+                    stat_dict, errors = cls._get_comparative_measures(
+                        good_params["summary_type"], good_params["summary_key"])
                 except Exception:
                     errors = {"error": [get_traceback()]}
 
@@ -56,39 +55,70 @@ class CountSvc(_AnalystService):
         # Assemble
         full_out = AnalystOutput(
             cls.SERVICE_TYPE["name"], description=cls.SERVICE_TYPE["description"],
-            output=records, errors=errinfo)
+            output=stat_dict, errors=errinfo)
 
         return full_out.response
 
 # ...............................................
     @classmethod
-    def _get_simple_dataset_counts(cls, dataset_key):
-        """Get counts for datasetKey.
+    def _get_comparative_measures(cls, summary_type, summary_key):
+        key_txt = f"{summary_type.capitalize()} Statistics"
+        spnet_mtx, errinfo = cls._init_sparse_matrix()
+        if spnet_mtx is not None:
+            # Compare dataset
+            if summary_type == "dataset":
+                # Only request single dataset if summary_key is present
+                if summary_key is not None:
+                    try:
+                        one_stat_dict = spnet_mtx.get_column_stats(summary_key)
+                    except IndexError:
+                        errinfo = {
+                            "error": [f"Key {summary_key} does not exist in {summary_type}"]
+                        }
+                    except Exception:
+                        errinfo = {
+                            "error": [HTTPStatus.INTERNAL_SERVER_ERROR, get_traceback()]
+                        }
+                # Get aggregated stats for all datasets
+                try:
+                    all_stat_dict = spnet_mtx.get_all_column_stats()
+                except Exception:
+                    errinfo = {
+                        "error": [HTTPStatus.INTERNAL_SERVER_ERROR, get_traceback()]
+                    }
+            # other valid option is "species"
+            else:
+                # Only request single species if summary_key is present
+                if summary_key is not None:
+                    try:
+                        one_stat_dict = spnet_mtx.get_row_stats(summary_key)
+                    except IndexError:
+                        errinfo = {
+                            "error": [f"Key {summary_key} does not exist in {summary_type}"]
+                        }
+                    except Exception:
+                        errinfo = add_errinfo(
+                            errinfo, "error",
+                            [HTTPStatus.INTERNAL_SERVER_ERROR, get_traceback()])
+                # Get aggregated stats for all species
+                try:
+                    all_stat_dict = spnet_mtx.get_all_row_stats()
+                except Exception:
+                    errinfo = {
+                        "error": [HTTPStatus.INTERNAL_SERVER_ERROR, get_traceback()]
+                    }
 
-        Args:
-            dataset_key: unique GBIF identifier for dataset of interest.
-
-        Returns:
-            a flask_app.analyst.s2n_type.AnalystOutput object with optional records as a
-            list of records corresponding to occurrence and counts for the dataset.
-        """
-        records = []
-        errors = {}
-        spnet = SpNetAnalyses(PROJ_BUCKET)
-        try:
-            records = spnet.get_simple_dataset_counts(dataset_key)
-        except Exception:
-            traceback = get_traceback()
-            errors["error"] = [HTTPStatus.INTERNAL_SERVER_ERROR, traceback]
-
-        return records, errors
+        out_dict = {f"Total {key_txt}":  all_stat_dict}
+        if summary_key is not None:
+            out_dict[f"Individual {key_txt}"] = one_stat_dict
+        return out_dict, errinfo
 
 
 # .............................................................................
 if __name__ == "__main__":
     dataset_key = "0000e36f-d0e9-46b0-aa23-cc1980f00515"
 
-    svc = CountSvc()
+    svc = CompareSvc()
     response = svc.get_endpoint()
     print(prettify_object(response))
     response = svc.get_counts(dataset_key=dataset_key, pub_org_key=None)

@@ -1,12 +1,11 @@
 """URL Routes for the Specify Network API services."""
 from flask import Blueprint, Flask, render_template, request
-import os
 
-from flask_app.analyst.compare import CountSvc
+from flask_app.analyst.compare import CompareSvc
 from flask_app.analyst.describe import DescribeSvc
-from flask_app.analyst.rank import RankSvc
+# from flask_app.analyst.rank import RankSvc
 from flask_app.common.constants import (
-    STATIC_DIR, TEMPLATE_DIR, SCHEMA_DIR, SCHEMA_ANALYST_FNAME)
+    STATIC_DIR, TEMPLATE_DIR)
 from flask_app.common.s2n_type import APIEndpoint
 
 analyst_blueprint = Blueprint(
@@ -46,20 +45,20 @@ def analyst_status():
     }
 
 
-# ..........................
-@app.route("/api/v1/schema")
-def display_raw_schema():
-    """Show the schema XML.
-
-    Returns:
-        schema: the schema for the Specify Network.
-    """
-    fname = os.path.join(SCHEMA_DIR, SCHEMA_ANALYST_FNAME)
-    with open(fname, "r") as f:
-        schema = f.read()
-    return schema
-
-
+# # ..........................
+# @app.route("/api/v1/schema")
+# def display_raw_schema():
+#     """Show the schema XML.
+#
+#     Returns:
+#         schema: the schema for the Specify Network.
+#     """
+#     fname = os.path.join(SCHEMA_DIR, SCHEMA_ANALYST_FNAME)
+#     with open(fname, "r") as f:
+#         schema = f.read()
+#     return schema
+#
+#
 # # ..........................
 # @app.route("/api/v1/swaggerui")
 # def swagger_ui():
@@ -80,12 +79,12 @@ def describe_endpoint():
         response: A flask_app.analyst API response object containing the dataset
             API response.
     """
-    ds_arg = request.args.get("summary_type", default=None, type=str)
-    sp_arg = request.args.get("summary_key", default=None, type=str)
-    if ds_arg is None:
+    type_arg = request.args.get("summary_type", default=None, type=str)
+    key_arg = request.args.get("summary_key", default=None, type=str)
+    if type_arg is None:
         response = DescribeSvc.get_endpoint()
     else:
-        response = DescribeSvc.get_dataset_counts(dataset_key=ds_arg, species_key=sp_arg)
+        response = DescribeSvc.get_measures(summary_type=type_arg, summary_key=key_arg)
     return response
 
 
@@ -98,37 +97,38 @@ def compare_endpoint():
         response: A flask_app.analyst API response object containing the dataset
             API response.
     """
-    ds_arg = request.args.get("summary_type", default=None, type=str)
-    sp_arg = request.args.get("summary_key", default=None, type=str)
-    if ds_arg is None:
-        response = DescribeSvc.get_endpoint()
+    type_arg = request.args.get("summary_type", default=None, type=str)
+    key_arg = request.args.get("summary_key", default=None, type=str)
+    if type_arg is None:
+        response = CompareSvc.get_endpoint()
     else:
-        response = DescribeSvc.get_dataset_counts(dataset_key=ds_arg, species_key=sp_arg)
+        response = CompareSvc.compare_measures(
+            summary_type=type_arg, summary_key=key_arg)
     return response
 
-
-# .....................................................................................
-@app.route("/api/v1/rank/")
-def rank_endpoint():
-    """Get the available counts.
-
-    Returns:
-        response: A flask_app.analyst API response object containing the count
-            API response.
-    """
-    count_by_arg = request.args.get("count_by", default=None, type=str)
-    order_arg = request.args.get("order", default=None, type=str)
-    limit_arg = request.args.get("limit", default=10, type=int)
-    print(
-        f"*** aggregate_by_arg={count_by_arg}, order_arg={order_arg}, "
-        f"limit_arg={limit_arg} ***")
-    # if coll_arg is None and org_arg is None:
-    if count_by_arg is None:
-        response = RankSvc.get_endpoint()
-    else:
-        response = RankSvc.rank_counts(
-            count_by_arg, order=order_arg, limit=limit_arg)
-    return response
+#
+# # .....................................................................................
+# @app.route("/api/v1/rank/")
+# def rank_endpoint():
+#     """Get the available counts.
+#
+#     Returns:
+#         response: A flask_app.analyst API response object containing the count
+#             API response.
+#     """
+#     count_by_arg = request.args.get("count_by", default=None, type=str)
+#     order_arg = request.args.get("order", default=None, type=str)
+#     limit_arg = request.args.get("limit", default=10, type=int)
+#     print(
+#         f"*** aggregate_by_arg={count_by_arg}, order_arg={order_arg}, "
+#         f"limit_arg={limit_arg} ***")
+#     # if coll_arg is None and org_arg is None:
+#     if count_by_arg is None:
+#         response = RankSvc.get_endpoint()
+#     else:
+#         response = RankSvc.rank_counts(
+#             count_by_arg, order=order_arg, limit=limit_arg)
+#     return response
 
 
 # .....................................................................................
