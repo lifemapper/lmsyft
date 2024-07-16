@@ -107,28 +107,29 @@ def compare_endpoint():
     return response
 
 #
-# # .....................................................................................
-# @app.route("/api/v1/rank/")
-# def rank_endpoint():
-#     """Get the available counts.
-#
-#     Returns:
-#         response: A flask_app.analyst API response object containing the count
-#             API response.
-#     """
-#     count_by_arg = request.args.get("count_by", default=None, type=str)
-#     order_arg = request.args.get("order", default=None, type=str)
-#     limit_arg = request.args.get("limit", default=10, type=int)
-#     print(
-#         f"*** aggregate_by_arg={count_by_arg}, order_arg={order_arg}, "
-#         f"limit_arg={limit_arg} ***")
-#     # if coll_arg is None and org_arg is None:
-#     if count_by_arg is None:
-#         response = RankSvc.get_endpoint()
-#     else:
-#         response = RankSvc.rank_counts(
-#             count_by_arg, order=order_arg, limit=limit_arg)
-#     return response
+# .....................................................................................
+@app.route("/api/v1/rank/")
+def rank_endpoint():
+    """Get the available counts.
+
+    Returns:
+        response: A flask_app.analyst API response object containing the count
+            API response.
+    """
+    rank_type_arg = request.args.get("rank_type", default=None, type=str)
+    rank_by_arg = request.args.get("rank_by", default=None, type=str)
+    order_arg = request.args.get("order", default=None, type=str)
+    limit_arg = request.args.get("limit", default=10, type=int)
+    print(
+        f"*** type_arg={rank_type_arg}, rank_by_arg={rank_by_arg}, order_arg={order_arg}, "
+        f"limit_arg={limit_arg} ***")
+    # if coll_arg is None and org_arg is None:
+    if rank_type_arg is None:
+        response = RankSvc.get_endpoint()
+    else:
+        response = RankSvc.rank_counts(
+            rank_type_arg, rank_by_arg, order=order_arg, limit=limit_arg)
+    return response
 
 
 # .....................................................................................

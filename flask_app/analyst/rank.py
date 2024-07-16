@@ -17,7 +17,7 @@ class RankSvc(_AnalystService):
 
     # ...............................................
     @classmethod
-    def rank_counts(cls, count_by, order=None, limit=10):
+    def rank_counts(cls, rank_type, rank_by, count_by, order=None, limit=10):
         """Return occurrence and species counts for dataset/organization identifiers.
 
         Args:
