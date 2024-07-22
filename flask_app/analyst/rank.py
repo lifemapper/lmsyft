@@ -90,42 +90,48 @@ class RankSvc(_AnalystService):
 # .............................................................................
 if __name__ == "__main__":
     summary_type = "dataset"
-    rank_by = "species"
-    order = "descending"
+    # Default: order = "descending"
     limit = 5
 
     svc = RankSvc()
     response = svc.get_endpoint()
     print(prettify_object(response))
 
-    response = svc.rank_counts(summary_type=summary_type, rank_by=rank_by)
+    rank_by = "occurrence"
+    response = svc.rank_counts(summary_type, rank_by)
     print(prettify_object(response))
-    # print(response)
+
+    response = svc.rank_counts(summary_type, rank_by, order="ascending")
+    print(prettify_object(response))
+
+    rank_by = "species"
+    response = svc.rank_counts(summary_type, rank_by)
+    print(prettify_object(response))
+
+    response = svc.rank_counts(summary_type, rank_by, order="ascending")
+    print(prettify_object(response))
 
 """
 from flask_app.analyst.rank import *
-from flask_app.analyst.count import *
-dataset_key = "0000e36f-d0e9-46b0-aa23-cc1980f00515"
 
-# ..............................
-# Count
-svc = CountSvc()
-response = svc.get_endpoint()
-print(prettify_object(response))
-response = svc.get_counts(dataset_key=dataset_key, pub_org_key=None)
-print(prettify_object(response))
-
-
-# ..............................
-# Rank
-count_by = "species"
-order = "descending"
+summary_type = "dataset"
 limit = 5
 
-
 svc = RankSvc()
-response = svc.rank_counts(count_by)
+response = svc.get_endpoint()
 print(prettify_object(response))
 
-records, errors = svc._get_ordered_counts(count_by, order, limit)
+rank_by = "occurrence"
+response = svc.rank_counts(summary_type, rank_by)
+print(prettify_object(response))
+
+response = svc.rank_counts(summary_type, rank_by, order="ascending")
+print(prettify_object(response))
+
+rank_by = "species"
+response = svc.rank_counts(summary_type, rank_by)
+print(prettify_object(response))
+
+response = svc.rank_counts(summary_type, rank_by, order="ascending")
+print(prettify_object(response))
 """
