@@ -1089,14 +1089,15 @@ def read_s3_parquet_to_pandas(
 
 # .............................................................................
 def read_s3_multiple_parquets_to_pandas(
-        bucket, bucket_path, logger=None, s3_conn=None, s3_client=None, region=REGION, **args):
+        bucket, bucket_path, logger=None, s3_conn=None, s3_client=None,
+        region=REGION, **args):
     """Read multiple parquets from a folder on S3 into a pd DataFrame.
 
     Args:
         bucket (str): Bucket identifier on S3.
         bucket_path (str): Parent folder path to the S3 parquet data.
         logger (object): logger for saving relevant processing messages
-        s3 (object): Connection to the S3 resource
+        s3_conn (object): Connection to the S3 resource
         s3_client (object): object for interacting with Amazon S3.
         region: AWS region to query.
         args: Additional arguments to be sent to the pd.read_parquet function.
