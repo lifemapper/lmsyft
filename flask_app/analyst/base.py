@@ -99,6 +99,7 @@ class _AnalystService(_SpecifyNetworkService):
 
         Raises:
             BadRequest: on invalid query parameters.
+            BadRequest: on summary_type == rank_by for Rank service.
             BadRequest: on unknown exception parsing parameters.
 
         Returns:
@@ -117,6 +118,13 @@ class _AnalystService(_SpecifyNetworkService):
         except Exception:
             error_description = get_traceback()
             raise BadRequest(error_description)
+
+        # In RankSvc, summary_type and rank_by may not be the same data dimension
+        if rank_by is not None and usr_params["summary_type"] == usr_params["rank_by"]:
+            raise BadRequest(
+                f"Cannot rank by the same dimension as summarizing by. "
+                f"URL arguments summary_type ({usr_params['summary_type']}) "
+                f"and rank_by ({usr_params['rank_by']}) may not be equal.")
 
         # errinfo["error"] indicates bad parameters, throws exception
         try:

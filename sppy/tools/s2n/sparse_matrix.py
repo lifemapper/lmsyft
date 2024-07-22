@@ -368,7 +368,7 @@ class SparseMatrix(_AggregateDataMatrix):
 
     # ...............................................
     def get_row_stats(self, row_label=None):
-        """Get row statistics for one or all rows.
+        """Get the statistics for one or all rows.
 
         Args:
             row_label (str): label for one row of data to examine.
@@ -379,7 +379,6 @@ class SparseMatrix(_AggregateDataMatrix):
         Raises:
             IndexError: on row_label not found in data.
         """
-
         if row_label is None:
             try:
                 stats = self.get_all_row_stats()
@@ -471,6 +470,17 @@ class SparseMatrix(_AggregateDataMatrix):
 
     # ...............................................
     def get_column_stats(self, col_label=None):
+        """Return statistics for a one or all columns.
+
+        Args:
+            col_label (str): label of one column to get statistics for.
+
+        Returns:
+            stats (dict): quantitative measures of one or all columns.
+
+        Raises:
+            IndexError: on label not present in column header.
+        """
         if col_label is None:
             stats = self.get_all_column_stats()
         else:

@@ -259,25 +259,26 @@ class SpNetAnalyses():
         print(records)
 
     # ----------------------------------------------------
-    def rank_dataset_counts(self, count_by, order, limit, format="JSON"):
-        """Return the top or bottom datasets, with counts, ranked by number of species.
+    def rank_dataset_counts(self, rank_by, order, limit, format="JSON"):
+        """Return the top or bottom datasets ranked by number of occurrences or species.
 
         Args:
-            count_by: string indicating rank datasets by counts of "species" or
-                "occurrence" .
+            rank_by: string indicating rank datasets by counts of "occurrence" or
+                another data dimension (currently only "species").
             order: string indicating whether to rank in "descending" or
                 "ascending" order.
             limit: number of datasets to return, no more than 300.
             format: output format, options "CSV" or "JSON"
 
         Returns:
-             records: list of limit records containing dataset_key, occ_count, species_count
+             records: list of limit records containing dataset_key and name,
+                occ_count, species_count
         """
         records = []
         errors = {}
         table = self._summary_tables['dataset_counts']
 
-        if count_by == "species":
+        if rank_by == "species":
             sort_field = "species_count"
         else:
             sort_field = "occ_count"
@@ -291,6 +292,41 @@ class SpNetAnalyses():
             self._add_dataset_lookup_vals(records, table, format)
 
         return records, errors
+
+    # # ----------------------------------------------------
+    # def rank_species_counts(self, rank_by, order, limit, format="JSON"):
+    #     """Return the top or bottom species ranked by number of occurrences or datasets.
+    #
+    #     Args:
+    #         rank_by: string indicating rank datasets by counts of "occurrence" or
+    #             another data dimension (currently only "species").
+    #         order: string indicating whether to rank in "descending" or
+    #             "ascending" order.
+    #         limit: number of datasets to return, no more than 300.
+    #         format: output format, options "CSV" or "JSON"
+    #
+    #     Returns:
+    #          records: list of limit records containing species_key, occ_count,
+    #             dataset_count.
+    #     """
+    #     records = []
+    #     errors = {}
+    #     table = self._summary_tables['species_counts']
+    #
+    #     if rank_by == "occurrence":
+    #         sort_field = "occ_count"
+    #     else:
+    #         sort_field = "dataset_count"
+    #     try:
+    #         records = self._query_order_summary_table(
+    #             table, sort_field, order, limit, format)
+    #     except Exception:
+    #         errors = {"error": [get_traceback()]}
+    #     # Add dataset title, etc if the lookup table exists in S3
+    #     if self._dataset_metadata_exists():
+    #         self._add_dataset_lookup_vals(records, table, format)
+    #
+    #     return records, errors
 
     # # ----------------------------------------------------
     # def get_org_counts(self, pub_org_key):
@@ -308,12 +344,11 @@ class SpNetAnalyses():
     #     return (occ_count, species_count)
 
     # ----------------------------------------------------
-    def get_dataset_lookup_vals(self, dataset_keys, rec_table):
+    def get_dataset_lookup_vals(self, dataset_keys):
         """Return dataset metadata for a list of dataset_keys.
 
         Args:
             dataset_keys: list of dataset GUIDs to return names for.
-            rec_table: dictionary of fieldnames, filename, format for a summary table
 
         Returns:
             recs (list): list of dictionaries with metadata for each dataset_key.

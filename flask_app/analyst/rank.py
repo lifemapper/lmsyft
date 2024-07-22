@@ -6,7 +6,7 @@ from flask_app.analyst.base import _AnalystService
 
 from sppy.aws.aws_constants import PROJ_BUCKET
 from sppy.tools.s2n.spnet import SpNetAnalyses
-from sppy.tools.util.utils import (combine_errinfo, get_traceback)
+from sppy.tools.util.utils import (combine_errinfo, get_traceback, prettify_object)
 
 
 # .............................................................................
@@ -17,14 +17,15 @@ class RankSvc(_AnalystService):
 
     # ...............................................
     @classmethod
-    def rank_counts(cls, rank_type, rank_by, count_by, order=None, limit=10):
+    def rank_counts(cls, summary_type, rank_by, order=None, limit=10):
         """Return occurrence and species counts for dataset/organization identifiers.
 
         Args:
-            count_by: URL parameter indicating rank datasets by counts of "species" or
-                "occurrence" .
-            order: URL parameter indicating whether to rank in "descending" or
-                "ascending" order.
+            summary_type: data dimension for rank comparison, (currently "species" or
+                "dataset")
+            rank_by: rank by counts of "occurrence" or another data dimension (not
+                the rank type).
+            order: rank in "descending" or "ascending" order.
             limit: integer URL parameter specifying the number of ordered records to
                 return.
 
@@ -35,13 +36,13 @@ class RankSvc(_AnalystService):
         Returns:
             JSON response for this API query.
         """
-        if count_by is None:
+        if summary_type is None:
             return cls.get_endpoint()
 
         records = []
         try:
             good_params, errinfo = cls._standardize_params(
-                count_by=count_by, order=order, limit=limit)
+                summary_type=summary_type, rank_by=rank_by, order=order, limit=limit)
 
         except BadRequest as e:
             errinfo = {"error": [e.description]}
@@ -50,8 +51,8 @@ class RankSvc(_AnalystService):
             # Query for ordered dataset counts
             try:
                 records, errors = cls._get_ordered_counts(
-                    good_params["count_by"], good_params["order"],
-                    good_params["limit"])
+                    good_params["summary_type"], good_params["rank_by"],
+                    good_params["order"], good_params["limit"])
             except Exception:
                 errors = {"error": [get_traceback()]}
 
@@ -67,30 +68,38 @@ class RankSvc(_AnalystService):
 
     # ...............................................
     @classmethod
-    def _get_ordered_counts(cls, count_by, order, limit):
+    def _get_ordered_counts(cls, summary_type, rank_by, order, limit):
         records = []
         spnet = SpNetAnalyses(PROJ_BUCKET)
-        try:
-            records, errinfo = spnet.rank_dataset_counts(count_by, order, limit)
-
-        except Exception:
-            errinfo = {"error": [get_traceback()]}
+        if summary_type == "dataset":
+            try:
+                records, errinfo = spnet.rank_dataset_counts(rank_by, order, limit)
+            except Exception:
+                errinfo = {"error": [get_traceback()]}
+        # species
+        else:
+            errinfo = {"error": ["Only dataset ranks are currently available"]}
+            # try:
+            #     records, errinfo = spnet.rank_species_counts(rank_by, order, limit)
+            # except Exception:
+            #     errinfo = {"error": [get_traceback()]}
 
         return records, errinfo
 
 
 # .............................................................................
 if __name__ == "__main__":
-    dataset_key = "0000e36f-d0e9-46b0-aa23-cc1980f00515"
-
-    svc = RankSvc()
-    # response = svc.get_endpoint()
-    # AnalystOutput.print_output(response, do_print_rec=True)
-    count_by = "species"
+    summary_type = "dataset"
+    rank_by = "species"
     order = "descending"
     limit = 5
-    response = svc.rank_counts(count_by)
-    AnalystOutput.print_output(response, do_print_rec=True)
+
+    svc = RankSvc()
+    response = svc.get_endpoint()
+    print(prettify_object(response))
+
+    response = svc.rank_counts(summary_type=summary_type, rank_by=rank_by)
+    print(prettify_object(response))
     # print(response)
 
 """

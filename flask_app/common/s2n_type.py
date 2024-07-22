@@ -206,7 +206,8 @@ class APIService:
             "summary_type": {
                 "type": "",
                 "description":
-                    "Type or dimension of data to summarize (i.e: species, dataset)",
+                    "Type or dimension of aggregated specimen occurrence data to "
+                    "summarize (i.e: species, dataset)",
                 "options": ["dataset", "species"],
                 "default": None
             },
@@ -228,20 +229,25 @@ class APIService:
         "name": APIEndpoint.Rank,
         "endpoint": f"{APIEndpoint.Root}/{APIEndpoint.Rank}",
         "params": {
-            "rank_type": {
+            # TODO: extend dimensions to other measurements
+            "summary_type": {
                 "type": "",
                 "description":
-                    "Type or dimension of data to summarize (i.e: species, dataset)",
-                "options": ["dataset", "species"],
+                    "Type or dimension of aggregated specimen occurrence data to "
+                    "summarize (i.e: dataset)",
+                # TODO: add species
+                "options": ["dataset"],
                 "default": "dataset"
             },
             "rank_by": {
                 "type": "",
                 "description":
                     "Measurement or dimension of data to rank by (i.e: occurrence "
-                    "counts or other dimension)",
+                    "counts or other dimension).  Summary type must be ranked by "
+                    "occurrence counts or a different data dimension.",
                 # TODO: extend dimensions to other measurements
-                "options": ["occurrence", "dataset", "species"],
+                # TODO: add dataset
+                "options": ["occurrence", "species"],
                 # None will resolve to the other dimension while there are only 2
                 "default": "occurrence",
             },

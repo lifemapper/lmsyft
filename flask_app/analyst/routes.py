@@ -3,7 +3,7 @@ from flask import Blueprint, Flask, render_template, request
 
 from flask_app.analyst.compare import CompareSvc
 from flask_app.analyst.describe import DescribeSvc
-# from flask_app.analyst.rank import RankSvc
+from flask_app.analyst.rank import RankSvc
 from flask_app.common.constants import (
     STATIC_DIR, TEMPLATE_DIR)
 from flask_app.common.s2n_type import APIEndpoint
@@ -106,7 +106,7 @@ def compare_endpoint():
             summary_type=type_arg, summary_key=key_arg)
     return response
 
-#
+
 # .....................................................................................
 @app.route("/api/v1/rank/")
 def rank_endpoint():
@@ -116,19 +116,19 @@ def rank_endpoint():
         response: A flask_app.analyst API response object containing the count
             API response.
     """
-    rank_type_arg = request.args.get("rank_type", default=None, type=str)
+    summary_type_arg = request.args.get("summary_type", default=None, type=str)
     rank_by_arg = request.args.get("rank_by", default=None, type=str)
     order_arg = request.args.get("order", default=None, type=str)
     limit_arg = request.args.get("limit", default=10, type=int)
     print(
-        f"*** type_arg={rank_type_arg}, rank_by_arg={rank_by_arg}, order_arg={order_arg}, "
+        f"*** type_arg={summary_type_arg}, rank_by_arg={rank_by_arg}, order_arg={order_arg}, "
         f"limit_arg={limit_arg} ***")
     # if coll_arg is None and org_arg is None:
-    if rank_type_arg is None:
+    if summary_type_arg is None:
         response = RankSvc.get_endpoint()
     else:
         response = RankSvc.rank_counts(
-            rank_type_arg, rank_by_arg, order=order_arg, limit=limit_arg)
+            summary_type_arg, rank_by_arg, order=order_arg, limit=limit_arg)
     return response
 
 
