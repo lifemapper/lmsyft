@@ -740,10 +740,48 @@ class SparseMatrix(_AggregateDataMatrix):
         """Uncompress a zipped SparseMatrix into a coo_array and row/column categories.
 
         Args:
-            zip_filename (str): Filename of output data to write to S3.
+            zip_filename (str): Filename of zipped sparse matrix data to uncompress.
             local_path (str): Absolute path of local destination path
             overwrite (bool): Flag indicating whether to use existing files unzipped
                 from the zip_filename.
+
+        Returns:
+            sparse_coo (scipy.sparse.coo_array): Sparse Matrix containing data.
+            row_categ (pandas.api.types.CategoricalDtype): row categories
+            col_categ (pandas.api.types.CategoricalDtype): column categories
+            table_type (aws.aws_constants.SUMMARY_TABLE_TYPES): type of table data
+            data_datestr (str): date string in format YYYY_MM_DD
+
+        Raises:
+            Exception: on failure to uncompress files.
+            Exception: on failure to load data from uncompressed files.
+
+        Note:
+            All filenames have the same basename with extensions indicating which data
+                they contain. The filename contains a string like YYYY-MM-DD which
+                indicates which GBIF data dump the statistics were built upon.
+        """
+        try:
+            mtx_fname, meta_fname, table_type, data_datestr = cls._uncompress_files(
+                zip_filename, local_path=local_path, overwrite=overwrite)
+        except Exception:
+            raise
+
+        try:
+            sparse_coo, row_categ, col_categ = cls.read_data(mtx_fname, meta_fname)
+        except Exception:
+            raise
+
+        return sparse_coo, row_categ, col_categ, table_type, data_datestr
+
+    # .............................................................................
+    @classmethod
+    def read_data(cls, mtx_filename, meta_filename):
+        """Read SparseMatrix data files into a coo_array and row/column categories.
+
+        Args:
+            mtx_filename (str): Filename of scipy.sparse.coo_array data in npz format.
+            meta_filename (str): Filename of JSON sparse matrix metadata.
 
         Returns:
             sparse_coo (scipy.sparse.coo_array): Sparse Matrix containing data.
@@ -757,26 +795,21 @@ class SparseMatrix(_AggregateDataMatrix):
             Exception: on unable to load JSON metadata file
             Exception: on missing row categories in JSON
             Exception: on missing column categories in JSON
-            Exception: on missing table_type code in JSON
-            Exception: on bad table_type code in JSON
 
         Note:
             All filenames have the same basename with extensions indicating which data
                 they contain. The filename contains a string like YYYY-MM-DD which
                 indicates which GBIF data dump the statistics were built upon.
         """
-        mtx_fname, meta_fname, table_type, data_datestr = cls._uncompress_files(
-            zip_filename, local_path=local_path, overwrite=overwrite)
-
-        # Read sparse matrix from local npz file
+        # Read sparse matrix from npz file
         try:
-            sparse_coo = scipy.sparse.load_npz(mtx_fname)
+            sparse_coo = scipy.sparse.load_npz(mtx_filename)
         except Exception as e:
-            raise Exception(f"Failed to load {mtx_fname}: {e}")
+            raise Exception(f"Failed to load {mtx_filename}: {e}")
 
         # Read JSON dictionary as string
         try:
-            meta_dict = cls.load_metadata(meta_fname)
+            meta_dict = cls.load_metadata(meta_filename)
         except Exception:
             raise
 
@@ -784,14 +817,14 @@ class SparseMatrix(_AggregateDataMatrix):
         try:
             row_catlst = meta_dict.pop("row")
         except KeyError:
-            raise Exception(f"Missing row categories in {meta_fname}")
+            raise Exception(f"Missing row categories in {meta_filename}")
         else:
             row_categ = CategoricalDtype(row_catlst, ordered=True)
         try:
             col_catlst = meta_dict.pop("column")
         except KeyError:
-            raise Exception(f"Missing column categories in {meta_fname}")
+            raise Exception(f"Missing column categories in {meta_filename}")
         else:
             col_categ = CategoricalDtype(col_catlst, ordered=True)
 
-        return sparse_coo, row_categ, col_categ, table_type, data_datestr
+        return sparse_coo, row_categ, col_categ

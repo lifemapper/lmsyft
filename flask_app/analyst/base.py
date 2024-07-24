@@ -17,14 +17,16 @@ from sppy.tools.util.utils import add_errinfo, get_traceback
 from sppy.tools.util.logtools import Logger
 
 
-# For local debugging
 try:
-    LOCAL_PATH = os.environ["WORKING_DIRECTORY"]
+    # For docker deployment
+    WORKING_PATH = os.environ["WORKING_DIRECTORY"]
+    # Read-only volume
     INPUT_DATA_PATH = os.environ["AWS_DATA_DIRECTORY"]
 except KeyError:
-    LOCAL_PATH = '/tmp'
-    INPUT_DATA_PATH = LOCAL_PATH
-LOG_PATH = os.path.join(LOCAL_PATH, "log")
+    # For local debugging
+    WORKING_PATH = '/tmp'
+    INPUT_DATA_PATH = WORKING_PATH
+LOG_PATH = os.path.join(WORKING_PATH, "log")
 
 
 # .............................................................................
@@ -137,38 +139,96 @@ class _AnalystService(_SpecifyNetworkService):
 
     # ...............................................
     @classmethod
+    def _get_matrix_input_filenames(cls, table, input_path):
+        basename = table["fname"]
+        mtx_ext = table["matrix_extension"]
+        mtx_fname = f"{input_path}/{basename}{mtx_ext}"
+        meta_fname = f"{input_path}/{basename}.json"
+        zip_fname = f"{input_path}/{basename}.zip"
+        return mtx_fname, meta_fname, zip_fname
+
+    # ...............................................
+    @classmethod
+    def _retrieve_sparse_matrix(cls, zip_basename, local_path):
+        sparse_coo = None
+        row_categ = None
+        col_categ = None
+        table_type = None
+        errinfo = {"info": [f"Download data {zip_basename} locally"]}
+        # Download to local working directory if file does not exist
+        try:
+            zip_filename = download_from_s3(
+                PROJ_BUCKET, SUMMARY_FOLDER, zip_basename, local_path=local_path,
+                overwrite=True)
+        except Exception as e:
+            errinfo = add_errinfo(errinfo, "error", str(e))
+
+        else:
+            if os.path.exists(zip_filename):
+                try:
+                    sparse_coo, row_categ, col_categ, table_type, _data_datestr = \
+                        SparseMatrix.uncompress_zipped_data(
+                            zip_filename, local_path=INPUT_DATA_PATH, overwrite=False)
+                except Exception as e:
+                    errinfo = add_errinfo(errinfo, "error", str(e))
+            else:
+                errinfo = add_errinfo(
+                    errinfo, "error", f"Failed to download {zip_basename}")
+        return sparse_coo, row_categ, col_categ, table_type, errinfo
+
+    # ...............................................
+    @classmethod
     def _init_sparse_matrix(cls):
         errinfo = {}
-        sp_mtx = None
         data_datestr = get_current_datadate_str()
         mtx_table_type = SUMMARY_TABLE_TYPES.SPECIES_DATASET_MATRIX
         table = Summaries.get_table(mtx_table_type, data_datestr)
-        zip_fname = f"{table['fname']}.zip"
-        zip_filename = os.path.join(INPUT_DATA_PATH, zip_fname)
-        # Download if necessary
-        if not os.path.exists(zip_filename):
-            errinfo["info"] = [f"Download input file {zip_filename}"]
-            # Download if file does not exist
-            try:
-                _ = download_from_s3(
-                    PROJ_BUCKET, SUMMARY_FOLDER, zip_fname, local_path=INPUT_DATA_PATH,
-                    overwrite=False)
-            except Exception as e:
-                errinfo = add_errinfo(errinfo, "error", str(e))
-
-        if os.path.exists(zip_filename):
-            # Extract if matrix and metadata files do not exist, create objects
-            try:
-                sparse_coo, row_categ, col_categ, table_type, _data_datestr = \
-                    SparseMatrix.uncompress_zipped_data(
-                        zip_filename, local_path=INPUT_DATA_PATH, overwrite=False)
-            except Exception as e:
-                errinfo = add_errinfo(errinfo, "error", str(e))
-            # Create
-            sp_mtx = SparseMatrix(
-                sparse_coo, mtx_table_type, data_datestr, row_category=row_categ,
-                column_category=col_categ, logger=None)
+        # Look for uncompressed files in Read-only volume first
+        mtx_filename, meta_filename, zip_filename = cls._get_matrix_input_filenames(
+            table, INPUT_DATA_PATH)
+        if os.path.exists(meta_filename) and os.path.exists(mtx_filename):
+            # Read
+            sparse_coo, row_categ, col_categ = SparseMatrix.read_data(
+                mtx_filename, meta_filename)
+        else:
+            # or Download to working path and read
+            sparse_coo, row_categ, col_categ, _table_type, errinfo = \
+                cls._retrieve_sparse_matrix(
+                    os.path.basename(zip_filename), WORKING_PATH)
+        # Create
+        sp_mtx = SparseMatrix(
+            sparse_coo, mtx_table_type, data_datestr, row_category=row_categ,
+            column_category=col_categ, logger=None)
         return sp_mtx, errinfo
+
+    # ...............................................
+    @classmethod
+    def _retrieve_summary_matrix(cls, zip_basename, local_path):
+        dataframe = None
+        meta_dict = None
+        table_type = None
+        errinfo = {"info": [f"Download data {zip_basename} locally"]}
+        # Download to local working directory if file does not exist
+        try:
+            zip_filename = download_from_s3(
+                PROJ_BUCKET, SUMMARY_FOLDER, zip_basename, local_path=local_path,
+                overwrite=True)
+        except Exception as e:
+            errinfo = add_errinfo(errinfo, "error", str(e))
+
+        else:
+            if os.path.exists(zip_filename):
+                # Extract if matrix and metadata files do not exist, create objects
+                try:
+                    dataframe, meta_dict, table_type, _data_datestr = \
+                        SummaryMatrix.uncompress_zipped_data(
+                            zip_filename, local_path=WORKING_PATH, overwrite=False)
+                except Exception as e:
+                    errinfo = add_errinfo(errinfo, "error", str(e))
+            else:
+                errinfo = add_errinfo(
+                    errinfo, "error", f"Failed to download {zip_basename}")
+        return dataframe, meta_dict, table_type, errinfo
 
     # ...............................................
     @classmethod
@@ -181,28 +241,23 @@ class _AnalystService(_SpecifyNetworkService):
             mtx_table_type = SUMMARY_TABLE_TYPES.SPECIES_DATASET_SUMMARY
 
         table = Summaries.get_table(mtx_table_type, data_datestr)
-        zip_fname = f"{table['fname']}.zip"
-        zip_filename = os.path.join(INPUT_DATA_PATH, zip_fname)
+        # Look for uncompressed files in Read-only volume first
+        mtx_filename, meta_filename, zip_filename = cls._get_matrix_input_filenames(
+            table, INPUT_DATA_PATH)
+        if os.path.exists(meta_filename) and os.path.exists(mtx_filename):
+            # Read
+            dataframe, meta_dict = SummaryMatrix.read_data(
+                mtx_filename, meta_filename)
+        else:
+            # or Download to working path and read
+            if not (os.path.exists(meta_filename) and os.path.exists(mtx_filename)):
+                dataframe, meta_dict, _, errinfo = cls._retrieve_summary_matrix(
+                    os.path.basename(zip_filename), WORKING_PATH)
 
-        if not os.path.exists(zip_filename):
-            errinfo["info"] = [f"Downloaded input data file {zip_filename}"]
-            # TODO: pre-download this as part of AWS workflow
-            _ = download_from_s3(
-                PROJ_BUCKET, SUMMARY_FOLDER, zip_fname, local_path=LOCAL_PATH,
-                overwrite=False)
+        # Create
+        summary_mtx = SummaryMatrix(
+            dataframe, mtx_table_type, data_datestr, logger=None)
 
-        if os.path.exists(zip_filename):
-            # Will only extract if matrix and metadata files do not exist yet
-            try:
-                dataframe, _meta_dict, _table_type, _data_datestr = \
-                    SummaryMatrix.uncompress_zipped_data(
-                        zip_filename, local_path=LOCAL_PATH, overwrite=False)
-            except Exception as e:
-                errinfo = add_errinfo(errinfo, "error", str(e))
-            # Create
-            else:
-                summary_mtx = SummaryMatrix(
-                    dataframe, mtx_table_type, data_datestr, logger=None)
         return summary_mtx, errinfo
 
 

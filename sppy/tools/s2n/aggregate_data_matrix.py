@@ -197,8 +197,7 @@ class _AggregateDataMatrix:
 
     # .............................................................................
     @classmethod
-    def _uncompress_files(
-            cls, zip_filename, local_path, overwrite=False):
+    def _uncompress_files(cls, zip_filename, local_path, overwrite=False):
         """Uncompress a zipped SparseMatrix into a coo_array and row/column categories.
 
         Args:

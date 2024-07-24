@@ -117,82 +117,19 @@ class CompareSvc(_AnalystService):
 # .............................................................................
 if __name__ == "__main__":
     dataset_key = "0000e36f-d0e9-46b0-aa23-cc1980f00515"
-
+    species_key = "11378306 Phaneroptera laticerca"
     svc = CompareSvc()
     response = svc.get_endpoint()
     print(prettify_object(response))
-    response = svc.get_counts(dataset_key=dataset_key, pub_org_key=None)
+    response = svc.compare_measures(summary_type="dataset", summary_key=dataset_key)
     print(prettify_object(response))
 
+    response = svc.compare_measures(summary_type="species")
+    print(prettify_object(response))
+
+    response = svc.compare_measures(summary_type="species", summary_key=species_key)
+    print(prettify_object(response))
 """
 from flask_app.analyst.count import *
-
-dataset_key = "0000e36f-d0e9-46b0-aa23-cc1980f00515"
-dataset_key = "0000e36f-d0e9-46b0-aa23-cc1980f00515"
-
-svc = CountSvc()
-response = svc.get_endpoint()
-print(prettify_object(response))
-response = svc.get_counts(dataset_key=dataset_key, pub_org_key=None)
-print(prettify_object(response))
-
-# ...............................................
-from sppy.tools.provider.spnet import *
-bucket = PROJ_BUCKET
-arn = f"arn:aws:s3:::{bucket}"
-uri = f"s3://{bucket}/summary/"
-
-spnet = SpNetAnalyses(PROJ_BUCKET)
-records = spnet.get_simple_dataset_counts(dataset_key)
-
-self = spnet
-
-table = self._summary_tables["dataset_counts"]
-query_str = (
-    f"SELECT * FROM s3object s WHERE s.{table['key_fld']} = '{dataset_key}'"
-)
-format="JSON"
-records = self._query_summary_table(table, query_str, format)
-
-# ...................................................
-rec_table = table
-
-
-meta_table = self._summary_tables["dataset_meta"]
-meta_fields = meta_table["fields"]
-meta_key_fld = meta_table["key_fld"]
-meta_key_idx = meta_fields.index(meta_key_fld)
-meta_fields.pop(meta_key_idx)
-qry_flds = ", ".join(meta_fields)
-
-# Record info
-rec_fields = rec_table["fields"]
-rec_key_fld = rec_table["key_fld"]
-rec_key_idx = rec_fields.index(rec_key_fld)
-
-rec = records[0]
-
-# Get datasetkey by field or position
-if format == "JSON":
-    val = rec[rec_key_fld]
-else:
-    val = rec[rec_key_idx]
-
-query_str = (
-    f"SELECT {qry_flds} FROM s3object s WHERE s.{meta_key_fld} = '{val}'"
-)
-# Returns empty list or list of 1 record
-meta_recs = self._query_summary_table(meta_table, query_str, format)
-try:
-    meta = meta_recs[0]
-except IndexError:
-    # Add placeholders for empty values, no entries for dictionary
-    if format == "CSV":
-        rec.extend(["" for _ in qry_flds])
-else:
-    if format == "JSON":
-        rec.update(meta)
-    else:
-        rec.extend(meta)
 
 """

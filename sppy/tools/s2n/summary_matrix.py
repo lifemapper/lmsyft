@@ -176,24 +176,54 @@ class SummaryMatrix(_AggregateDataMatrix):
             data_datestr (str): date string in format YYYY_MM_DD
 
         Raises:
-            Exception: on unable to load CSV file
-            Exception: on unable to load JSON metadata
+            Exception: on failure to uncompress files.
+            Exception: on failure to load data from uncompressed files.
         """
-        mtx_fname, meta_fname, table_type, data_datestr = cls._uncompress_files(
-            zip_filename, local_path, overwrite=overwrite)
-
-        # Read dataframe from local CSV file
         try:
-            dataframe = pd.read_csv(mtx_fname, sep=MATRIX_SEPARATOR, index_col=0)
-        except Exception as e:
-            raise Exception(f"Failed to load {mtx_fname}: {e}")
-        # Read JSON dictionary as string
-        try:
-            meta_dict = cls.load_metadata(meta_fname)
+            mtx_fname, meta_fname, table_type, data_datestr = cls._uncompress_files(
+                zip_filename, local_path, overwrite=overwrite)
         except Exception:
             raise
 
+        # Read matrix data from local files
+        try:
+            dataframe, meta_dict = cls.read_data(mtx_fname, meta_fname)
+        except Exception as e:
+            raise
+
         return dataframe, meta_dict, table_type, data_datestr
+
+    # .............................................................................
+    @classmethod
+    def read_data(cls, mtx_filename, meta_filename):
+        """Read SummaryMatrix data files into a dataframe and metadata dictionary.
+
+        Args:
+            mtx_filename (str): Filename of pandas.DataFrame data in csv format.
+            meta_filename (str): Filename of JSON summary matrix metadata.
+
+        Returns:
+            dataframe (pandas.DataFrame): dataframe containing summary matrix data.
+            meta_dict (dict): metadata for the matrix
+            table_type (aws.aws_constants.SUMMARY_TABLE_TYPES): type of table data
+            data_datestr (str): date string in format YYYY_MM_DD
+
+        Raises:
+            Exception: on unable to load CSV file
+            Exception: on unable to load JSON metadata
+        """
+        # Read dataframe from local CSV file
+        try:
+            dataframe = pd.read_csv(mtx_filename, sep=MATRIX_SEPARATOR, index_col=0)
+        except Exception as e:
+            raise Exception(f"Failed to load {mtx_filename}: {e}")
+        # Read JSON dictionary as string
+        try:
+            meta_dict = cls.load_metadata(meta_filename)
+        except Exception:
+            raise
+
+        return dataframe, meta_dict
 
     # ...............................................
     def get_measures(self, summary_key):
