@@ -100,7 +100,7 @@ class APIEndpoint:
                 [
                     cls.Compare,
                     cls.Describe,
-                    # cls.Rank
+                    cls.Rank
                 ],
             cls.Broker:
                 [
