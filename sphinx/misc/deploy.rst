@@ -128,8 +128,10 @@ script run on instantiation.
     * docker-compose.yml bind-mounts this host directory to the /volumes/aws_data
       directory as Read-Only on the analyst container.
     * AWS_INPUT_DATA in the .env.analyst.conf file points to this volume
-    * INPUT_DATA_PATH references the AWS_INPUT_DATA environment variable in the
-      flask_app/analyst/dataset.py service
+    * INPUT_DATA_PATH in python code references the AWS_INPUT_DATA environment variable
+      in the flask_app/analyst/base.py service
+    * currently, this directory only holds the sparse matrix data, uncompressed and
+      possibly the zip file. (speciesxdataset_matrix_2024_02_01.npz, .json, .zip)
 
 
 Standard manipulation
