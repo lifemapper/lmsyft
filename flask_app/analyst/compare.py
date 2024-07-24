@@ -43,12 +43,17 @@ class CompareSvc(_AnalystService):
         else:
             # Query dataset counts
             if good_params["summary_type"] is not None:
-                try:
-                    stat_dict, errors = cls._get_comparative_measures(
-                        good_params["summary_type"], good_params["summary_key"])
-                except Exception:
-                    errors = {"error": [get_traceback()]}
-
+                if good_params["summary_key"] is not None:
+                    try:
+                        stat_dict, errors = cls._get_comparative_measures(
+                            good_params["summary_type"], good_params["summary_key"])
+                    except Exception:
+                        errors = {"error": [get_traceback()]}
+                else:
+                    errors = {
+                        "error":
+                            ["Parameter `summary_key` is required for compare API."]
+                    }
                 # Combine errors from success or failure
                 errinfo = combine_errinfo(errinfo, errors)
 
@@ -62,55 +67,55 @@ class CompareSvc(_AnalystService):
 # ...............................................
     @classmethod
     def _get_comparative_measures(cls, summary_type, summary_key):
-        key_txt = f"{summary_type.capitalize()} Statistics"
+        out_dict = {}
         spnet_mtx, errinfo = cls._init_sparse_matrix()
+        one_stat_dict = None
+        all_stat_dict = None
         if spnet_mtx is not None:
             # Compare dataset
             if summary_type == "dataset":
-                # Only request single dataset if summary_key is present
-                if summary_key is not None:
+                try:
+                    one_stat_dict = spnet_mtx.get_column_stats(summary_key)
+                except IndexError:
+                    errinfo = {
+                        "error": [f"Key {summary_key} does not exist in {summary_type}"]
+                    }
+                except Exception:
+                    errinfo = {
+                        "error": [HTTPStatus.INTERNAL_SERVER_ERROR, get_traceback()]
+                    }
+                else:
+                    # Get aggregated stats for all datasets
                     try:
-                        one_stat_dict = spnet_mtx.get_column_stats(summary_key)
-                    except IndexError:
-                        errinfo = {
-                            "error": [f"Key {summary_key} does not exist in {summary_type}"]
-                        }
+                        all_stat_dict = spnet_mtx.get_all_column_stats()
                     except Exception:
                         errinfo = {
                             "error": [HTTPStatus.INTERNAL_SERVER_ERROR, get_traceback()]
                         }
-                # Get aggregated stats for all datasets
-                try:
-                    all_stat_dict = spnet_mtx.get_all_column_stats()
-                except Exception:
-                    errinfo = {
-                        "error": [HTTPStatus.INTERNAL_SERVER_ERROR, get_traceback()]
-                    }
             # other valid option is "species"
             else:
-                # Only request single species if summary_key is present
-                if summary_key is not None:
-                    try:
-                        one_stat_dict = spnet_mtx.get_row_stats(summary_key)
-                    except IndexError:
-                        errinfo = {
-                            "error": [f"Key {summary_key} does not exist in {summary_type}"]
-                        }
-                    except Exception:
-                        errinfo = add_errinfo(
-                            errinfo, "error",
-                            [HTTPStatus.INTERNAL_SERVER_ERROR, get_traceback()])
-                # Get aggregated stats for all species
                 try:
-                    all_stat_dict = spnet_mtx.get_all_row_stats()
-                except Exception:
+                    one_stat_dict = spnet_mtx.get_row_stats(summary_key)
+                except IndexError:
                     errinfo = {
-                        "error": [HTTPStatus.INTERNAL_SERVER_ERROR, get_traceback()]
+                        "error": [f"Key {summary_key} does not exist in {summary_type}"]
                     }
-
-        out_dict = {f"Total {key_txt}":  all_stat_dict}
-        if summary_key is not None:
+                except Exception:
+                    errinfo = add_errinfo(
+                        errinfo, "error",
+                        [HTTPStatus.INTERNAL_SERVER_ERROR, get_traceback()])
+                else:
+                    # Get aggregated stats for all species
+                    try:
+                        all_stat_dict = spnet_mtx.get_all_row_stats()
+                    except Exception:
+                        errinfo = {
+                            "error": [HTTPStatus.INTERNAL_SERVER_ERROR, get_traceback()]
+                        }
+        if one_stat_dict is not None and all_stat_dict is not None:
+            key_txt = f"{summary_type.capitalize()} Statistics"
             out_dict[f"Individual {key_txt}"] = one_stat_dict
+            out_dict = {f"Total {key_txt}": all_stat_dict}
         return out_dict, errinfo
 
 
