@@ -78,13 +78,13 @@ def combine_errinfo(errinfo1, errinfo2):
 
 
 # ...............................................
-def add_errinfo(errinfo, key, val):
+def add_errinfo(errinfo, key, val_lst):
     """Add to a dictionary with keys `error`, `warning` and `info`.
 
     Args:
         errinfo: dictionary of errors
         key: error type, `error`, `warning` or `info`
-        val: error message
+        val_lst: error message or list of errors
 
     Returns:
         updated dictionary of errors
@@ -92,8 +92,8 @@ def add_errinfo(errinfo, key, val):
     if errinfo is None:
         errinfo = {}
     if key in ("error", "warning", "info"):
-        if isinstance(val, str):
-            val_lst = [val]
+        if isinstance(val_lst, str):
+            val_lst = [val_lst]
         try:
             errinfo[key].extend(val_lst)
         except KeyError:
