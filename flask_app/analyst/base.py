@@ -19,14 +19,14 @@ from sppy.tools.util.logtools import Logger
 
 try:
     # For docker deployment
-    WORKING_PATH = os.environ["WORKING_DIRECTORY"]
+    DOWNLOAD_PATH = os.environ["WORKING_DIRECTORY"]
     # Read-only volume
     INPUT_DATA_PATH = os.environ["AWS_DATA_DIRECTORY"]
 except KeyError:
     # For local debugging
-    WORKING_PATH = '/tmp'
-    INPUT_DATA_PATH = WORKING_PATH
-LOG_PATH = os.path.join(WORKING_PATH, "log")
+    DOWNLOAD_PATH = '/tmp'
+    INPUT_DATA_PATH = DOWNLOAD_PATH
+LOG_PATH = os.path.join(DOWNLOAD_PATH, "log")
 
 
 # .............................................................................
@@ -139,13 +139,20 @@ class _AnalystService(_SpecifyNetworkService):
 
     # ...............................................
     @classmethod
-    def _get_matrix_input_filenames(cls, table, input_path):
+    def _find_matrix_input_filenames(cls, table, input_path, download_path):
+        do_retrieve = False
         basename = table["fname"]
         mtx_ext = table["matrix_extension"]
         mtx_fname = f"{input_path}/{basename}{mtx_ext}"
         meta_fname = f"{input_path}/{basename}.json"
         zip_fname = f"{input_path}/{basename}.zip"
-        return mtx_fname, meta_fname, zip_fname
+        if not os.path.exists(mtx_fname) or not os.path.exists(meta_fname):
+            mtx_fname = f"{download_path}/{basename}{mtx_ext}"
+            meta_fname = f"{download_path}/{basename}.json"
+            zip_fname = f"{download_path}/{basename}.zip"
+            if not os.path.exists(mtx_fname) or not os.path.exists(meta_fname):
+                do_retrieve = True
+        return do_retrieve, mtx_fname, meta_fname, zip_fname
 
     # ...............................................
     @classmethod
@@ -202,9 +209,10 @@ class _AnalystService(_SpecifyNetworkService):
         mtx_table_type = SUMMARY_TABLE_TYPES.SPECIES_DATASET_MATRIX
         table = Summaries.get_table(mtx_table_type, data_datestr)
         # Look for uncompressed files in Read-only volume first
-        mtx_filename, meta_filename, zip_filename = cls._get_matrix_input_filenames(
-            table, INPUT_DATA_PATH)
-        if os.path.exists(meta_filename) and os.path.exists(mtx_filename):
+        (do_retrieve,
+         mtx_filename, meta_filename, zip_filename) = cls._find_matrix_input_filenames(
+            table, INPUT_DATA_PATH, DOWNLOAD_PATH)
+        if do_retrieve is False:
             # Read
             sparse_coo, row_categ, col_categ = SparseMatrix.read_data(
                 mtx_filename, meta_filename)
@@ -212,7 +220,7 @@ class _AnalystService(_SpecifyNetworkService):
             # or Download to working path and read
             sparse_coo, row_categ, col_categ, _table_type, errinfo = \
                 cls._retrieve_sparse_matrix(
-                    os.path.basename(zip_filename), WORKING_PATH)
+                    os.path.basename(zip_filename), DOWNLOAD_PATH)
         # Create
         if None not in (sparse_coo, row_categ, col_categ):
             sp_mtx = SparseMatrix(
@@ -261,16 +269,17 @@ class _AnalystService(_SpecifyNetworkService):
 
         table = Summaries.get_table(mtx_table_type, data_datestr)
         # Look for uncompressed files in Read-only volume first
-        mtx_filename, meta_filename, zip_filename = cls._get_matrix_input_filenames(
-            table, INPUT_DATA_PATH)
-        if os.path.exists(meta_filename) and os.path.exists(mtx_filename):
+        (do_retrieve,
+         mtx_filename, meta_filename, zip_filename) = cls._find_matrix_input_filenames(
+            table, INPUT_DATA_PATH, DOWNLOAD_PATH)
+        if do_retrieve is False:
             # Read
             dataframe, meta_dict = SummaryMatrix.read_data(
                 mtx_filename, meta_filename)
         else:
             # or Download to working path and read
             dataframe, meta_dict, _, errinfo = cls._retrieve_summary_matrix(
-                os.path.basename(zip_filename), WORKING_PATH)
+                os.path.basename(zip_filename), DOWNLOAD_PATH)
 
         # Create
         if dataframe is not None:
