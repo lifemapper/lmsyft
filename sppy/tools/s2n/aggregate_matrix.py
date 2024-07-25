@@ -303,8 +303,8 @@ if __name__ == "__main__":
 
     # Create
     sp_mtx = SparseMatrix(
-        sparse_coo, mtx_table_type, data_datestr, row_category=row_categ,
-        column_category=col_categ, logger=tst_logger)
+        sparse_coo, mtx_table_type, data_datestr, row_categ, col_categ,
+        logger=tst_logger)
 
     # .................................
     # Create 2 summary matrices from sparse matrix and upload

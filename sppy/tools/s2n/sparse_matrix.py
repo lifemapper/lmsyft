@@ -16,8 +16,8 @@ class SparseMatrix(_AggregateDataMatrix):
 
     # ...........................
     def __init__(
-            self, sparse_coo_array, table_type, data_datestr, row_category=None,
-            column_category=None, logger=None):
+            self, sparse_coo_array, table_type, data_datestr, row_category,
+            column_category, logger=None):
         """Constructor for species by dataset comparisons.
 
         Args:
@@ -94,8 +94,7 @@ class SparseMatrix(_AggregateDataMatrix):
             (stacked_df[val_fld], (row_idx, col_idx)),
             shape=(y_categ.categories.size, x_categ.categories.size))
         sparse_matrix = SparseMatrix(
-            sparse_coo, table_type, data_datestr, row_category=y_categ,
-            column_category=x_categ, logger=logger)
+            sparse_coo, table_type, data_datestr, y_categ, x_categ, logger=logger)
         return sparse_matrix
 
     # ...........................
