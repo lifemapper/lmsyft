@@ -115,7 +115,7 @@ class CompareSvc(_AnalystService):
             if one_stat_dict is not None and all_stat_dict is not None:
                 key_txt = f"{summary_type.capitalize()} Statistics"
                 out_dict[f"Individual {key_txt}"] = one_stat_dict
-                out_dict = {f"Total {key_txt}": all_stat_dict}
+                out_dict[f"Total {key_txt}"] = all_stat_dict
         return out_dict, errinfo
 
 
