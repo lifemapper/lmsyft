@@ -149,6 +149,23 @@ class _AnalystService(_SpecifyNetworkService):
 
     # ...............................................
     @classmethod
+    def _test_download(cls, filename):
+        success = True
+        msg = ""
+        # Test successful download
+        retries = 0
+        interval = 6
+        while not os.path.exists(filename) and retries < 10:
+            import time
+            time.sleep(6)
+            retries += 1
+        if not os.path.exists(filename):
+            success = False
+            msg = f"Failed to access {filename} in {retries * interval} seconds"
+        return success, msg
+
+    # ...............................................
+    @classmethod
     def _retrieve_sparse_matrix(cls, zip_basename, local_path):
         sparse_coo = None
         row_categ = None
@@ -164,7 +181,8 @@ class _AnalystService(_SpecifyNetworkService):
             errinfo = add_errinfo(errinfo, "error", str(e))
 
         else:
-            if os.path.exists(zip_filename):
+            success, msg = cls._test_download(zip_filename)
+            if success:
                 try:
                     sparse_coo, row_categ, col_categ, table_type, _data_datestr = \
                         SparseMatrix.uncompress_zipped_data(
@@ -172,8 +190,7 @@ class _AnalystService(_SpecifyNetworkService):
                 except Exception as e:
                     errinfo = add_errinfo(errinfo, "error", str(e))
             else:
-                errinfo = add_errinfo(
-                    errinfo, "error", f"Failed to download {zip_basename}")
+                errinfo = add_errinfo(errinfo, "error", [msg])
         return sparse_coo, row_categ, col_categ, table_type, errinfo
 
     # ...............................................
@@ -197,8 +214,7 @@ class _AnalystService(_SpecifyNetworkService):
                     os.path.basename(zip_filename), WORKING_PATH)
         # Create
         sp_mtx = SparseMatrix(
-            sparse_coo, mtx_table_type, data_datestr, row_category=row_categ,
-            column_category=col_categ, logger=None)
+            sparse_coo, mtx_table_type, data_datestr, row_categ, col_categ)
         return sp_mtx, errinfo
 
     # ...............................................
@@ -217,7 +233,8 @@ class _AnalystService(_SpecifyNetworkService):
             errinfo = add_errinfo(errinfo, "error", str(e))
 
         else:
-            if os.path.exists(zip_filename):
+            success, msg = cls._test_download(zip_filename)
+            if success:
                 # Extract if matrix and metadata files do not exist, create objects
                 try:
                     dataframe, meta_dict, table_type, _data_datestr = \
@@ -226,8 +243,7 @@ class _AnalystService(_SpecifyNetworkService):
                 except Exception as e:
                     errinfo = add_errinfo(errinfo, "error", str(e))
             else:
-                errinfo = add_errinfo(
-                    errinfo, "error", f"Failed to download {zip_basename}")
+                errinfo = add_errinfo(errinfo, "error", [msg])
         return dataframe, meta_dict, table_type, errinfo
 
     # ...............................................
