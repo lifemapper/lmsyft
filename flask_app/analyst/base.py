@@ -186,7 +186,7 @@ class _AnalystService(_SpecifyNetworkService):
                 try:
                     sparse_coo, row_categ, col_categ, table_type, _data_datestr = \
                         SparseMatrix.uncompress_zipped_data(
-                            zip_filename, local_path=INPUT_DATA_PATH, overwrite=False)
+                            zip_filename, local_path=local_path, overwrite=False)
                 except Exception as e:
                     errinfo = add_errinfo(errinfo, "error", str(e))
             else:
@@ -241,7 +241,7 @@ class _AnalystService(_SpecifyNetworkService):
                 try:
                     dataframe, meta_dict, table_type, _data_datestr = \
                         SummaryMatrix.uncompress_zipped_data(
-                            zip_filename, local_path=WORKING_PATH, overwrite=False)
+                            zip_filename, local_path=local_path, overwrite=False)
                 except Exception as e:
                     errinfo = add_errinfo(errinfo, "error", str(e))
             else:
