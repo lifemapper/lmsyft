@@ -197,6 +197,7 @@ class _AnalystService(_SpecifyNetworkService):
     @classmethod
     def _init_sparse_matrix(cls):
         errinfo = {}
+        sp_mtx = None
         data_datestr = get_current_datadate_str()
         mtx_table_type = SUMMARY_TABLE_TYPES.SPECIES_DATASET_MATRIX
         table = Summaries.get_table(mtx_table_type, data_datestr)
@@ -251,6 +252,7 @@ class _AnalystService(_SpecifyNetworkService):
     @classmethod
     def _init_summary_matrix(cls, summary_type):
         errinfo = {}
+        summary_mtx = None
         data_datestr = get_current_datadate_str()
         if summary_type == "dataset":
             mtx_table_type = SUMMARY_TABLE_TYPES.DATASET_SPECIES_SUMMARY
@@ -267,13 +269,13 @@ class _AnalystService(_SpecifyNetworkService):
                 mtx_filename, meta_filename)
         else:
             # or Download to working path and read
-            if not (os.path.exists(meta_filename) and os.path.exists(mtx_filename)):
-                dataframe, meta_dict, _, errinfo = cls._retrieve_summary_matrix(
-                    os.path.basename(zip_filename), WORKING_PATH)
+            dataframe, meta_dict, _, errinfo = cls._retrieve_summary_matrix(
+                os.path.basename(zip_filename), WORKING_PATH)
 
         # Create
-        summary_mtx = SummaryMatrix(
-            dataframe, mtx_table_type, data_datestr, logger=None)
+        if dataframe is not None:
+            summary_mtx = SummaryMatrix(
+                dataframe, mtx_table_type, data_datestr, logger=None)
 
         return summary_mtx, errinfo
 

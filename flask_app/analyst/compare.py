@@ -69,9 +69,9 @@ class CompareSvc(_AnalystService):
     def _get_comparative_measures(cls, summary_type, summary_key):
         out_dict = {}
         spnet_mtx, errinfo = cls._init_sparse_matrix()
-        one_stat_dict = None
-        all_stat_dict = None
         if spnet_mtx is not None:
+            one_stat_dict = None
+            all_stat_dict = None
             # Compare dataset
             if summary_type == "dataset":
                 try:
@@ -112,10 +112,10 @@ class CompareSvc(_AnalystService):
                         errinfo = {
                             "error": [HTTPStatus.INTERNAL_SERVER_ERROR, get_traceback()]
                         }
-        if one_stat_dict is not None and all_stat_dict is not None:
-            key_txt = f"{summary_type.capitalize()} Statistics"
-            out_dict[f"Individual {key_txt}"] = one_stat_dict
-            out_dict = {f"Total {key_txt}": all_stat_dict}
+            if one_stat_dict is not None and all_stat_dict is not None:
+                key_txt = f"{summary_type.capitalize()} Statistics"
+                out_dict[f"Individual {key_txt}"] = one_stat_dict
+                out_dict = {f"Total {key_txt}": all_stat_dict}
         return out_dict, errinfo
 
 
