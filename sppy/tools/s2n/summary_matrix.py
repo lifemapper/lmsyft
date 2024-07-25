@@ -188,7 +188,7 @@ class SummaryMatrix(_AggregateDataMatrix):
         # Read matrix data from local files
         try:
             dataframe, meta_dict = cls.read_data(mtx_fname, meta_fname)
-        except Exception as e:
+        except Exception:
             raise
 
         return dataframe, meta_dict, table_type, data_datestr
