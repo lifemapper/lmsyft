@@ -213,8 +213,9 @@ class _AnalystService(_SpecifyNetworkService):
                 cls._retrieve_sparse_matrix(
                     os.path.basename(zip_filename), WORKING_PATH)
         # Create
-        sp_mtx = SparseMatrix(
-            sparse_coo, mtx_table_type, data_datestr, row_categ, col_categ)
+        if None not in (sparse_coo, row_categ, col_categ):
+            sp_mtx = SparseMatrix(
+                sparse_coo, mtx_table_type, data_datestr, row_categ, col_categ)
         return sp_mtx, errinfo
 
     # ...............................................
