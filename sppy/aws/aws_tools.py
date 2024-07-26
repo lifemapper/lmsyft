@@ -1140,7 +1140,7 @@ if __name__ == "__main__":
     # Required: Download dataset metadata from GBIF first
     # https://www.gbif.org/dataset/search?type=OCCURRENCE
     create_s3_dataset_lookup_from_tsv(
-        tsv_filename, bucket, s3_folders, by_keys=False, encoding=ENCODING)
+        tsv_filename, bucket, s3_folders, encoding=ENCODING)
 
 """
 # Note: Test with quoted data such as:
