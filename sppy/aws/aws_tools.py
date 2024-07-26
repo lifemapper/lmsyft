@@ -993,7 +993,7 @@ def create_dataframe_from_api(base_url, response_keys, output_columns):
 
 # ----------------------------------------------------
 def _get_dataset_keys(bucket, s3_folders, input_fname, is_test):
-    # Get keys for dataset resolution
+    # Get keys for dataset resolution from our latest copy of GBIF data
     s3_path = f"{s3_folders}/{input_fname}"
     query_str = f"SELECT {DATASET_GBIF_KEY} from s3object s"
     key_records = _query_table(bucket, s3_path, query_str, format="CSV")
@@ -1005,14 +1005,13 @@ def _get_dataset_keys(bucket, s3_folders, input_fname, is_test):
 
 # ----------------------------------------------------
 def create_s3_dataset_lookup_from_tsv(
-        tsv_filename, bucket, s3_folders, by_keys=False, encoding=ENCODING):
+        tsv_filename, bucket, s3_folders, encoding=ENCODING):
     """Query the GBIF Dataset API, write a subset of the response to a table in S3.
 
     Args:
         tsv_filename: TSV filename of dataset metadata downloaded from GBIF
         bucket: name of the bucket containing the CSV data.
         s3_folders: S3 bucket folders for output lookup table
-        by_keys: boolean flag indicating save only metadata for dataset keys of interest
         encoding: encoding of the input data
 
     Note:
@@ -1028,11 +1027,6 @@ def create_s3_dataset_lookup_from_tsv(
     data_date = get_current_datadate_str()
     output_fname = f"dataset_meta_{data_date}.parquet"
     tmp_parquet_fname = f"/tmp/{output_fname}"
-
-    # # Get keys for dataset resolution
-    # if by_keys:
-    #     input_s3_path = f"{s3_folders}/dataset_counts_{data_date}_000.parquet"
-    #     keys = _get_dataset_keys(bucket, input_s3_path, is_test)
 
     # "dataset_key" is first column and set as index with index_col
     df = pd.read_csv(
@@ -1143,7 +1137,8 @@ if __name__ == "__main__":
     outfile = f"dataset_counts_{data_date}_000.parquet"
     keys = _get_dataset_keys(bucket, s3_folders, outfile, is_test)
 
-    # tsv_filename, bucket, s3_folders, by_keys = False, encoding = ENCODING
+    # Required: Download dataset metadata from GBIF first
+    # https://www.gbif.org/dataset/search?type=OCCURRENCE
     create_s3_dataset_lookup_from_tsv(
         tsv_filename, bucket, s3_folders, by_keys=False, encoding=ENCODING)
 
