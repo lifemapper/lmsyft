@@ -29,14 +29,30 @@ Create a Security Group for the region
     * All traffic all ports
 
 
-Create an IAM role for the EC2/Redshift/S3 interaction (specnet_ec2_role)
+Create an IAM role for the EC2/S3 interaction (specnet_ec2_s3_role)
+===========================================================
+
+* Create a Role for EC2 instance access to S3
+
+  1. First, create Policy allowing FullAccess to SpecifyNetwork bucket
+     (specnet_S3bucket_FullAccess)
+
+     * Make sure to add each S3 bucket subfolder - permissions are not recursive.
+
+  2. Trusted entity type = AWS service, Use Case = S3.
+
+  3. Add permissions
+
+    * specnet_S3bucket_FullAccess
+
+  4. Save and name role (specnet_ec2_role)
+
+Create an IAM role for the EC2/S3/Redshift interaction (specnet_ec2_role)
 ===========================================================
 
 * Create a Role for EC2 instance access to Redshift and S3
 
-  1. Create Policy allowing FullAccess to SpecifyNetwork bucket
-     (specnet_S3bucket_FullAccess)
-  2. Trusted entity type = AWS service, Use Case = Redshift - Customizable.
+  1. Trusted entity type = AWS service, Use Case = Redshift - Customizable.
 
     * TODO: change to Redshift - Scheduler when we automate the workflow
 
@@ -67,49 +83,23 @@ Creation Settings
     * t4g.small is 2gb RAM
 
   * Security Group: launch-wizard-1
-  * 30 Gb General Purpose SSD (gp2)
+  * 30 Gb General Purpose SSD (gp3)
   * For dev, Spot instance (in Advanced options)
-  * Modify IAM role - to role created above (i.e. specnet_ec2_role)
+  * Modify IAM role - to role created for s3 access (i.e. specnet_ec2_s3_role)
   * Use the security group created for this region (currently launch-wizard-1)
+  * Assign your key pair to this instance
 
-Allow docker containers to use host credentials
-------------------------------------------------
-* Extend the hop limit for getting metadata about permissions to 2
-  host --> dockercontainer --> metadata
-  https://specifydev.slack.com/archives/DQSAVMMHN/p1717706137817839
-  From the ec2 instance, run ::
-
-    aws ec2 modify-instance-metadata-options \
-        --instance-id i-082e751b94e476987 \
-        --http-put-response-hop-limit 2 \
-        --http-endpoint enabled
-
-Launch
----------------
-
-  * Default user for ubuntu instance is `ubuntu`
-  * If you do not have a keypair, create one for SSH access (tied to region) on initial
-    EC2 launch
-
+    * If you do not have a keypair, create one for SSH access (tied to region) on initial
+      EC2 launch
     * One chance only: Download the private key (.pem file for Linux and OSX) to local
       machine
     * Set file permissions to 400
 
-Configure programmatic access to S3
-===========================================================
+  * Launch
+  * Test by SSH-ing to the instance with the Public IPv4 DNS address, with efault user
+    (for ubuntu instance) `ubuntu`::
 
-Configure AWS credentials either through
-
-* environment variables
-* AWS CLI configuration (for command line tools), or
-* using an IAM role attached to your instance if running on AWS infrastructure.
-
-The AWS cli depends on boto3, so both must be up to date.  In my testing, awscli
-1.27.118 (with requirement botocore==1.29.118) and boto3 1.28.1, failed on
-S3 Select access.
-
-I upgraded awscli (sudo apt install awscli), then upgraded boto3
-(pip install --upgrade boto3) , which installed 1.34.60.  Success
+    ssh  -i .ssh/<aws_keyname>.pem  ubuntu@<ec2-xxx-xxx-xxx-xxx.compute-x.amazonaws.com>
 
 
 Elastic IP
@@ -125,52 +115,91 @@ Install software on EC2
 Baseline
 ------------
 * update apt
-* install AWS client, awscli
 * install apache for getting/managing certificates
 * install certbot for Let's Encrypt certificates::
 
-    $ sudo apt update
-    $ sudo apt install awscli
-    $ sudo apt install apache2
-    $ sudo apt install certbot
-    $ sudo apt install plocate
-    $ sudo apt install unzip
-
+    sudo apt update
+    sudo apt install apache2
+    sudo apt install certbot
+    sudo apt install plocate
+    sudo apt install unzip
 
 AWS Client tools
 --------------------
 
+* Make sure awscli dependencies are satisified; currently glibc, groff, and less
 * Use instructions to install the awscli package:
   https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html.
 * Make sure to use the instructions with the right architecture (x86 vs Arm)
+* Troubleshooting:
+
+  * The AWS cli depends on boto3, so both must be up to date.  In my testing, awscli
+    1.27.118 (with requirement botocore==1.29.118) and boto3 1.28.1, failed on
+    S3 Select access.
+  * I upgraded awscli (sudo apt install awscli), then upgraded boto3
+    (pip install --upgrade boto3) , which installed 1.34.60.  Success
+
+Configure programmatic access to S3
+----------------------------------------
+
+Configure AWS credentials either through
+
+* (preferred) Using an IAM role attached to your instance if running on AWS
+  infrastructure.
+* Not recommended:
+
+  * Environment variables
+  * AWS CLI configuration (for command line tools),
+    https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-configure.html
+
+* Test access with local file test.txt (for S3 resources allowed in IAM role)::
+
+  aws s3 ls s3://specnet-us-east-1
+  aws s3 cp test.txt s3://specnet-us-east-1/summary/
+  aws s3 rm s3://specnet-us-east-1/summary/test.txt
+
+
+
+Allow docker containers to use host credentials
+------------------------------------------------
+* Extend the hop limit for getting metadata about permissions to 2
+  host --> dockercontainer --> metadata
+  https://specifydev.slack.com/archives/DQSAVMMHN/p1717706137817839
+
+* SSH to the ec2 instance, then run ::
+
+    aws ec2 modify-instance-metadata-options \
+        --instance-id i-082e751b94e476987 \
+        --http-put-response-hop-limit 2 \
+        --http-endpoint enabled
 
 Docker
 -----------
 
 Follow instructions at https://docs.docker.com/engine/install/ubuntu/
 
-* Set up the repository::
+* Install dependencies if needed::
 
-    $ sudo apt-get update
-    $ sudo apt-get install ca-certificates curl gnupg
+    sudo apt-get update
+    sudo apt-get install ca-certificates curl gnupg
 
 * Add Docker GPG key::
 
-    $ sudo install -m 0755 -d /etc/apt/keyrings
-    $ curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-    $ sudo chmod a+r /etc/apt/keyrings/docker.gpg
+    sudo install -m 0755 -d /etc/apt/keyrings
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+    sudo chmod a+r /etc/apt/keyrings/docker.gpg
 
 * Set up the docker repository::
 
-    $ echo \
+    echo \
       "deb [arch="$(dpkg --print-architecture)" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
       "$(. /etc/os-release && echo "$VERSION_CODENAME")" stable" | \
       sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
-* Update apt and install Docker Engine, containerd, and Docker Compose::
+* Update apt for Docker repo, install Docker Engine, containerd, and Docker Compose::
 
-    $ sudo apt-get update
-    $ sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+    sudo apt-get update
+    sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
 
 Add the Specify Network software via Github
@@ -184,7 +213,7 @@ Add the Specify Network software via Github
 
 * Add the ssh key to Github
 
-  * In the Github website, login, and navigate to your user profile
+  * In the Github website, login, and navigate to your profile Settings
   * Select **SSH and GPG keys** from the left vertical menu
   * Choose **New SSH key**
   * In a terminal window, copy the key to the clipboard::
@@ -300,7 +329,7 @@ Connect and set EC2 SSH service timeout
 
     $ sudo systemctl reload sshd
 
-Enable S3 access from local machine (and EC2?)
+Enable S3 access from local machine
 ===========================================================
 
 * Configure AWS credentials and defaults
@@ -325,7 +354,7 @@ Enable S3 access from local machine (and EC2?)
 
 * Test access locally with::
 
-    $ aws s3 ls
+    $ aws s3 ls s3://specnet-us-east-1
     $ aws ec2 describe-instances
 
 
