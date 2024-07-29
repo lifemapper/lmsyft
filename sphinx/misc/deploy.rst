@@ -125,6 +125,11 @@ script run on instantiation.
   * /home/ubuntu/aws_data directory on the host will contain data downloaded from S3
     for data analysis outputs used by the SpecifyNetwork Analyst APIs.
 
+    * download input data into this directory prior to volume creation in deployment
+      (docker compose)
+
+      * TODO: set up an automated task to download this on creation in S3
+
     * docker-compose.yml bind-mounts this host directory to the /volumes/aws_data
       directory as Read-Only on the analyst container.
     * AWS_INPUT_DATA in the .env.analyst.conf file points to this volume
@@ -132,6 +137,7 @@ script run on instantiation.
       in the flask_app/analyst/base.py service
     * currently, this directory only holds the sparse matrix data, uncompressed and
       possibly the zip file. (speciesxdataset_matrix_2024_02_01.npz, .json, .zip)
+
 
 
 Standard manipulation
