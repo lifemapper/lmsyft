@@ -60,10 +60,12 @@
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="debugging.html">Debugging Flask and Docker instances</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Deploy Specify Network</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#create-an-ec2-instance">Create an EC2 instance</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#install-specify-network-code">Install Specify Network code</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#create-ssl-certificates">Create SSL certificates</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#build-deploy-specify-network">Build/deploy Specify Network</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#environment-status-checks">Environment status checks:</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#host-machine-preparation">Host machine preparation</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="#standard-manipulation">Standard manipulation</a><ul>
@@ -130,6 +132,9 @@
              
   <section id="deploy-specify-network">
 <h1>Deploy Specify Network<a class="headerlink" href="#deploy-specify-network" title="Link to this heading"></a></h1>
+<section id="create-an-ec2-instance">
+<h2>Create an EC2 instance<a class="headerlink" href="#create-an-ec2-instance" title="Link to this heading"></a></h2>
+</section>
 <section id="install-specify-network-code">
 <h2>Install Specify Network code<a class="headerlink" href="#install-specify-network-code" title="Link to this heading"></a></h2>
 </section>
@@ -236,6 +241,35 @@ for FLASK_APP on production, DEBUG_PORT for FLASK_MANAGE on development.
     <span class="n">proxy_pass</span> <span class="n">http</span><span class="p">:</span><span class="o">//</span><span class="n">analyst</span><span class="p">:</span><span class="mi">5000</span><span class="p">;</span>
 </pre></div>
 </div>
+</section>
+<section id="host-machine-preparation">
+<h3>Host machine preparation<a class="headerlink" href="#host-machine-preparation" title="Link to this heading"></a></h3>
+<p>These tasks should be set up on the EC2 host, possibly in the userdata
+script run on instantiation.</p>
+<ul class="simple">
+<li><p>Create a directory on the host machine to share data with docker containers.</p>
+<ul>
+<li><p>/home/ubuntu/aws_data directory on the host will contain data downloaded from S3
+for data analysis outputs used by the SpecifyNetwork Analyst APIs.</p>
+<ul>
+<li><p>download input data into this directory prior to volume creation in deployment
+(docker compose)</p>
+<ul>
+<li><p>TODO: set up an automated task to download this on creation in S3</p></li>
+</ul>
+</li>
+<li><p>docker-compose.yml bind-mounts this host directory to the /volumes/aws_data
+directory as Read-Only on the analyst container.</p></li>
+<li><p>AWS_INPUT_DATA in the .env.analyst.conf file points to this volume</p></li>
+<li><p>INPUT_DATA_PATH in python code references the AWS_INPUT_DATA environment variable
+in the flask_app/analyst/base.py service</p></li>
+<li><p>currently, this directory only holds the sparse matrix data, uncompressed and
+possibly the zip file. (speciesxdataset_matrix_2024_02_01.npz, .json, .zip)</p></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
 </section>
 </section>
 <section id="standard-manipulation">
