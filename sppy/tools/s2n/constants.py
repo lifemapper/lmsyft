@@ -38,6 +38,7 @@ class Summaries:
     Note: Table code is the same as <datacontents>_<datatype>
     Note: "datasetkey" is the original GBIF field
     """
+
     TABLES = {
             SUMMARY_TABLE_TYPES.DATASET_COUNTS: {
                 "code": SUMMARY_TABLE_TYPES.DATASET_COUNTS,
@@ -105,7 +106,6 @@ class Summaries:
                 "value": "measure",
             }
     }
-
     # ...............................................
     @classmethod
     def update_summary_tables(cls, datestr):
@@ -252,20 +252,21 @@ class SNKeys(Enum):
     (COL_TYPE,) = range(5000, 5001)
     # Column: One x
     (COL_IDX, COL_LABEL, COL_COUNT, COL_TOTAL,
-     COL_MIN_COUNT, COL_MIN_LABELS, COL_MIN_INDEXES,
-     COL_MAX_COUNT, COL_MAX_LABELS, COL_MAX_INDEXES
-     ) = range(5100, 5110)
+     COL_MIN_COUNT, COL_MIN_LABELS,
+     COL_MAX_COUNT, COL_MAX_LABELS,
+     ) = range(5100, 5108)
     # Column: All x
-    (COLS_TOTAL, COLS_MIN, COLS_MAX, COLS_MEAN, COLS_MEDIAN,
-     COLS_COUNT, COLS_COUNT_MIN, COLS_COUNT_MAX, COLS_COUNT_MEAN, COLS_COUNT_MEDIAN
-     ) = range(5200, 5210)
+    (COLS_TOTAL, COLS_MIN, COLS_MAX, COLS_MAX_LABELS, COLS_MEAN, COLS_MEDIAN,
+     COLS_COUNT, COLS_COUNT_MIN, COLS_COUNT_MAX, COLS_COUNT_MAX_LABELS,
+     COLS_COUNT_MEAN, COLS_COUNT_MEDIAN,
+     ) = range(5200, 5212)
     # Row: aggregation of what type of data
     (ROW_TYPE,) = range(6000, 6001)
     # Row: One y
     (ROW_IDX, ROW_LABEL, ROW_COUNT, ROW_TOTAL,
-     ROW_MIN_COUNT, ROW_MIN_LABELS, ROW_MIN_INDEXES,
-     ROW_MAX_COUNT, ROW_MAX_LABELS, ROW_MAX_INDEXES
-     ) = range(6100, 6110)
+     ROW_MIN_COUNT, ROW_MIN_LABELS,
+     ROW_MAX_COUNT, ROW_MAX_LABELS,
+     ) = range(6100, 6108)
     (ROWS_TOTAL, ROWS_MIN, ROWS_MAX, ROWS_MEAN, ROWS_MEDIAN,
      ROWS_COUNT, ROWS_COUNT_MIN, ROWS_COUNT_MAX, ROWS_COUNT_MEAN, ROWS_COUNT_MEDIAN
      ) = range(6200, 6210)
@@ -273,9 +274,9 @@ class SNKeys(Enum):
     (TYPE,) = range(0, 1)
     # One field of row/column header
     (ONE_IDX, ONE_LABEL, ONE_COUNT, ONE_TOTAL,
-     ONE_MIN_COUNT, ONE_MIN_LABELS, ONE_MIN_INDEXES,
-     ONE_MAX_COUNT, ONE_MAX_LABELS, ONE_MAX_INDEXES
-     ) = range(100, 110)
+     ONE_MIN_COUNT, ONE_MIN_LABELS,
+     ONE_MAX_COUNT, ONE_MAX_LABELS,
+     ) = range(100, 108)
     # Column: All row/column headers
     (ALL_TOTAL, ALL_MIN, ALL_MAX, ALL_MEAN, ALL_MEDIAN,
      ALL_COUNT, ALL_COUNT_MIN, ALL_COUNT_MAX, ALL_COUNT_MEAN, ALL_COUNT_MEDIAN
@@ -308,14 +309,12 @@ class SNKeys(Enum):
                 cls.COL_COUNT: "total_species_for_dataset",
                 # Values (total of values in column)
                 cls.COL_TOTAL: "total_occurrences_for_dataset",
-                # Values: Minimum occurrence count for one dataset, species labels, indexes
+                # Values: Minimum occurrence count for one dataset, species labels
                 cls.COL_MIN_COUNT: "min_occurrence_count_for_dataset",
                 cls.COL_MIN_LABELS: "species_with_min_occurrence_count_for_dataset",
-                cls.COL_MIN_INDEXES: "species_indexes_with_min_occurrence_count_for_dataset",
-                # Values: Maximum occurrence count for one dataset, species labels, indexes
+                # Values: Maximum occurrence count for one dataset, species labels
                 cls.COL_MAX_COUNT: "max_occurrence_count_for_dataset",
                 cls.COL_MAX_LABELS: "species_with_max_occurrence_count_for_dataset",
-                cls.COL_MAX_INDEXES: "species_indexes_with_max_occurrence_count_for_dataset",
                 # -----------------------------
                 # All datasets
                 # ------------
@@ -324,6 +323,7 @@ class SNKeys(Enum):
                 cls.COLS_TOTAL: "total_occurrences_for_all_datasets",
                 cls.COLS_MIN: "min_occurrences_for_all_datasets",
                 cls.COLS_MAX: "max_occurrences_for_all_datasets",
+                cls.COLS_MAX_LABELS: "species_with_max_occurrences_for_all_datasets",
                 cls.COLS_MEAN: "mean_occurrences_for_all_datasets",
                 cls.COLS_MEDIAN: "median_occurrences_for_all_datasets",
                 # ------------
@@ -333,6 +333,7 @@ class SNKeys(Enum):
                 # Species counts for all datasets - stats
                 cls.COLS_COUNT_MIN: "min_species_count_for_all_datasets",
                 cls.COLS_COUNT_MAX: "max_species_count_for_all_datasets",
+                cls.COLS_COUNT_MAX_LABELS: "datasets_with_max_species_count",
                 cls.COLS_COUNT_MEAN: "mean_species_count_for_all_datasets",
                 cls.COLS_COUNT_MEDIAN: "median_species_count_for_all_datasets",
                 # ----------------------------------------------------------------------
@@ -349,11 +350,9 @@ class SNKeys(Enum):
                 # Values: Minimum occurrence count for one species, dataset labels, indexes
                 cls.ROW_MIN_COUNT: "min_occurrence_count_for_species",
                 cls.ROW_MIN_LABELS: "datasets_with_min_count_for_species",
-                cls.ROW_MIN_INDEXES: "dataset_indexes_with_min_count_for_species",
                 # Values: Maximum occurrence count for one species, dataset labels, indexes
                 cls.ROW_MAX_COUNT: "max_occurrence_count_for_species",
                 cls.ROW_MAX_LABELS: "datasets_with_max_count_for_species",
-                cls.ROW_MAX_INDEXES: "dataset_indexes_with_max_count_for_species",
                 # -----------------------------
                 # All species
                 # ------------
@@ -390,11 +389,9 @@ class SNKeys(Enum):
                 # Values: Minimum occurrence count for one dataset, species labels, indexes
                 cls.ONE_MIN_COUNT: "min_occurrence_count_for_dataset",
                 cls.ONE_MIN_LABELS: "species_with_min_occurrence_count_for_dataset",
-                cls.ONE_MIN_INDEXES: "species_indexes_with_min_occurrence_count_for_dataset",
                 # Values: Maximum occurrence count for one dataset, species labels, indexes
                 cls.ONE_MAX_COUNT: "max_occurrence_count_for_dataset",
                 cls.ONE_MAX_LABELS: "species_with_max_occurrence_count_for_dataset",
-                cls.ONE_MAX_INDEXES: "species_indexes_with_max_occurrence_count_for_dataset",
                 # -----------------------------
                 # All datasets
                 # ------------
@@ -431,11 +428,9 @@ class SNKeys(Enum):
                 # Values: Minimum occurrence count for one species, dataset labels, indexes
                 cls.ONE_MIN_COUNT: "min_occurrence_count_for_species",
                 cls.ONE_MIN_LABELS: "datasets_with_min_count_for_species",
-                cls.ONE_MIN_INDEXES: "dataset_indexes_with_min_count_for_species",
                 # Values: Maximum occurrence count for one species, dataset labels, indexes
                 cls.ONE_MAX_COUNT: "max_occurrence_count_for_species",
                 cls.ONE_MAX_LABELS: "datasets_with_max_count_for_species",
-                cls.ONE_MAX_INDEXES: "dataset_indexes_with_max_count_for_species",
                 # -----------------------------
                 # All species
                 # ------------

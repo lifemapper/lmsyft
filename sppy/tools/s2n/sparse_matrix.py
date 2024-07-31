@@ -6,8 +6,10 @@ from pandas.api.types import CategoricalDtype
 import random
 import scipy.sparse
 
+from sppy.aws.aws_constants import PROJ_BUCKET, DATASET_GBIF_KEY
 from sppy.tools.s2n.aggregate_data_matrix import _AggregateDataMatrix
 from sppy.tools.s2n.constants import (SNKeys, Summaries)
+from sppy.tools.s2n.spnet import SpNetAnalyses
 
 
 # .............................................................................
@@ -24,7 +26,8 @@ class SparseMatrix(_AggregateDataMatrix):
             sparse_coo_array (scipy.sparse.coo_array): A 2d sparse array with count
                 values for one aggregator0 (i.e. species) rows (axis 0) by another
                 aggregator1 (i.e. dataset) columns (axis 1) to use for computations.
-            table_type (aws_constants.SUMMARY_TABLE_TYPES): type of aggregated data
+            table_type (sppy.tools.s2n.constants.SUMMARY_TABLE_TYPES): type of
+                aggregated data
             data_datestr (str): date of the source data in YYYY_MM_DD format.
             row_category (pandas.api.types.CategoricalDtype): ordered row labels used
                 to identify axis 0/rows.
@@ -59,8 +62,8 @@ class SparseMatrix(_AggregateDataMatrix):
                 (axis 0)
             val_fld: : column in the input dataframe containing values to be used as
                 values for the intersection of x and y fields
-            table_type (aws_constants.SUMMARY_TABLE_TYPES): table type of sparse matrix
-                aggregated data
+            table_type (sppy.tools.s2n.constants.SUMMARY_TABLE_TYPES): table type of
+                sparse matrix aggregated data
             data_datestr (str): date of the source data in YYYY_MM_DD format.
             logger (object): logger for saving relevant processing messages
 
@@ -322,7 +325,7 @@ class SparseMatrix(_AggregateDataMatrix):
 
     # ...............................................
     def get_extreme_val_labels_for_vector(self, vector, axis=0, is_max=True):
-        """Get the minimum or maximum NON-ZERO value and row label(s) for a column.
+        """Get the minimum or maximum NON-ZERO value and axis label(s) for a vecto.
 
         Args:
             vector (numpy.array): 1 dimensional array for a row or column.
@@ -344,8 +347,31 @@ class SparseMatrix(_AggregateDataMatrix):
             target = vals.min()
         target = self.convert_np_vals_for_json(target)
 
+        # Get labels for this value in
+        labels = self.get_labels_for_val_in_vector(vector, target, axis=axis)
+        return target, labels
+
+    # ...............................................
+    def get_labels_for_val_in_vector(self, vector, target_val, axis=0):
+        """Get the row or column label(s) for a vector containing target_val.
+
+        Args:
+            vector (numpy.array): 1 dimensional array for a row or column.
+            target_val (int): value to search for in a row or column
+            axis (int): row (0) or column (1) header for extreme value and labels.
+
+        Returns:
+            target: The minimum or maximum value for a column
+            row_labels: The labels of the rows containing the target value
+
+        Raises:
+            Exception: on axis not in (0, 1)
+        """
+        # Returns row_idxs, col_idxs, vals of NNZ values in row
+        row_idxs, col_idxs, vals = scipy.sparse.find(vector)
+
         # Get indexes of target value within NNZ vals
-        tmp_idxs = np.where(vals == target)[0]
+        tmp_idxs = np.where(vals == target_val)[0]
         tmp_idx_lst = [tmp_idxs[i] for i in range(len(tmp_idxs))]
         # Get actual indexes (within all zero/non-zero elements) of target in vector
         if axis == 0:
@@ -363,7 +389,7 @@ class SparseMatrix(_AggregateDataMatrix):
         # Convert from indexes to labels
         labels = [
             self._get_category_from_code(idx, axis=label_axis) for idx in idxs_lst]
-        return target, labels
+        return labels
 
     # ...............................................
     def get_row_stats(self, row_label=None):
@@ -409,11 +435,16 @@ class SparseMatrix(_AggregateDataMatrix):
             row, row_idx = self.get_vector_from_label(row_label, axis=0)
         except IndexError:
             raise
-        # Largest Occurrence count for this Species, and datasets that contain it
-        maxval, max_row_labels = self.get_extreme_val_labels_for_vector(
+        # Largest/smallest Occurrence count for this Species, and column (dataset)
+        # labels that contain it
+        maxval, max_col_labels = self.get_extreme_val_labels_for_vector(
             row, axis=0, is_max=True)
-        minval, min_row_labels = self.get_extreme_val_labels_for_vector(
+        minval, min_col_labels = self.get_extreme_val_labels_for_vector(
             row, axis=0, is_max=False)
+        # Get dataset labels, if column is dataset, for datasets with max occurrences
+        # of species.  Datasets with only 1 occurrence is often large number
+        names = self._lookup_dataset_names(max_col_labels)
+
         stats = {
             self._keys[SNKeys.ROW_IDX]: row_idx,
             self._keys[SNKeys.ROW_LABEL]: row_label,
@@ -423,10 +454,10 @@ class SparseMatrix(_AggregateDataMatrix):
             self._keys[SNKeys.ROW_COUNT]: self.convert_np_vals_for_json(row.nnz),
             # Return min/max count in this species and datasets for that count
             self._keys[SNKeys.ROW_MIN_COUNT]: minval,
-            # TODO: is there a good way to optionally return many labels
             self._keys[SNKeys.ROW_MAX_COUNT]: maxval,
-            self._keys[SNKeys.ROW_MAX_LABELS]: max_row_labels,
+            self._keys[SNKeys.ROW_MAX_LABELS]: names
         }
+
         return stats
 
     # ...............................................
@@ -439,32 +470,41 @@ class SparseMatrix(_AggregateDataMatrix):
         """
         # Sum all rows to return a column (axis=1)
         all_totals = self._coo_array.sum(axis=1)
+        # Get dataset labels, if column is dataset, for datasets with max occurrences
+        # of species.  Datasets with only 1 occurrence is often large number
+        max_total = all_totals.max()
+        max_total_labels = self.get_labels_for_val_in_vector(
+            all_totals, max_total, axis=0)
+        names = self._lookup_dataset_names(max_total_labels)
         # Get number of non-zero entries for every row (column, numpy.ndarray)
         all_counts = self._coo_array.getnnz(axis=1)
         # Count columns with at least one non-zero entry (all columns)
         row_count = self._coo_array.shape[1]
         all_row_stats = {
+            # Count of other axis
             self._keys[SNKeys.ROWS_COUNT]: row_count,
-            self._keys[SNKeys.ROWS_TOTAL]:
-                self.convert_np_vals_for_json(all_totals.sum()),
-            self._keys[SNKeys.ROWS_MIN]:
-                self.convert_np_vals_for_json(all_totals.min()),
-            self._keys[SNKeys.ROWS_MAX]:
-                self.convert_np_vals_for_json(all_totals.max()),
-            self._keys[SNKeys.ROWS_MEAN]:
-                self.convert_np_vals_for_json(all_totals.mean()),
-            self._keys[SNKeys.ROWS_MEDIAN]: self.convert_np_vals_for_json(
-                np.median(all_totals, axis=0)[0, 0]),
-
             self._keys[SNKeys.ROWS_COUNT_MIN]:
                 self.convert_np_vals_for_json(all_counts.min()),
-            self._keys[SNKeys.ROWS_COUNT_MAX]:
-                self.convert_np_vals_for_json(all_counts.max()),
             self._keys[SNKeys.ROWS_COUNT_MEAN]:
                 self.convert_np_vals_for_json(all_counts.mean()),
             self._keys[SNKeys.ROWS_COUNT_MEDIAN]:
                 self.convert_np_vals_for_json(np.median(all_counts, axis=0)),
+            self._keys[SNKeys.ROWS_COUNT_MAX]:
+                self.convert_np_vals_for_json(all_counts.max()),
+            # Total of values
+            self._keys[SNKeys.ROWS_TOTAL]:
+                self.convert_np_vals_for_json(all_totals.sum()),
+            self._keys[SNKeys.ROWS_MIN]:
+                self.convert_np_vals_for_json(all_totals.min()),
+            self._keys[SNKeys.ROWS_MEAN]:
+                self.convert_np_vals_for_json(all_totals.mean()),
+            self._keys[SNKeys.ROWS_MEDIAN]: self.convert_np_vals_for_json(
+                np.median(all_totals, axis=0)[0, 0]),
+            self._keys[SNKeys.ROWS_MAX]:
+                self.convert_np_vals_for_json(max_total),
+            self._keys[SNKeys.ROW_MAX_LABELS]: names
         }
+
         return all_row_stats
 
     # ...............................................
@@ -506,35 +546,62 @@ class SparseMatrix(_AggregateDataMatrix):
             Inline comments are specific to a SUMMARY_TABLE_TYPES.SPECIES_DATASET_MATRIX
                 with row/column/value = species/dataset/occ_count
         """
+        stats = {}
         # Get column (sparse array), and its index
         try:
             col, col_idx = self.get_vector_from_label(col_label, axis=1)
         except IndexError:
             raise
-        stats = {
-            self._keys[SNKeys.COL_IDX]: col_idx,
-            self._keys[SNKeys.COL_LABEL]: col_label,
-        }
-        # Count of non-zero rows (Species) within this column (Dataset)
-        stats[self._keys[SNKeys.COL_COUNT]] = self.convert_np_vals_for_json(col.nnz)
-        # Largest/smallest occ count for dataset (column), and species (row)
-        # containing that count
-        maxval, max_col_labels = self.get_extreme_val_labels_for_vector(
+        # Largest/smallest occ count for dataset (column), and species (row) labels
+        # containing that count.
+        maxval, max_row_labels = self.get_extreme_val_labels_for_vector(
             col, axis=1, is_max=True)
-        minval, min_col_labels = self.get_extreme_val_labels_for_vector(
+        minval, min_row_labels = self.get_extreme_val_labels_for_vector(
             col, axis=1, is_max=False)
 
+        # Add dataset titles if column label contains dataset_keys/GUIDs
+        name = self._lookup_dataset_names([col_label])
+        try:
+            stats[self._keys[SNKeys.COL_LABEL]] = name
+        except TypeError:
+            stats[self._keys[SNKeys.COL_LABEL]] = col_label
+
+        # Count of non-zero rows (Species) within this column (Dataset)
+        stats[self._keys[SNKeys.COL_COUNT]] = self.convert_np_vals_for_json(col.nnz)
         # Total Occurrences for Dataset
         stats[self._keys[SNKeys.COL_TOTAL]] = self.convert_np_vals_for_json(col.sum())
         # Return min occurrence count in this dataset
         stats[self._keys[SNKeys.COL_MIN_COUNT]] = self.convert_np_vals_for_json(minval)
         # Return number of species containing same minimum count (too many to list)
-        stats[self._keys[SNKeys.COL_MIN_LABELS]] = len(min_col_labels)
+        stats[self._keys[SNKeys.COL_MIN_LABELS]] = len(min_row_labels)
         # Return max occurrence count in this dataset
         stats[self._keys[SNKeys.COL_MAX_COUNT]] = self.convert_np_vals_for_json(maxval)
         # Return species containing same maximum count
-        stats[self._keys[SNKeys.COL_MAX_LABELS]] = max_col_labels
+        stats[self._keys[SNKeys.COL_MAX_LABELS]] = max_row_labels
+
         return stats
+
+    # ...............................................
+    def _lookup_dataset_names(self, labels):
+        if self._table["column"] != DATASET_GBIF_KEY:
+            names = labels
+        else:
+            names = {}
+            # initialize all labels
+            for lbl in labels:
+                names[lbl] = None
+            if not (isinstance(labels, list) or isinstance(labels, tuple)):
+                labels = [labels]
+            spnet = SpNetAnalyses(PROJ_BUCKET)
+            try:
+                ds_meta = spnet.get_dataset_metadata(labels)
+            except Exception as e:
+                pass
+            else:
+                for rec in ds_meta:
+                    # label is a dataset_key
+                    names[rec["dataset_key"]] = rec["title"]
+        return names
 
     # ...............................................
     def get_all_column_stats(self):
@@ -543,33 +610,47 @@ class SparseMatrix(_AggregateDataMatrix):
         Returns:
             all_col_stats (dict): counts and statistics about all columns.
         """
-        # Sum all rows for each column to return a row (numpy.ndarray, axis=0)
+        # Sum all rows for each column to return a row (numpy.matrix, axis=0)
         all_totals = self._coo_array.sum(axis=0)
+        max_total = all_totals.max()
+        # returns list of labels for which columns contain max total
+        max_total_labels = self.get_labels_for_val_in_vector(
+            all_totals, max_total, axis=0)
+        # Get dataset labels, if column is dataset, for datasets with max occurrences
+        # of species.  Datasets with only 1 occurrence is often large number
+        max_total_names = self._lookup_dataset_names(max_total_labels)
+
         # Get number of non-zero rows for every column (row, numpy.ndarray)
         all_counts = self._coo_array.getnnz(axis=0)
+        max_counts = all_counts.max()
+        max_counts_labels = self.get_labels_for_val_in_vector(
+            all_counts, max_counts, axis=0)
+        max_counts_names = self._lookup_dataset_names(max_counts_labels)
         # Count rows with at least one non-zero entry (all rows)
         col_count = self._coo_array.shape[0]
         all_col_stats = {
+            # Count of other axis
             self._keys[SNKeys.COLS_COUNT]: col_count,
-            self._keys[SNKeys.COLS_TOTAL]:
-                self.convert_np_vals_for_json(all_totals.sum()),
-            self._keys[SNKeys.COLS_MIN]:
-                self.convert_np_vals_for_json(all_totals.min()),
-            self._keys[SNKeys.COLS_MAX]:
-                self.convert_np_vals_for_json(all_totals.max()),
-            self._keys[SNKeys.COLS_MEAN]:
-                self.convert_np_vals_for_json(all_totals.mean()),
-            self._keys[SNKeys.COLS_MEDIAN]:
-                self.convert_np_vals_for_json(np.median(all_totals, axis=1)[0, 0]),
-
             self._keys[SNKeys.COLS_COUNT_MIN]:
                 self.convert_np_vals_for_json(all_counts.min()),
-            self._keys[SNKeys.COLS_COUNT_MAX]:
-                self.convert_np_vals_for_json(all_counts.max()),
             self._keys[SNKeys.COLS_COUNT_MEAN]:
                 self.convert_np_vals_for_json(all_counts.mean()),
             self._keys[SNKeys.COLS_COUNT_MEDIAN]:
                 self.convert_np_vals_for_json(np.median(all_counts, axis=0)),
+            self._keys[SNKeys.COLS_COUNT_MAX]:
+                self.convert_np_vals_for_json(all_counts.max()),
+            self._keys[SNKeys.COLS_COUNT_MAX_LABELS]: max_counts_labels,
+
+            self._keys[SNKeys.COLS_TOTAL]:
+                self.convert_np_vals_for_json(all_totals.sum()),
+            self._keys[SNKeys.COLS_MIN]:
+                self.convert_np_vals_for_json(all_totals.min()),
+            self._keys[SNKeys.COLS_MEAN]:
+                self.convert_np_vals_for_json(all_totals.mean()),
+            self._keys[SNKeys.COLS_MEDIAN]:
+                self.convert_np_vals_for_json(np.median(all_totals, axis=1)[0, 0]),
+            self._keys[SNKeys.COLS_MAX]: self.convert_np_vals_for_json(max_total),
+            self._keys[SNKeys.COLS_MAX_LABELS]: max_total_labels,
         }
         return all_col_stats
 
@@ -748,7 +829,8 @@ class SparseMatrix(_AggregateDataMatrix):
             sparse_coo (scipy.sparse.coo_array): Sparse Matrix containing data.
             row_categ (pandas.api.types.CategoricalDtype): row categories
             col_categ (pandas.api.types.CategoricalDtype): column categories
-            table_type (aws.aws_constants.SUMMARY_TABLE_TYPES): type of table data
+            table_type (sppy.tools.s2n.constants.SUMMARY_TABLE_TYPES): type of table
+                data
             data_datestr (str): date string in format YYYY_MM_DD
 
         Raises:
@@ -786,7 +868,8 @@ class SparseMatrix(_AggregateDataMatrix):
             sparse_coo (scipy.sparse.coo_array): Sparse Matrix containing data.
             row_categ (pandas.api.types.CategoricalDtype): row categories
             col_categ (pandas.api.types.CategoricalDtype): column categories
-            table_type (aws.aws_constants.SUMMARY_TABLE_TYPES): type of table data
+            table_type (sppy.tools.s2n.constants.SUMMARY_TABLE_TYPES): type of table
+                data
             data_datestr (str): date string in format YYYY_MM_DD
 
         Raises:

@@ -293,86 +293,31 @@ class SpNetAnalyses():
 
         return records, errors
 
-    # # ----------------------------------------------------
-    # def rank_species_counts(self, rank_by, order, limit, format="JSON"):
-    #     """Return the top or bottom species ranked by number of occurrences or datasets.
-    #
-    #     Args:
-    #         rank_by: string indicating rank datasets by counts of "occurrence" or
-    #             another data dimension (currently only "species").
-    #         order: string indicating whether to rank in "descending" or
-    #             "ascending" order.
-    #         limit: number of datasets to return, no more than 300.
-    #         format: output format, options "CSV" or "JSON"
-    #
-    #     Returns:
-    #          records: list of limit records containing species_key, occ_count,
-    #             dataset_count.
-    #     """
-    #     records = []
-    #     errors = {}
-    #     table = self._summary_tables['species_counts']
-    #
-    #     if rank_by == "occurrence":
-    #         sort_field = "occ_count"
-    #     else:
-    #         sort_field = "dataset_count"
-    #     try:
-    #         records = self._query_order_summary_table(
-    #             table, sort_field, order, limit, format)
-    #     except Exception:
-    #         errors = {"error": [get_traceback()]}
-    #     # Add dataset title, etc if the lookup table exists in S3
-    #     if self._dataset_metadata_exists():
-    #         self._add_dataset_lookup_vals(records, table, format)
-    #
-    #     return records, errors
-
-    # # ----------------------------------------------------
-    # def get_org_counts(self, pub_org_key):
-    #     """Query S3 for occurrence and species counts for this organization.
-    #
-    #     Args:
-    #         pub_org_key: unique GBIF identifier for organization of interest.
-    #
-    #     Returns:
-    #          records: empty list or list of 1 record containing occ_count, species_count
-    #
-    #     TODO: implement this?
-    #     """
-    #     (occ_count, species_count) = (0,0)
-    #     return (occ_count, species_count)
-
     # ----------------------------------------------------
-    def get_dataset_lookup_vals(self, dataset_keys):
+    def get_dataset_metadata(self, dataset_keys):
         """Return dataset metadata for a list of dataset_keys.
 
         Args:
             dataset_keys: list of dataset GUIDs to return names for.
 
         Returns:
-            recs (list): list of dictionaries with metadata for each dataset_key.
+            meta_recs (list): list of dictionaries with metadata for each dataset_key.
         """
         # Metadata table info
         meta_table = self._summary_tables["dataset_meta"]
         meta_key_fld = meta_table["key_fld"]
-        # Copy the list so we can remove an element before query
-        meta_fields_cpy = meta_table["fields"].copy()
-        meta_key_idx = meta_fields_cpy.index(meta_key_fld)
-        meta_fields_cpy.pop(meta_key_idx)
-        qry_flds = ", ".join(meta_fields_cpy)
 
-        for dataset_key in dataset_keys:
-            query_str = (
-                f"SELECT {qry_flds} FROM s3object s WHERE s.{meta_key_fld} = '{dataset_key}'"
-            )
-            # Returns empty list or list of 1 record
-            meta_recs = self._query_summary_table(meta_table, query_str, format)
-            try:
-                meta = meta_recs[0]
-            except IndexError:
-                meta = {}
-        return meta
+        if not(isinstance(dataset_keys, list) or isinstance(dataset_keys, tuple)):
+            dataset_keys = [dataset_keys]
+        innerstr = "','".join(dataset_keys)
+        in_cond = f"['{innerstr}']"
+        query_str = (
+            f"SELECT * FROM s3object s WHERE s.{meta_key_fld} IN {in_cond}"
+        )
+        format = "JSON"
+        # Returns list of 0 or more records
+        meta_recs = self._query_summary_table(meta_table, query_str, format)
+        return meta_recs
 
     # # ----------------------------------------------------
     # def rank_species_counts(self, order, limit, format="JSON"):
