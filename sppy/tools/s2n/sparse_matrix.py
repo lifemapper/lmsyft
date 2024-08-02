@@ -561,9 +561,9 @@ class SparseMatrix(_AggregateDataMatrix):
 
         # Add dataset titles if column label contains dataset_keys/GUIDs
         name = self._lookup_dataset_names([col_label])
-        try:
+        if isinstance(name, dict):
             stats[self._keys[SNKeys.COL_LABEL]] = name
-        except TypeError:
+        else:
             stats[self._keys[SNKeys.COL_LABEL]] = col_label
 
         # Count of non-zero rows (Species) within this column (Dataset)
@@ -586,21 +586,8 @@ class SparseMatrix(_AggregateDataMatrix):
         if self._table["column"] != DATASET_GBIF_KEY:
             names = labels
         else:
-            names = {}
-            # initialize all labels
-            for lbl in labels:
-                names[lbl] = None
-            if not (isinstance(labels, list) or isinstance(labels, tuple)):
-                labels = [labels]
             spnet = SpNetAnalyses(PROJ_BUCKET)
-            try:
-                ds_meta = spnet.get_dataset_metadata(labels)
-            except Exception as e:
-                pass
-            else:
-                for rec in ds_meta:
-                    # label is a dataset_key
-                    names[rec["dataset_key"]] = rec["title"]
+            names = spnet.lookup_dataset_names(labels)
         return names
 
     # ...............................................
