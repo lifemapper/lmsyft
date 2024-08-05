@@ -259,7 +259,7 @@ class SpNetAnalyses():
             # Iterate over metadata recs until we find dict with same key
             for dsm in meta_ds:
                 if dsm[meta_key_fld] == rec[rec_key_idx]:
-                    dstitle = meta_ds["title"]
+                    dstitle = dsm["title"]
                     break
             # Update the record
             if format == "JSON":
