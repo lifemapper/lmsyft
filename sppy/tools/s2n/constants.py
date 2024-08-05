@@ -252,34 +252,45 @@ class SNKeys(Enum):
     (COL_TYPE,) = range(5000, 5001)
     # Column: One x
     (COL_LABEL, COL_COUNT, COL_TOTAL,
-     COL_MIN_COUNT, COL_MAX_COUNT, COL_MAX_COUNT_LABELS,
-     ) = range(5100, 5106)
+     COL_MIN_TOTAL, COL_MIN_TOTAL_NUMBER, COL_MAX_TOTAL, COL_MAX_TOTAL_LABELS,
+     ) = range(5100, 5107)
     # Column: All x
-    (COLS_TOTAL, COLS_MIN, COLS_MEAN, COLS_MEDIAN, COLS_MAX, COLS_MAX_LABELS,
-     COLS_COUNT, COLS_COUNT_MIN, COLS_COUNT_MEAN, COLS_COUNT_MEDIAN,
-     COLS_COUNT_MAX, COLS_COUNT_MAX_LABELS
-     ) = range(5200, 5212)
+    (COLS_TOTAL,
+     COLS_MIN_TOTAL, COLS_MIN_TOTAL_NUMBER, COLS_MEAN_TOTAL, COLS_MEDIAN_TOTAL,
+     COLS_MAX_TOTAL, COLS_MAX_TOTAL_LABELS,
+     COLS_COUNT,
+     COLS_MIN_COUNT, COLS_MIN_COUNT_NUMBER, COLS_MEAN_COUNT, COLS_MEDIAN_COUNT,
+     COLS_MAX_COUNT, COLS_MAX_COUNT_LABELS
+     ) = range(5200, 5214)
     # Row: aggregation of what type of data
     (ROW_TYPE,) = range(6000, 6001)
     # Row: One y
     (ROW_LABEL, ROW_COUNT, ROW_TOTAL,
-     ROW_MIN_COUNT, ROW_MIN_LABELS, ROW_MAX_COUNT, ROW_MAX_LABELS,
+     ROW_MIN_TOTAL, ROW_MIN_TOTAL_NUMBER, ROW_MAX_TOTAL, ROW_MAX_TOTAL_LABELS,
      ) = range(6100, 6107)
     # Rows: All y
-    (ROWS_TOTAL, ROWS_MIN, ROWS_MEAN, ROWS_MEDIAN, ROWS_MAX,
-     ROWS_COUNT, ROWS_COUNT_MIN, ROWS_COUNT_MEAN, ROWS_COUNT_MEDIAN,
-     ROWS_COUNT_MAX, ROWS_COUNT_MAX_LABELS
-     ) = range(6200, 6211)
+    (ROWS_TOTAL,
+     ROWS_MIN_TOTAL, ROWS_MIN_TOTAL_NUMBER, ROWS_MEAN_TOTAL, ROWS_MEDIAN_TOTAL,
+     ROWS_MAX_TOTAL, ROWS_MAX_TOTAL_LABELS,
+     ROWS_COUNT,
+     ROWS_MIN_COUNT, ROWS_MIN_COUNT_NUMBER, ROWS_MEAN_COUNT, ROWS_MEDIAN_COUNT,
+     ROWS_MAX_COUNT, ROWS_MAX_COUNT_LABELS
+     ) = range(6200, 6214)
     # Type of aggregation
     (TYPE,) = range(0, 1)
     # One field of row/column header
-    (ONE_LABEL, ONE_COUNT, ONE_TOTAL, ONE_MIN_COUNT, ONE_MAX_COUNT_LABELS
-     ) = range(100, 105)
+    (ONE_LABEL, ONE_COUNT, ONE_TOTAL,
+     ONE_MIN_COUNT, ONE_MIN_COUNT_NUMBER,
+     ONE_MAX_COUNT, ONE_MAX_COUNT_LABELS
+     ) = range(100, 107)
     # Column: All row/column headers
-    (ALL_TOTAL, ALL_MIN, ALL_MEAN, ALL_MEDIAN, ALL_MAX,
-     ALL_COUNT, ALL_COUNT_MIN, ALL_COUNT_MEAN, ALL_COUNT_MEDIAN,
-     ALL_COUNT_MAX, ALL_COUNT_MAX_LABELS,
-     ) = range(200, 211)
+    (ALL_TOTAL,
+     ALL_MIN_TOTAL, ALL_MIN_TOTAL_NUMBER, ALL_MEAN_TOTAL, ALL_MEDIAN_TOTAL,
+     ALL_MAX_TOTAL, ALL_MAX_TOTAL_LABELS,
+     ALL_COUNT,
+     ALL_MIN_COUNT, ALL_MIN_COUNT_NUMBER, ALL_MEAN_COUNT, ALL_MEDIAN_COUNT,
+     ALL_MAX_COUNT, ALL_MAX_COUNT_LABELS,
+     ) = range(200, 214)
 
     @classmethod
     def get_keys_for_table(cls, table_type):
@@ -309,6 +320,7 @@ class SNKeys(Enum):
                 cls.COL_TOTAL: "total_occurrences_for_dataset",
                 # Values: Minimum occurrences for one dataset, species labels
                 cls.COL_MIN_TOTAL: "min_occurrences_for_dataset",
+                cls.COL_MIN_TOTAL_NUMBER: "number_of_species_with_min_occurrences_for_dataset",
                 # Values: Maximum occurrence count for one dataset, species labels
                 cls.COL_MAX_TOTAL: "max_occurrences_for_dataset",
                 cls.COL_MAX_TOTAL_LABELS: "species_with_max_occurrences_for_dataset",
@@ -318,15 +330,17 @@ class SNKeys(Enum):
                 # Values: Total of all occurrences for all datasets - stats
                 cls.COLS_TOTAL: "total_occurrences_of_all_datasets",
                 cls.COLS_MIN_TOTAL: "min_occurrences_of_all_datasets",
+                cls.COLS_MIN_TOTAL_NUMBER: "number_of_datasets_with_min_occurrences_of_all",
                 cls.COLS_MEAN_TOTAL: "mean_occurrences_of_all_datasets",
                 cls.COLS_MEDIAN_TOTAL: "median_occurrences_of_all_datasets",
                 cls.COLS_MAX_TOTAL: "max_occurrences_of_all_datasets",
                 cls.COLS_MAX_TOTAL_LABELS: "datasets_with_max_occurrences_of_all",
                 # ------------
                 # Counts: Count of all species (from all columns/datasets)
-                cls.COLS_COUNT: "total_species_count",
+                cls.COLS_COUNT: "total_dataset_count",
                 # Species counts for all datasets - stats
                 cls.COLS_MIN_COUNT: "min_species_count_of_all_datasets",
+                cls.COLS_MIN_COUNT_NUMBER: "number_of_datasets_with_min_species_count_of_all",
                 cls.COLS_MEAN_COUNT: "mean_species_count_of_all_datasets",
                 cls.COLS_MEDIAN_COUNT: "median_species_count_of_all_datasets",
                 cls.COLS_MAX_COUNT: "max_species_count_of_all_datasets",
@@ -353,16 +367,18 @@ class SNKeys(Enum):
                 # Values: Total of all occurrences for all species - stats
                 cls.ROWS_TOTAL: "total_occurrences_of_all_species",
                 cls.ROWS_MIN_TOTAL: "min_occurrences_of_all_species",
+                cls.ROWS_MIN_TOTAL_NUMBER: "number_of_species_with_max_occurrences_of_all",
                 cls.ROWS_MEAN_TOTAL: "mean_occurrences_of_all_species",
                 cls.ROWS_MEDIAN_TOTAL: "median_occurrences_of_all_species",
                 cls.ROWS_MAX_TOTAL: "max_occurrences_of_all_species",
-                cls.ROWS_MAX_TOTAL_LABELS: "species_with_max_occurrences_for_all",
+                cls.ROWS_MAX_TOTAL_LABELS: "species_with_max_occurrences_of_all",
                 # ------------
                 # COMPARES TO: cls.ROW_COUNT: "total_datasets_for_species",
                 # Counts: Count of all datasets (from all rows/species)
-                cls.ROWS_COUNT: "total_dataset_count",
+                cls.ROWS_COUNT: "total_species_count",
                 # Dataset counts for all species - stats
                 cls.ROWS_MIN_COUNT: "min_dataset_count_of_all_species",
+                cls.ROWS_MIN_COUNT_NUMBER: "species_with_min_dataset_count_of_all",
                 cls.ROWS_MEAN_COUNT: "mean_dataset_count_of_all_species",
                 cls.ROWS_MEDIAN_COUNT: "median_dataset_count_of_all_species",
                 cls.ROWS_MAX_COUNT: "max_dataset_count_of_all_species",

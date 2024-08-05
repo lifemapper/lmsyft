@@ -392,6 +392,30 @@ class SparseMatrix(_AggregateDataMatrix):
         return labels
 
     # ...............................................
+    def count_val_in_vector(self, vector, target_val):
+        """Count the row or columns containing target_val in a vector.
+
+        Args:
+            vector (numpy.array): 1 dimensional array for a row or column.
+            target_val (int): value to search for in a row or column
+            axis (int): row (0) or column (1) header for extreme value and labels.
+
+        Returns:
+            target: The minimum or maximum value for a column
+            row_labels: The labels of the rows containing the target value
+
+        Raises:
+            Exception: on axis not in (0, 1)
+        """
+        # Returns row_idxs, col_idxs, vals of NNZ values in row
+        row_idxs, col_idxs, vals = scipy.sparse.find(vector)
+        # Get indexes of target value within NNZ vals
+        tmp_idxs = np.where(vals == target_val)[0]
+        tmp_idx_lst = [tmp_idxs[i] for i in range(len(tmp_idxs))]
+        count = len(tmp_idx_lst)
+        return count
+
+    # ...............................................
     def get_row_stats(self, row_label=None):
         """Get the statistics for one or all rows.
 
@@ -446,16 +470,15 @@ class SparseMatrix(_AggregateDataMatrix):
         names = self._lookup_dataset_names(max_col_labels)
 
         stats = {
-            self._keys[SNKeys.ROW_IDX]: row_idx,
             self._keys[SNKeys.ROW_LABEL]: row_label,
             # Total Occurrences for this Species
             self._keys[SNKeys.ROW_TOTAL]: self.convert_np_vals_for_json(row.sum()),
             # Count of Datasets containing this Species
             self._keys[SNKeys.ROW_COUNT]: self.convert_np_vals_for_json(row.nnz),
             # Return min/max count in this species and datasets for that count
-            self._keys[SNKeys.ROW_MIN_COUNT]: minval,
-            self._keys[SNKeys.ROW_MAX_COUNT]: maxval,
-            self._keys[SNKeys.ROW_MAX_LABELS]: names
+            self._keys[SNKeys.ROW_MIN_TOTAL]: minval,
+            self._keys[SNKeys.ROW_MAX_TOTAL]: maxval,
+            self._keys[SNKeys.ROW_MAX_TOTAL_LABELS]: names
         }
 
         return stats
@@ -468,41 +491,58 @@ class SparseMatrix(_AggregateDataMatrix):
             all_row_stats (dict): counts and statistics about all rows.
             (numpy.ndarray): array of totals of all rows.
         """
-        # Sum all rows to return a column (axis=1)
+        # Sum all rows to return a column (axis=1) of species totals
         all_totals = self._coo_array.sum(axis=1)
-        # Get dataset labels, if column is dataset, for datasets with max occurrences
-        # of species.  Datasets with only 1 occurrence is often large number
+        # Min total and rows that contain it
+        min_total = all_totals.min()
+        min_total_number = self.count_val_in_vector(all_totals, min_total)
+        # Max total and rows that contain that
         max_total = all_totals.max()
+        # Get species names for largest number of occurrences
         max_total_labels = self.get_labels_for_val_in_vector(
-            all_totals, max_total, axis=0)
-        names = self._lookup_dataset_names(max_total_labels)
+            all_totals, max_total, axis=1)
+
         # Get number of non-zero entries for every row (column, numpy.ndarray)
         all_counts = self._coo_array.getnnz(axis=1)
+        min_count = all_counts.min()
+        min_count_number = self.count_val_in_vector(all_counts, min_count)
+        max_count = all_counts.max()
+        max_count_labels = self.get_labels_for_val_in_vector(
+            all_counts, max_count, axis=1)
+
         # Count columns with at least one non-zero entry (all columns)
-        row_count = self._coo_array.shape[1]
+        row_count = self._coo_array.shape[0]
         all_row_stats = {
             # Count of other axis
             self._keys[SNKeys.ROWS_COUNT]: row_count,
-            self._keys[SNKeys.ROWS_COUNT_MIN]:
-                self.convert_np_vals_for_json(all_counts.min()),
-            self._keys[SNKeys.ROWS_COUNT_MEAN]:
+            self._keys[SNKeys.ROWS_MIN_COUNT]:
+                self.convert_np_vals_for_json(min_count),
+            self._keys[SNKeys.ROWS_MIN_TOTAL_NUMBER]: min_count_number,
+
+            self._keys[SNKeys.ROWS_MEAN_COUNT]:
                 self.convert_np_vals_for_json(all_counts.mean()),
-            self._keys[SNKeys.ROWS_COUNT_MEDIAN]:
+            self._keys[SNKeys.ROWS_MEDIAN_COUNT]:
                 self.convert_np_vals_for_json(np.median(all_counts, axis=0)),
-            self._keys[SNKeys.ROWS_COUNT_MAX]:
-                self.convert_np_vals_for_json(all_counts.max()),
+
+            self._keys[SNKeys.ROWS_MAX_COUNT]:
+                self.convert_np_vals_for_json(max_count),
+            self._keys[SNKeys.ROWS_MAX_COUNT_LABELS]: max_count_labels,
+
             # Total of values
             self._keys[SNKeys.ROWS_TOTAL]:
                 self.convert_np_vals_for_json(all_totals.sum()),
-            self._keys[SNKeys.ROWS_MIN]:
-                self.convert_np_vals_for_json(all_totals.min()),
-            self._keys[SNKeys.ROWS_MEAN]:
+            self._keys[SNKeys.ROWS_MIN_TOTAL]:
+                self.convert_np_vals_for_json(min_total),
+            self._keys[SNKeys.ROWS_MIN_TOTAL]: min_total_number,
+
+            self._keys[SNKeys.ROWS_MEAN_TOTAL]:
                 self.convert_np_vals_for_json(all_totals.mean()),
-            self._keys[SNKeys.ROWS_MEDIAN]: self.convert_np_vals_for_json(
+            self._keys[SNKeys.ROWS_MEDIAN_TOTAL]: self.convert_np_vals_for_json(
                 np.median(all_totals, axis=0)[0, 0]),
-            self._keys[SNKeys.ROWS_MAX]:
+
+            self._keys[SNKeys.ROWS_MAX_TOTAL]:
                 self.convert_np_vals_for_json(max_total),
-            self._keys[SNKeys.ROW_MAX_LABELS]: names
+            self._keys[SNKeys.ROW_MAX_TOTAL_LABELS]: max_total_labels,
         }
 
         return all_row_stats
@@ -571,13 +611,13 @@ class SparseMatrix(_AggregateDataMatrix):
         # Total Occurrences for Dataset
         stats[self._keys[SNKeys.COL_TOTAL]] = self.convert_np_vals_for_json(col.sum())
         # Return min occurrence count in this dataset
-        stats[self._keys[SNKeys.COL_MIN_COUNT]] = self.convert_np_vals_for_json(minval)
+        stats[self._keys[SNKeys.COL_MIN_TOTAL]] = self.convert_np_vals_for_json(minval)
         # Return number of species containing same minimum count (too many to list)
-        stats[self._keys[SNKeys.COL_MIN_LABELS]] = len(min_row_labels)
+        stats[self._keys[SNKeys.COL_MIN_TOTAL_NUMBER]] = len(min_row_labels)
         # Return max occurrence count in this dataset
-        stats[self._keys[SNKeys.COL_MAX_COUNT]] = self.convert_np_vals_for_json(maxval)
+        stats[self._keys[SNKeys.COL_MAX_TOTAL]] = self.convert_np_vals_for_json(maxval)
         # Return species containing same maximum count
-        stats[self._keys[SNKeys.COL_MAX_LABELS]] = max_row_labels
+        stats[self._keys[SNKeys.COL_MAX_TOTAL_LABELS]] = max_row_labels
 
         return stats
 
@@ -599,45 +639,58 @@ class SparseMatrix(_AggregateDataMatrix):
         """
         # Sum all rows for each column to return a row (numpy.matrix, axis=0)
         all_totals = self._coo_array.sum(axis=0)
+        # Min total and columns that contain it
+        min_total = all_totals.min()
+        min_total_number = self.count_val_in_vector(all_totals, min_total)
+        # Max total and columns that contain it
         max_total = all_totals.max()
-        # returns list of labels for which columns contain max total
         max_total_labels = self.get_labels_for_val_in_vector(
             all_totals, max_total, axis=0)
-        # Get dataset labels, if column is dataset, for datasets with max occurrences
-        # of species.  Datasets with only 1 occurrence is often large number
         max_total_names = self._lookup_dataset_names(max_total_labels)
 
         # Get number of non-zero rows for every column (row, numpy.ndarray)
         all_counts = self._coo_array.getnnz(axis=0)
-        max_counts = all_counts.max()
-        max_counts_labels = self.get_labels_for_val_in_vector(
-            all_counts, max_counts, axis=0)
-        max_counts_names = self._lookup_dataset_names(max_counts_labels)
+        # Min count and columns that contain that
+        min_count = all_counts.min()
+        min_count_number = self.count_val_in_vector(all_counts, min_count)
+        # Max count and columns that contain that
+        max_count = all_counts.max()
+        max_count_labels = self.get_labels_for_val_in_vector(
+            all_counts, max_count, axis=0)
+        max_count_names = self._lookup_dataset_names(max_count_labels)
+
         # Count rows with at least one non-zero entry (all rows)
-        col_count = self._coo_array.shape[0]
+        col_count = self._coo_array.shape[1]
         all_col_stats = {
             # Count of other axis
             self._keys[SNKeys.COLS_COUNT]: col_count,
-            self._keys[SNKeys.COLS_COUNT_MIN]:
-                self.convert_np_vals_for_json(all_counts.min()),
-            self._keys[SNKeys.COLS_COUNT_MEAN]:
-                self.convert_np_vals_for_json(all_counts.mean()),
-            self._keys[SNKeys.COLS_COUNT_MEDIAN]:
-                self.convert_np_vals_for_json(np.median(all_counts, axis=0)),
-            self._keys[SNKeys.COLS_COUNT_MAX]:
-                self.convert_np_vals_for_json(all_counts.max()),
-            self._keys[SNKeys.COLS_COUNT_MAX_LABELS]: max_counts_labels,
+            self._keys[SNKeys.COLS_MIN_COUNT]:
+                self.convert_np_vals_for_json(min_count),
+            self._keys[SNKeys.COLS_MIN_COUNT_NUMBER]: min_count_number,
 
+            self._keys[SNKeys.COLS_MEAN_COUNT]:
+                self.convert_np_vals_for_json(all_counts.mean()),
+            self._keys[SNKeys.COLS_MEDIAN_COUNT]:
+                self.convert_np_vals_for_json(np.median(all_counts, axis=0)),
+
+            self._keys[SNKeys.COLS_MAX_COUNT]:
+                self.convert_np_vals_for_json(max_count),
+            self._keys[SNKeys.COLS_MAX_COUNT_LABELS]: max_count_names,
+
+            # Total occurrences
             self._keys[SNKeys.COLS_TOTAL]:
                 self.convert_np_vals_for_json(all_totals.sum()),
-            self._keys[SNKeys.COLS_MIN]:
-                self.convert_np_vals_for_json(all_totals.min()),
-            self._keys[SNKeys.COLS_MEAN]:
+            self._keys[SNKeys.COLS_MIN_TOTAL]:
+                self.convert_np_vals_for_json(min_total),
+            self._keys[SNKeys.COLS_MIN_TOTAL_NUMBER]: min_total_number,
+
+            self._keys[SNKeys.COLS_MEAN_TOTAL]:
                 self.convert_np_vals_for_json(all_totals.mean()),
-            self._keys[SNKeys.COLS_MEDIAN]:
+            self._keys[SNKeys.COLS_MEDIAN_TOTAL]:
                 self.convert_np_vals_for_json(np.median(all_totals, axis=1)[0, 0]),
-            self._keys[SNKeys.COLS_MAX]: self.convert_np_vals_for_json(max_total),
-            self._keys[SNKeys.COLS_MAX_LABELS]: max_total_labels,
+
+            self._keys[SNKeys.COLS_MAX_TOTAL]: self.convert_np_vals_for_json(max_total),
+            self._keys[SNKeys.COLS_MAX_TOTAL_LABELS]: max_total_names,
         }
         return all_col_stats
 
