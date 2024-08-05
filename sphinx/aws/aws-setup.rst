@@ -250,6 +250,8 @@ Overview
   species level, and records with a basis of record that is not observation, occurrence,
   or preserved specimen.  This brings the full dataset from about 2.6 billion down to
   2.3 billion.
+* Role/Permissions: Attach the Role AmazonRedshift-CommandsAccessRole-20231129T105842
+  to the Redshift Namespace
 
 
 Create a new workgroup (and namespace)
