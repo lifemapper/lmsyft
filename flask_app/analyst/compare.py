@@ -122,6 +122,7 @@ class CompareSvc(_AnalystService):
 # .............................................................................
 if __name__ == "__main__":
     dataset_key = "0000e36f-d0e9-46b0-aa23-cc1980f00515"
+    dataset_key = "3e2d26d9-2776-4bec-bdc7-bab3842ffb6b"
     species_key = "11378306 Phaneroptera laticerca"
     svc = CompareSvc()
     response = svc.get_endpoint()

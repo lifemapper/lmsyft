@@ -204,58 +204,68 @@ class SpNetAnalyses():
         query_str = (
             f"SELECT * FROM s3object s WHERE s.{table['key_fld']} = '{dataset_key}'"
         )
-        # Returns empty list or list of 1 record
+        # Returns empty list or list of 1 record dict
         records = self._query_summary_table(table, query_str, format)
         if self._dataset_metadata_exists():
             self._add_dataset_lookup_vals(records, table, format)
         return records
 
+    # ...............................................
+    def lookup_dataset_names(self, labels):
+        names = {}
+        for lbl in labels:
+            names[lbl] = None
+        if not (isinstance(labels, list) or isinstance(labels, tuple)):
+            labels = [labels]
+        try:
+            ds_meta = self.get_dataset_metadata(labels)
+        except Exception as e:
+            pass
+        else:
+            for rec in ds_meta:
+                # label is a dataset_key
+                names[rec["dataset_key"]] = rec["title"]
+        return names
+
     # ----------------------------------------------------
-    def _add_dataset_lookup_vals(self, records, rec_table, format):
+    def _add_dataset_names(self, records, rec_table, format):
         """Add dataset metadata to records.
 
         Args:
-            records: records to add dataset metadata to.
+            records: list of records (dicts for JSON format or lists for CSV format)
+                to add dataset names to.
             rec_table: dictionary of fieldnames, filename, format for a summary table
             format: output format, options "CSV" or "JSON"
         """
         # Metadata table info
         meta_table = self._summary_tables["dataset_meta"]
         meta_key_fld = meta_table["key_fld"]
-        # Copy the list so we can remove an element before query
-        meta_fields_cpy = meta_table["fields"].copy()
-        meta_key_idx = meta_fields_cpy.index(meta_key_fld)
-        meta_fields_cpy.pop(meta_key_idx)
-        qry_flds = ", ".join(meta_fields_cpy)
 
         # Record info
         rec_fields = rec_table["fields"]
-        rec_key_fld = rec_table["key_fld"]
-        rec_key_idx = rec_fields.index(rec_key_fld)
+        rec_key_idx = rec_table["key_fld"]
+        if format == "CSV":
+            rec_key_idx = rec_fields.index(rec_key_idx)
 
+        dataset_keys = [rec[rec_key_idx] for rec in records]
+
+        # Returns a list of dictionaries
+        meta_ds = self.get_dataset_metadata(dataset_keys)
+
+        # Update each record
         for rec in records:
-            # Get datasetkey by field or position
+            # Initialize to empty string
+            dstitle = ""
+            # Iterate over metadata recs until we find dict with same key
+            for dsm in meta_ds:
+                if dsm[meta_key_fld] == rec[rec_key_idx]:
+                    dstitle = dsm["title"]
+                    break
+            # Update the record
             if format == "JSON":
-                val = rec[rec_key_fld]
+                rec["dataset_title"] = dstitle
             else:
-                val = rec[rec_key_idx]
-
-            query_str = (
-                f"SELECT {qry_flds} FROM s3object s WHERE s.{meta_key_fld} = '{val}'"
-            )
-            # Returns empty list or list of 1 record
-            meta_recs = self._query_summary_table(meta_table, query_str, format)
-            try:
-                meta = meta_recs[0]
-            except IndexError:
-                # Add placeholders for empty values, no entries for dictionary
-                if format == "CSV":
-                    rec.extend(["" for _ in qry_flds])
-            else:
-                if format == "JSON":
-                    rec.update(meta)
-                else:
-                    rec.extend(meta)
+                rec.extend(dstitle)
         print(records)
 
     # ----------------------------------------------------
@@ -289,90 +299,35 @@ class SpNetAnalyses():
             errors = {"error": [get_traceback()]}
         # Add dataset title, etc if the lookup table exists in S3
         if self._dataset_metadata_exists():
-            self._add_dataset_lookup_vals(records, table, format)
+            self._add_dataset_names(records, table, format)
 
         return records, errors
 
-    # # ----------------------------------------------------
-    # def rank_species_counts(self, rank_by, order, limit, format="JSON"):
-    #     """Return the top or bottom species ranked by number of occurrences or datasets.
-    #
-    #     Args:
-    #         rank_by: string indicating rank datasets by counts of "occurrence" or
-    #             another data dimension (currently only "species").
-    #         order: string indicating whether to rank in "descending" or
-    #             "ascending" order.
-    #         limit: number of datasets to return, no more than 300.
-    #         format: output format, options "CSV" or "JSON"
-    #
-    #     Returns:
-    #          records: list of limit records containing species_key, occ_count,
-    #             dataset_count.
-    #     """
-    #     records = []
-    #     errors = {}
-    #     table = self._summary_tables['species_counts']
-    #
-    #     if rank_by == "occurrence":
-    #         sort_field = "occ_count"
-    #     else:
-    #         sort_field = "dataset_count"
-    #     try:
-    #         records = self._query_order_summary_table(
-    #             table, sort_field, order, limit, format)
-    #     except Exception:
-    #         errors = {"error": [get_traceback()]}
-    #     # Add dataset title, etc if the lookup table exists in S3
-    #     if self._dataset_metadata_exists():
-    #         self._add_dataset_lookup_vals(records, table, format)
-    #
-    #     return records, errors
-
-    # # ----------------------------------------------------
-    # def get_org_counts(self, pub_org_key):
-    #     """Query S3 for occurrence and species counts for this organization.
-    #
-    #     Args:
-    #         pub_org_key: unique GBIF identifier for organization of interest.
-    #
-    #     Returns:
-    #          records: empty list or list of 1 record containing occ_count, species_count
-    #
-    #     TODO: implement this?
-    #     """
-    #     (occ_count, species_count) = (0,0)
-    #     return (occ_count, species_count)
-
     # ----------------------------------------------------
-    def get_dataset_lookup_vals(self, dataset_keys):
+    def get_dataset_metadata(self, dataset_keys):
         """Return dataset metadata for a list of dataset_keys.
 
         Args:
             dataset_keys: list of dataset GUIDs to return names for.
 
         Returns:
-            recs (list): list of dictionaries with metadata for each dataset_key.
+            meta_recs (list): list of dictionaries with metadata for each dataset_key.
         """
         # Metadata table info
         meta_table = self._summary_tables["dataset_meta"]
         meta_key_fld = meta_table["key_fld"]
-        # Copy the list so we can remove an element before query
-        meta_fields_cpy = meta_table["fields"].copy()
-        meta_key_idx = meta_fields_cpy.index(meta_key_fld)
-        meta_fields_cpy.pop(meta_key_idx)
-        qry_flds = ", ".join(meta_fields_cpy)
 
-        for dataset_key in dataset_keys:
-            query_str = (
-                f"SELECT {qry_flds} FROM s3object s WHERE s.{meta_key_fld} = '{dataset_key}'"
-            )
-            # Returns empty list or list of 1 record
-            meta_recs = self._query_summary_table(meta_table, query_str, format)
-            try:
-                meta = meta_recs[0]
-            except IndexError:
-                meta = {}
-        return meta
+        if not(isinstance(dataset_keys, list) or isinstance(dataset_keys, tuple)):
+            dataset_keys = [dataset_keys]
+        innerstr = "','".join(dataset_keys)
+        in_cond = f"['{innerstr}']"
+        query_str = (
+            f"SELECT * FROM s3object s WHERE s.{meta_key_fld} IN {in_cond}"
+        )
+        format = "JSON"
+        # Returns list of 0 or more records
+        meta_recs = self._query_summary_table(meta_table, query_str, format)
+        return meta_recs
 
     # # ----------------------------------------------------
     # def rank_species_counts(self, order, limit, format="JSON"):
@@ -398,7 +353,7 @@ class SpNetAnalyses():
     #         errors = {"error": [get_traceback()]}
     #
     #     if self._dataset_metadata_exists():
-    #         self._add_dataset_lookup_vals(records, format)
+    #         self._add_dataset_names(records, format)
     #     return records, errors
 
 
