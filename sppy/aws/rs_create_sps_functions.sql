@@ -29,7 +29,28 @@ SELECT f_current_datestr();
 -- Stored Procedures
 -- ----------------------------------------------------------------------------
 -- Get first day of previous month to find obsolete data
-CREATE OR REPLACE PROCEDURE public.sp_get_previous_datestr(last_date OUT VARCHAR)
+CREATE OR REPLACE PROCEDURE public.sp_get_datestr(sep IN VARCHAR, datestr OUT VARCHAR)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    yr VARCHAR;
+    mo VARCHAR;
+BEGIN
+    yr := SPLIT_PART(CURRENT_DATE, '-', 1);
+    mo := SPLIT_PART(CURRENT_DATE, '-', 2);
+    mo := CAST (mo AS INTEGER);
+    IF mo < 10 THEN
+        mo := '0' || mo;
+    END IF;
+    SELECT INTO datestr yr || sep || mo || sep || '01';
+END;
+$$;
+
+CALL public.sp_get_datestr('_');
+
+
+-- Get first day of previous month to find obsolete data
+CREATE OR REPLACE PROCEDURE public.sp_get_previous_datestr(sep IN VARCHAR, last_date OUT VARCHAR)
 LANGUAGE plpgsql
 AS $$
 DECLARE
@@ -49,11 +70,11 @@ BEGIN
             END IF;
         END;
     END IF;
-    SELECT INTO last_date yr || '-' || mo || '-01';
+    SELECT INTO last_date yr || sep || mo || sep || '01';
 END;
-$$
+$$;
 
--- CALL public.sp_get_previous_datestr();
+CALL public.sp_get_previous_datestr('_');
 
 -- -------------------------------------------------------
 -- Mount latest GBIF data in Amazon Registry of Open Data

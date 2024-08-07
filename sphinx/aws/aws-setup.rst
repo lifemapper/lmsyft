@@ -254,9 +254,15 @@ Overview
   to the Redshift Namespace
 
 
+Create (or use existing) Role
+==================================
+
+* Need Glue permissions
+
+
 Create a new workgroup (and namespace)
 =============================================
-* In the Redshift dashbord, choose the button **Create workspace** to create a new
+* In the Redshift dashboard, choose the button **Create workspace** to create a new
   workgroup and namespace.  The resulting form shows 3 steps.
 
   * Step 1, define the Workgroup name, Capacity, and Network and Security.
