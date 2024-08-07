@@ -269,7 +269,7 @@ def get_current_datadate_str():
     n = DT.datetime.now()
     date_str = f"{n.year}_{n.month:02d}_01"
     # TODO: delete this testing-only value
-    date_str = "2024_02_01"
+    date_str = "2024_08_01"
     return date_str
 
 

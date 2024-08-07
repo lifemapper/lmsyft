@@ -160,9 +160,9 @@ class _AggregateDataMatrix:
         files_present = [fname for fname in expected_files if os.path.exists(fname)]
         # Delete if overwrite is true or if not all expected files are present
         if overwrite is True or len(files_present) < len(expected_files):
-            deleted_files = files_present
             for fname in files_present:
                 os.remove(fname)
+                deleted_files.append(fname)
             print(f"Removed files {', '.join(deleted_files)}.")
         # Who remains?
         files_present = [fname for fname in expected_files if os.path.exists(fname)]
