@@ -19,7 +19,7 @@ Reference
 Steps
 ===========================================================
 
-1. Create namespace and workgroup for steps and temporary data
+1. Redshift: Create namespace and workgroup for steps and temporary data
 ****************************************************************
 
 TODO: fully document this process and the meaning of each component.
@@ -43,7 +43,7 @@ Note: This is a manual task, as it only needs to be performed the first time.
       * AmazonRedshift-CommandsAccessPolicy-20231129T105842 (Customer managed) policy
       * aimee-glue-some (Customer inline) policy
 
-2. Subset GBIF for Specify Network processing
+2. Redshift: Subset GBIF for Specify Network processing
 ***********************************************************
 
 Note: This task may be automated, triggered by new GBIF data available from the
@@ -69,7 +69,7 @@ on the first of the month.
     * Drops the mounted GBIF S3 data table.
 
 
-2. Summarize species and occurrence counts
+2. Redshift: Summarize species and occurrence counts
 ***********************************************************
 
 * Redshift: Create summary tables on the subsetted GBIF data and write to S3
@@ -85,6 +85,16 @@ on the first of the month.
     * Write both of those tables to S3 in parquet format.
     * Drop the previous month's summary tables.
 
+3. Python scripts: Summarize these tables by 2 data dimensions
+******************************************************************************
+
+* Further summarize these tables by 2 data dimensions (dataset and species) into
+  summary matrices using Python scripts on a local or EC2 machine, then write to S3 for
+  API query.
+
+  * These Python scripts may be performed on a local machine or EC2 instance running
+    a Docker instance.
+  * The **build_test_aggregated_data.py** script
 
 1.5 TODO
 ***********************************************************
