@@ -19,8 +19,14 @@ from time import sleep
 import xml.etree.ElementTree as ET
 
 from sppy.aws.aws_constants import (
-    DATASET_GBIF_KEY, ENCODING, INSTANCE_TYPE, KEY_NAME, PROJ_BUCKET, PROJ_NAME, REGION,
-    SECURITY_GROUP_ID, SPOT_TEMPLATE_BASENAME, SUMMARY_FOLDER, USER_DATA_TOKEN)
+    ENCODING, INSTANCE_TYPE, KEY_NAME, PROJ_BUCKET, PROJ_NAME, REGION,
+    SECURITY_GROUP_ID, SPOT_TEMPLATE_BASENAME, SUMMARY_FOLDER, USER_DATA_TOKEN
+)
+from sppy.tools.s2n.constants import (
+    DATASET_GBIF_DELIMITER, DATASET_GBIF_DOWNLOAD_URL, DATASET_GBIF_FORMAT,
+    DATASET_GBIF_KEY, Summaries, SUMMARY_TABLE_TYPES
+)
+from sppy.tools.util.fileop import get_csv_writer
 from sppy.tools.util.logtools import logit
 
 
@@ -1004,34 +1010,76 @@ def _get_dataset_keys(bucket, s3_folders, input_fname, is_test):
 
 
 # ----------------------------------------------------
-def create_s3_dataset_lookup_from_tsv(
-        tsv_filename, bucket, s3_folders, encoding=ENCODING):
-    """Query the GBIF Dataset API, write a subset of the response to a table in S3.
+def download_dataset_lookup():
+    """Download dataset metadata from GBIF in TSV format.
+
+    Returns:
+        local_fname (str): full path to output local file
+    """
+    certificate = certifi.where()
+    # Current filenames
+    data_date = get_current_datadate_str()
+    output_fname = Summaries.get_filename(SUMMARY_TABLE_TYPES.DATASET_META, data_date)
+    local_fname = f"/tmp/{output_fname}.{DATASET_GBIF_FORMAT.lower()}"
+
+    response = requests.get(DATASET_GBIF_DOWNLOAD_URL, verify=certificate)
+    data = response.text
+    lines = data.split("\n")
+
+    writer, outf = get_csv_writer(local_fname, DATASET_GBIF_DELIMITER, ENCODING, fmode="w")
+    for ln in lines:
+        if len(ln) > 1:
+            row = ln.split(DATASET_GBIF_DELIMITER)
+            try:
+                writer.writerow(row)
+            except Exception as e:
+                raise
+    outf.close()
+    return local_fname
+
+
+# ----------------------------------------------------
+def create_parquet_lookup_from_tsv(tsv_filename, encoding=ENCODING):
+    """Write the GBIF dataset metadata file to a table in S3.
 
     Args:
-        tsv_filename: TSV filename of dataset metadata downloaded from GBIF
-        bucket: name of the bucket containing the CSV data.
-        s3_folders: S3 bucket folders for output lookup table
+        tsv_filename: full path to local TSV of dataset metadata downloaded from GBIF
         encoding: encoding of the input data
 
-    Note:
-        There are >100k records for datasets and limited memory on this EC2 instance,
-        so we write them as temporary CSV files, then combine them, then create a
-        dataframe and upload.
+    Returns:
+        tmp_parquet_fname (str): full path to local parquet file.
+
+    Raises:
+        Exception: on input file does not exist
+        Exception: on input file does not have the expected extension.
+        Exception: on unable to read file as a TSV format.
+        Exception: on unable to write dataframe to parquet.
+        Exception: on failure to write file locally.
 
     Postcondition:
         Parquet table with dataset key, pubOrgKey, dataset name, dataset citation
-            written to the named S3 object in bucket and folders
+            written locally.
     """
+    expected_ext = DATASET_GBIF_FORMAT.lower()
+    if not os.path.exists(tsv_filename):
+        raise Exception(f"File {tsv_filename} does not exist")
+    elif not tsv_filename.endswith(expected_ext):
+        raise Exception(f"File {tsv_filename} does not end in {expected_ext}")
     # Current filenames
-    data_date = get_current_datadate_str()
-    output_fname = f"dataset_meta_{data_date}.parquet"
-    tmp_parquet_fname = f"/tmp/{output_fname}"
+    local_pth, fname = os.path.split(tsv_filename)
+    out_fname = fname.replace(f"{DATASET_GBIF_FORMAT.lower()}", "parquet")
+    tmp_parquet_fname = os.path.join(local_pth, out_fname)
 
-    # "dataset_key" is first column and set as index with index_col
-    df = pd.read_csv(
-        tsv_filename, sep="\t", header=0, index_col=0, dtype=str, engine="python",
-        quoting=csv.QUOTE_NONE, escapechar="\\", encoding=encoding, on_bad_lines="warn")
+    try:
+        # "dataset_key" is first column and set as index with index_col
+        df = pd.read_csv(
+            tsv_filename, sep=DATASET_GBIF_DELIMITER, header=0, index_col=0, dtype=str,
+            engine="python", quoting=csv.QUOTE_NONE, escapechar="\\", encoding=encoding,
+            on_bad_lines="warn")
+    except Exception as e:
+        raise Exception(
+            f"Unable to read file {tsv_filename} as {DATASET_GBIF_FORMAT} format")
+
     # Remove all columns except title and pub_org_key
     columns = set(df.columns)
     for c in ["title", "publishing_organization_key"]:
@@ -1039,9 +1087,13 @@ def create_s3_dataset_lookup_from_tsv(
     smdf = df.drop(labels=columns, axis=1)
 
     # smdf.to_parquet(tmp_parquet_fname, engine="fastparquet", index=True)
-    smdf.to_parquet(tmp_parquet_fname, index=True)
-    output_s3_path = f"{s3_folders}/{output_fname}"
-    upload_to_s3(tmp_parquet_fname, bucket, output_s3_path)
+    try:
+        smdf.to_parquet(tmp_parquet_fname, index=True)
+    except Exception as e:
+        raise Exception(f"Failed to write {tsv_filename} to parquet ({e})")
+    if not os.path.exists(tmp_parquet_fname):
+        raise Exception(f"Failed to write {tsv_filename} to {tmp_parquet_fname}")
+    return tmp_parquet_fname
 
 
 # .............................................................................
@@ -1130,17 +1182,13 @@ if __name__ == "__main__":
     encoding = ENCODING
     s3_folders = SUMMARY_FOLDER
     data_date = get_current_datadate_str()
-    tsv_filename = "/home/astewart/Downloads/gbif_datasets.tsv"
     is_test = True
 
-    # Get keys for dataset resolution
-    outfile = f"dataset_counts_{data_date}_000.parquet"
-    keys = _get_dataset_keys(bucket, s3_folders, outfile, is_test)
-
-    # Required: Download dataset metadata from GBIF first
-    # https://www.gbif.org/dataset/search?type=OCCURRENCE
-    create_s3_dataset_lookup_from_tsv(
-        tsv_filename, bucket, s3_folders, encoding=ENCODING)
+    tsv_filename = download_dataset_lookup()
+    tmp_parquet_fname = create_parquet_lookup_from_tsv(tsv_filename)
+    out_fname = os.path.basename(tmp_parquet_fname)
+    output_s3_path = f"{SUMMARY_FOLDER}/{out_fname}"
+    upload_to_s3(tmp_parquet_fname, PROJ_BUCKET, output_s3_path)
 
 """
 # Note: Test with quoted data such as:

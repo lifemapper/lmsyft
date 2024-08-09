@@ -6,9 +6,9 @@ from pandas.api.types import CategoricalDtype
 import random
 import scipy.sparse
 
-from sppy.aws.aws_constants import PROJ_BUCKET, DATASET_GBIF_KEY
+from sppy.aws.aws_constants import PROJ_BUCKET
 from sppy.tools.s2n.aggregate_data_matrix import _AggregateDataMatrix
-from sppy.tools.s2n.constants import (SNKeys, Summaries)
+from sppy.tools.s2n.constants import (DATASET_GBIF_KEY, SNKeys, Summaries)
 from sppy.tools.s2n.spnet import SpNetAnalyses
 
 

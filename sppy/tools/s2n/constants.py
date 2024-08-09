@@ -3,14 +3,15 @@ import copy
 import os.path
 from enum import Enum
 
-from sppy.aws.aws_constants import (
-    DATASET_GBIF_KEY, DATESTR_TOKEN,
-)
+from sppy.aws.aws_constants import DATESTR_TOKEN
 
 # .............................................................................
 MATRIX_SEPARATOR = ","
-
-
+DATASET_GBIF_KEY = "datasetkey"
+DATASET_GBIF_FORMAT = "TSV"
+DATASET_GBIF_DOWNLOAD_URL = \
+    f"https://api.gbif.org/v1/dataset/search/export?format={DATASET_GBIF_FORMAT}&type=OCCURRENCE"
+DATASET_GBIF_DELIMITER = "\t"
 # .............................................................................
 class SUMMARY_FIELDS:
     """Fields used to summarize aggregated data."""
