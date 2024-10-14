@@ -96,26 +96,12 @@ TLS/SSL using Certificate Authority (CA)
     - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 
-Install certificates into config directory
+Bind-mount the letsencrypt directory
 -------------------------------------------------------
 
-* Create a ~/certificates directory to hold certificate files
-* as superuser, copy the newly created fullchain.pem and privkey.pem files from the
-  letsencrypt live
-* change the owner so that they can be used in Docker containers
-* Link the certificates in the repo config directory
-
-::
-
-    $ cd
-    $ mkdir certificates
-    $ sudo su -
-    # cp -p /etc/letsencrypt/live/<fqdn>/* /home/ubuntu/certificates/
-    # chown ubuntu:ubuntu /home/ubuntu/certificates/*
-    # exit
-    $ cd ~/git/sp_network/config
-    $ ln -s ~/certificates/fullchain.pem
-    $ ln -s ~/certificates/privkey.pem
+* For all containers responding to web requests, bind-mount the /etc/letsencrypt
+  directory (or the directory containing self-signed certificates) from the host machine
+  to the container
 
 Renew Certbot SSL certificates
 .........................................

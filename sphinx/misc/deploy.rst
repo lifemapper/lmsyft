@@ -19,18 +19,21 @@ Build/deploy Specify Network
 Environment status checks:
 --------------------------
 
-* Ensure the FQDN(s) in .env.*.conf and server/server_name in nginx.conf agree for each
-  subdomain deployment.
+* Ensure the FQDN(s) in .env.*.conf and server/server_name AND SSL key location in
+  nginx.conf agree for each subdomain deployment.
 
   .env.analyst.conf::
 
-    FQDN=analyst.localhost
+    FQDN=<FQDN>
 
   nginx.conf::
 
     server {
       ...
       server_name  analyst.localhost;
+
+      ssl_certificate /etc/letsencrypt/live/<FQDN>/fullchain.pem;
+      ssl_certificate_key /etc/letsencrypt/live/<FQDN>/privkey.pem;
 
 
 * Ensure no webserver (i.e. apache2) is running on the host machine
@@ -133,7 +136,7 @@ script run on instantiation.
     * docker-compose.yml bind-mounts this host directory to the /volumes/aws_data
       directory as Read-Only on the analyst container.
     * AWS_INPUT_DATA in the .env.analyst.conf file points to this volume
-    * INPUT_DATA_PATH in python code references the AWS_INPUT_DATA environment variable
+    * AWS_INPUT_PATH in python code references the AWS_INPUT_DATA environment variable
       in the flask_app/analyst/base.py service
     * currently, this directory only holds the sparse matrix data, uncompressed and
       possibly the zip file. (speciesxdataset_matrix_2024_02_01.npz, .json, .zip)
