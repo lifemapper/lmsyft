@@ -50,4 +50,3 @@ UNLOAD (
 -- Cleanup Redshift data summaries
 DROP TABLE public.dataset_counts_2024_07_01;
 DROP TABLE public.dataset_lists_2024_07_01;
-

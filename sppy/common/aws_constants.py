@@ -1,10 +1,8 @@
 """Constants for Specnet AWS Resources."""
-PROJ_NAME = "specnet"
+PROJECT = "specnet"
 REGION = "us-east-1"
-PROJ_BUCKET = f"{PROJ_NAME}-{REGION}"
+PROJ_BUCKET = f"{PROJECT}-{REGION}"
 SUMMARY_FOLDER = "summary"
-ENCODING = "utf-8"
-LOCAL_OUTDIR = "/tmp"
 
 INPUT_PATH = "summary"
 LOG_PATH = "log"
@@ -28,6 +26,3 @@ TRIGGER_FILENAME = "go.txt"
 # List of instance types at https://aws.amazon.com/ec2/spot/pricing/
 INSTANCE_TYPE = "t2.micro"
 # INSTANCE_TYPE = "a1.large"
-
-USER_DATA_TOKEN = "###SCRIPT_GOES_HERE###"
-DATESTR_TOKEN = "YYYY_MM_DD"

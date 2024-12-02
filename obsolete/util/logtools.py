@@ -20,8 +20,7 @@ class Logger:
 
     # .......................
     def __init__(
-            self, log_name, log_path=None, log_console=True,
-            log_level=logging.INFO):
+            self, log_name, log_path=None, log_console=True, log_level=logging.INFO):
         """Constructor.
 
         Args:

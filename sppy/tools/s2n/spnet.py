@@ -3,12 +3,9 @@ import boto3
 import json
 import pandas as pd
 
-from sppy.aws.aws_constants import (
-    ENCODING, PROJ_BUCKET, REGION, SUMMARY_FOLDER)
-from sppy.aws.aws_tools import get_current_datadate_str
-from sppy.tools.s2n.constants import Summaries
-
-from sppy.tools.util.utils import get_traceback
+from sppy.common.aws_constants import (PROJ_BUCKET, REGION, SUMMARY_FOLDER)
+from sppy.common.constants import ENCODING, Summaries
+from sppy.common.util import get_current_datadate_str, get_traceback
 
 
 # .............................................................................
@@ -207,19 +204,27 @@ class SpNetAnalyses():
         # Returns empty list or list of 1 record dict
         records = self._query_summary_table(table, query_str, format)
         if self._dataset_metadata_exists():
-            self._add_dataset_lookup_vals(records, table, format)
+            self._add_dataset_names(records, table, format)
         return records
 
     # ...............................................
-    def lookup_dataset_names(self, labels):
+    def lookup_dataset_names(self, dataset_keys):
+        """Find dataset names for a list of unique GBIF identifiers.
+
+        Args:
+             dataset_keys (list of str): list of dataset_keys for GBIF datasets.
+
+        Returns:
+            names (dict): keys are dataset_keys, values are dataset names.
+        """
         names = {}
-        for lbl in labels:
-            names[lbl] = None
-        if not (isinstance(labels, list) or isinstance(labels, tuple)):
-            labels = [labels]
+        for key in dataset_keys:
+            names[key] = None
+        if not (isinstance(dataset_keys, list) or isinstance(dataset_keys, tuple)):
+            dataset_keys = [dataset_keys]
         try:
-            ds_meta = self.get_dataset_metadata(labels)
-        except Exception as e:
+            ds_meta = self.get_dataset_metadata(dataset_keys)
+        except Exception:
             pass
         else:
             for rec in ds_meta:

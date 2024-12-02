@@ -3,8 +3,24 @@ import copy
 import os.path
 from enum import Enum
 
-from sppy.aws.aws_constants import DATESTR_TOKEN
-
+# .............................................................................
+class ANALYSIS_DIMENSIONS:
+    """All dimensions (besides species) with columns used for data analyses."""
+    DATASET = {
+        "code": "dataset",
+        # In summary records
+        "fields": [
+            "dataset_key", UNIQUE_SPECIES_FLD, OCCURRENCE_STATUS_FLD,
+            OCCURRENCE_COUNT_FLD
+        ],
+        "key_fld": "census_state",
+    SPECIES = {
+        "code": "species",
+        "key_fld": UNIQUE_SPECIES_FLD,
+        # Species status for each occurrence
+        "status": OCCURRENCE_STATUS,
+        "status_fld": OCCURRENCE_STATUS_FLD
+    }
 # .............................................................................
 MATRIX_SEPARATOR = ","
 DATASET_GBIF_KEY = "datasetkey"
@@ -12,6 +28,50 @@ DATASET_GBIF_FORMAT = "TSV"
 DATASET_GBIF_DOWNLOAD_URL = \
     f"https://api.gbif.org/v1/dataset/search/export?format={DATASET_GBIF_FORMAT}&type=OCCURRENCE"
 DATASET_GBIF_DELIMITER = "\t"
+SHP_EXT = "shp"
+SHP_EXTENSIONS = [
+    ".shp", ".shx", ".dbf", ".prj", ".sbn", ".sbx", ".fbn", ".fbx", ".ain",
+    ".aih", ".ixs", ".mxs", ".atx", ".shp.xml", ".cpg", ".qix"]
+USER_DATA_TOKEN = "###SCRIPT_GOES_HERE###"
+DATESTR_TOKEN = "YYYY_MM_DD"
+
+# .............................................................................
+# Log processing progress
+LOGINTERVAL = 1000000
+LOG_FORMAT = " ".join(["%(asctime)s", "%(levelname)-8s", "%(message)s"])
+LOG_DATE_FORMAT = "%d %b %Y %H:%M"
+LOGFILE_MAX_BYTES = 52000000
+LOGFILE_BACKUP_COUNT = 5
+
+TMP_PATH = "/tmp"
+ENCODING = "utf-8"
+ERR_SEPARATOR = "------------"
+USER_DATA_TOKEN = "###SCRIPT_GOES_HERE###"
+CSV_DELIMITER = ","
+ZIP_EXTENSION = ".zip"
+JSON_EXTENSION = ".json"
+CSV_EXTENSION = ".csv"
+
+# .............................................................................
+class STATISTICS_TYPE:
+    """Biodiversity statistics for a Site by Species presence-absence matrix (PAM)."""
+    SIGMA_SITE = "sigma-site"
+    SIGMA_SPECIES = "sigma-species"
+    DIVERSITY = "diversity"
+    SITE = "site"
+    SPECIES = "species"
+
+# ...........................
+    @classmethod
+    def all(cls):
+        """Get all aggregated data type codes.
+
+        Returns:
+            list of supported codes for datatypes.
+        """
+        return (cls.SIGMA_SITE, cls.SIGMA_SPECIES, cls.DIVERSITY, cls.SITE, cls.SPECIES)
+
+
 # .............................................................................
 class SUMMARY_FIELDS:
     """Fields used to summarize aggregated data."""
@@ -22,10 +82,14 @@ class SUMMARY_FIELDS:
 # .............................................................................
 class SUMMARY_TABLE_TYPES:
     """Types of tables stored in S3 for aggregate species data analyses."""
+    # Counts are used for API query
     DATASET_COUNTS = "dataset_counts"
+    # Lists are used for assembling dim x dim sparse matrix
     DATASET_SPECIES_LISTS = "dataset_species_lists"
     DATASET_META = "dataset_meta"
+    # Matrix is used for species x dimension biodiversity statistics
     SPECIES_DATASET_MATRIX = "species_dataset_matrix"
+    # Summaries are used for ranking on species or dimension counts
     SPECIES_DATASET_SUMMARY = "species_dataset_summary"
     DATASET_SPECIES_SUMMARY = "dataset_species_summary"
 
@@ -107,6 +171,7 @@ class Summaries:
                 "value": "measure",
             }
     }
+
     # ...............................................
     @classmethod
     def update_summary_tables(cls, datestr):

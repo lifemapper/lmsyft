@@ -18,16 +18,16 @@ import requests
 from time import sleep
 import xml.etree.ElementTree as ET
 
-from sppy.aws.aws_constants import (
-    ENCODING, INSTANCE_TYPE, KEY_NAME, PROJ_BUCKET, PROJ_NAME, REGION,
-    SECURITY_GROUP_ID, SPOT_TEMPLATE_BASENAME, SUMMARY_FOLDER, USER_DATA_TOKEN
+from sppy.common.aws_constants import (
+    INSTANCE_TYPE, KEY_NAME, PROJ_BUCKET, PROJECT, REGION,
+    SECURITY_GROUP_ID, SPOT_TEMPLATE_BASENAME, SUMMARY_FOLDER,
 )
-from sppy.tools.s2n.constants import (
+from sppy.common.constants import (
     DATASET_GBIF_DELIMITER, DATASET_GBIF_DOWNLOAD_URL, DATASET_GBIF_FORMAT,
-    DATASET_GBIF_KEY, Summaries, SUMMARY_TABLE_TYPES
+    DATASET_GBIF_KEY, ENCODING, Summaries, SUMMARY_TABLE_TYPES, USER_DATA_TOKEN
 )
-from sppy.tools.util.fileop import get_csv_writer
-from sppy.tools.util.logtools import logit
+from sppy.common.log import logit
+from sppy.common.util import get_csv_writer, get_current_datadate_str
 
 
 # --------------------------------------------------------------------------------------
@@ -72,9 +72,9 @@ def create_spot_launch_template_name(desc_str=None):
         template_name (str): name for identifying this Spot Launch Template.
     """
     if desc_str is None:
-        template_name = f"{PROJ_NAME}_{SPOT_TEMPLATE_BASENAME}"
+        template_name = f"{PROJECT}_{SPOT_TEMPLATE_BASENAME}"
     else:
-        template_name = f"{PROJ_NAME}_{desc_str}_{SPOT_TEMPLATE_BASENAME}"
+        template_name = f"{PROJECT}_{desc_str}_{SPOT_TEMPLATE_BASENAME}"
     return template_name
 
 
@@ -248,52 +248,50 @@ def create_token(type=None):
         token(str): token for AWS resource identification.
     """
     if type is None:
-        type = PROJ_NAME
+        type = PROJECT
     token = f"{type}_{DT.datetime.now().timestamp()}"
     return token
 
 
-# ----------------------------------------------------
-def get_today_str():
-    """Get a string representation of the current date.
-
-    Returns:
-        date_str(str): string representing date in YYYY-MM-DD format.
-    """
-    n = DT.datetime.now()
-    date_str = f"{n.year}_{n.month:02d}_{n.day:02d}"
-    return date_str
-
-
-# ----------------------------------------------------
-def get_current_datadate_str():
-    """Get a string representation of the first day of the current month.
-
-    Returns:
-        date_str(str): string representing date in YYYY-MM-DD format.
-    """
-    n = DT.datetime.now()
-    date_str = f"{n.year}_{n.month:02d}_01"
-    # TODO: delete this testing-only value
-    date_str = "2024_08_01"
-    return date_str
-
-
-# ----------------------------------------------------
-def get_previous_datadate_str():
-    """Get a string representation of the first day of the previous month.
-
-    Returns:
-        date_str(str): string representing date in YYYY-MM-DD format.
-    """
-    n = DT.datetime.now()
-    yr = n.year
-    mo = n.month - 1
-    if n.month == 0:
-        mo = 12
-        yr -= 1
-    date_str = f"{yr}_{mo:02d}_01"
-    return date_str
+# # ----------------------------------------------------
+# def get_today_str():
+#     """Get a string representation of the current date.
+#
+#     Returns:
+#         date_str(str): string representing date in YYYY-MM-DD format.
+#     """
+#     n = DT.datetime.now()
+#     date_str = f"{n.year}_{n.month:02d}_{n.day:02d}"
+#     return date_str
+#
+#
+# # ----------------------------------------------------
+# def get_current_datadate_str():
+#     """Get a string representation of the first day of the current month.
+#
+#     Returns:
+#         date_str(str): string representing date in YYYY-MM-DD format.
+#     """
+#     n = DT.datetime.now()
+#     date_str = f"{n.year}_{n.month:02d}_01"
+#     return date_str
+#
+#
+# # ----------------------------------------------------
+# def get_previous_datadate_str():
+#     """Get a string representation of the first day of the previous month.
+#
+#     Returns:
+#         date_str(str): string representing date in YYYY-MM-DD format.
+#     """
+#     n = DT.datetime.now()
+#     yr = n.year
+#     mo = n.month - 1
+#     if n.month == 0:
+#         mo = 12
+#         yr -= 1
+#     date_str = f"{yr}_{mo:02d}_01"
+#     return date_str
 
 
 # ----------------------------------------------------
@@ -1015,6 +1013,9 @@ def download_dataset_lookup():
 
     Returns:
         local_fname (str): full path to output local file
+
+    Raises:
+        Exception: on failure to write output.
     """
     certificate = certifi.where()
     # Current filenames
@@ -1032,7 +1033,7 @@ def download_dataset_lookup():
             row = ln.split(DATASET_GBIF_DELIMITER)
             try:
                 writer.writerow(row)
-            except Exception as e:
+            except Exception:
                 raise
     outf.close()
     return local_fname
@@ -1076,7 +1077,7 @@ def create_parquet_lookup_from_tsv(tsv_filename, encoding=ENCODING):
             tsv_filename, sep=DATASET_GBIF_DELIMITER, header=0, index_col=0, dtype=str,
             engine="python", quoting=csv.QUOTE_NONE, escapechar="\\", encoding=encoding,
             on_bad_lines="warn")
-    except Exception as e:
+    except Exception:
         raise Exception(
             f"Unable to read file {tsv_filename} as {DATASET_GBIF_FORMAT} format")
 
@@ -1191,29 +1192,4 @@ if __name__ == "__main__":
     upload_to_s3(tmp_parquet_fname, PROJ_BUCKET, output_s3_path)
 
 """
-# Note: Test with quoted data such as:
-# http://api.gbif.org/v1/dataset/3c83d5da-822a-439c-897a-7569e82c4ebc
-from sppy.aws.aws_tools  import *
-from sppy.aws.aws_tools  import _query_table
-
-bucket=PROJ_BUCKET
-region=REGION
-encoding=ENCODING
-s3_folders="summary"
-data_date = get_current_datadate_str()
-input_fname = f"dataset_counts_{data_date}_000.parquet"
-
-s3_path = f"{s3_folders}/{input_fname}"
-query_str = "SELECT datasetkey from s3object s"
-key_records = _query_table(bucket, s3_path, query_str, format="CSV")
-
-
-create_s3_dataset_lookup_by_keys(
-        bucket, s3_folders, region=REGION, encoding=ENCODING, is_test=False)
-
-for fn in csv_fnames:
-    print(f"Reading {fn} ...")
-    subdf = pd.read_csv(fn, index_col=0, header=0, delimiter="\t",
-            encoding=encoding, low_memory=False, quoting=csv.QUOTE_MINIMAL)
-    df_lst.append(subdf)
 """

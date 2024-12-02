@@ -6,7 +6,7 @@ import os
 SHP_EXT = "shp"
 SHP_EXTENSIONS = [
     ".shp", ".shx", ".dbf", ".prj", ".sbn", ".sbx", ".fbn", ".fbx", ".ain",
-    ".aih", ".ixs", ".mxs", ".atx", ".shp.xml", ".cpg", ".qix"],
+    ".aih", ".ixs", ".mxs", ".atx", ".shp.xml", ".cpg", ".qix"]
 
 
 # ...............................................

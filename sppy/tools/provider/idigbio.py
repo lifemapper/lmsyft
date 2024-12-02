@@ -6,10 +6,9 @@ from flask_app.broker.constants import (
 from flask_app.common.s2n_type import APIEndpoint, BrokerSchema, S2nKey, ServiceProvider
 from flask_app.common.constants import ENCODING
 
-from sppy.tools.util.logtools import logit
-from sppy.tools.util.fileop import ready_filename
+from sppy.common.log import logit
+from sppy.common.util import add_errinfo, ready_filename
 from sppy.tools.provider.api import APIQuery
-from sppy.tools.util.utils import add_errinfo
 
 
 # .............................................................................

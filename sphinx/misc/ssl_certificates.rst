@@ -109,8 +109,10 @@ Renew Certbot SSL certificates
 SSL certificates are served from the instance (AWS EC2), and need port 80 to be renewed.
 These are administered by Letsencrypt using Certbot and are only valid for 90 days at
 a time. When it is time for a renewal (approx every 60 days), bring the docker
-containers down.  Prune the volumes so the new containers and volumes will be created
-with the updated certificates.  Renew the certificates, then bring the containers up.
+containers down.  Renew the certificates, then bring the containers up.
+
+TODO: is rebuild necessary since using bind mount?? i.e. Prune the volumes so the new
+containers will be created with the updated certificates.
 
 Amazon EC2 containers do not need apache running, certbot runs its own temp web server.
 
@@ -120,14 +122,7 @@ Test with https://broker.spcoco.org/api/v1/frontend/?occid=01493b05-4310-4f28-9d
 
     $ sudo certbot certificates
     $ sudo docker compose stop
-    $ sudo su -
-    # certbot renew
-    # cp -p /etc/letsencrypt/live/spcoco.org/* /home/ubuntu/certificates/
-    # chown ubuntu:ubuntu /home/ubuntu/certificates/*
-    # exit
-    $ ls -lahtr ~/git/sp_network/config
-    <check symlinks - should still be valid>
-    $ sudo docker system prune --all --volumes
+    $ sudo certbot renew
     $ sudo docker compose up -d
 
 

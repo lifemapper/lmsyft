@@ -10,7 +10,6 @@ Create a Security Group for the region
 * Test this group!
 * Create a security group for the instance (and all other instances in region)
 
-  * aimee.stewart_SG_useast1
   * Must be tied to the region of instance
   * inbound: SSH from campus (use VPN if elsewhere), HTTP/HTTPS from all
 
@@ -45,9 +44,9 @@ Create an IAM role for the EC2/S3 interaction (specnet_ec2_s3_role)
 
     * specnet_S3bucket_FullAccess
 
-  4. Save and name role (specnet_ec2_role)
+  4. Save and name role (specnet_ec2_s3_role)
 
-Create an IAM role for the EC2/S3/Redshift interaction (specnet_ec2_role)
+Create an IAM role for the EC2/S3/Redshift interaction (specnet_ec2_s3_role)
 ===========================================================
 
 * Create a Role for EC2 instance access to Redshift and S3
@@ -62,7 +61,7 @@ Create an IAM role for the EC2/S3/Redshift interaction (specnet_ec2_role)
     * AmazonS3FullAccess (AWS managed)
     * specnet_S3bucket_FullAccess
 
-  4. Save and name role (specnet_ec2_role)
+  4. Save and name role (specnet_ec2_s3_role)
 
 
 EC2
@@ -73,7 +72,7 @@ EC2 instance creation
 
 Creation Settings
 --------------------
-* Future - create and save an AMI for consistent reproduction
+* Future - create and save an AMI or template for consistent reproduction
 * via Console, without launch template:
 
   * Ubuntu Server 24.04 LTS, SSD Volume Type (free tier eligible), Arm architecture
@@ -119,10 +118,7 @@ Baseline
 * install certbot for Let's Encrypt certificates::
 
     sudo apt update
-    sudo apt install apache2
-    sudo apt install certbot
-    sudo apt install plocate
-    sudo apt install unzip
+    sudo apt install apache2 certbot plocate unzip
 
 AWS Client tools
 --------------------

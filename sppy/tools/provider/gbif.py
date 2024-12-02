@@ -10,9 +10,9 @@ from flask_app.common.s2n_type import (
     APIEndpoint, BrokerOutput, BrokerSchema, S2nKey, ServiceProvider)
 from flask_app.common.constants import URL_ESCAPES, ENCODING
 
-from sppy.tools.util.logtools import logit
+from sppy.common.log import logit
+from sppy.common.util import add_errinfo
 from sppy.tools.provider.api import APIQuery
-from sppy.tools.util.utils import add_errinfo
 
 
 # .............................................................................

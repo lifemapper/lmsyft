@@ -3,8 +3,8 @@ from flask_app.broker.constants import (MorphoSource, TST_VALUES)
 from flask_app.common.s2n_type import (
     APIEndpoint, BrokerSchema, S2nKey, ServiceProvider)
 
+from sppy.common.util import add_errinfo
 from sppy.tools.provider.api import APIQuery
-from sppy.tools.util.utils import add_errinfo
 
 
 # .............................................................................

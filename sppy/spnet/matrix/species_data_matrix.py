@@ -1,27 +1,33 @@
 """Matrix to summarize 2 dimensions of data by counts of a third in a sparse matrix."""
 import json
-from logging import ERROR, INFO
+from logging import ERROR
 from numpy import integer as np_int, floating as np_float, ndarray
 import os
 from zipfile import ZipFile
 
-from sppy.common.constants import (SNKeys, Summaries)
-from sppy.common.log import logit
+from bison.common.constants import SNKeys, SUMMARY, TMP_PATH, JSON_EXTENSION, ZIP_EXTENSION
+from bison.common.log import logit
 
 
 # .............................................................................
-class _AggregateDataMatrix:
-    """Class for managing computations for counts of aggregator0 x aggregator1."""
+class _SpeciesDataMatrix:
+    """Class for managing computations for counts of species x aggregator."""
 
     # ...........................
-    def __init__(self, table_type, data_datestr, logger=None):
+    def __init__(self, dim0, dim1, table_type, datestr, logger=None):
         """Constructor for species by dataset comparisons.
 
         Args:
-            table_type (sppy.tools.s2n.SUMMARY_TABLE_TYPES): type of aggregated data
-            data_datestr (str): date of the source data in YYYY_MM_DD format.
+            dim0 (bison.common.constants.ANALYSIS_DIM): dimension for axis 0, rows
+            dim1 (bison.common.constants.ANALYSIS_DIM): dimension for axis 1, columns
+            table_type (code from bison.common.constants.SUMMARY): predefined type of
+                data indicating type and contents.
+            datestr (str): date of the source data in YYYY_MM_DD format.
             logger (object): An optional local logger to use for logging output
                 with consistent options
+
+        Raises:
+            Exception: on invalid table_type.
 
         Note: in the first implementation, because species are generally far more
             numerous, rows are always species, columns are datasets.  This allows
@@ -33,9 +39,23 @@ class _AggregateDataMatrix:
                 they contain. The filename contains a string like YYYY-MM-DD which
                 indicates which GBIF data dump the statistics were built upon.
         """
+        # Test that table type agrees with provided dimensions
+        _, dim0code, dim1code, _ = SUMMARY.parse_table_type(table_type)
+        if dim0["code"] != dim0code:
+            raise Exception(f"Dimension 0 {dim0['code']} != {dim0code} from {table_type}")
+        if dim1["code"] != dim1code:
+            raise Exception(f"Dimension 1 {dim1['code']} != {dim1code} from {table_type}")
+
+        self._row_dim = dim0
+        self._col_dim = dim1
         self._table_type = table_type
-        self._data_datestr = data_datestr
-        self._table = Summaries.get_table(table_type, datestr=data_datestr)
+        self._datestr = datestr
+
+        try:
+            self._table = SUMMARY.get_table(table_type, datestr=datestr)
+        except Exception as e:
+            raise Exception(f"Cannot create _AggregateDataMatrix: {e}")
+
         self._keys = SNKeys.get_keys_for_table(table_type)
         self._logger = logger
         self._report = {}
@@ -47,30 +67,69 @@ class _AggregateDataMatrix:
 
     # ...........................
     @property
-    def data_datestr(self):
-        return self._data_datestr
+    def datestr(self):
+        return self._datestr
+
+    # ...........................
+    @property
+    def y_dimension(self):
+        """Return analysis dimension for axis 0.
+
+        Returns:
+            (bison.common.constants.ANALYSIS_DIM): Data dimension for axis 0 (rows).
+        """
+        return self._row_dim
+
+    # ...........................
+    @property
+    def x_dimension(self):
+        """Return analysis dimension for axis 1.
+
+        Returns:
+            (bison.common.constants.ANALYSIS_DIM): Data dimension for axis 1 (columns).
+        """
+        return self._col_dim
+
+    # ...........................
+    @property
+    def dimensions(self):
+        """Return analysis dimension for axis 1.
+
+        Returns:
+            (bison.common.constants.ANALYSIS_DIM): Data dimension for axis 1 (columns).
+        """
+        return (self._row_dim["code"], self._col_dim["code"])
 
     # ...............................................
-    def _logme(self, msg, refname="", log_level=INFO):
-        logit(self._logger, msg, refname=refname, log_level=log_level)
+    def _logme(self, msg, refname="", log_level=None):
+        logit(msg, logger=self._logger, refname=refname, log_level=log_level)
 
     # ...............................................
-    def _get_input_files(self, local_path="/tmp"):
+    @classmethod
+    def get_matrix_meta_zip_filenames(cls, table, local_path=None):
         """Return the files that comprise local input data, optionally delete.
 
         Args:
+            table (dict): dictionary of metadata for a matrix
             local_path (str): Absolute path of local destination path
 
         Returns:
             mtx_fname (str): absolute path for local matrix data file.
             meta_fname (str): absolute path for local metadata file.
             zip_fname (str): absolute path for local compressed file.
+
+        Note:
+            Leave local_path as None to return S3 object names.
         """
-        basename = self._table["fname"]
-        mtx_ext = self._table["matrix_extension"]
-        mtx_fname = f"{local_path}/{basename}{mtx_ext}"
-        meta_fname = f"{local_path}/{basename}.json"
-        zip_fname = f"{local_path}/{basename}.zip"
+        basename = table["fname"]
+        mtx_ext = table["file_extension"]
+        mtx_fname = f"{basename}{mtx_ext}"
+        meta_fname = f"{basename}{JSON_EXTENSION}"
+        zip_fname = f"{basename}{ZIP_EXTENSION}"
+        if local_path is not None:
+            mtx_fname = os.path.join(local_path, mtx_fname)
+            meta_fname = os.path.join(local_path, meta_fname)
+            zip_fname = os.path.join(local_path, zip_fname)
         return mtx_fname, meta_fname, zip_fname
 
     # ......................................................
@@ -154,20 +213,11 @@ class _AggregateDataMatrix:
 
     # ...............................................
     @classmethod
-    def _check_for_existing_files(cls, expected_files, overwrite):
-        deleted_files = []
+    def _find_local_files(cls, expected_files):
         # Are local files already present?
         files_present = [fname for fname in expected_files if os.path.exists(fname)]
-        # Delete if overwrite is true or if not all expected files are present
-        if overwrite is True or len(files_present) < len(expected_files):
-            for fname in files_present:
-                os.remove(fname)
-                deleted_files.append(fname)
-            print(f"Removed files {', '.join(deleted_files)}.")
-        # Who remains?
-        files_present = [fname for fname in expected_files if os.path.exists(fname)]
         all_exist = len(files_present) == len(expected_files)
-        return all_exist, deleted_files
+        return files_present, all_exist
 
     # ...............................................
     def _compress_files(self, input_fnames, zip_fname):
@@ -185,15 +235,14 @@ class _AggregateDataMatrix:
             raise Exception(msg)
 
     # .............................................................................
-    def _remove_expected_files(self, local_path="/tmp"):
+    def _remove_expected_files(self, local_path=TMP_PATH):
         # Always delete local files before compressing this data.
-        overwrite = True
-        [mtx_fname, meta_fname, zip_fname] = self._get_input_files(local_path=local_path)
-        all_exist, deleted_files = self._check_for_existing_files(
-            [mtx_fname, meta_fname, zip_fname], overwrite)
-        if deleted_files:
-            self._logme(f"Deleted existing files {','.join(deleted_files)}.")
-        return [mtx_fname, meta_fname, zip_fname]
+        expected_files = self.get_matrix_meta_zip_filenames(
+            self._table, local_path=local_path)
+        for fn in expected_files:
+            if os.path.exists(fn):
+                os.remove(fn)
+        return expected_files
 
     # .............................................................................
     @classmethod
@@ -211,7 +260,7 @@ class _AggregateDataMatrix:
             row_categ (pandas.api.types.CategoricalDtype): row categories
             col_categ (pandas.api.types.CategoricalDtype): column categories
             table_type (aws.aws_constants.SUMMARY_TABLE_TYPES): type of table data
-            data_datestr (str): date string in format YYYY_MM_DD
+            datestr (str): date string in format YYYY_MM_DD
 
         Raises:
             Exception: on missing input zipfile
@@ -220,24 +269,29 @@ class _AggregateDataMatrix:
         """
         if not os.path.exists(zip_filename):
             raise Exception(f"Missing file {zip_filename}")
-        basename = os.path.basename(zip_filename)
-        fname, _ext = os.path.splitext(basename)
         try:
-            table_type, data_datestr = Summaries.get_tabletype_datestring_from_filename(
+            table_type, datestr = SUMMARY.get_tabletype_datestring_from_filename(
                 zip_filename)
         except Exception:
             raise
 
-        table = Summaries.get_table(table_type)
-        mtx_ext = table["matrix_extension"]
-        # Expected files from archive
-        mtx_fname = f"{local_path}/{fname}{mtx_ext}"
-        meta_fname = f"{local_path}/{fname}.json"
+        table = SUMMARY.get_table(table_type, datestr=datestr)
+        mtx_fname, meta_fname, _ = cls.get_matrix_meta_zip_filenames(
+            table, local_path=local_path)
 
         # Are local files already present?
         expected_files = [mtx_fname, meta_fname]
-        all_exist, _deleted_files = cls._check_for_existing_files(
-            expected_files, overwrite)
+        files_present, all_exist = cls._find_local_files(expected_files)
+
+        # If overwrite or only some are present, remove
+        if (
+                len(files_present) > 0 and
+                (overwrite is True or
+                 (overwrite is False and all_exist is False))
+        ):
+            for fn in files_present:
+                if os.path.exists(fn):
+                    os.remove(fn)
 
         if all_exist and overwrite is False:
             print(f"Expected files {', '.join(expected_files)} already exist.")
@@ -249,4 +303,4 @@ class _AggregateDataMatrix:
                 if not os.path.exists(fn):
                     raise Exception(f"Missing expected file {fn}")
 
-        return mtx_fname, meta_fname, table_type, data_datestr
+        return mtx_fname, meta_fname, table_type, datestr

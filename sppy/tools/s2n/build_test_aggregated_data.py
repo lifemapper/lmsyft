@@ -2,15 +2,15 @@
 from logging import INFO
 import os
 
-from sppy.aws.aws_constants import (LOCAL_OUTDIR, PROJ_BUCKET, REGION, SUMMARY_FOLDER)
-from sppy.aws.aws_tools import (
+from sppy.common.aws_constants import (PROJ_BUCKET, REGION, SUMMARY_FOLDER)
+from sppy.common.aws_util import (
     create_parquet_lookup_from_tsv, download_dataset_lookup, download_from_s3,
     get_current_datadate_str, get_today_str, read_s3_parquet_to_pandas, upload_to_s3
 )
-from sppy.tools.s2n.constants import (Summaries, SUMMARY_TABLE_TYPES)
+from sppy.common.constants import (Summaries, SUMMARY_TABLE_TYPES, TMP_PATH)
+from sppy.common.log import Logger, logit
 from sppy.tools.s2n.sparse_matrix import SparseMatrix
 from sppy.tools.s2n.summary_matrix import SummaryMatrix
-from sppy.tools.util.logtools import Logger, logit
 
 
 # ...............................................
@@ -170,6 +170,9 @@ def test_stacked_to_aggregate_extremes(
     Postcondition:
         Printed information for successful or failed tests.
 
+    Raises:
+        IndexError: on failure to find label in axis.
+
     Note: The aggregate_df must have been created from the stacked_df.
     """
     labels = agg_sparse_mtx.get_random_labels(test_count, axis=agg_axis)
@@ -247,10 +250,12 @@ def read_stacked_data_records(data_datestr, logger):
     stk_df = read_s3_parquet_to_pandas(
         PROJ_BUCKET, SUMMARY_FOLDER, pqt_fname, logger, s3_client=None
     )
+
     # .................................
     # Combine key and species fields to ensure uniqueness
     def _combine_columns(row):
         return str(row[fld1]) + ' ' + str(row[fld2])
+
     # Combine 2 columns to create a guaranteed unique column
     stk_df[stk_col_label_for_axis0] = stk_df.apply(_combine_columns, axis=1)
     return (
@@ -279,7 +284,7 @@ def create_dataset_metadata():
         tmp_parquet_fname = create_parquet_lookup_from_tsv(tsv_filename)
     except Exception:
         raise
-    out_fname = os.path.basename(tmp_parquet_fname)
+    _ = os.path.basename(tmp_parquet_fname)
     # output_s3_path = f"{SUMMARY_FOLDER}/{out_fname}"
     s3_filename = upload_to_s3(tmp_parquet_fname, PROJ_BUCKET, SUMMARY_FOLDER)
     return s3_filename
@@ -302,7 +307,7 @@ if __name__ == "__main__":
     log_name = f"{script_name}_{todaystr}"
     # Create logger with default INFO messages
     logger = Logger(
-        log_name, log_path=LOCAL_OUTDIR, log_console=True, log_level=INFO)
+        log_name, log_path=TMP_PATH, log_console=True, log_level=INFO)
 
     # .................................
     # Create a dataframe from stacked records
@@ -456,7 +461,7 @@ todaystr = get_today_str()
 log_name = f"{script_name}_{todaystr}"
 # Create logger with default INFO messages
 logger = Logger(
-    log_name, log_path=LOCAL_OUTDIR, log_console=True, log_level=INFO)
+    log_name, log_path=TMP_DIR, log_console=True, log_level=INFO)
 
 # .................................
 # Create a dataframe from stacked records
@@ -535,7 +540,7 @@ upload_to_s3(ds_sum_filename, PROJ_BUCKET, SUMMARY_FOLDER, REGION)
 # .................................
 # Download data and recreate 2 summary matrices to test for corruption
 # .................................
-# Species Summary 
+# Species Summary
 sp_table = Summaries.get_table(spsum_table_type, data_datestr)
 sp_zip_fname = f"{sp_table['fname']}.zip"
 sp_zip_filename = download_from_s3(
@@ -546,7 +551,7 @@ sp_dataframe, sp_meta_dict, sp_table_type, data_datestr = \
     SummaryMatrix.uncompress_zipped_data(
         sp_zip_filename, local_path=local_path, overwrite=overwrite)
 
-# Dataset Summary 
+# Dataset Summary
 ds_table = Summaries.get_table(dssum_table_type, data_datestr)
 ds_zip_fname = f"{ds_table['fname']}.zip"
 ds_zip_filename = download_from_s3(

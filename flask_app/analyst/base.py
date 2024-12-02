@@ -6,27 +6,25 @@ from werkzeug.exceptions import BadRequest
 from flask_app.common.base import _SpecifyNetworkService
 from flask_app.common.s2n_type import AnalystOutput, APIService
 
-from sppy.aws.aws_constants import PROJ_BUCKET, SUMMARY_FOLDER
-from sppy.aws.aws_tools import (
-    download_from_s3, get_current_datadate_str, get_today_str)
-
-from sppy.tools.s2n.constants import (Summaries, SUMMARY_TABLE_TYPES)
+from sppy.common.aws_constants import PROJ_BUCKET, SUMMARY_FOLDER
+from sppy.common.aws_util import (download_from_s3, get_current_datadate_str)
+from sppy.common.constants import (Summaries, SUMMARY_TABLE_TYPES)
+from sppy.common.log import Logger
+from sppy.common.util import add_errinfo, get_today_str, get_traceback
 from sppy.tools.s2n.sparse_matrix import SparseMatrix
 from sppy.tools.s2n.summary_matrix import SummaryMatrix
-from sppy.tools.util.utils import add_errinfo, get_traceback
-from sppy.tools.util.logtools import Logger
 
 
 try:
     # For docker deployment
-    DOWNLOAD_PATH = os.environ["WORKING_DIRECTORY"]
+    WORKING_PATH = os.environ["WORKING_DIRECTORY"]
     # Read-only volume
-    INPUT_DATA_PATH = os.environ["AWS_DATA_DIRECTORY"]
+    AWS_INPUT_PATH = os.environ["AWS_DATA_DIRECTORY"]
 except KeyError:
     # For local debugging
-    DOWNLOAD_PATH = '/tmp'
-    INPUT_DATA_PATH = DOWNLOAD_PATH
-LOG_PATH = os.path.join(DOWNLOAD_PATH, "log")
+    WORKING_PATH = '/tmp'
+    AWS_INPUT_PATH = WORKING_PATH
+LOG_PATH = os.path.join(WORKING_PATH, "log")
 
 
 # .............................................................................
@@ -211,7 +209,7 @@ class _AnalystService(_SpecifyNetworkService):
         # Look for uncompressed files in Read-only volume first
         (do_retrieve,
          mtx_filename, meta_filename, zip_filename) = cls._find_matrix_input_filenames(
-            table, INPUT_DATA_PATH, DOWNLOAD_PATH)
+            table, AWS_INPUT_PATH, WORKING_PATH)
         if do_retrieve is False:
             # Read
             sparse_coo, row_categ, col_categ = SparseMatrix.read_data(
@@ -220,7 +218,7 @@ class _AnalystService(_SpecifyNetworkService):
             # or Download to working path and read
             sparse_coo, row_categ, col_categ, _table_type, errinfo = \
                 cls._retrieve_sparse_matrix(
-                    os.path.basename(zip_filename), DOWNLOAD_PATH)
+                    os.path.basename(zip_filename), WORKING_PATH)
         # Create
         if None not in (sparse_coo, row_categ, col_categ):
             sp_mtx = SparseMatrix(
@@ -271,7 +269,7 @@ class _AnalystService(_SpecifyNetworkService):
         # Look for uncompressed files in Read-only volume first
         (do_retrieve,
          mtx_filename, meta_filename, zip_filename) = cls._find_matrix_input_filenames(
-            table, INPUT_DATA_PATH, DOWNLOAD_PATH)
+            table, AWS_INPUT_PATH, WORKING_PATH)
         if do_retrieve is False:
             # Read
             dataframe, meta_dict = SummaryMatrix.read_data(
@@ -279,7 +277,7 @@ class _AnalystService(_SpecifyNetworkService):
         else:
             # or Download to working path and read
             dataframe, meta_dict, _, errinfo = cls._retrieve_summary_matrix(
-                os.path.basename(zip_filename), DOWNLOAD_PATH)
+                os.path.basename(zip_filename), WORKING_PATH)
 
         # Create
         if dataframe is not None:

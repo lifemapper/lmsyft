@@ -1,23 +1,25 @@
 """Matrix to summarize each of 2 dimensions of data by counts of the other and a third."""
 from collections import OrderedDict
-from logging import ERROR
+from copy import deepcopy
 import pandas as pd
 
 from sppy.common.constants import (
-    MATRIX_SEPARATOR, SNKeys, SUMMARY_FIELDS, Summaries
+    COUNT_FLD, CSV_DELIMITER, SNKeys, TMP_PATH, TOTAL_FLD, SUMMARY, AGGREGATION_TYPE, ANALYSIS_DIM
 )
-from sppy.tools.s2n.aggregate_data_matrix import _AggregateDataMatrix
-from sppy.tools.util.logtools import logit
+from sppy.spnet.common.constants import (
+    COUNT_FLD, TOTAL_FLD, SUMMARY, AGGREGATION_TYPE, ANALYSIS_DIM
+)
+from sppy.spnet.matrix.species_data_matrix import _SpeciesDataMatrix
 
 
 # .............................................................................
-class SummaryMatrix(_AggregateDataMatrix):
+class SummaryMatrix(_SpeciesDataMatrix):
     """Class for holding summary counts of each of 2 dimensions of data."""
 
     # ...........................
     def __init__(
-            self, summary_df, table_type, data_datestr, logger=None):
-        """Constructor for species by dataset comparisons.
+            self, summary_df, table_type, datestr, dim0, dim1):
+        """Constructor for occurrence/species counts by region/analysis_dim comparisons.
 
         Args:
             summary_df (pandas.DataFrame): DataFrame with a row for each element in
@@ -26,24 +28,38 @@ class SummaryMatrix(_AggregateDataMatrix):
                 * Column 1 contains the count of the number of columns in  that row
                 * Column 2 contains the total of values in that row.
             table_type (aws_constants.SUMMARY_TABLE_TYPES): type of aggregated data
-            data_datestr (str): date of the source data in YYYY_MM_DD format.
-            logger (object): An optional local logger to use for logging output
-                with consistent options
+            datestr (str): date of the source data in YYYY_MM_DD format.
+            dim0 (bison.common.constants.ANALYSIS_DIM): dimension for axis 0,
+                rows for which we will count and total dimension 1
+            dim1 (bison.common.constants.ANALYSIS_DIM): dimension for axis 1, with two
+                columns (count and total) for each value in dimension 0.
+
+        Note: Count and total dim1 for every value in dim0
+
+        Note: constructed from records in table with datatype "counts" in
+            bison.common.constants.SUMMARY.DATATYPES,
+            i.e. county_x_riis_counts where each record has
+                county, riis_status, occ_count, species_count;
+                counts of occurrences and species by riis_status for a county
+            OR
+            county_counts where each record has
+                county, occ_count, species_count;
+                counts of occurrences and species for a county
         """
         self._df = summary_df
-        _AggregateDataMatrix.__init__(self, table_type, data_datestr, logger=logger)
+
+        _SpeciesDataMatrix.__init__(self, dim0, dim1, table_type, datestr)
 
     # ...........................
     @classmethod
-    def init_from_sparse_matrix(cls, sp_mtx, axis=0, logger=None):
+    def init_from_heatmap(cls, heatmap, axis=0):
         """Summarize a matrix into counts of one axis and values for the other axis.
 
         Args:
-            sp_mtx (sppy.tools.s2n.SparseMatrix): A sparse matrix with count
-                values for one aggregator0 (i.e. species) rows (axis 0) by another
-                aggregator1 (i.e. dataset) columns (axis 1) to use for computations.
-            axis (int): Summarize rows (0) or columns (1).
-            logger (object): logger for saving relevant processing messages
+            heatmap (bison.spnet.heatmap_matrix.HeatmapMatrix): A 2d sparse matrix with
+                count values for one dimension, (i.e. region) rows (axis 0), by the
+                species dimension, columns (axis 1), to use for computations.
+            axis (int): Summarize rows (0) for each column, or columns (1) for each row.
 
         Returns:
             sparse_coo (pandas.DataFrame): DataFrame summarizing rows by the count and
@@ -51,33 +67,86 @@ class SummaryMatrix(_AggregateDataMatrix):
 
         Note:
             The input dataframe must contain only one input record for any x and y value
-                combination, and each record must contain another value for the dataframe
-                contents.  The function was written for a table of records with
-                datasetkey (for the column labels/x), species (for the row labels/y),
-                and occurrence count.
-        """
-        # Column counts and totals (count along axis 0, each row)
-        # Row counts and totals (count along axis 1, each column)
-        totals = sp_mtx.get_totals(axis=axis)
-        counts = sp_mtx.get_counts(axis=axis)
-        data = {SUMMARY_FIELDS.COUNT: counts, SUMMARY_FIELDS.TOTAL: totals}
-        input_table_meta = Summaries.get_table(sp_mtx.table_type)
+                combination, and each record must contain another value for the
+                dataframe contents.
 
-        # Axis 0 summarizes each column (down axis 0) of sparse matrix
+        Note:
+            Total/Count down axis 0/row, rows for a column
+                across axis 1/column, columns for a row (aka species)
+            Axis 0 produces a matrix shape (col_count, 1),
+                1 row of values, total for each column
+            Axis 1 produces matrix shape (row_count, 1),
+                1 column of values, total for each row
+        """
+        # Total of the values along the axis
+        totals = heatmap.get_totals(axis=axis)
+        # Count of the non-zero values along the axis
+        counts = heatmap.get_counts(axis=axis)
+        data = {COUNT_FLD: counts, TOTAL_FLD: totals}
+
+        # Sparse matrix always has species in axis 1.
+        species_dim = heatmap.x_dimension
+        other_dim = heatmap.y_dimension
+
+        # Axis 0 summarizes down axis 0, each column/species, other dimension
+        # (i.e. region) counts and occurrence totals of other dimension in sparse matrix
         if axis == 0:
-            index = sp_mtx.column_category.categories
-            table_type = input_table_meta["column_summary_table"]
-        # Axis 1 summarizes each row (across axis 1) of sparse matrix
+            dim0 = species_dim
+            dim1 = other_dim
+            index = heatmap.column_category.categories
+            table_type = SUMMARY.get_table_type(
+                AGGREGATION_TYPE.SUMMARY, species_dim["code"], other_dim["code"])
+        # Axis 1 summarizes across axis 1, each row/other dimension, species counts and
+        # occurrence totals of species in sparse matrix
         elif axis == 1:
-            index = sp_mtx.row_category.categories
-            table_type = input_table_meta["row_summary_table"]
+            dim0 = other_dim
+            dim1 = species_dim
+            index = heatmap.row_category.categories
+            table_type = SUMMARY.get_table_type(
+                AGGREGATION_TYPE.SUMMARY, other_dim["code"], species_dim["code"])
 
         # summary fields = columns, sparse matrix axis = rows
         sdf = pd.DataFrame(data=data, index=index)
 
-        summary_matrix = SummaryMatrix(
-            sdf, table_type, sp_mtx.data_datestr, logger=logger)
+        summary_matrix = SummaryMatrix(sdf, table_type, heatmap.datestr, dim0, dim1)
         return summary_matrix
+
+    # ...........................
+    @classmethod
+    def init_from_compressed_file(
+            cls, zip_filename, local_path=TMP_PATH, overwrite=False):
+        """Construct a SparseMatrix from a compressed file.
+
+        Args:
+            zip_filename (str): Filename of zipped sparse matrix data to uncompress.
+            local_path (str): Absolute path of local destination path
+            overwrite (bool): Flag indicating whether to use existing files unzipped
+                from the zip_filename.
+
+        Returns:
+            sparse_mtx (bison.spnet.sparse_matrix.SparseMatrix): matrix for the data.
+
+        Raises:
+            Exception: on failure to uncompress files.
+            Exception: on failure to load data from uncompressed files.
+
+        Note:
+            All filenames have the same basename with extensions indicating which data
+                they contain. The filename contains a string like YYYY-MM-DD which
+                indicates which GBIF data dump the statistics were built upon.
+        """
+        try:
+            dataframe, meta_dict, table_type, datestr = cls.uncompress_zipped_data(
+                zip_filename, local_path=local_path, overwrite=overwrite)
+        except Exception:
+            raise
+
+        dim0 = ANALYSIS_DIM.get(meta_dict["dim_0_code"])
+        dim1 = ANALYSIS_DIM.get(meta_dict["dim_1_code"])
+        # Create
+        summary_mtx = SummaryMatrix(dataframe, table_type, datestr, dim0, dim1)
+
+        return summary_mtx
 
     # ...............................................
     @property
@@ -113,11 +182,11 @@ class SummaryMatrix(_AggregateDataMatrix):
         size = len(self._df.index)
         # Get a random sample of category indexes (0-based)
         idxs = random.sample(range(size), count)
-        labels = [self._df.index(i) for i in idxs]
+        labels = [self._df.index[i] for i in idxs]
         return labels
 
     # .............................................................................
-    def compress_to_file(self, local_path="/tmp"):
+    def compress_to_file(self, local_path=TMP_PATH):
         """Compress this SparseMatrix to a zipped npz and json file.
 
         Args:
@@ -137,14 +206,24 @@ class SummaryMatrix(_AggregateDataMatrix):
 
         # Save matrix to csv locally
         try:
-            self._df.to_csv(mtx_fname, sep=MATRIX_SEPARATOR)
+            self._df.to_csv(mtx_fname, sep=CSV_DELIMITER)
         except Exception as e:
             msg = f"Failed to write {mtx_fname}: {e}"
-            self._logme(msg, log_level=ERROR)
             raise Exception(msg)
 
         # Save table data and categories to json locally
-        metadata = Summaries.get_table(self._table_type)
+        metadata = deepcopy(self._table)
+        # Should be filled already, make sure they are consistent!
+        if metadata["dim_0_code"] != self.y_dimension["code"]:
+            raise Exception(
+                f"metadata/dim_0_code {metadata['dim_0_code']} != "
+                f"y_dimension {self.y_dimension['code']}"
+            )
+        if metadata["dim_1_code"] != self.x_dimension["code"]:
+            raise Exception(
+                f"metadata/dim_1_code {metadata['dim_1_code']} != "
+                f"x_dimension {self.x_dimension['code']}"
+            )
         try:
             self._dump_metadata(metadata, meta_fname)
         except Exception:
@@ -161,7 +240,7 @@ class SummaryMatrix(_AggregateDataMatrix):
     # .............................................................................
     @classmethod
     def uncompress_zipped_data(
-            cls, zip_filename, local_path="/tmp", overwrite=False):
+            cls, zip_filename, local_path=TMP_PATH, overwrite=False):
         """Uncompress a zipped SparseMatrix into a coo_array and row/column categories.
 
         Args:
@@ -174,14 +253,14 @@ class SummaryMatrix(_AggregateDataMatrix):
             dataframe (pandas.DataFrame): dataframe containing summary matrix data.
             meta_dict (dict): metadata for the matrix
             table_type (aws.aws_constants.SUMMARY_TABLE_TYPES): type of table data
-            data_datestr (str): date string in format YYYY_MM_DD
+            datestr (str): date string in format YYYY_MM_DD
 
         Raises:
             Exception: on failure to uncompress files.
             Exception: on failure to load data from uncompressed files.
         """
         try:
-            mtx_fname, meta_fname, table_type, data_datestr = cls._uncompress_files(
+            mtx_fname, meta_fname, table_type, datestr = cls._uncompress_files(
                 zip_filename, local_path, overwrite=overwrite)
         except Exception:
             raise
@@ -192,7 +271,7 @@ class SummaryMatrix(_AggregateDataMatrix):
         except Exception:
             raise
 
-        return dataframe, meta_dict, table_type, data_datestr
+        return dataframe, meta_dict, table_type, datestr
 
     # .............................................................................
     @classmethod
@@ -207,7 +286,7 @@ class SummaryMatrix(_AggregateDataMatrix):
             dataframe (pandas.DataFrame): dataframe containing summary matrix data.
             meta_dict (dict): metadata for the matrix
             table_type (aws.aws_constants.SUMMARY_TABLE_TYPES): type of table data
-            data_datestr (str): date string in format YYYY_MM_DD
+            datestr (str): date string in format YYYY_MM_DD
 
         Raises:
             Exception: on unable to load CSV file
@@ -215,7 +294,7 @@ class SummaryMatrix(_AggregateDataMatrix):
         """
         # Read dataframe from local CSV file
         try:
-            dataframe = pd.read_csv(mtx_filename, sep=MATRIX_SEPARATOR, index_col=0)
+            dataframe = pd.read_csv(mtx_filename, sep=CSV_DELIMITER, index_col=0)
         except Exception as e:
             raise Exception(f"Failed to load {mtx_filename}: {e}")
         # Read JSON dictionary as string
@@ -225,6 +304,29 @@ class SummaryMatrix(_AggregateDataMatrix):
             raise
 
         return dataframe, meta_dict
+
+    # ...............................................
+    def get_row_values(self, row_label):
+        """Get the labels and values for a row.
+
+        Args:
+            row_label: label of row to get values for.
+
+        Returns:
+            row_dict: Dictionary of labels and values for the row.
+
+        Raises:
+            Exception: on failure to find row_label in the dataframe index.
+        """
+        vals = {}
+        try:
+            row = self._df.loc[[row_label]].to_dict()
+        except KeyError:
+            raise Exception(f"Failed to find row {row_label} in index")
+
+        for lbl, valdict in row.items():
+            vals[lbl] = valdict[row_label]
+        return vals
 
     # ...............................................
     def get_measures(self, summary_key):
@@ -240,8 +342,8 @@ class SummaryMatrix(_AggregateDataMatrix):
         measures = self._df.loc[summary_key]
         stats = {
             self._keys[SNKeys.ONE_LABEL]: summary_key,
-            self._keys[SNKeys.ONE_COUNT]: measures.loc[SUMMARY_FIELDS.COUNT],
-            self._keys[SNKeys.ONE_TOTAL]: measures.loc[SUMMARY_FIELDS.TOTAL]
+            self._keys[SNKeys.ONE_COUNT]: measures.loc[COUNT_FLD],
+            self._keys[SNKeys.ONE_TOTAL]: measures.loc[TOTAL_FLD]
         }
         return stats
 
@@ -289,7 +391,3 @@ class SummaryMatrix(_AggregateDataMatrix):
             for other_fld in measure_flds:
                 ordered_rec_dict[k][other_fld] = rec_dict[other_fld][k]
         return ordered_rec_dict
-
-    # ...............................................
-    def _logme(self, msg, refname="", log_level=None):
-        logit(self._logger, msg, refname=refname, log_level=log_level)
