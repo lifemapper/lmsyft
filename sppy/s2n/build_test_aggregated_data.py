@@ -2,15 +2,15 @@
 from logging import INFO
 import os
 
-from sppy.common.aws_constants import (PROJ_BUCKET, REGION, SUMMARY_FOLDER)
-from sppy.common.aws_util import (
+from spnet.aws.constants import (PROJ_BUCKET, REGION, SUMMARY_FOLDER)
+from spnet.aws.tools import (
     create_parquet_lookup_from_tsv, download_dataset_lookup, download_from_s3,
     get_current_datadate_str, get_today_str, read_s3_parquet_to_pandas, upload_to_s3
 )
 from sppy.common.constants import (Summaries, SUMMARY_TABLE_TYPES, TMP_PATH)
-from sppy.common.log import Logger, logit
-from sppy.tools.s2n.sparse_matrix import SparseMatrix
-from sppy.tools.s2n.summary_matrix import SummaryMatrix
+from spnet.common.log import Logger, logit
+from obsolete.s2n.sparse_matrix import SparseMatrix
+from obsolete.s2n.summary_matrix import SummaryMatrix
 
 
 # ...............................................

@@ -1,12 +1,12 @@
 """Parent Class for the Specify Network API services."""
 from werkzeug.exceptions import BadRequest
 
-from sppy.common.util import add_errinfo, combine_errinfo, get_traceback
+from spnet.common.util import add_errinfo, combine_errinfo, get_traceback
 from flask_app.common.base import _SpecifyNetworkService
 from flask_app.common.s2n_type import (
     APIEndpoint, APIService, BrokerOutput, get_host_url, S2nKey, ServiceProvider)
-from sppy.tools.provider.gbif import GbifAPI
-from sppy.tools.provider.itis import ItisAPI
+from sppy.provider.gbif import GbifAPI
+from sppy.provider.itis import ItisAPI
 
 
 # .............................................................................

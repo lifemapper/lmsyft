@@ -3,11 +3,11 @@ import boto3
 import json
 import pandas as pd
 
-from sppy.common.aws_constants import (PROJ_BUCKET, REGION, SUMMARY_FOLDER)
-from sppy.common.constants import ENCODING, Summaries
-from sppy.common.util import get_current_datadate_str, get_traceback
+from spnet.aws.constants import S3_BUCKET, REGION, S3_SUMMARY_DIR
+from spnet.common.constants import ENCODING, GBIF_DATASET_KEY_FLD
+from spnet.common.util import get_current_datadate_str, get_traceback
 
-
+from sppy.common.constants import SUMMARY
 # .............................................................................
 class SpNetAnalyses():
     """Class for retrieving SpecifyNetwork summary data from AWS S3."""
@@ -15,7 +15,7 @@ class SpNetAnalyses():
     # ...............................................
     @classmethod
     def __init__(
-            self, bucket, s3_summary_path=SUMMARY_FOLDER, region=REGION,
+            self, bucket, s3_summary_path=S3_SUMMARY_DIR, region=REGION,
             encoding=ENCODING):
         """Object to query tabular data in S3.
 
@@ -32,7 +32,7 @@ class SpNetAnalyses():
         self.datestr = get_current_datadate_str()
         self._summary_path = s3_summary_path
         # Data objects for query
-        self._summary_tables = Summaries.update_summary_tables(self.datestr)
+        self._summary_tables = SUMMARY.tables(datestr=self.datestr)
 
     # ----------------------------------------------------
     def _list_summaries(self):
@@ -229,7 +229,7 @@ class SpNetAnalyses():
         else:
             for rec in ds_meta:
                 # label is a dataset_key
-                names[rec["dataset_key"]] = rec["title"]
+                names[rec[GBIF_DATASET_KEY_FLD]] = rec["title"]
         return names
 
     # ----------------------------------------------------
@@ -366,7 +366,7 @@ class SpNetAnalyses():
 if __name__ == "__main__":
     format = "JSON"
     dataset_key = "0000e36f-d0e9-46b0-aa23-cc1980f00515"
-    s3q = SpNetAnalyses(PROJ_BUCKET)
+    s3q = SpNetAnalyses(S3_BUCKET)
     recs = s3q.get_simple_dataset_counts(dataset_key, format=format)
     for r in recs:
         print(r)

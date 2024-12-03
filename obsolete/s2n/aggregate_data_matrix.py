@@ -6,7 +6,7 @@ import os
 from zipfile import ZipFile
 
 from sppy.common.constants import (SNKeys, Summaries)
-from sppy.common.log import logit
+from spnet.common.log import logit
 
 
 # .............................................................................

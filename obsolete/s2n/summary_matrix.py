@@ -6,7 +6,7 @@ import pandas as pd
 from sppy.common.constants import (
     MATRIX_SEPARATOR, SNKeys, SUMMARY_FIELDS, Summaries
 )
-from sppy.tools.s2n.aggregate_data_matrix import _AggregateDataMatrix
+from obsolete.s2n.aggregate_data_matrix import _AggregateDataMatrix
 from sppy.tools.util.logtools import logit
 
 

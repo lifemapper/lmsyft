@@ -6,13 +6,17 @@ from werkzeug.exceptions import BadRequest
 from flask_app.common.base import _SpecifyNetworkService
 from flask_app.common.s2n_type import AnalystOutput, APIService
 
-from sppy.common.aws_constants import PROJ_BUCKET, SUMMARY_FOLDER
-from sppy.common.aws_util import (download_from_s3, get_current_datadate_str)
-from sppy.common.constants import (Summaries, SUMMARY_TABLE_TYPES)
-from sppy.common.log import Logger
-from sppy.common.util import add_errinfo, get_today_str, get_traceback
-from sppy.tools.s2n.sparse_matrix import SparseMatrix
-from sppy.tools.s2n.summary_matrix import SummaryMatrix
+from spnet.aws.constants import REGION, S3_BUCKET, S3_SUMMARY_DIR
+from spnet.aws.tools import S3
+from spnet.common.constants import SPECIES_DIM, SUMMARY_FIELDS
+from spnet.common.log import Logger
+from spnet.common.util import (
+    add_errinfo, get_current_datadate_str, get_today_str, get_traceback
+)
+from spnet.matrix.heatmap_matrix import HeatmapMatrix
+from spnet.matrix.summary_matrix import SummaryMatrix
+
+from sppy.common.constants import ANALYSIS_DIM, SUMMARY
 
 
 try:
@@ -177,11 +181,11 @@ class _AnalystService(_SpecifyNetworkService):
         col_categ = None
         table_type = None
         errinfo = {"info": [f"Download data {zip_basename} locally"]}
+        s3 = S3(region=REGION)
         # Download to local working directory if file does not exist
         try:
-            zip_filename = download_from_s3(
-                PROJ_BUCKET, SUMMARY_FOLDER, zip_basename, local_path=local_path,
-                overwrite=True)
+            zip_filename = s3.download(
+                S3_BUCKET, S3_SUMMARY_DIR, zip_basename, local_path, overwrite=True)
         except Exception as e:
             errinfo = add_errinfo(errinfo, "error", str(e))
 
@@ -190,7 +194,7 @@ class _AnalystService(_SpecifyNetworkService):
             if success:
                 try:
                     sparse_coo, row_categ, col_categ, table_type, _data_datestr = \
-                        SparseMatrix.uncompress_zipped_data(
+                        HeatmapMatrix.uncompress_zipped_data(
                             zip_filename, local_path=local_path, overwrite=False)
                 except Exception as e:
                     errinfo = add_errinfo(errinfo, "error", str(e))
@@ -204,15 +208,19 @@ class _AnalystService(_SpecifyNetworkService):
         errinfo = {}
         sp_mtx = None
         data_datestr = get_current_datadate_str()
-        mtx_table_type = SUMMARY_TABLE_TYPES.SPECIES_DATASET_MATRIX
-        table = Summaries.get_table(mtx_table_type, data_datestr)
+        dim_dataset = ANALYSIS_DIM.DATASET
+        dim_species = SPECIES_DIM
+        dataset_species_matrix_type = SUMMARY.get_table_type(
+            "matrix", dim_dataset["code"], dim_species["code"])
+        # mtx_table_type = SUMMARY_TABLE_TYPES.SPECIES_DATASET_MATRIX
+        table = SUMMARY.get_table(dataset_species_matrix_type, datestr=data_datestr)
         # Look for uncompressed files in Read-only volume first
         (do_retrieve,
          mtx_filename, meta_filename, zip_filename) = cls._find_matrix_input_filenames(
             table, AWS_INPUT_PATH, WORKING_PATH)
         if do_retrieve is False:
             # Read
-            sparse_coo, row_categ, col_categ = SparseMatrix.read_data(
+            sparse_coo, row_categ, col_categ = HeatmapMatrix.read_data(
                 mtx_filename, meta_filename)
         else:
             # or Download to working path and read
@@ -221,8 +229,12 @@ class _AnalystService(_SpecifyNetworkService):
                     os.path.basename(zip_filename), WORKING_PATH)
         # Create
         if None not in (sparse_coo, row_categ, col_categ):
-            sp_mtx = SparseMatrix(
-                sparse_coo, mtx_table_type, data_datestr, row_categ, col_categ)
+            # TODO: Revisit assumption that all HeatmapMatrixes are built on occurrence
+            #   count (not species count)
+            sp_mtx = HeatmapMatrix(
+                sparse_coo, dataset_species_matrix_type, data_datestr, row_categ,
+                col_categ, dim_dataset, dim_species, SUMMARY_FIELDS.OCCURRENCE_COUNT
+            )
         return sp_mtx, errinfo
 
     # ...............................................
@@ -233,10 +245,11 @@ class _AnalystService(_SpecifyNetworkService):
         table_type = None
         errinfo = {"info": [f"Download data {zip_basename} locally"]}
         # Download to local working directory if file does not exist
+        s3 = S3(region=REGION)
+        # Download to local working directory if file does not exist
         try:
-            zip_filename = download_from_s3(
-                PROJ_BUCKET, SUMMARY_FOLDER, zip_basename, local_path=local_path,
-                overwrite=True)
+            zip_filename = s3.download(
+                S3_BUCKET, S3_SUMMARY_DIR, zip_basename, local_path, overwrite=True)
         except Exception as e:
             errinfo = add_errinfo(errinfo, "error", str(e))
 
@@ -260,12 +273,17 @@ class _AnalystService(_SpecifyNetworkService):
         errinfo = {}
         summary_mtx = None
         data_datestr = get_current_datadate_str()
-        if summary_type == "dataset":
-            mtx_table_type = SUMMARY_TABLE_TYPES.DATASET_SPECIES_SUMMARY
-        else:
-            mtx_table_type = SUMMARY_TABLE_TYPES.SPECIES_DATASET_SUMMARY
 
-        table = Summaries.get_table(mtx_table_type, data_datestr)
+        if summary_type == "dataset":
+            dim0 = ANALYSIS_DIM.DATASET
+            dim1 = SPECIES_DIM
+        else:
+            dim0 = SPECIES_DIM
+            dim1 = ANALYSIS_DIM.DATASET
+        mtx_table_type = SUMMARY.get_table_type(
+            "summary", dim0["code"], dim1["code"])
+
+        table = SUMMARY.get_table(mtx_table_type, datestr=data_datestr)
         # Look for uncompressed files in Read-only volume first
         (do_retrieve,
          mtx_filename, meta_filename, zip_filename) = cls._find_matrix_input_filenames(
@@ -282,7 +300,7 @@ class _AnalystService(_SpecifyNetworkService):
         # Create
         if dataframe is not None:
             summary_mtx = SummaryMatrix(
-                dataframe, mtx_table_type, data_datestr, logger=None)
+                dataframe, mtx_table_type, data_datestr, dim0, dim1)
 
         return summary_mtx, errinfo
 

@@ -5,7 +5,7 @@ from werkzeug.exceptions import BadRequest
 from flask_app.common.s2n_type import APIService, AnalystOutput
 from flask_app.analyst.base import _AnalystService
 
-from sppy.common.util import (
+from spnet.common.util import (
     add_errinfo, combine_errinfo, get_traceback, prettify_object
 )
 

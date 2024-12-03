@@ -1,5 +1,5 @@
 """Module containing Lifemapper XML utilities."""
-from sppy.tools.util.attribute_object import LmAttList, LmAttObj
+from sppy.provider.attribute_object import LmAttList, LmAttObj
 
 from types import (BuiltinFunctionType, BuiltinMethodType, FunctionType,
                    LambdaType, MethodType)

@@ -4,9 +4,10 @@ from werkzeug.exceptions import BadRequest
 from flask_app.common.s2n_type import APIService, AnalystOutput
 from flask_app.analyst.base import _AnalystService
 
-from sppy.common.aws_constants import PROJ_BUCKET
-from sppy.tools.s2n.spnet import SpNetAnalyses
-from sppy.common.util import (combine_errinfo, get_traceback, prettify_object)
+from spnet.aws.constants import S3_BUCKET
+from spnet.common.util import (combine_errinfo, get_traceback, prettify_object)
+
+from sppy.s2n.spnet import SpNetAnalyses
 
 
 # .............................................................................
@@ -70,7 +71,7 @@ class RankSvc(_AnalystService):
     @classmethod
     def _get_ordered_counts(cls, summary_type, rank_by, order, limit):
         records = []
-        spnet = SpNetAnalyses(PROJ_BUCKET)
+        spnet = SpNetAnalyses(S3_BUCKET)
         if summary_type == "dataset":
             try:
                 records, errinfo = spnet.rank_dataset_counts(rank_by, order, limit)

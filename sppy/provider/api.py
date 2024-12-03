@@ -5,11 +5,13 @@ import requests
 import urllib
 
 from flask_app.common.s2n_type import BrokerOutput, S2nKey, ServiceProvider
-from flask_app.common.constants import ENCODING, URL_ESCAPES
+from flask_app.common.constants import URL_ESCAPES
 
-from sppy.common.log import logit
-from sppy.tools.s2n.lm_xml import fromstring, deserialize
-from sppy.common.util import add_errinfo, get_traceback
+from spnet.common.constants import ENCODING
+from spnet.common.log import logit
+from spnet.common.util import add_errinfo, get_traceback
+
+from sppy.provider.lm_xml import fromstring, deserialize
 
 
 # .............................................................................

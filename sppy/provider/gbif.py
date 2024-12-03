@@ -8,11 +8,12 @@ import urllib
 from flask_app.broker.constants import GBIF, ISSUE_DEFINITIONS
 from flask_app.common.s2n_type import (
     APIEndpoint, BrokerOutput, BrokerSchema, S2nKey, ServiceProvider)
-from flask_app.common.constants import URL_ESCAPES, ENCODING
+from flask_app.common.constants import URL_ESCAPES
 
-from sppy.common.log import logit
-from sppy.common.util import add_errinfo
-from sppy.tools.provider.api import APIQuery
+from spnet.common.constants import ENCODING
+from spnet.common.log import logit
+from spnet.common.util import add_errinfo
+from sppy.provider.api import APIQuery
 
 
 # .............................................................................

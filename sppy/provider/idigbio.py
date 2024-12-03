@@ -4,11 +4,11 @@ import os
 from flask_app.broker.constants import (
     GBIF_MISSING_KEY, Idigbio, ISSUE_DEFINITIONS)
 from flask_app.common.s2n_type import APIEndpoint, BrokerSchema, S2nKey, ServiceProvider
-from flask_app.common.constants import ENCODING
 
-from sppy.common.log import logit
-from sppy.common.util import add_errinfo, ready_filename
-from sppy.tools.provider.api import APIQuery
+from spnet.common.constants import ENCODING
+from spnet.common.log import logit
+from spnet.common.util import add_errinfo, ready_filename
+from sppy.provider.api import APIQuery
 
 
 # .............................................................................

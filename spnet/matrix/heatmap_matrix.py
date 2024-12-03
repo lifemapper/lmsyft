@@ -32,9 +32,10 @@ class HeatmapMatrix(_SpeciesDataMatrix):
                 to identify axis 0/rows.
             column_category (pandas.api.types.CategoricalDtype): ordered column labels
                 used to identify axis 1/columns.
-            dim0 (bison.common.constants.ANALYSIS_DIM): dimension for axis 0, rows
-            dim1 (bison.common.constants.ANALYSIS_DIM): dimension for axis 1, columns,
-                always species dimension in specnet sparse matrices
+            dim0 (bison.common.constants.ANALYSIS_DIM or SPECIES_DIM): dimension for
+                axis 0, rows
+            dim1 (bison.common.constants.ANALYSIS_DIM or SPECIES_DIM): dimension for
+                axis 1, columns, always species dimension in specnet sparse matrices
             val_fld (str): column header from stacked input records containing values
                 for sparse matrix cells
 

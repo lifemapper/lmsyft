@@ -5,10 +5,10 @@ from flask_app.broker.base import _BrokerService
 from flask_app.common.s2n_type import (
     APIEndpoint, APIService, BrokerOutput, BrokerSchema, S2nKey, ServiceProvider)
 
-from sppy.tools.provider.gbif import GbifAPI
-from sppy.tools.provider.itis import ItisAPI
-from sppy.tools.provider.worms import WormsAPI
-from sppy.common.util import get_traceback
+from sppy.provider.itis import ItisAPI
+from sppy.provider.gbif import GbifAPI
+from sppy.provider.worms import WormsAPI
+from spnet.common.util import get_traceback
 
 
 # .............................................................................

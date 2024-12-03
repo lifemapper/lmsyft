@@ -6,9 +6,11 @@ from pandas.api.types import CategoricalDtype
 import random
 import scipy.sparse
 
-from sppy.common.aws_constants import PROJ_BUCKET
-from sppy.common.constants import (DATASET_GBIF_KEY, SNKeys, Summaries)
-from sppy.tools.s2n.aggregate_data_matrix import _AggregateDataMatrix
+from spnet.aws.constants import S3_BUCKET
+from spnet.common.constants import GBIF_DATASET_KEY_FLD
+
+from sppy.common.constants import SNKeys, SUMMARY
+from obsolete.s2n.aggregate_data_matrix import _AggregateDataMatrix
 from sppy.tools.s2n.spnet import SpNetAnalyses
 
 
@@ -620,10 +622,10 @@ class SparseMatrix(_AggregateDataMatrix):
 
     # ...............................................
     def _lookup_dataset_names(self, labels):
-        if self._table["column"] != DATASET_GBIF_KEY:
+        if self._table["column"] != GBIF_DATASET_KEY_FLD:
             names = labels
         else:
-            spnet = SpNetAnalyses(PROJ_BUCKET)
+            spnet = SpNetAnalyses(S3_BUCKET)
             names = spnet.lookup_dataset_names(labels)
         return names
 
@@ -841,7 +843,7 @@ class SparseMatrix(_AggregateDataMatrix):
             raise Exception(msg)
 
         # Save table data and categories to json locally
-        metadata = Summaries.get_table(self._table_type)
+        metadata = SUMMARY.get_table(self._table_type, datestr=self._data_datestr)
         metadata["row"] = self._row_categ.categories.tolist()
         metadata["column"] = self._col_categ.categories.tolist()
         try:

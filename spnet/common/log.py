@@ -5,7 +5,7 @@ import os
 from pprint import pp
 import sys
 
-from bison.common.util import get_today_str
+from spnet.common.util import get_today_str
 
 
 # .............................................................................

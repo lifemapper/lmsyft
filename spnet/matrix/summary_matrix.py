@@ -3,13 +3,12 @@ from collections import OrderedDict
 from copy import deepcopy
 import pandas as pd
 
-from sppy.common.constants import (
-    COUNT_FLD, CSV_DELIMITER, SNKeys, TMP_PATH, TOTAL_FLD, SUMMARY, AGGREGATION_TYPE, ANALYSIS_DIM
+from sppy.common.constants import ANALYSIS_DIM, SNKeys, SUMMARY
+
+from spnet.common.constants import (
+    AGGREGATION_TYPE, CSV_DELIMITER, SUMMARY_FIELDS, TMP_PATH
 )
-from sppy.spnet.common.constants import (
-    COUNT_FLD, TOTAL_FLD, SUMMARY, AGGREGATION_TYPE, ANALYSIS_DIM
-)
-from sppy.spnet.matrix.species_data_matrix import _SpeciesDataMatrix
+from spnet.matrix.species_data_matrix import _SpeciesDataMatrix
 
 
 # .............................................................................
@@ -29,10 +28,10 @@ class SummaryMatrix(_SpeciesDataMatrix):
                 * Column 2 contains the total of values in that row.
             table_type (aws_constants.SUMMARY_TABLE_TYPES): type of aggregated data
             datestr (str): date of the source data in YYYY_MM_DD format.
-            dim0 (bison.common.constants.ANALYSIS_DIM): dimension for axis 0,
-                rows for which we will count and total dimension 1
-            dim1 (bison.common.constants.ANALYSIS_DIM): dimension for axis 1, with two
-                columns (count and total) for each value in dimension 0.
+            dim0 (bison.common.constants.ANALYSIS_DIM or SPECIES_DIM): dimension for
+                 axis 0, rows for which we will count and total dimension 1
+            dim1 (bison.common.constants.ANALYSIS_DIM or SPECIES_DIM): dimension for
+                axis 1, with two columns (count and total) for each value in dimension 0.
 
         Note: Count and total dim1 for every value in dim0
 
@@ -82,7 +81,7 @@ class SummaryMatrix(_SpeciesDataMatrix):
         totals = heatmap.get_totals(axis=axis)
         # Count of the non-zero values along the axis
         counts = heatmap.get_counts(axis=axis)
-        data = {COUNT_FLD: counts, TOTAL_FLD: totals}
+        data = {SUMMARY_FIELDS.COUNT: counts, SUMMARY_FIELDS.TOTAL: totals}
 
         # Sparse matrix always has species in axis 1.
         species_dim = heatmap.x_dimension
@@ -342,8 +341,8 @@ class SummaryMatrix(_SpeciesDataMatrix):
         measures = self._df.loc[summary_key]
         stats = {
             self._keys[SNKeys.ONE_LABEL]: summary_key,
-            self._keys[SNKeys.ONE_COUNT]: measures.loc[COUNT_FLD],
-            self._keys[SNKeys.ONE_TOTAL]: measures.loc[TOTAL_FLD]
+            self._keys[SNKeys.ONE_COUNT]: measures.loc[SUMMARY_FIELDS.COUNT],
+            self._keys[SNKeys.ONE_TOTAL]: measures.loc[SUMMARY_FIELDS.TOTAL]
         }
         return stats
 

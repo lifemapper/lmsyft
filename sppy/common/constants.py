@@ -1,196 +1,515 @@
-"""Constants for Specify Network Analyst Data."""
-import copy
-import os.path
+"""Constants for data-specific Specify Network Analyst use of spnet modules."""
+from copy import deepcopy
 from enum import Enum
+import os
+
+from spnet.aws.constants import S3_RS_TABLE_SUFFIX
+from spnet.common.constants import (
+    AGGREGATION_TYPE, COMPOUND_SPECIES_FLD, SPECIES_DIM, SUMMARY_FIELDS, ZIP_EXTENSION
+)
+
 
 # .............................................................................
-class ANALYSIS_DIMENSIONS:
+# Specify Network Workflow tasks: scripts, docker compose files, EC2 launch template versions,
+#   Cloudwatch streams
+class TASK:
+    """Workflow tasks to be executed on EC2 instances."""
+    TEST = "test_task"
+    CALC_STATS = "calc_stats"
+    userdata_extension = ".userdata.sh"
+
+    # ...........................
+    @classmethod
+    def tasks(cls):
+        """Get all valid tasks.
+
+        Returns:
+            (list of str): all valid tasks
+        """
+        return [cls.TEST, cls.CALC_STATS]
+
+    # ...........................
+    @classmethod
+    def get_userdata_filename(cls, task, pth=None):
+        """Get the filename containing userdata to execute this task.
+
+        Args:
+            task (str): task
+            pth (str): local path for file.
+
+        Returns:
+            fname (str): filename for EC2 userdata to execute task.
+
+        Raises:
+            Exception: on unsupported task string.
+        """
+        if task not in cls.tasks():
+            raise Exception(f"Unknown task {task}")
+        fname = f"{task}{cls.userdata_extension}"
+        if pth is not None:
+            fname = os.path.join(pth, fname)
+        return fname
+
+    # ...........................
+    @classmethod
+    def get_task_from_userdata_filename(cls, fname):
+        """Get the task for the userdata file.
+
+        Args:
+            fname (str): filename for EC2 userdata to execute task.
+
+        Returns:
+            task (str): task
+
+        Raises:
+            Exception: on no task for this filename.
+        """
+        task = fname.rstrip(cls.userdata_extension)
+        if task not in cls.tasks():
+            raise Exception(f"Unknown task {task} from userdata file {fname}")
+        return task
+
+
+# .............................................................................
+class ANALYSIS_DIM:
     """All dimensions (besides species) with columns used for data analyses."""
     DATASET = {
         "code": "dataset",
         # In summary records
         "fields": [
-            "dataset_key", UNIQUE_SPECIES_FLD, OCCURRENCE_STATUS_FLD,
-            OCCURRENCE_COUNT_FLD
-        ],
-        "key_fld": "census_state",
-    SPECIES = {
-        "code": "species",
-        "key_fld": UNIQUE_SPECIES_FLD,
-        # Species status for each occurrence
-        "status": OCCURRENCE_STATUS,
-        "status_fld": OCCURRENCE_STATUS_FLD
+            "dataset_key", COMPOUND_SPECIES_FLD, SUMMARY_FIELDS.OCCURRENCE_COUNT
+        ]
     }
-# .............................................................................
-MATRIX_SEPARATOR = ","
-DATASET_GBIF_KEY = "datasetkey"
-DATASET_GBIF_FORMAT = "TSV"
-DATASET_GBIF_DOWNLOAD_URL = \
-    f"https://api.gbif.org/v1/dataset/search/export?format={DATASET_GBIF_FORMAT}&type=OCCURRENCE"
-DATASET_GBIF_DELIMITER = "\t"
-SHP_EXT = "shp"
-SHP_EXTENSIONS = [
-    ".shp", ".shx", ".dbf", ".prj", ".sbn", ".sbx", ".fbn", ".fbx", ".ain",
-    ".aih", ".ixs", ".mxs", ".atx", ".shp.xml", ".cpg", ".qix"]
-USER_DATA_TOKEN = "###SCRIPT_GOES_HERE###"
-DATESTR_TOKEN = "YYYY_MM_DD"
 
-# .............................................................................
-# Log processing progress
-LOGINTERVAL = 1000000
-LOG_FORMAT = " ".join(["%(asctime)s", "%(levelname)-8s", "%(message)s"])
-LOG_DATE_FORMAT = "%d %b %Y %H:%M"
-LOGFILE_MAX_BYTES = 52000000
-LOGFILE_BACKUP_COUNT = 5
-
-TMP_PATH = "/tmp"
-ENCODING = "utf-8"
-ERR_SEPARATOR = "------------"
-USER_DATA_TOKEN = "###SCRIPT_GOES_HERE###"
-CSV_DELIMITER = ","
-ZIP_EXTENSION = ".zip"
-JSON_EXTENSION = ".json"
-CSV_EXTENSION = ".csv"
-
-# .............................................................................
-class STATISTICS_TYPE:
-    """Biodiversity statistics for a Site by Species presence-absence matrix (PAM)."""
-    SIGMA_SITE = "sigma-site"
-    SIGMA_SPECIES = "sigma-species"
-    DIVERSITY = "diversity"
-    SITE = "site"
-    SPECIES = "species"
-
-# ...........................
+    # ...........................
     @classmethod
-    def all(cls):
-        """Get all aggregated data type codes.
+    def analysis_dimensions(cls):
+        """Get one or all data analyses dimensions to be analyzed for species.
 
         Returns:
-            list of supported codes for datatypes.
+            dim_lst (list): List of data dimension(s) to be analyzed for species.
         """
-        return (cls.SIGMA_SITE, cls.SIGMA_SPECIES, cls.DIVERSITY, cls.SITE, cls.SPECIES)
+        dim_lst = [cls.DATASET]
+        return dim_lst
+
+    # ...........................
+    @classmethod
+    def analysis_codes(cls):
+        """Get one or all codes for data analyses dimensions to be analyzed for species.
+
+        Returns:
+            code_lst (list): Codes of data dimension(s) to be analyzed for species.
+        """
+        code_lst = [cls.DATASET["code"]]
+        return code_lst
+
+    # ...........................
+    @classmethod
+    def get(cls, code):
+        """Get the data analyses dimension for the code.
+
+        Args:
+            code (str): Code for the analysis dimension to be returned.
+
+        Returns:
+            Data dimension.
+
+        Raises:
+            Exception: on unknown code.
+        """
+        for dim in [cls.DATASET]:
+            if code == dim["code"]:
+                return dim
+        raise Exception(f"No dimension `{code}` in ANALYSIS_DIM")
+
+    # ...........................
+    @classmethod
+    def get_from_key_fld(cls, key_fld):
+        """Get the data analyses dimension for the key_fld.
+
+        Args:
+            key_fld (str): Field name for the analysis dimension to be returned.
+
+        Returns:
+            Data dimension.
+
+        Raises:
+            Exception: on unknown code.
+        """
+        for dim in [cls.DATASET]:
+            if key_fld == dim["key_fld"]:
+                return dim
+        raise Exception(f"No dimension for field `{key_fld}` in ANALYSIS_DIM")
 
 
 # .............................................................................
-class SUMMARY_FIELDS:
-    """Fields used to summarize aggregated data."""
-    COUNT = "count"
-    TOTAL = "total"
-
-
-# .............................................................................
-class SUMMARY_TABLE_TYPES:
+class SUMMARY:
     """Types of tables stored in S3 for aggregate species data analyses."""
-    # Counts are used for API query
-    DATASET_COUNTS = "dataset_counts"
-    # Lists are used for assembling dim x dim sparse matrix
-    DATASET_SPECIES_LISTS = "dataset_species_lists"
-    DATASET_META = "dataset_meta"
-    # Matrix is used for species x dimension biodiversity statistics
-    SPECIES_DATASET_MATRIX = "species_dataset_matrix"
-    # Summaries are used for ranking on species or dimension counts
-    SPECIES_DATASET_SUMMARY = "species_dataset_summary"
-    DATASET_SPECIES_SUMMARY = "dataset_species_summary"
+    dt_token = "YYYY_MM_DD"
+    sep = "_"
+    dim_sep = f"{sep}x{sep}"
+    DATATYPES = AGGREGATION_TYPE.all()
+    SPECIES_DIMENSION = SPECIES_DIM["code"]
+    SPECIES_FIELD = SPECIES_DIM["key_fld"]
+    ANALYSIS_DIMENSIONS = ANALYSIS_DIM.analysis_codes()
 
+    # ...........................
+    @classmethod
+    def get_table_type(cls, datatype, dim0, dim1):
+        """Get the table_type string for the analysis dimension and datatype.
 
-# .............................................................................
-class Summaries:
-    """Constant metadata about aggregate tables.
+        Args:
+            datatype (SUMMARY.DATAYPES): type of aggregated data.
+            dim0 (str): code for primary dimension (bison.common.constants.ANALYSIS_DIM)
+                of analysis
+            dim1 (str): code for secondary dimension of analysis
 
-    Note: All filenames follow the pattern
-        <datacontents>_<datatype>_<YYYY_MM_DD><_optional parquet extension>
-    Note: Table code is the same as <datacontents>_<datatype>
-    Note: "datasetkey" is the original GBIF field
-    """
+        Note:
+            BISON Table types include:
+                list: region_x_species_list
+                counts: region_counts
+                summary: region_x_species_summary
+                         species_x_region_summary
+                matrix:  species_x_region_matrix
 
-    TABLES = {
-            SUMMARY_TABLE_TYPES.DATASET_COUNTS: {
-                "code": SUMMARY_TABLE_TYPES.DATASET_COUNTS,
-                "fname": f"dataset_counts_{DATESTR_TOKEN}_000",
-                "table_format": "Parquet",
-                "fields": [DATASET_GBIF_KEY, "occ_count", "species_count"],
-                "key_fld": DATASET_GBIF_KEY
-            },
-            SUMMARY_TABLE_TYPES.DATASET_SPECIES_LISTS: {
-                "code": SUMMARY_TABLE_TYPES.DATASET_SPECIES_LISTS,
-                "fname": f"dataset_lists_{DATESTR_TOKEN}_000",
-                "table_format": "Parquet",
-                "fields": [DATASET_GBIF_KEY, "taxonkey", "species", "occ_count"],
-                "key_fld": DATASET_GBIF_KEY,
-                "species_fld": "species",
-                "combine_fields": {"taxonkey_species": ("taxonkey", "species")},
-                "value_fld": "occ_count",
-            },
-            SUMMARY_TABLE_TYPES.DATASET_META: {
-                "code": SUMMARY_TABLE_TYPES.DATASET_META,
-                "fname": f"dataset_meta_{DATESTR_TOKEN}",
-                "table_format": "Parquet",
-                "fields": [
-                    "dataset_key", "publishing_organization_key", "title"],
-                "key_fld": "dataset_key"
-            },
-            SUMMARY_TABLE_TYPES.SPECIES_DATASET_MATRIX: {
-                "code": SUMMARY_TABLE_TYPES.SPECIES_DATASET_MATRIX,
-                "fname": f"speciesxdataset_matrix_{DATESTR_TOKEN}",
-                "table_format": "Zip",
-                "matrix_extension": ".npz",
-                # Axis 0
-                "row": "taxonkey_species",
-                "row_summary_table": SUMMARY_TABLE_TYPES.SPECIES_DATASET_SUMMARY,
-                # Axis 1
-                "column": DATASET_GBIF_KEY,
-                "column_summary_table": SUMMARY_TABLE_TYPES.DATASET_SPECIES_SUMMARY,
-                # Matrix values
-                "value": "occ_count",
-            },
-            SUMMARY_TABLE_TYPES.SPECIES_DATASET_SUMMARY: {
-                "code": SUMMARY_TABLE_TYPES.SPECIES_DATASET_SUMMARY,
-                "fname": f"speciesxdataset_summary_{DATESTR_TOKEN}",
-                "table_format": "Zip",
-                "matrix_extension": ".csv",
-                # Axis 0, matches row (axis 0) in SPECIES_DATASET_MATRIX
-                "row": "taxonkey_species",
-                # Axis 1
-                "column": "measurement_type",
-                "fields": [SUMMARY_FIELDS.COUNT, SUMMARY_FIELDS.TOTAL],
-                # Matrix values
-                "value": "measure",
-            },
-            SUMMARY_TABLE_TYPES.DATASET_SPECIES_SUMMARY: {
-                "code": SUMMARY_TABLE_TYPES.DATASET_SPECIES_SUMMARY,
-                "fname": f"datasetxspecies_summary_{DATESTR_TOKEN}",
-                "table_format": "Zip",
-                "matrix_extension": ".csv",
-                # Axis 0, matches column (axis 1) in SPECIES_DATASET_MATRIX
-                "row": DATASET_GBIF_KEY,
-                # Axis 1
-                "column": "measurement_type",
-                "fields": [SUMMARY_FIELDS.COUNT, SUMMARY_FIELDS.TOTAL],
-                # Matrix values
-                "value": "measure",
+        Note: for matrix, dimension1 corresponds to Axis 0 (rows) and dimension2
+            corresponds to Axis 1 (columns).
+
+        Returns:
+            table_type (str): code for data type and contents
+
+        Raises:
+            Exception: on datatype not one of: "counts", "list", "summary", "matrix"
+            Exception: on datatype "counts", dim0 not in ANALYSIS_DIMENSIONS
+            Exception: on datatype "counts", dim1 not None
+            Exception: on datatype "matrix", dim0 not in ANALYSIS_DIMENSIONS
+            Exception: on datatype "matrix", dim1 != SPECIES_DIMENSION
+            Exception: on dim0 == SPECIES_DIMENSION and dim1 not in ANALYSIS_DIMENSIONS
+            Exception: on dim0 in ANALYSIS_DIMENSIONS and dim0 != SPECIES_DIMENSION
+        """
+        if datatype not in cls.DATATYPES:
+            raise Exception(f"Datatype {datatype} is not in {cls.DATATYPES}.")
+
+        if datatype == AGGREGATION_TYPE.COUNT:
+            if dim0 in cls.ANALYSIS_DIMENSIONS:
+                if dim1 is None:
+                    # ex: state_counts
+                    table_type = f"{dim0}{cls.sep}{datatype}"
+                else:
+                    raise Exception("Second dimension must be None")
+            else:
+                raise Exception(
+                    f"First dimension for counts must be in {cls.ANALYSIS_DIMENSIONS}.")
+        elif datatype == AGGREGATION_TYPE.MATRIX:
+            if dim0 not in cls.ANALYSIS_DIMENSIONS:
+                raise Exception(
+                    f"First dimension (rows) must be in {cls.ANALYSIS_DIMENSIONS}"
+                )
+            if dim1 != cls.SPECIES_DIMENSION:
+                raise Exception(
+                    f"Second dimension (columns) must be {cls.SPECIES_DIMENSION}"
+                )
+            table_type = f"{dim0}{cls.dim_sep}{dim1}{cls.sep}{datatype}"
+        else:
+            if dim0 == cls.SPECIES_DIMENSION and dim1 not in cls.ANALYSIS_DIMENSIONS:
+                raise Exception(
+                    f"Second dimension must be in {cls.ANALYSIS_DIMENSIONS}"
+                )
+            elif dim0 in cls.ANALYSIS_DIMENSIONS and dim1 != cls.SPECIES_DIMENSION:
+                raise Exception(
+                    f"First dimension must be {cls.SPECIES_DIMENSION} or "
+                    f"in {cls.ANALYSIS_DIMENSIONS}."
+                )
+
+            table_type = f"{dim0}{cls.dim_sep}{dim1}{cls.sep}{datatype}"
+        return table_type
+
+    # ...........................
+    @classmethod
+    def list(cls):
+        """Records of dimension, species, occ count for each dimension in project.
+
+        Returns:
+            list (dict): dict of dictionaries for each list table defined by the
+                project.
+
+        Note:
+            The keys for the dictionary (and code in the metadata values) are table_type
+        """
+        list = {}
+        for analysis_code in cls.ANALYSIS_DIMENSIONS:
+            table_type = cls.get_table_type(
+                AGGREGATION_TYPE.LIST, analysis_code, cls.SPECIES_DIMENSION)
+            dim = ANALYSIS_DIM.get(analysis_code)
+            # name == table_type, ex: county_x_species_list
+            meta = {
+                "code": table_type,
+                "fname": f"{table_type}{cls.sep}{cls.dt_token}",
+                # "table_format": "Parquet",
+                "file_extension": f"{cls.sep}000.parquet",
+
+                "fields": dim["fields"],
+                "key_fld": dim["key_fld"],
+                "species_fld": COMPOUND_SPECIES_FLD,
+                "value_fld": SUMMARY_FIELDS.OCCURRENCE_COUNT
             }
-    }
+            list[table_type] = meta
+        return list
+
+    # ...........................
+    @classmethod
+    def counts(cls):
+        """Records of dimension, species count, occ count for each dimension in project.
+
+        Returns:
+            list (dict): dict of dictionaries for each list table defined by the
+                project.
+
+        Note:
+            This table type refers to a table assembled from original data records
+            and species and occurrence counts for a dimension.  The dimension can be
+            any unique set of attributes, such as county + riis_status.  For simplicity,
+            define each unique set of attributes as a single field/value
+
+        Note:
+            The keys for the dictionary (and code in the metadata values) are table_type
+
+        TODO: Remove this from creation?  Can create from sparse matrix.
+        """
+        counts = {}
+        for analysis_code in cls.ANALYSIS_DIMENSIONS:
+            dim0 = ANALYSIS_DIM.get(analysis_code)
+            table_type = cls.get_table_type(
+                AGGREGATION_TYPE.COUNT, analysis_code, None)
+
+            meta = {
+                "code": table_type,
+                "fname": f"{table_type}{cls.sep}{cls.dt_token}",
+                # "table_format": "Parquet",
+                "file_extension": f"{cls.sep}000.parquet",
+                "data_type": "counts",
+
+                # Dimensions: 0 is row (aka Axis 0) list of records with counts
+                #   1 is column (aka Axis 1), count and total of dim for each row
+                "dim_0_code": analysis_code,
+                "dim_1_code": None,
+
+                "key_fld": dim0["key_fld"],
+                "occurrence_count_fld": SUMMARY_FIELDS.OCCURRENCE_COUNT,
+                "species_count_fld": COMPOUND_SPECIES_FLD,
+                "fields": [
+                    dim0["key_fld"],
+                    SUMMARY_FIELDS.OCCURRENCE_COUNT,
+                    COMPOUND_SPECIES_FLD
+                ]
+            }
+            counts[table_type] = meta
+        return counts
+
+    # ...........................
+    @classmethod
+    def summary(cls):
+        """Summary of dimension1 count and occurrence count for each dimension0 value.
+
+        Returns:
+            sums (dict): dict of dictionaries for each summary table defined by the
+                project.
+
+        Note:
+            table contains stacked records summarizing original data:
+                dim0, dim1, rec count of dim1 in dim0
+                ex: county, species, occ_count
+        """
+        sums = {}
+        species_code = cls.SPECIES_DIMENSION
+        for analysis_code in cls.ANALYSIS_DIMENSIONS:
+            for dim0, dim1 in (
+                    (analysis_code, species_code), (species_code, analysis_code)
+            ):
+                table_type = cls.get_table_type(
+                    AGGREGATION_TYPE.SUMMARY, dim0, dim1)
+                meta = {
+                    "code": table_type,
+                    "fname": f"{table_type}{cls.sep}{cls.dt_token}",
+                    "file_extension": ".csv",
+                    "data_type": "summary",
+
+                    # Dimensions: 0 is row (aka Axis 0) list of values to summarize,
+                    #   1 is column (aka Axis 1), count and total of dim for each row
+                    "dim_0_code": dim0,
+                    "dim_1_code": dim1,
+
+                    # Axis 1
+                    "column": "measurement_type",
+                    "fields": [SUMMARY_FIELDS.COUNT, SUMMARY_FIELDS.TOTAL],
+                    # Matrix values
+                    "value": "measure"}
+                sums[table_type] = meta
+        return sums
+
+    # ...........................
+    @classmethod
+    def matrix(cls):
+        """Species by <dimension> matrix defined for this project.
+
+        Returns:
+            mtxs (dict): dict of dictionaries for each matrix/table defined for this
+                project.
+
+        Note:
+            Similar to a Presence/Absence Matrix (PAM),
+                Rows will always have analysis dimension (i.e. region or other category)
+                Columns will have species
+        """
+        mtxs = {}
+        dim1 = SPECIES_DIM["code"]
+        for analysis_code in cls.ANALYSIS_DIMENSIONS:
+            dim0 = analysis_code
+            table_type = cls.get_table_type(AGGREGATION_TYPE.MATRIX, dim0, dim1)
+
+            # Dimension/Axis 0/row is always region or other analysis dimension
+            meta = {
+                "code": table_type,
+                "fname": f"{table_type}{cls.sep}{cls.dt_token}",
+                "file_extension": ".npz",
+                "data_type": "matrix",
+
+                # Dimensions: 0 is row (aka Axis 0), 1 is column (aka Axis 1)
+                "dim_0_code": dim0,
+                "dim_1_code": dim1,
+
+                # These are all filled in for compressing data, reading data
+                "row_categories": [],
+                "column_categories": [],
+                "value_fld": "",
+                "datestr": cls.dt_token,
+
+                # Matrix values
+                "value": SUMMARY_FIELDS.OCCURRENCE_COUNT,
+            }
+            mtxs[table_type] = meta
+        return mtxs
+
+    # ...........................
+    @classmethod
+    def statistics(cls):
+        """Species by <dimension> statistics matrix/table defined for this project.
+
+        Returns:
+            stats (dict): dict of dictionaries for each matrix/table defined for this
+                project.
+
+        Note:
+            Rows will always have analysis dimension (i.e. region or other category)
+            Columns will have species
+        """
+        stats = {}
+        # Axis 1 of PAM is always species
+        dim1 = SPECIES_DIM["code"]
+        for analysis_code in cls.ANALYSIS_DIMENSIONS:
+            # Axis 0 of PAM is always 'site'
+            dim0 = analysis_code
+            table_type = cls.get_table_type(AGGREGATION_TYPE.STATISTICS, dim0, dim1)
+            meta = {
+                "code": table_type,
+                "fname": f"{table_type}{cls.sep}{cls.dt_token}",
+                "file_extension": ".csv",
+                "data_type": "stats",
+                "datestr": cls.dt_token,
+
+                # Dimensions refer to the PAM matrix, site x species, from which the
+                # stats are computed.
+                "dim_0_code": dim0,
+                "dim_1_code": dim1,
+
+                # Minimum count defining 'presence' in the PAM
+                "min_presence_count": 1,
+
+                # TODO: Remove.  pandas.DataFrame contains row and column headers
+                # # Categories refer to the statistics matrix headers
+                # "row_categories": [],
+                # "column_categories": []
+            }
+            stats[table_type] = meta
+        return stats
+
+    # ...........................
+    @classmethod
+    def pam(cls):
+        """Species by <dimension> matrix defined for this project.
+
+        Returns:
+            pams (dict): dict of dictionaries for each matrix/table defined for this
+                project.
+
+        Note:
+            Rows will always have analysis dimension (i.e. region or other category)
+            Columns will have species
+        """
+        # TODO: Is this an ephemeral data structure used only for computing stats?
+        #       If we want to save it, we must add compress_to_file,
+        #       uncompress_zipped_data, read_data.
+        #       If we only save computations, must save input HeatmapMatrix metadata
+        #       and min_presence_count
+        #       Note bison.spnet.pam_matrix.PAM
+        pams = {}
+        for analysis_code in cls.ANALYSIS_DIMENSIONS:
+            dim0 = analysis_code
+            dim1 = SPECIES_DIM["code"]
+            table_type = cls.get_table_type(AGGREGATION_TYPE.PAM, dim0, dim1)
+
+            # Dimension/Axis 0/row is always region or other analysis dimension
+            meta = {
+                "code": table_type,
+                "fname": f"{table_type}{cls.sep}{cls.dt_token}",
+                "file_extension": ".npz",
+                "data_type": "matrix",
+
+                # Dimensions: 0 is row (aka Axis 0), 1 is column (aka Axis 1)
+                "dim_0_code": dim0,
+                "dim_1_code": dim1,
+
+                # These are all filled in for compressing data, reading data
+                "row_categories": [],
+                "column_categories": [],
+                "value_fld": "",
+                "datestr": cls.dt_token,
+
+                # Matrix values
+                "value": "presence",
+                "min_presence_count": 1,
+            }
+            pams[table_type] = meta
+        return pams
 
     # ...............................................
     @classmethod
-    def update_summary_tables(cls, datestr):
-        """Update filenames in the metadata dictionary and return.
+    def tables(cls, datestr=None):
+        """All tables of species count and occurrence count, summary, and matrix.
 
         Args:
-            datestr: Datestring contained in the filename indicating the current version
-                of the data.
+            datestr (str): String in the format YYYY_MM_DD.
 
         Returns:
-            tables: dictionary of summary table metadata.
+            sums (dict): dict of dictionaries for each table defined by the project.
+                If datestr is provided, the token in the filename is replaced with that.
+
+        Note:
+            The keys for the dictionary (and code in the metadata values) are table_type
         """
-        tables = {}
-        # Update filename in summary tables
-        for key, meta in cls.TABLES.items():
-            meta_cpy = copy.deepcopy(meta)
-            fname_tmpl = meta["fname"]
-            meta_cpy["fname"] = fname_tmpl.replace(DATESTR_TOKEN, datestr)
-            tables[key] = meta_cpy
+        tables = cls.list()
+        tables.update(cls.counts())
+        tables.update(cls.summary())
+        tables.update(cls.matrix())
+        tables.update(cls.pam())
+        tables.update(cls.statistics())
+        if datestr is not None:
+            # Update filename in summary tables
+            for key, meta in tables.items():
+                meta_cpy = deepcopy(meta)
+                fname_tmpl = meta["fname"]
+                meta_cpy["fname"] = fname_tmpl.replace(cls.dt_token, datestr)
+                tables[key] = meta_cpy
         return tables
 
     # ...............................................
@@ -205,14 +524,19 @@ class Summaries:
 
         Returns:
             tables: dictionary of summary table metadata.
+
+        Raises:
+            Exception: on invalid table_type
         """
         try:
-            cpy_table = copy.deepcopy(cls.TABLES[table_type])
+            table = cls.tables()[table_type]
         except KeyError:
-            return None
+            raise Exception(f"Invalid table_type {table_type}")
+        cpy_table = deepcopy(table)
         if datestr is not None:
+            cpy_table["datestr"] = datestr
             fname_tmpl = cpy_table["fname"]
-            cpy_table["fname"] = fname_tmpl.replace(DATESTR_TOKEN, datestr)
+            cpy_table["fname"] = fname_tmpl.replace(cls.dt_token, datestr)
         return cpy_table
 
     # ...............................................
@@ -223,7 +547,7 @@ class Summaries:
         Args:
             datacontents (str): first part of filename indicating data in table.
             datatype (str): second part of filename indicating form of data in table
-                (records, lists, matrix, etc).
+                (records, list, matrix, etc).
 
         Returns:
             table_type (SUMMARY_TABLE_TYPES type): type of table.
@@ -231,8 +555,9 @@ class Summaries:
         Raises:
             Exception: on invalid file prefix.
         """
+        tables = cls.tables()
         table_type = None
-        for key, meta in cls.TABLES.items():
+        for key, meta in tables.items():
             fname = meta["fname"]
             contents, dtp, _, _ = cls._parse_filename(fname)
             if datacontents == contents and datatype == dtp:
@@ -244,44 +569,81 @@ class Summaries:
 
     # ...............................................
     @classmethod
-    def get_filename(cls, table_type, datestr):
+    def get_filename(cls, table_type, datestr, is_compressed=False):
         """Update the filename in a metadata dictionary for one table, and return.
 
         Args:
-            table_type: type of summary table to return.
-            datestr: Datestring contained in the filename indicating the current version
+            table_type (str): predefined type of data indicating type and contents.
+            datestr (str): Datestring contained in the filename indicating the current version
                 of the data.
+            is_compressed (bool): flag indicating to return a filename for a compressed
+                file.
 
         Returns:
             tables: dictionary of summary table metadata.
         """
-        fname_tmpl = cls.TABLES[table_type]["fname"]
-        fname = fname_tmpl.replace(DATESTR_TOKEN, datestr)
+        table = cls.tables()[table_type]
+        ext = table["file_extension"]
+        if is_compressed is True:
+            ext = ZIP_EXTENSION
+        fname_tmpl = f"{table['fname']}{ext}"
+        fname = fname_tmpl.replace(cls.dt_token, datestr)
         return fname
 
     # ...............................................
     @classmethod
+    def parse_table_type(cls, table_type):
+        """Parse the table_type into datacontents (dim0, dim1) and datatype.
+
+        Args:
+            table_type: String identifying the type of data and dimensions.
+
+        Returns:
+            datacontents (str): type of data contents
+            dim0 (str): first dimension (rows/axis 0) of data in the table
+            dim1 (str): second dimension (columns/axis 1) of data in the table
+            datatype (str): type of data structure: summary table, stacked records
+                (list or count), or matrix.
+
+        Raises:
+            Exception: on failure to parse table_type into 2 strings.
+        """
+        dim0 = dim1 = None
+        fn_parts = table_type.split(cls.sep)
+        if len(fn_parts) >= 2:
+            datatype = fn_parts.pop()
+            idx = len(datatype) + 1
+            datacontents = table_type[:-idx]
+        else:
+            raise Exception(f"Failed to parse {table_type}.")
+        # Some data has 2 dimensions
+        dim_parts = datacontents.split(cls.dim_sep)
+        dim0 = dim_parts[0]
+        try:
+            dim1 = dim_parts[1]
+        except IndexError:
+            pass
+        return datacontents, dim0, dim1, datatype
+
+    # ...............................................
+    @classmethod
     def _parse_filename(cls, filename):
+        # This will parse a filename for the compressed file of statistics, but
+        #             not individual matrix and metadata files for each stat.
         # <datacontents>_<datatype>_<YYYY_MM_DD><_optional parquet extension>
         fname = os.path.basename(filename)
-        fname_noext, _ext = os.path.splitext(fname)
-        fn_parts = fname_noext.split("_")
-        if len(fn_parts) >= 5:
-            datacontents = fn_parts[0]
-            datatype = fn_parts[1]
-            yr = fn_parts[2]
-            mo = fn_parts[3]
-            day = fn_parts[4]
-            rest = fn_parts[5:]
-            if len(yr) == 4 and len(mo) == 2 and len(day) == 2:
-                data_datestr = f"{yr}_{mo}_{day}"
-            else:
-                raise Exception(
-                    f"Length of elements year, month, day ({yr}, {mo}. {day}) should "
-                    "be 4, 2, and 2")
+        if fname.endswith(S3_RS_TABLE_SUFFIX):
+            stripped_fn = fname[:-len(S3_RS_TABLE_SUFFIX)]
+            rest = S3_RS_TABLE_SUFFIX
         else:
-            raise Exception(f"{fname_noext} does not follow the expected pattern")
-        return datacontents, datatype, data_datestr, rest
+            stripped_fn, ext = os.path.splitext(fname)
+            rest = ext
+        idx = len(stripped_fn) - len(cls.dt_token)
+        datestr = stripped_fn[idx:]
+        table_type = stripped_fn[:idx-1]
+        datacontents, dim0, dim1, datatype = cls.parse_table_type(table_type)
+
+        return datacontents, dim0, dim1, datatype, datestr, rest
 
     # ...............................................
     @classmethod
@@ -293,17 +655,22 @@ class Summaries:
 
         Returns:
             table_type (SUMMARY_TABLE_TYPES type): type of table.
-            data_datestr (str): date of data in "YYYY_MM_DD" format.
+            datestr (str): date of data in "YYYY_MM_DD" format.
 
         Raises:
             Exception: on failure to get tabletype and datestring from this filename.
+
+        Note:
+            This will parse a filename for the compressed file of statistics, but
+            not individual matrix and metadata files for each stat.
         """
         try:
-            datacontents, datatype, data_datestr, _rest = cls._parse_filename(filename)
-            table_type = cls.get_tabletype_from_filename_prefix(datacontents, datatype)
+            datacontents, dim0, dim1, datatype, datestr, _rest = \
+                cls._parse_filename(filename)
+            table_type = f"{datacontents}{cls.sep}{datatype}"
         except Exception:
             raise
-        return table_type, data_datestr
+        return table_type, datestr
 
 
 # .............................................................................
@@ -372,7 +739,15 @@ class SNKeys(Enum):
         Raises:
             Exception: on un-implemented table type.
         """
-        if table_type == SUMMARY_TABLE_TYPES.SPECIES_DATASET_MATRIX:
+        dim_dataset = ANALYSIS_DIM.DATASET["code"]
+        dim_species = SPECIES_DIM["code"]
+        dataset_species_matrix_type = SUMMARY.get_table_type(
+            "matrix", dim_dataset, dim_species)
+        dataset_species_summary_type = SUMMARY.get_table_type(
+            "summary", dim_dataset, dim_species)
+        species_dataset_summary_type = SUMMARY.get_table_type(
+            "summary", dim_dataset, dim_species)
+        if table_type == dataset_species_matrix_type:
             keys = {
                 # ----------------------------------------------------------------------
                 # Column
@@ -450,7 +825,7 @@ class SNKeys(Enum):
                 cls.ROWS_MAX_COUNT: "max_dataset_count_of_all_species",
                 cls.ROWS_MAX_COUNT_LABELS: "species_with_max_dataset_count_of_all",
             }
-        elif table_type == SUMMARY_TABLE_TYPES.DATASET_SPECIES_SUMMARY:
+        elif table_type == dataset_species_summary_type:
             keys = {
                 # ----------------------------------------------------------------------
                 # Column
@@ -489,7 +864,7 @@ class SNKeys(Enum):
                 cls.ALL_MEDIAN_COUNT: "median_species_count_of_all_datasets",
                 cls.ALL_MAX_COUNT: "max_species_count_of_all_datasets",
             }
-        elif table_type == SUMMARY_TABLE_TYPES.SPECIES_DATASET_SUMMARY:
+        elif table_type == species_dataset_summary_type:
             keys = {
                 # ----------------------------------------------------------------------
                 # Column
