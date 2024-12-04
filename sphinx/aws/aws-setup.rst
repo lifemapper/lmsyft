@@ -1,6 +1,109 @@
 AWS Setup
 ####################
 
+Resource-Variable Setup
+********************
+
+Base resource and configuration variables
+================================================
+AWS constants are held in the spnet/aws/common/constants.py file.
+
+* Note the account number (AWS_ACCOUNT)
+* Decide on the region (REGION)
+* Choose a project name (PROJECT)
+* Choose a role name for the Workflow (WORKFLOW_ROLE_NAME)
+
+Other AWS constants are created from these base names.  If you choose to change the
+expected name format, for example, the S3 bucket name as <project>-<account#>-<region>,
+also change the name construction in the constants file:
+
+S3
+============
+
+In the AWS/S3 dashboard, create a project bucket (expected name format is
+<project>-<account#>-<region>):
+
+* General purpose bucket
+* ACLs disabled
+* Block public access
+* Disable versioning
+* Server-side encryption with Amazon S3 managed keys (SSE-S3)
+
+TODO: Consider "Server-side encryption with AWS Key Management Service keys (SSE-KMS)"
+    for lower costs.
+
+Create expected folders: input, output, log, summary
+
+Create a Security Group for resources
+===========================================================
+
+In the AWS/EC2 dashboard under Network & Security, Security Groups, create a
+Security Group for the project workflow, named <project>-workflow-sg.  This must
+be tied to the region used for workflow.
+
+Create 5 Inbound rules, all with Source: Anywhere IPv4:
+
+* Custom TCP, Port range 8000, local webserver
+* Custom TCP, Port range 8000, local SSL webserver
+* HTTP, webserver
+* HTTPS, SSL webserver
+* SSH
+
+Create 2 Outbound rules, both All traffic:
+
+* Anywhere IPv4, outbound IPv4
+* Anywhere IPv6, outbound IPv6
+
+TODO: restrict inbound SSH
+TODO: restrict outbound traffic
+
+Create Roles for Workflow and EC2 Tasks
+============================================
+All supporting JSON is in the `spnet/aws/permissions` directory of this repo.
+
+For EC2 tasks:
+
+<project>_ec2_s3_role
+----------------------
+
+This role allows workflow steps.  Lambda functions can run, log to Cloudwatch,
+launch EC2 instances, access S3 resources, and pass permissions between resources.
+
+The Policies and Trust relationships are defined in `specnet_task_role.txt`.  Each
+policy in the role is in the JSON file with the corresponding policy name.
+
+<project>_workflow_role
+----------------------
+
+
+
+EC2 Launch Template for Workflow Tasks
+===========================================
+
+Create a Launch template for EC2 instances to be launched for some workflow tasks.
+Each task will use a different version of the template, with userdata that calls
+a Docker compose file configured for that task (script).
+
+Create the EC2 Launch Template as a "one-time" Spot instance.  The Launch template
+should have the following settings, some in Quickstart::
+
+  Name: <project>-spot-task-template
+  Application and OS Images: Ubuntu
+  AMI: <most current Ubuntu LTS>
+  Architecture: 64-bit ARM
+  Instance type: t4g.micro
+  Network settings/Select existing security group: (created above) <project>-workflow-sg
+  Advanced Details:
+    IAM instance profile: <project>_ec2_s3_role
+    Shutdown behavior: Terminate
+    Cloudwatch monitoring: Enable
+    Purchasing option: Spot instances
+    Request type: One-time
+
+EC2 Instance for API Deployment
+=========================
+
+
 Security
 **********************
 
@@ -13,19 +116,7 @@ Create a Security Group for the region
   * Must be tied to the region of instance
   * inbound: SSH from campus (use VPN if elsewhere), HTTP/HTTPS from all
 
-* or use launch-wizard-1 security group (created by some EC2 instance creation in 2023)
 
-  * inbound rules IPv4:
-
-    * Custom TCP 8000
-    * Custom TCP 8080
-    * SSH 22
-    * HTTP 80
-    * HTTPS 443
-
-  * outbound rules IPv4, IPv6:
-
-    * All traffic all ports
 
 
 Create an IAM role for the EC2/S3 interaction (specnet_ec2_s3_role)

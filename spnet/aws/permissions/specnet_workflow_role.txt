@@ -1,0 +1,27 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Principal": {
+                "Service": [
+                    "ec2.amazonaws.com",
+                    "lambda.amazonaws.com",
+                    "scheduler.amazonaws.com",
+                    "redshift.amazonaws.com"
+                ]
+            },
+            "Action": "sts:AssumeRole"
+        },
+        {
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": [
+                    "arn:aws:iam::321942852011:role/specnet_task_role",
+                    "arn:aws:iam::321942852011:role/specnet_workflow_role"
+                ]
+            },
+            "Action": "sts:AssumeRole"
+        }
+    ]
+}
