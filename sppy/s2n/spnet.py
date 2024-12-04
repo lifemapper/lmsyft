@@ -8,6 +8,8 @@ from spnet.common.constants import ENCODING, GBIF_DATASET_KEY_FLD
 from spnet.common.util import get_current_datadate_str, get_traceback
 
 from sppy.common.constants import SUMMARY
+
+
 # .............................................................................
 class SpNetAnalyses():
     """Class for retrieving SpecifyNetwork summary data from AWS S3."""

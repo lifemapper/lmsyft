@@ -474,7 +474,7 @@ class ItisAPI(APIQuery):
 if __name__ == "__main__":
     # test
     # https://services.itis.gov/?wt=json&q=nameWInd:Plagioecia\%20patina
-    from sppy.tools.provider.gbif import GbifAPI
+    from sppy.provider.gbif import GbifAPI
 
     names = TST_VALUES.NAMES[:5]
     canonicals = GbifAPI.parse_names(names=names)

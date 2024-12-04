@@ -1,15 +1,16 @@
 """Create a matrix of occurrence or species counts by (geospatial) analysis dimension."""
 import os
 
-from bison.common.aws_util import S3
-from bison.common.constants import (
-    ANALYSIS_DIM, REGION, S3_BUCKET, S3_SUMMARY_DIR, SUMMARY, TMP_PATH
-)
-from bison.common.log import logit
-from bison.common.util import get_current_datadate_str
-from bison.spnet.heatmap_matrix import HeatmapMatrix
-from bison.spnet.pam_matrix import PAM
-from bison.spnet.summary_matrix import SummaryMatrix
+from spnet.aws.constants import REGION, S3_BUCKET, S3_SUMMARY_DIR
+from spnet.aws.tools import S3
+from spnet.common.constants import TMP_PATH
+from spnet.common.log import logit
+from spnet.common.util import get_current_datadate_str
+from spnet.matrix.heatmap_matrix import HeatmapMatrix
+from spnet.matrix.pam_matrix import PAM
+from spnet.matrix.summary_matrix import SummaryMatrix
+
+from sppy.common.constants import ANALYSIS_DIM, SUMMARY
 
 """
 Note:
@@ -90,43 +91,14 @@ def _read_stacked_data_records(s3, stacked_data_table_type, datestr):
     # Species in columns/x/axis1
     stacked_record_table = SUMMARY.get_table(stacked_data_table_type, datestr)
     pqt_fname = SUMMARY.get_filename(stacked_data_table_type, datestr)
+    # Read stacked (record) data directly into DataFrame
+    stk_df = s3.get_dataframe_from_parquet(S3_BUCKET, S3_SUMMARY_DIR, pqt_fname)
 
     axis0_fld = stacked_record_table["key_fld"]
     axis1_fld = stacked_record_table["species_fld"]
     val_fld = stacked_record_table["value_fld"]
 
-    # Read stacked (record) data directly into DataFrame
-    stk_df = s3.get_dataframe_from_parquet(S3_BUCKET, S3_SUMMARY_DIR, pqt_fname)
     return (axis0_fld, axis1_fld, val_fld, stk_df)
-
-
-# .............................................................................
-# .............................................................................
-def download_dataframe(s3, table_type, datestr, bucket, bucket_dir):
-    """Download a table written by Redshift to S3 in parquet, return dataframe.
-
-    Args:
-        s3 (bison.aws_util.S3): client connection for reading/writing data to AWS S3.
-        table_type (aws.aws_constants.SUMMARY_TABLE_TYPES): type of table data
-        datestr (str): date string in format YYYY_MM_DD
-        bucket (str): S3 bucket for project.
-        bucket_dir (str): Folder in S3 bucket for datafile.
-
-    Returns:
-        df (pandas.DataFrame): dataframe containing Redshift "counts" table data.
-
-    Raises:
-        Exception: on failure to download data from S3.
-    """
-    tbl = SUMMARY.get_table(table_type, datestr=datestr)
-    pqt_fname = f"{tbl['fname']}.parquet"
-    # Read stacked (record) data directly into DataFrame
-    try:
-        df = s3.get_dataframe_from_parquet(bucket, bucket_dir, pqt_fname)
-    except Exception as e:
-        print(f"Failed to read s3 parquet {pqt_fname} to dataframe. ({e})")
-        raise(e)
-    return df
 
 
 # --------------------------------------------------------------------------------------
