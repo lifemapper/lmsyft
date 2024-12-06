@@ -119,7 +119,7 @@ Create a Security Group for the region
 
 
 
-Create an IAM role for the EC2/S3 interaction (specnet_ec2_s3_role)
+Create an IAM role for the EC2/S3 interaction (specnet_task_role)
 ===========================================================
 
 * Create a Role for EC2 instance access to S3
@@ -137,10 +137,11 @@ Create an IAM role for the EC2/S3 interaction (specnet_ec2_s3_role)
 
   4. Save and name role (specnet_ec2_s3_role)
 
-Create an IAM role for the EC2/S3/Redshift interaction (specnet_ec2_s3_role)
+
+Create an IAM role for the EC2/S3/Redshift interaction (specnet_workflow_role)
 ===========================================================
 
-* Create a Role for EC2 instance access to Redshift and S3
+* Create a Role for workflow including EC2 instance access to Redshift and S3
 
   1. Trusted entity type = AWS service, Use Case = Redshift - Customizable.
 
@@ -152,7 +153,14 @@ Create an IAM role for the EC2/S3/Redshift interaction (specnet_ec2_s3_role)
     * AmazonS3FullAccess (AWS managed)
     * specnet_S3bucket_FullAccess
 
-  4. Save and name role (specnet_ec2_s3_role)
+  4. Save and name role (specnet_workflow_role)
+  5. **In Redshift**, GRANT permissions to database::
+
+    GRANT CREATE
+        ON DATABASE dev
+        TO 'arn:aws:iam::321942852011:role/service-role/bison_redshift_lambda_role'
+
+
 
 
 EC2
