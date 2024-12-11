@@ -10,8 +10,8 @@ from spanalyst.matrix.heatmap_matrix import HeatmapMatrix
 from spanalyst.matrix.pam_matrix import PAM
 from spanalyst.matrix.summary_matrix import SummaryMatrix
 
-from sppy.common.constants import ANALYSIS_DIM, SUMMARY
-from sppy.task.calc_stats import create_heatmap_from_records
+from specnet.common.constants import ANALYSIS_DIM, SUMMARY
+from specnet.task.calc_stats import create_heatmap_from_records
 """
 Note:
     The analysis dimension should be geospatial, and fully cover the landscape with no

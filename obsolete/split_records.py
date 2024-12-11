@@ -2,8 +2,8 @@
 from logging import ERROR
 import os
 
-from sppy.tools.util.logtools import Logger
-from sppy.tools.util.fileop import get_csv_reader, get_csv_writer
+from specnet.tools.util.logtools import Logger
+from specnet.tools.util.fileop import get_csv_reader, get_csv_writer
 
 ENCODING = "utf-8"
 

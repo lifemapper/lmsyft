@@ -113,5 +113,5 @@ if __name__ == "__main__":
         for stat in APIService.Badge["params"]["icon_status"]["options"]:
             retval = svc.get_icon(
                 provider=pr, icon_status=stat,
-                app_path="/home/astewart/git/sp_network/sppy/frontend")
+                app_path="/specnet/frontend")
             print(retval)

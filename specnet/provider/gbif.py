@@ -13,7 +13,7 @@ from flask_app.common.constants import URL_ESCAPES
 from spanalyst.common.constants import ENCODING
 from spanalyst.common.log import logit
 from spanalyst.common.util import add_errinfo
-from sppy.provider.api import APIQuery
+from specnet.provider.api import APIQuery
 
 
 # .............................................................................
@@ -704,7 +704,7 @@ if __name__ == "__main__":
     pass
 
 """
-from sppy.tools.provider.gbif import GbifAPI
+from specnet.tools.provider.gbif import GbifAPI
 
 dataset_key = 'e9d1c589-5df6-4bd8-aead-c09e2d8630e4'
 ds_api = GbifAPI(service='dataset', key=dataset_key)

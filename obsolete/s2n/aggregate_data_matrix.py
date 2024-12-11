@@ -5,7 +5,7 @@ from numpy import integer as np_int, floating as np_float, ndarray
 import os
 from zipfile import ZipFile
 
-from sppy.common.constants import (SNKeys, Summaries)
+from specnet.common.constants import (SNKeys, Summaries)
 
 from spanalyst.common.log import logit
 
@@ -19,7 +19,7 @@ class _AggregateDataMatrix:
         """Constructor for species by dataset comparisons.
 
         Args:
-            table_type (sppy.tools.s2n.SUMMARY_TABLE_TYPES): type of aggregated data
+            table_type (specnet.tools.s2n.SUMMARY_TABLE_TYPES): type of aggregated data
             data_datestr (str): date of the source data in YYYY_MM_DD format.
             logger (object): An optional local logger to use for logging output
                 with consistent options

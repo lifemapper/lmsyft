@@ -16,7 +16,7 @@ from spanalyst.common.util import (
 from spanalyst.matrix.heatmap_matrix import HeatmapMatrix
 from spanalyst.matrix.summary_matrix import SummaryMatrix
 
-from sppy.common.constants import ANALYSIS_DIM, SUMMARY
+from specnet.common.constants import ANALYSIS_DIM, SUMMARY
 
 
 try:

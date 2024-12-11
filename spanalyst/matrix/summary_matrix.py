@@ -3,7 +3,7 @@ from collections import OrderedDict
 from copy import deepcopy
 import pandas as pd
 
-from sppy.common.constants import ANALYSIS_DIM, SNKeys, SUMMARY
+from specnet.common.constants import ANALYSIS_DIM, SNKeys, SUMMARY
 
 from spanalyst.common.constants import (
     AGGREGATION_TYPE, CSV_DELIMITER, SUMMARY_FIELDS, TMP_PATH

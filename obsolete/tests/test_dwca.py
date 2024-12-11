@@ -1,11 +1,11 @@
-"""Functions to test the sppy.tools.util.dwca.DwCArchive with known URLs."""
+"""Functions to test the specnet.tools.util.dwca.DwCArchive with known URLs."""
 import os
 import shutil
 import time
 
-from sppy.tools.util.dwca import (
+from specnet.tools.util.dwca import (
     assemble_download_filename, DwCArchive, get_dwca_urls, download_dwca)
-from sppy.tools.util.utils import is_valid_uuid
+from specnet.tools.util.utils import is_valid_uuid
 from flask_app.broker.constants import (DWCA, TST_VALUES)
 
 today = time.localtime()
@@ -25,7 +25,7 @@ def prep_dwca_data(do_download=False, do_extract=False):
         Exception: on failure to download file from URL.
 
     Returns:
-        a sppy.tools.util.dwca.DwCArchive object
+        a specnet.tools.util.dwca.DwCArchive object
     """
     url = TST_VALUES.SPECIFY_URLS[0]
     zip_dwca_fullfname = assemble_download_filename(url, TEST_PATH)

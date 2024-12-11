@@ -8,7 +8,7 @@ from zipfile import ZipFile
 from spanalyst.common.constants import TMP_PATH, JSON_EXTENSION, ZIP_EXTENSION
 from spanalyst.common.log import logit
 
-from sppy.common.constants import SNKeys, SUMMARY
+from specnet.common.constants import SNKeys, SUMMARY
 
 
 # .............................................................................

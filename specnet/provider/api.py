@@ -11,7 +11,7 @@ from spanalyst.common.constants import ENCODING
 from spanalyst.common.log import logit
 from spanalyst.common.util import add_errinfo, get_traceback
 
-from sppy.provider.lm_xml import fromstring, deserialize
+from specnet.provider.lm_xml import fromstring, deserialize
 
 
 # .............................................................................

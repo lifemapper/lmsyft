@@ -7,8 +7,8 @@ from flask_app.common.s2n_type import (
 
 from spanalyst.common.util import add_errinfo, combine_errinfo, get_traceback
 
-from sppy.provider.gbif import GbifAPI
-from sppy.provider.itis import ItisAPI
+from specnet.provider.gbif import GbifAPI
+from specnet.provider.itis import ItisAPI
 
 
 # .............................................................................

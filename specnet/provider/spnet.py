@@ -7,7 +7,7 @@ from spanalyst.aws.constants import S3_BUCKET, REGION, S3_SUMMARY_DIR
 from spanalyst.common.constants import ENCODING, GBIF_DATASET_KEY_FLD
 from spanalyst.common.util import get_current_datadate_str, get_traceback
 
-from sppy.common.constants import SUMMARY
+from specnet.common.constants import SUMMARY
 
 
 # .............................................................................

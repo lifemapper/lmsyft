@@ -10,7 +10,7 @@ from spanalyst.matrix.heatmap_matrix import HeatmapMatrix
 from spanalyst.matrix.pam_matrix import PAM
 from spanalyst.matrix.summary_matrix import SummaryMatrix
 
-from sppy.common.constants import ANALYSIS_DIM, SUMMARY
+from specnet.common.constants import ANALYSIS_DIM, SUMMARY
 
 """
 Note:
@@ -85,7 +85,7 @@ def _read_stacked_data_records(s3, stacked_data_table_type, datestr):
         datestr (str): date of the current dataset, in YYYY_MM_DD format
 
     Returns:
-        heatmap (sppy.tools.s2n.heatmap_matrix.HeatmapMatrix): sparse matrix
+        heatmap (specnet.tools.s2n.heatmap_matrix.HeatmapMatrix): sparse matrix
             containing data separated into 2 dimensions
     """
     # Species in columns/x/axis1

@@ -9,7 +9,7 @@ from flask_app.common.s2n_type import (
 from flask_app.common.constants import URL_ESCAPES
 
 from spanalyst.common.util import get_traceback, add_errinfo
-from sppy.provider.api import APIQuery
+from specnet.provider.api import APIQuery
 
 
 # .............................................................................
@@ -474,7 +474,7 @@ class ItisAPI(APIQuery):
 if __name__ == "__main__":
     # test
     # https://services.itis.gov/?wt=json&q=nameWInd:Plagioecia\%20patina
-    from sppy.provider.gbif import GbifAPI
+    from specnet.provider.gbif import GbifAPI
 
     names = TST_VALUES.NAMES[:5]
     canonicals = GbifAPI.parse_names(names=names)

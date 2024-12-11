@@ -10,7 +10,7 @@ from flask_app.common.constants import URL_ESCAPES
 from spanalyst.common.constants import ENCODING
 from spanalyst.common.util import add_errinfo
 
-from sppy.provider.api import APIQuery
+from specnet.provider.api import APIQuery
 
 
 # .............................................................................

@@ -2,7 +2,7 @@
 from flask_app.broker.base import _BrokerService
 from flask_app.common.s2n_type import APIService
 
-from sppy.frontend.templates import frontend_template
+from specnet.frontend.templates import frontend_template
 
 
 # .............................................................................

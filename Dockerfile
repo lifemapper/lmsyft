@@ -32,8 +32,8 @@ RUN python3 -m venv venv \
  && venv/bin/pip install --no-cache-dir -r ./requirements.txt
 
 # This assumes that the sp_network repository is present on the host machine and \
-# docker is run from the top of directory (with sppy directly below).
-COPY --chown=specify:specify ./sppy ./sppy
+# docker is run from the top of directory (with specnet directly below).
+COPY --chown=specify:specify specnet ./sppy
 
 
 # ........................................................
@@ -68,13 +68,13 @@ LABEL maintainer="Specify Collections Consortium <github.com/specify>"
 USER node
 WORKDIR /home/node
 
-COPY --chown=node:node sppy/frontend/js_src/package*.json ./
+COPY --chown=node:node specnet/frontend/js_src/package*.json ./
 RUN npm install
 
 RUN mkdir dist \
  && chown node:node dist
 
-COPY --chown=node:node sppy/frontend/js_src .
+COPY --chown=node:node specnet/frontend/js_src .
 
 
 # ........................................................

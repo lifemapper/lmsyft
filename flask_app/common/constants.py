@@ -2,7 +2,7 @@
 URL_ESCAPES = [[" ", r"\%20"], [",", r"\%2C"]]
 
 # Used in broker, so relative to the flask_app/broker or analyst directories
-STATIC_DIR = "../../sppy/frontend/static"
+STATIC_DIR = "../../specnet/frontend/static"
 ICON_DIR = f"{STATIC_DIR}/icon"
 SCHEMA_DIR = f"{STATIC_DIR}/schema"
 

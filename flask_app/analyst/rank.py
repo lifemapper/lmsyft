@@ -7,7 +7,7 @@ from flask_app.analyst.base import _AnalystService
 from spanalyst.aws.constants import S3_BUCKET
 from spanalyst.common.util import (combine_errinfo, get_traceback, prettify_object)
 
-from sppy.provider.spnet import SpNetAnalyses
+from specnet.provider.spnet import SpNetAnalyses
 
 
 # .............................................................................
