@@ -154,7 +154,12 @@ Create an IAM role for the EC2/S3/Redshift interaction (specnet_workflow_role)
     * specnet_S3bucket_FullAccess
 
   4. Save and name role (specnet_workflow_role)
-  5. **In Redshift**, GRANT permissions to database::
+  5. **In Redshift**,
+
+     * Reference: https://docs.aws.amazon.com/redshift/latest/mgmt/authorization-fas-spectrum.html
+     * Namespace Security and Encryption: Associate the specnet_workflow_role with the
+       namespace
+     * Editor: GRANT permissions to database::
 
     GRANT CREATE
         ON DATABASE dev

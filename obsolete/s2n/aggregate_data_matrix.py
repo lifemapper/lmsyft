@@ -18,7 +18,7 @@ class _AggregateDataMatrix:
         """Constructor for species by dataset comparisons.
 
         Args:
-            table_type (sppy.tools.s2n.SUMMARY_TABLE_TYPES): type of aggregated data
+            table_type (span.tools.s2n.SUMMARY_TABLE_TYPES): type of aggregated data
             data_datestr (str): date of the source data in YYYY_MM_DD format.
             logger (object): An optional local logger to use for logging output
                 with consistent options

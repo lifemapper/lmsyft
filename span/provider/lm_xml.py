@@ -273,7 +273,7 @@ def deserialize(element, remove_namespace=True):
             from the element tags.
 
     Returns:
-        sppy.tools.util.attribute_object.LmAttObj - An object representing the
+        span.tools.util.attribute_object.LmAttObj - An object representing the
             deserialized version of the xml.
     """
     # If remove_namespace is set to true, look for namespaces in the tag and remove

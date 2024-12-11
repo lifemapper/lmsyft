@@ -9,6 +9,9 @@ from spnet.common.constants import (
 )
 
 
+USERDATA_DIR = "./span/task"
+
+
 # .............................................................................
 # Specify Network Workflow tasks: scripts, docker compose files, EC2 launch template versions,
 #   Cloudwatch streams
@@ -30,7 +33,7 @@ class TASK:
 
     # ...........................
     @classmethod
-    def get_userdata_filename(cls, task, pth=None):
+    def get_userdata_filename(cls, task, pth=USERDATA_DIR):
         """Get the filename containing userdata to execute this task.
 
         Args:

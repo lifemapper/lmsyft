@@ -32,7 +32,7 @@ RUN python3 -m venv venv \
  && venv/bin/pip install --no-cache-dir -r ./requirements.txt
 
 # This assumes that the sp_network repository is present on the host machine and \
-# docker is run from the top of directory (with sppy directly below).
+# docker is run from the top of directory (with span directly below).
 COPY --chown=specify:specify ./sppy ./sppy
 
 

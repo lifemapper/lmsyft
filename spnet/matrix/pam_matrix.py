@@ -30,7 +30,7 @@ class PAM(HeatmapMatrix):
                 presence (1) or absence (0) values for one dimension (i.e. region) rows
                 (axis 0) by the species dimension columns (axis 1) to use for analyses.
             min_presence_count (int): minimum value to be considered presence.
-            table_type (sppy.tools.s2n.constants.SUMMARY_TABLE_TYPES): type of
+            table_type (span.tools.s2n.constants.SUMMARY_TABLE_TYPES): type of
                 aggregated data
             datestr (str): date of the source data in YYYY_MM_DD format.
             row_category (pandas.api.types.CategoricalDtype): ordered row labels used

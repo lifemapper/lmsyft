@@ -28,7 +28,7 @@ class SparseMatrix(_AggregateDataMatrix):
             sparse_coo_array (scipy.sparse.coo_array): A 2d sparse array with count
                 values for one aggregator0 (i.e. species) rows (axis 0) by another
                 aggregator1 (i.e. dataset) columns (axis 1) to use for computations.
-            table_type (sppy.common.constants.SUMMARY_TABLE_TYPES): type of
+            table_type (span.common.constants.SUMMARY_TABLE_TYPES): type of
                 aggregated data
             data_datestr (str): date of the source data in YYYY_MM_DD format.
             row_category (pandas.api.types.CategoricalDtype): ordered row labels used
@@ -64,7 +64,7 @@ class SparseMatrix(_AggregateDataMatrix):
                 (axis 0)
             val_fld: : column in the input dataframe containing values to be used as
                 values for the intersection of x and y fields
-            table_type (sppy.common.constants.SUMMARY_TABLE_TYPES): table type of
+            table_type (span.common.constants.SUMMARY_TABLE_TYPES): table type of
                 sparse matrix aggregated data
             data_datestr (str): date of the source data in YYYY_MM_DD format.
             logger (object): logger for saving relevant processing messages
@@ -875,7 +875,7 @@ class SparseMatrix(_AggregateDataMatrix):
             sparse_coo (scipy.sparse.coo_array): Sparse Matrix containing data.
             row_categ (pandas.api.types.CategoricalDtype): row categories
             col_categ (pandas.api.types.CategoricalDtype): column categories
-            table_type (sppy.common.constants.SUMMARY_TABLE_TYPES): type of table
+            table_type (span.common.constants.SUMMARY_TABLE_TYPES): type of table
                 data
             data_datestr (str): date string in format YYYY_MM_DD
 
@@ -914,7 +914,7 @@ class SparseMatrix(_AggregateDataMatrix):
             sparse_coo (scipy.sparse.coo_array): Sparse Matrix containing data.
             row_categ (pandas.api.types.CategoricalDtype): row categories
             col_categ (pandas.api.types.CategoricalDtype): column categories
-            table_type (sppy.common.constants.SUMMARY_TABLE_TYPES): type of table
+            table_type (span.common.constants.SUMMARY_TABLE_TYPES): type of table
                 data
             data_datestr (str): date string in format YYYY_MM_DD
 

@@ -1,4 +1,4 @@
-"""Functions to test the sppy.tools.util.dwca.DwCArchive with known URLs."""
+"""Functions to test the span.tools.util.dwca.DwCArchive with known URLs."""
 import os
 import shutil
 import time
@@ -25,7 +25,7 @@ def prep_dwca_data(do_download=False, do_extract=False):
         Exception: on failure to download file from URL.
 
     Returns:
-        a sppy.tools.util.dwca.DwCArchive object
+        a span.tools.util.dwca.DwCArchive object
     """
     url = TST_VALUES.SPECIFY_URLS[0]
     zip_dwca_fullfname = assemble_download_filename(url, TEST_PATH)

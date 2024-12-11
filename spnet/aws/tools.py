@@ -12,7 +12,8 @@ import pandas
 import subprocess as sp
 from time import sleep
 
-from bison.common.constants import (AWS_METADATA_URL, REGION, TASK, USERDATA_DIR)
+from spnet.aws.constants import AWS_METADATA_URL, REGION
+from sppy.common.constants import TASK
 
 six_hours = 21600
 
@@ -159,13 +160,12 @@ class EC2:
         self._client = self._auth_session.client("ec2")
 
     # ----------------------------------------------------
-    def get_userdata(self, userdata_filename, local_path):
+    def get_userdata(self, userdata_filename):
         """Return the EC2 user_data script as a Base64 encoded string.
 
         Args:
-            userdata_filename: Filename containing the userdata script to be executed on
-                EC2 instance.
-            local_path: path to file on local system.
+            userdata_filename: full path to filename containing the userdata script to
+                be executed on EC2 instance.
 
         Returns:
             A Base64-encoded string of the user_data file to create on an EC2 instance.
@@ -173,12 +173,11 @@ class EC2:
         Raises:
             Exception: on userdata_filename does not exist in the local path.
         """
-        local_userdata = os.path.join(local_path, userdata_filename)
-        if not os.path.exists(local_userdata):
+        if not os.path.exists(userdata_filename):
             raise Exception(
-                f"Userdata file {local_userdata} does not exist in {local_path}")
+                f"Userdata file {userdata_filename} does not exist")
         try:
-            with open(local_userdata, "r") as infile:
+            with open(userdata_filename, "r") as infile:
                 script_text = infile.read()
         except Exception:
             return None
@@ -189,14 +188,12 @@ class EC2:
             return base64_script_text
 
     # ----------------------------------------------------
-    def create_task_template_version(
-            self, template_name, task, local_path=USERDATA_DIR):
+    def create_task_template_version(self, template_name, task):
         """Create a launch template version from the original, replacing the userdata.
 
         Args:
             template_name: name of the template to version.
             task (str): one of aws.common.constants.TASK.tasks
-            local_path: full path to the local copy of the userdata file.
 
         Returns:
             ver_num: version number of the newly created template version.
@@ -206,7 +203,7 @@ class EC2:
             Exception: on missing element in response.
         """
         userdata_filename = TASK.get_userdata_filename(task)
-        base64_script_text = self.get_userdata(userdata_filename, local_path=local_path)
+        base64_script_text = self.get_userdata(userdata_filename)
         response = self._client.create_launch_template_version(
             DryRun=False,
             LaunchTemplateName=template_name,

@@ -85,7 +85,7 @@ def _read_stacked_data_records(s3, stacked_data_table_type, datestr):
         datestr (str): date of the current dataset, in YYYY_MM_DD format
 
     Returns:
-        heatmap (sppy.tools.s2n.heatmap_matrix.HeatmapMatrix): sparse matrix
+        heatmap (span.tools.s2n.heatmap_matrix.HeatmapMatrix): sparse matrix
             containing data separated into 2 dimensions
     """
     # Species in columns/x/axis1
