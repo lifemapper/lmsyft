@@ -144,7 +144,7 @@ class _AnalystService(_SpecifyNetworkService):
     def _find_matrix_input_filenames(cls, table, input_path, download_path):
         do_retrieve = False
         basename = table["fname"]
-        mtx_ext = table["matrix_extension"]
+        mtx_ext = table["file_extension"]
         mtx_fname = f"{input_path}/{basename}{mtx_ext}"
         meta_fname = f"{input_path}/{basename}.json"
         zip_fname = f"{input_path}/{basename}.zip"

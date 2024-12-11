@@ -34,10 +34,9 @@ class HeatmapMatrix(_SpeciesDataMatrix):
                 to identify axis 0/rows.
             column_category (pandas.api.types.CategoricalDtype): ordered column labels
                 used to identify axis 1/columns.
-            dim0 (bison.common.constants.ANALYSIS_DIM or SPECIES_DIM): dimension for
-                axis 0, rows
-            dim1 (bison.common.constants.ANALYSIS_DIM or SPECIES_DIM): dimension for
-                axis 1, columns, always species dimension in specnet sparse matrices
+            dim0 (specnet.common.constants.ANALYSIS_DIM): dimension for axis 0, rows
+            dim1 (spanalyst.common.constants.SPECIES_DIM): dimension for axis 1, columns,
+                always species dimension in specnet sparse matrices.
             val_fld (str): column header from stacked input records containing values
                 for sparse matrix cells
 
@@ -51,15 +50,15 @@ class HeatmapMatrix(_SpeciesDataMatrix):
             dimension to be columns (axis/dimension 1).
             Checks for this:
                 this constructor raises an Exception
-                bison.constants.SUMMARY matrix table_type defines
-                    dim1 = ANALYSIS_DIM.SPECIES
+                specnet.common.constants.SUMMARY matrix table_type defines
+                    dim1 = spanalyst.common.constants.SPECIES
 
         Note: y_fld, x_fld, val_fld refer to column headers from the original data
             used to construct the sparse matrix.  They are included to aid in testing
             the original data against the sparse matrix.
 
         Note: constructed from `stacked` records in table with datatype "list" in
-            bison.common.constants.SUMMARY.DATATYPES, i.e. county_x_species_list
+            specnet.common.constants.SUMMARY.DATATYPES, i.e. county_x_species_list
             where each record has county, species, riis_status, occ_count, a list of
             species in a county.
 
@@ -84,7 +83,7 @@ class HeatmapMatrix(_SpeciesDataMatrix):
         """Return analysis dimension for axis 1.
 
         Returns:
-            (bison.common.constants.ANALYSIS_DIM): Data dimension for axis 1 (columns).
+            (specnet.common.constants.ANALYSIS_DIM): Data dimension for axis 1 (columns).
         """
         return self._coo_array.shape
 
@@ -121,7 +120,7 @@ class HeatmapMatrix(_SpeciesDataMatrix):
                 from the zip_filename.
 
         Returns:
-            heatmap (bison.spanalyst.sparse_matrix.HeatmapMatrix): matrix for the data.
+            heatmap (spanalyst.matrix.heatmap_matrix.HeatmapMatrix): matrix for the data.
 
         Raises:
             Exception: on failure to uncompress files.
@@ -174,7 +173,7 @@ class HeatmapMatrix(_SpeciesDataMatrix):
             datestr (str): date of the source data in YYYY_MM_DD format.
 
         Returns:
-            sparse_matrix (bison.spanalyst.sparse_matrix.HeatmapMatrix): matrix of y values
+            sparse_matrix (spanalyst.matrix.heatmap_matrix.HeatmapMatrix): matrix of y values
                 (rows, y axis=0) by x values (columnns, x axis=1), with values from
                 another column.
 

@@ -68,7 +68,7 @@ class _AggregateDataMatrix:
             zip_fname (str): absolute path for local compressed file.
         """
         basename = self._table["fname"]
-        mtx_ext = self._table["matrix_extension"]
+        mtx_ext = self._table["file_extension"]
         mtx_fname = f"{local_path}/{basename}{mtx_ext}"
         meta_fname = f"{local_path}/{basename}.json"
         zip_fname = f"{local_path}/{basename}.zip"
@@ -230,7 +230,7 @@ class _AggregateDataMatrix:
             raise
 
         table = Summaries.get_table(table_type)
-        mtx_ext = table["matrix_extension"]
+        mtx_ext = table["file_extension"]
         # Expected files from archive
         mtx_fname = f"{local_path}/{fname}{mtx_ext}"
         meta_fname = f"{local_path}/{fname}.json"

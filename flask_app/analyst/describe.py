@@ -6,8 +6,9 @@ from flask_app.common.s2n_type import APIService, AnalystOutput
 from flask_app.analyst.base import _AnalystService
 
 from spanalyst.common.util import (
-    add_errinfo, combine_errinfo, get_traceback, prettify_object
+    add_errinfo, combine_errinfo, get_traceback, prettify_object, get_current_datadate_str
 )
+from specnet.common.constants import SUMMARY
 
 
 # .............................................................................
@@ -47,8 +48,9 @@ class DescribeSvc(_AnalystService):
                 try:
                     stat_dict, errors = cls._get_measures(
                         good_params["summary_type"], good_params["summary_key"])
-                except Exception:
-                    errinfo = add_errinfo(errinfo, "error", get_traceback())
+                except Exception as e:
+                    errinfo = add_errinfo(errinfo, "error", str(e))
+                    errinfo = add_errinfo(errinfo, "traceback", get_traceback())
                 else:
                     errinfo = combine_errinfo(errinfo, errors)
             else:
@@ -101,11 +103,16 @@ class DescribeSvc(_AnalystService):
 if __name__ == "__main__":
     dataset_key = "3e2d26d9-2776-4bec-bdc7-bab3842ffb6b"
     species_key = "8277078 Carcharodus alceae"
+    datestr = get_current_datadate_str()
+    datestr = "2024_11_01"
 
     print("**** Endpoint ****")
     svc = DescribeSvc()
     response = svc.get_endpoint()
     print(prettify_object(response))
+
+    tbs = SUMMARY.tables(datestr=datestr)
+    print(prettify_object(tbs))
 
     print("**** dataset_key ****")
     response = svc.get_measures(summary_type="dataset", summary_key=dataset_key)

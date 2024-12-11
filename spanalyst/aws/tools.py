@@ -12,7 +12,9 @@ import pandas
 import subprocess as sp
 from time import sleep
 
-from bison.common.constants import (AWS_METADATA_URL, REGION, TASK, USERDATA_DIR)
+from spanalyst.aws.constants import AWS_METADATA_URL, REGION
+
+from specnet.common.constants import TASK
 
 six_hours = 21600
 
@@ -189,14 +191,12 @@ class EC2:
             return base64_script_text
 
     # ----------------------------------------------------
-    def create_task_template_version(
-            self, template_name, task, local_path=USERDATA_DIR):
+    def create_task_template_version(self, template_name, task):
         """Create a launch template version from the original, replacing the userdata.
 
         Args:
             template_name: name of the template to version.
             task (str): one of aws.common.constants.TASK.tasks
-            local_path: full path to the local copy of the userdata file.
 
         Returns:
             ver_num: version number of the newly created template version.
@@ -206,7 +206,7 @@ class EC2:
             Exception: on missing element in response.
         """
         userdata_filename = TASK.get_userdata_filename(task)
-        base64_script_text = self.get_userdata(userdata_filename, local_path=local_path)
+        base64_script_text = self.get_userdata(userdata_filename)
         response = self._client.create_launch_template_version(
             DryRun=False,
             LaunchTemplateName=template_name,

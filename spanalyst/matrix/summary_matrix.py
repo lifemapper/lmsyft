@@ -28,15 +28,17 @@ class SummaryMatrix(_SpeciesDataMatrix):
                 * Column 2 contains the total of values in that row.
             table_type (aws_constants.SUMMARY_TABLE_TYPES): type of aggregated data
             datestr (str): date of the source data in YYYY_MM_DD format.
-            dim0 (bison.common.constants.ANALYSIS_DIM or SPECIES_DIM): dimension for
-                 axis 0, rows for which we will count and total dimension 1
-            dim1 (bison.common.constants.ANALYSIS_DIM or SPECIES_DIM): dimension for
-                axis 1, with two columns (count and total) for each value in dimension 0.
+            dim0 (specnet.common.constants.ANALYSIS_DIM/
+                spanalyst.common.constants.SPECIES_DIM): dimension for axis 0, rows for
+                which we will count and total dimension 1
+            dim1 (specnet.common.constants.ANALYSIS_DIM/
+                spanalyst.common.constants.SPECIES_DIM): dimension for axis 1, with two
+                columns (count and total) for each value in dimension 0.
 
         Note: Count and total dim1 for every value in dim0
 
         Note: constructed from records in table with datatype "counts" in
-            bison.common.constants.SUMMARY.DATATYPES,
+            spanalyst.common.constants.AGGREGATION_TYPE,
             i.e. county_x_riis_counts where each record has
                 county, riis_status, occ_count, species_count;
                 counts of occurrences and species by riis_status for a county
@@ -55,7 +57,7 @@ class SummaryMatrix(_SpeciesDataMatrix):
         """Summarize a matrix into counts of one axis and values for the other axis.
 
         Args:
-            heatmap (bison.spanalyst.heatmap_matrix.HeatmapMatrix): A 2d sparse matrix with
+            heatmap (spanalyst.matrix.heatmap_matrix.HeatmapMatrix): A 2d sparse matrix with
                 count values for one dimension, (i.e. region) rows (axis 0), by the
                 species dimension, columns (axis 1), to use for computations.
             axis (int): Summarize rows (0) for each column, or columns (1) for each row.
@@ -123,7 +125,7 @@ class SummaryMatrix(_SpeciesDataMatrix):
                 from the zip_filename.
 
         Returns:
-            sparse_mtx (bison.spanalyst.sparse_matrix.SparseMatrix): matrix for the data.
+            sparse_mtx (spanalyst.matrix.sparse_matrix.SparseMatrix): data matrix.
 
         Raises:
             Exception: on failure to uncompress files.

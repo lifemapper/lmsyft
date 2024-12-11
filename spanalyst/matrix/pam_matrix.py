@@ -37,8 +37,8 @@ class PAM(HeatmapMatrix):
                 to identify axis 0/rows.
             column_category (pandas.api.types.CategoricalDtype): ordered column labels
                 used to identify axis 1/columns.
-            dim0 (bison.common.constants.ANALYSIS_DIM): dimension for axis 0, rows
-            dim1 (bison.common.constants.ANALYSIS_DIM): dimension for axis 1, columns,
+            dim0 (specnet.common.constants.ANALYSIS_DIM): dimension for axis 0, rows
+            dim1 (spanalyst.common.constants.SPECIES): dimension for axis 1, columns,
                 always species dimension in specnet PAM matrices
 
         Raises:
@@ -81,13 +81,13 @@ class PAM(HeatmapMatrix):
     #     """Create a sparse matrix of rows by columns containing values from a table.
     #
     #     Args:
-    #         heatmap (bison.spanalyst.heatmap_matrix.HeatmapMatrix): Matrix of occurrence
+    #         heatmap (spanalyst.matrix.heatmap_matrix.HeatmapMatrix): Matrix of occurrence
     #             counts for sites (or other dimension), rows, by species, columns.
     #         min_presence_count (int): Minimum occurrence count for a species to be
     #             considered present at that site.
     #
     #     Returns:
-    #         pam (bison.spanalyst.presence_absence_matrix.PAM): matrix of
+    #         pam (spanalyst.matrix.pam_matrix.PAM): matrix of
     #             sites (rows, axis=0) by species (columnns, axis=1), with binary values
     #             indicating presence/absence.
     #     """
@@ -109,13 +109,13 @@ class PAM(HeatmapMatrix):
         """Create a sparse matrix of rows by columns containing values from a table.
 
         Args:
-            heatmap (bison.spanalyst.heatmap_matrix.HeatmapMatrix): Matrix of occurrence
+            heatmap (spanalyst.matrix.heatmap_matrix.HeatmapMatrix): Matrix of occurrence
                 counts for sites (or other dimension), rows, by species, columns.
             min_presence_count (int): Minimum occurrence count for a species to be
                 considered present at that site.
 
         Returns:
-            pam (bison.spanalyst.presence_absence_matrix.PAM): matrix of
+            pam (spanalyst.matrix.pam_matrix.PAM): matrix of
                 sites (rows, axis=0) by species (columnns, axis=1), with binary values
                 indicating presence/absence.
         """

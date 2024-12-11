@@ -75,6 +75,7 @@ class ANALYSIS_DIM:
     """All dimensions (besides species) with columns used for data analyses."""
     DATASET = {
         "code": "dataset",
+        "key_fld": "dataset_key",
         # In summary records
         "fields": [
             "dataset_key", COMPOUND_SPECIES_FLD, SUMMARY_FIELDS.OCCURRENCE_COUNT
@@ -528,8 +529,9 @@ class SUMMARY:
         Raises:
             Exception: on invalid table_type
         """
+        tables = cls.tables()
         try:
-            table = cls.tables()[table_type]
+            table = tables[table_type]
         except KeyError:
             raise Exception(f"Invalid table_type {table_type}")
         cpy_table = deepcopy(table)
@@ -582,7 +584,8 @@ class SUMMARY:
         Returns:
             tables: dictionary of summary table metadata.
         """
-        table = cls.tables()[table_type]
+        tables = cls.tables()
+        table = tables[table_type]
         ext = table["file_extension"]
         if is_compressed is True:
             ext = ZIP_EXTENSION
