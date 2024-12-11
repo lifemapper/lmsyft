@@ -18,7 +18,7 @@ services:
       # volumes
       - "scratch-path:/scratch-path"
       - "webpack-output:/volumes/webpack-output"
-      - "static-files:/home/specify/span/frontend/static"
+      - "static-files:/home/specify/sppy/frontend/static"
 
   broker:
     build:
@@ -34,7 +34,7 @@ services:
     volumes:
       - "scratch-path:/scratch-path"
       - "webpack-output:/volumes/webpack-output"
-      - "static-files:/home/specify/span/frontend/static"
+      - "static-files:/home/specify/sppy/frontend/static"
 
   nginx:
     image: nginx:alpine
@@ -55,7 +55,7 @@ services:
       # bind mounts from host machine
       - "/etc/letsencrypt:/etc/letsencrypt:ro"
       - "./config/nginx.conf:/etc/nginx/conf.d/default.conf:ro"
-      - "./span/frontend/static/:/var/www/:ro"
+      - "./sppy/frontend/static/:/var/www/:ro"
 
   front-end:
     build:

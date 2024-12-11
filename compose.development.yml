@@ -33,4 +33,4 @@ services:
       target: base-front-end
     command: ["npm", "run", "watch"]
     volumes:
-      - "./span/frontend/js_src/lib/:/home/node/lib/"
+      - "./sppy/frontend/js_src/lib/:/home/node/lib/"

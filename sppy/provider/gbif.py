@@ -704,7 +704,7 @@ if __name__ == "__main__":
     pass
 
 """
-from span.tools.provider.gbif import GbifAPI
+from sppy.tools.provider.gbif import GbifAPI
 
 dataset_key = 'e9d1c589-5df6-4bd8-aead-c09e2d8630e4'
 ds_api = GbifAPI(service='dataset', key=dataset_key)

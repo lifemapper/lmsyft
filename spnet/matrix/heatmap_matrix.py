@@ -25,7 +25,7 @@ class HeatmapMatrix(_SpeciesDataMatrix):
             sparse_coo_array (scipy.sparse.coo_array): A 2d sparse array with count
                 values for one dimension (i.e. region) rows (axis 0) by the
                 species dimension columns (axis 1) to use for computations.
-            table_type (span.tools.s2n.constants.SUMMARY_TABLE_TYPES): type of
+            table_type (sppy.tools.s2n.constants.SUMMARY_TABLE_TYPES): type of
                 aggregated data
             datestr (str): date of the source data in YYYY_MM_DD format.
             row_category (pandas.api.types.CategoricalDtype): ordered row labels used
@@ -167,7 +167,7 @@ class HeatmapMatrix(_SpeciesDataMatrix):
                 columns (axis 1)
             val_fld: : column in the input dataframe containing values to be used as
                 values for the intersection of x and y fields
-            table_type (span.tools.s2n.constants.SUMMARY_TABLE_TYPES): table type of
+            table_type (sppy.tools.s2n.constants.SUMMARY_TABLE_TYPES): table type of
                 sparse matrix aggregated data
             datestr (str): date of the source data in YYYY_MM_DD format.
 
@@ -1241,7 +1241,7 @@ class HeatmapMatrix(_SpeciesDataMatrix):
             sparse_coo (scipy.sparse.coo_array): Sparse Matrix containing data.
             row_categ (pandas.api.types.CategoricalDtype): row categories
             col_categ (pandas.api.types.CategoricalDtype): column categories
-            table_type (span.tools.s2n.constants.SUMMARY_TABLE_TYPES): type of table
+            table_type (sppy.tools.s2n.constants.SUMMARY_TABLE_TYPES): type of table
                 data
             datestr (str): date string in format YYYY_MM_DD
 
@@ -1281,7 +1281,7 @@ class HeatmapMatrix(_SpeciesDataMatrix):
             sparse_coo (scipy.sparse.coo_array): Sparse Matrix containing data.
             row_categ (pandas.api.types.CategoricalDtype): row categories
             col_categ (pandas.api.types.CategoricalDtype): column categories
-            table_type (span.tools.s2n.constants.SUMMARY_TABLE_TYPES): type of table
+            table_type (sppy.tools.s2n.constants.SUMMARY_TABLE_TYPES): type of table
                 data
             datestr (str): date string in format YYYY_MM_DD
 

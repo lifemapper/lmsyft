@@ -1,1 +1,1 @@
-"""Species analysis workflow tools for processing large occurrence datasets on AWS."""
+"""Modules for processing large GBIF species occurrence datasets on AWS."""

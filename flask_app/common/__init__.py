@@ -1,1 +1,1 @@
-"""Common elements for all flask applications."""
+"""Common elements for the analyst and broker flask applications."""

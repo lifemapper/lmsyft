@@ -39,7 +39,7 @@ class SummaryMatrix(_AggregateDataMatrix):
         """Summarize a matrix into counts of one axis and values for the other axis.
 
         Args:
-            sp_mtx (span.tools.s2n.SparseMatrix): A sparse matrix with count
+            sp_mtx (sppy.tools.s2n.SparseMatrix): A sparse matrix with count
                 values for one aggregator0 (i.e. species) rows (axis 0) by another
                 aggregator1 (i.e. dataset) columns (axis 1) to use for computations.
             axis (int): Summarize rows (0) or columns (1).

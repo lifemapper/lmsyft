@@ -233,7 +233,7 @@ def read_stacked_data_records(data_datestr, logger):
         logger (object): logger for saving relevant processing messages
 
     Returns:
-        agg_sparse_mtx (span.tools.s2n.sparse_matrix.SparseMatrix): sparse matrix
+        agg_sparse_mtx (sppy.tools.s2n.sparse_matrix.SparseMatrix): sparse matrix
             containing data separated into 2 dimensions
     """
     # Datasets in rows/x/axis 1
@@ -448,7 +448,7 @@ if __name__ == "__main__":
     # .................................
 
 """
-from span.tools.s2n.build_test_aggregated_data import *
+from sppy.tools.s2n.build_test_aggregated_data import *
 
 data_datestr = get_current_datadate_str()
 overwrite = True
