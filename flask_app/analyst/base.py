@@ -6,15 +6,15 @@ from werkzeug.exceptions import BadRequest
 from flask_app.common.base import _SpecifyNetworkService
 from flask_app.common.s2n_type import AnalystOutput, APIService
 
-from spnet.aws.constants import REGION, S3_BUCKET, S3_SUMMARY_DIR
-from spnet.aws.tools import S3
-from spnet.common.constants import SPECIES_DIM, SUMMARY_FIELDS
-from spnet.common.log import Logger
-from spnet.common.util import (
+from spanalyst.aws.constants import REGION, S3_BUCKET, S3_SUMMARY_DIR
+from spanalyst.aws.tools import S3
+from spanalyst.common.constants import SPECIES_DIM, SUMMARY_FIELDS
+from spanalyst.common.log import Logger
+from spanalyst.common.util import (
     add_errinfo, get_current_datadate_str, get_today_str, get_traceback
 )
-from spnet.matrix.heatmap_matrix import HeatmapMatrix
-from spnet.matrix.summary_matrix import SummaryMatrix
+from spanalyst.matrix.heatmap_matrix import HeatmapMatrix
+from spanalyst.matrix.summary_matrix import SummaryMatrix
 
 from sppy.common.constants import ANALYSIS_DIM, SUMMARY
 

@@ -7,8 +7,10 @@ from pandas.api.types import CategoricalDtype
 import random
 import scipy.sparse
 
-from bison.common.constants import ANALYSIS_DIM, SNKeys, TMP_PATH
-from bison.spnet.species_data_matrix import _SpeciesDataMatrix
+from spanalyst.common.constants import TMP_PATH
+from spanalyst.matrix.species_data_matrix import _SpeciesDataMatrix
+
+from sppy.common.constants import ANALYSIS_DIM, SNKeys
 
 
 # .............................................................................

@@ -6,11 +6,11 @@ import os
 import pandas as pd
 from zipfile import ZipFile
 
-from spnet.common.constants import (
+from spanalyst.common.constants import (
     CSV_DELIMITER, JSON_EXTENSION, STATISTICS_TYPE, TMP_PATH, CSV_EXTENSION,
     ZIP_EXTENSION
 )
-from spnet.matrix.heatmap_matrix import HeatmapMatrix
+from spanalyst.matrix.heatmap_matrix import HeatmapMatrix
 
 from sppy.common.constants import SUMMARY
 

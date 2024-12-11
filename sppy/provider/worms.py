@@ -7,8 +7,8 @@ from flask_app.common.s2n_type import (
     APIEndpoint, BrokerOutput, BrokerSchema, ServiceProvider)
 from flask_app.common.constants import URL_ESCAPES
 
-from spnet.common.constants import ENCODING
-from spnet.common.util import add_errinfo
+from spanalyst.common.constants import ENCODING
+from spanalyst.common.util import add_errinfo
 
 from sppy.provider.api import APIQuery
 

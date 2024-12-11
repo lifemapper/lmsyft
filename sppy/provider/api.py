@@ -7,9 +7,9 @@ import urllib
 from flask_app.common.s2n_type import BrokerOutput, S2nKey, ServiceProvider
 from flask_app.common.constants import URL_ESCAPES
 
-from spnet.common.constants import ENCODING
-from spnet.common.log import logit
-from spnet.common.util import add_errinfo, get_traceback
+from spanalyst.common.constants import ENCODING
+from spanalyst.common.log import logit
+from spanalyst.common.util import add_errinfo, get_traceback
 
 from sppy.provider.lm_xml import fromstring, deserialize
 

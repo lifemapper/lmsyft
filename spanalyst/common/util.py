@@ -9,7 +9,7 @@ import os
 import sys
 import traceback
 
-from spnet.common.constants import ENCODING, SHP_EXT, SHP_EXTENSIONS
+from spanalyst.common.constants import ENCODING, SHP_EXT, SHP_EXTENSIONS
 
 
 # ----------------------------------------------------

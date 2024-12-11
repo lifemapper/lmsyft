@@ -5,7 +5,7 @@ import os
 from pprint import pp
 import sys
 
-from spnet.common.util import get_today_str
+from spanalyst.common.util import get_today_str
 
 
 # .............................................................................

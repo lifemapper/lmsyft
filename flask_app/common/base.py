@@ -2,7 +2,8 @@
 from flask import Flask
 from werkzeug.exceptions import BadRequest, InternalServerError
 
-from spnet.common.util import add_errinfo
+from spanalyst.common.util import add_errinfo
+
 from flask_app.common.s2n_type import APIEndpoint, APIService
 
 app = Flask(__name__)

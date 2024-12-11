@@ -5,10 +5,10 @@ import pandas as pd
 
 from sppy.common.constants import ANALYSIS_DIM, SNKeys, SUMMARY
 
-from spnet.common.constants import (
+from spanalyst.common.constants import (
     AGGREGATION_TYPE, CSV_DELIMITER, SUMMARY_FIELDS, TMP_PATH
 )
-from spnet.matrix.species_data_matrix import _SpeciesDataMatrix
+from spanalyst.matrix.species_data_matrix import _SpeciesDataMatrix
 
 
 # .............................................................................

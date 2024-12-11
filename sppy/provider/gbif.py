@@ -10,9 +10,9 @@ from flask_app.common.s2n_type import (
     APIEndpoint, BrokerOutput, BrokerSchema, S2nKey, ServiceProvider)
 from flask_app.common.constants import URL_ESCAPES
 
-from spnet.common.constants import ENCODING
-from spnet.common.log import logit
-from spnet.common.util import add_errinfo
+from spanalyst.common.constants import ENCODING
+from spanalyst.common.log import logit
+from spanalyst.common.util import add_errinfo
 from sppy.provider.api import APIQuery
 
 
@@ -161,9 +161,9 @@ class GbifAPI(APIQuery):
     @classmethod
     def _get_fld_vals(cls, big_rec):
         rec = {}
-        for gbif_name, spnet_name in GbifAPI.NAME_MAP.items():
+        for gbif_name, spanalyst_name in GbifAPI.NAME_MAP.items():
             try:
-                rec[spnet_name] = big_rec[gbif_name]
+                rec[spanalyst_name] = big_rec[gbif_name]
             except KeyError:
                 pass
         return rec

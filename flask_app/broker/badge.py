@@ -6,7 +6,8 @@ from werkzeug.exceptions import (BadRequest, InternalServerError)
 from flask_app.broker.base import _BrokerService
 from flask_app.broker.constants import (ICON_CONTENT, ICON_DIR)
 from flask_app.common.s2n_type import APIService, S2nKey, ServiceProvider
-from spnet.common.util import get_traceback
+
+from spanalyst.common.util import get_traceback
 
 
 # .............................................................................

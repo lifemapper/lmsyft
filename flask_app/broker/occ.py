@@ -4,10 +4,12 @@ from werkzeug.exceptions import BadRequest
 from flask_app.broker.base import _BrokerService
 from flask_app.common.s2n_type import (
     APIEndpoint, APIService, BrokerOutput, BrokerSchema, S2nKey, ServiceProvider)
+
 from sppy.provider.gbif import GbifAPI
 from sppy.provider.idigbio import IdigbioAPI
 from sppy.provider.mopho import MorphoSourceAPI
-from spnet.common.util import get_traceback
+
+from spanalyst.common.util import get_traceback
 
 
 class OccurrenceSvc(_BrokerService):

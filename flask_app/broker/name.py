@@ -8,7 +8,8 @@ from flask_app.common.s2n_type import (
 from sppy.provider.itis import ItisAPI
 from sppy.provider.gbif import GbifAPI
 from sppy.provider.worms import WormsAPI
-from spnet.common.util import get_traceback
+
+from spanalyst.common.util import get_traceback
 
 
 # .............................................................................

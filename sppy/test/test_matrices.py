@@ -1,14 +1,14 @@
 """Test creation of species by site matrices, then summaries and statistics."""
 import os
 
-from spnet.aws.constants import REGION
-from spnet.aws.tools import S3
-from spnet.common.constants import TMP_PATH, SUMMARY_FIELDS, SPECIES_DIM
-from spnet.common.log import logit
-from spnet.common.util import get_current_datadate_str
-from spnet.matrix.heatmap_matrix import HeatmapMatrix
-from spnet.matrix.pam_matrix import PAM
-from spnet.matrix.summary_matrix import SummaryMatrix
+from spanalyst.aws.constants import REGION
+from spanalyst.aws.tools import S3
+from spanalyst.common.constants import TMP_PATH, SUMMARY_FIELDS, SPECIES_DIM
+from spanalyst.common.log import logit
+from spanalyst.common.util import get_current_datadate_str
+from spanalyst.matrix.heatmap_matrix import HeatmapMatrix
+from spanalyst.matrix.pam_matrix import PAM
+from spanalyst.matrix.summary_matrix import SummaryMatrix
 
 from sppy.common.constants import ANALYSIS_DIM, SUMMARY
 from sppy.task.calc_stats import create_heatmap_from_records

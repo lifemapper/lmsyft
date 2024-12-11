@@ -5,8 +5,10 @@ from numpy import integer as np_int, floating as np_float, ndarray
 import os
 from zipfile import ZipFile
 
-from bison.common.constants import SNKeys, SUMMARY, TMP_PATH, JSON_EXTENSION, ZIP_EXTENSION
-from bison.common.log import logit
+from spanalyst.common.constants import TMP_PATH, JSON_EXTENSION, ZIP_EXTENSION
+from spanalyst.common.log import logit
+
+from sppy.common.constants import SNKeys, SUMMARY
 
 
 # .............................................................................

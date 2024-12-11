@@ -6,7 +6,7 @@ Resource-Variable Setup
 
 Base resource and configuration variables
 ================================================
-AWS constants are held in the spnet/aws/common/constants.py file.
+AWS constants are held in the spanalyst/aws/common/constants.py file.
 
 * Note the account number (AWS_ACCOUNT)
 * Decide on the region (REGION)
@@ -59,7 +59,7 @@ TODO: restrict outbound traffic
 
 Create Roles for Workflow and EC2 Tasks
 ============================================
-All supporting JSON is in the `spnet/aws/permissions` directory of this repo.
+All supporting JSON is in the `spanalyst/aws/permissions` directory of this repo.
 
 For EC2 tasks:
 

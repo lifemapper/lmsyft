@@ -3,8 +3,8 @@ from copy import deepcopy
 from enum import Enum
 import os
 
-from spnet.aws.constants import S3_RS_TABLE_SUFFIX
-from spnet.common.constants import (
+from spanalyst.aws.constants import S3_RS_TABLE_SUFFIX
+from spanalyst.common.constants import (
     AGGREGATION_TYPE, COMPOUND_SPECIES_FLD, SPECIES_DIM, SUMMARY_FIELDS, ZIP_EXTENSION
 )
 

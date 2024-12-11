@@ -1,14 +1,14 @@
 """Create a matrix of occurrence or species counts by (geospatial) analysis dimension."""
 import os
 
-from spnet.aws.constants import REGION, S3_BUCKET, S3_SUMMARY_DIR
-from spnet.aws.tools import S3
-from spnet.common.constants import TMP_PATH
-from spnet.common.log import logit
-from spnet.common.util import get_current_datadate_str
-from spnet.matrix.heatmap_matrix import HeatmapMatrix
-from spnet.matrix.pam_matrix import PAM
-from spnet.matrix.summary_matrix import SummaryMatrix
+from spanalyst.aws.constants import REGION, S3_BUCKET, S3_SUMMARY_DIR
+from spanalyst.aws.tools import S3
+from spanalyst.common.constants import TMP_PATH
+from spanalyst.common.log import logit
+from spanalyst.common.util import get_current_datadate_str
+from spanalyst.matrix.heatmap_matrix import HeatmapMatrix
+from spanalyst.matrix.pam_matrix import PAM
+from spanalyst.matrix.summary_matrix import SummaryMatrix
 
 from sppy.common.constants import ANALYSIS_DIM, SUMMARY
 
