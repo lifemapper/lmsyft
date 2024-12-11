@@ -55,7 +55,7 @@ class SummaryMatrix(_SpeciesDataMatrix):
         """Summarize a matrix into counts of one axis and values for the other axis.
 
         Args:
-            heatmap (bison.spnet.heatmap_matrix.HeatmapMatrix): A 2d sparse matrix with
+            heatmap (bison.spanalyst.heatmap_matrix.HeatmapMatrix): A 2d sparse matrix with
                 count values for one dimension, (i.e. region) rows (axis 0), by the
                 species dimension, columns (axis 1), to use for computations.
             axis (int): Summarize rows (0) for each column, or columns (1) for each row.
@@ -123,7 +123,7 @@ class SummaryMatrix(_SpeciesDataMatrix):
                 from the zip_filename.
 
         Returns:
-            sparse_mtx (bison.spnet.sparse_matrix.SparseMatrix): matrix for the data.
+            sparse_mtx (bison.spanalyst.sparse_matrix.SparseMatrix): matrix for the data.
 
         Raises:
             Exception: on failure to uncompress files.

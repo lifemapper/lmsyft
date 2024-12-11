@@ -81,7 +81,7 @@ class RankSvc(_AnalystService):
         else:
             errinfo = {"error": ["Only dataset ranks are currently available"]}
             # try:
-            #     records, errinfo = spnet.rank_species_counts(rank_by, order, limit)
+            #     records, errinfo = spanalyst.rank_species_counts(rank_by, order, limit)
             # except Exception:
             #     errinfo = {"error": [get_traceback()]}
 

@@ -35,7 +35,7 @@ def create_heatmap_from_records(
         logger (bison.common.log.Logger): for writing messages to file and console
 
     Returns:
-        heatmap (bison.spnet.heatmap_matrix.HeatmapMatrix): sparse matrix
+        heatmap (bison.spanalyst.heatmap_matrix.HeatmapMatrix): sparse matrix
             containing data separated into 2 dimensions
         y_fld (str): column header from stacked input records containing values for
             sparse matrix row headers

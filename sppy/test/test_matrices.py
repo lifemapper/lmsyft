@@ -146,9 +146,9 @@ def test_heatmap_vs_summary(
     """Test for equality of sums and counts in summary and aggregated dataframes.
 
     Args:
-        heatmap (bison.spnet.heatmap_matrix.HeatmapMatrix): object containing a
+        heatmap (bison.spanalyst.heatmap_matrix.HeatmapMatrix): object containing a
             2-D scipy.sparse.coo_array.
-        summary_mtx_lst (list of bison.spnet.summary_matrix.SummaryMatrix): list of 2
+        summary_mtx_lst (list of bison.spanalyst.summary_matrix.SummaryMatrix): list of 2
             SummaryMatrices, each summarizing rows or columns of the heatmap
         test_count (int): number of rows and columns to test.
         logger (object): logger for saving relevant processing messages

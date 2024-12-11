@@ -81,13 +81,13 @@ class PAM(HeatmapMatrix):
     #     """Create a sparse matrix of rows by columns containing values from a table.
     #
     #     Args:
-    #         heatmap (bison.spnet.heatmap_matrix.HeatmapMatrix): Matrix of occurrence
+    #         heatmap (bison.spanalyst.heatmap_matrix.HeatmapMatrix): Matrix of occurrence
     #             counts for sites (or other dimension), rows, by species, columns.
     #         min_presence_count (int): Minimum occurrence count for a species to be
     #             considered present at that site.
     #
     #     Returns:
-    #         pam (bison.spnet.presence_absence_matrix.PAM): matrix of
+    #         pam (bison.spanalyst.presence_absence_matrix.PAM): matrix of
     #             sites (rows, axis=0) by species (columnns, axis=1), with binary values
     #             indicating presence/absence.
     #     """
@@ -109,13 +109,13 @@ class PAM(HeatmapMatrix):
         """Create a sparse matrix of rows by columns containing values from a table.
 
         Args:
-            heatmap (bison.spnet.heatmap_matrix.HeatmapMatrix): Matrix of occurrence
+            heatmap (bison.spanalyst.heatmap_matrix.HeatmapMatrix): Matrix of occurrence
                 counts for sites (or other dimension), rows, by species, columns.
             min_presence_count (int): Minimum occurrence count for a species to be
                 considered present at that site.
 
         Returns:
-            pam (bison.spnet.presence_absence_matrix.PAM): matrix of
+            pam (bison.spanalyst.presence_absence_matrix.PAM): matrix of
                 sites (rows, axis=0) by species (columnns, axis=1), with binary values
                 indicating presence/absence.
         """

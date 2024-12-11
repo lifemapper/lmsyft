@@ -119,7 +119,7 @@ class HeatmapMatrix(_SpeciesDataMatrix):
                 from the zip_filename.
 
         Returns:
-            heatmap (bison.spnet.sparse_matrix.HeatmapMatrix): matrix for the data.
+            heatmap (bison.spanalyst.sparse_matrix.HeatmapMatrix): matrix for the data.
 
         Raises:
             Exception: on failure to uncompress files.
@@ -172,7 +172,7 @@ class HeatmapMatrix(_SpeciesDataMatrix):
             datestr (str): date of the source data in YYYY_MM_DD format.
 
         Returns:
-            sparse_matrix (bison.spnet.sparse_matrix.HeatmapMatrix): matrix of y values
+            sparse_matrix (bison.spanalyst.sparse_matrix.HeatmapMatrix): matrix of y values
                 (rows, y axis=0) by x values (columnns, x axis=1), with values from
                 another column.
 

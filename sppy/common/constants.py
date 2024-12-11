@@ -1,4 +1,4 @@
-"""Constants for data-specific Specify Network Analyst use of spnet modules."""
+"""Constants for data-specific Specify Network Analyst use of spanalyst modules."""
 from copy import deepcopy
 from enum import Enum
 import os
@@ -451,7 +451,7 @@ class SUMMARY:
         #       uncompress_zipped_data, read_data.
         #       If we only save computations, must save input HeatmapMatrix metadata
         #       and min_presence_count
-        #       Note bison.spnet.pam_matrix.PAM
+        #       Note bison.spanalyst.pam_matrix.PAM
         pams = {}
         for analysis_code in cls.ANALYSIS_DIMENSIONS:
             dim0 = analysis_code
