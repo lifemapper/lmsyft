@@ -5,7 +5,7 @@ import os
 
 from spanalyst.aws.constants import S3_RS_TABLE_SUFFIX
 from spanalyst.common.constants import (
-    AGGREGATION_TYPE, COMPOUND_SPECIES_FLD, SPECIES_DIM, SUMMARY_FIELDS, ZIP_EXTENSION
+    AGGREGATION_TYPE, COMPOUND_SPECIES_FLD, SUMMARY_FIELDS, ZIP_EXTENSION
 )
 
 
@@ -72,7 +72,7 @@ class TASK:
 
 # .............................................................................
 class ANALYSIS_DIM:
-    """All dimensions (besides species) with columns used for data analyses."""
+    """All dimensions with columns used for data analyses."""
     DATASET = {
         "code": "dataset",
         "key_fld": "dataset_key",
@@ -81,6 +81,30 @@ class ANALYSIS_DIM:
             "dataset_key", COMPOUND_SPECIES_FLD, SUMMARY_FIELDS.OCCURRENCE_COUNT
         ]
     }
+    SPECIES = {
+        "code": "species",
+        "key_fld": COMPOUND_SPECIES_FLD,
+    }
+
+    # ...........................
+    @classmethod
+    def species(cls):
+        """Get the data species analyses dimension.
+
+        Returns:
+            Data dimension relating to species.
+        """
+        return ANALYSIS_DIM.SPECIES
+
+    # ...........................
+    @classmethod
+    def species_code(cls):
+        """Get the code for the data species analyses dimension.
+
+        Returns:
+            Code for the data dimension relating to species.
+        """
+        return ANALYSIS_DIM.SPECIES["code"]
 
     # ...........................
     @classmethod
@@ -150,8 +174,8 @@ class SUMMARY:
     sep = "_"
     dim_sep = f"{sep}x{sep}"
     DATATYPES = AGGREGATION_TYPE.all()
-    SPECIES_DIMENSION = SPECIES_DIM["code"]
-    SPECIES_FIELD = SPECIES_DIM["key_fld"]
+    SPECIES_DIMENSION = ANALYSIS_DIM.species_code()
+    SPECIES_FIELD = ANALYSIS_DIM.SPECIES["key_fld"]
     ANALYSIS_DIMENSIONS = ANALYSIS_DIM.analysis_codes()
 
     # ...........................
@@ -184,7 +208,7 @@ class SUMMARY:
             Exception: on datatype "counts", dim0 not in ANALYSIS_DIMENSIONS
             Exception: on datatype "counts", dim1 not None
             Exception: on datatype "matrix", dim0 not in ANALYSIS_DIMENSIONS
-            Exception: on datatype "matrix", dim1 != SPECIES_DIMENSION
+            Exception: on datatype "matrix", dim1 != ANALYSIS_DIMENSIONS.SPECIES
             Exception: on dim0 == SPECIES_DIMENSION and dim1 not in ANALYSIS_DIMENSIONS
             Exception: on dim0 in ANALYSIS_DIMENSIONS and dim0 != SPECIES_DIMENSION
         """
@@ -363,7 +387,7 @@ class SUMMARY:
                 Columns will have species
         """
         mtxs = {}
-        dim1 = SPECIES_DIM["code"]
+        dim1 = cls.SPECIES_DIMENSION
         for analysis_code in cls.ANALYSIS_DIMENSIONS:
             dim0 = analysis_code
             table_type = cls.get_table_type(AGGREGATION_TYPE.MATRIX, dim0, dim1)
@@ -406,7 +430,7 @@ class SUMMARY:
         """
         stats = {}
         # Axis 1 of PAM is always species
-        dim1 = SPECIES_DIM["code"]
+        dim1 = cls.SPECIES_DIMENSION
         for analysis_code in cls.ANALYSIS_DIMENSIONS:
             # Axis 0 of PAM is always 'site'
             dim0 = analysis_code
@@ -456,7 +480,7 @@ class SUMMARY:
         pams = {}
         for analysis_code in cls.ANALYSIS_DIMENSIONS:
             dim0 = analysis_code
-            dim1 = SPECIES_DIM["code"]
+            dim1 = cls.SPECIES_DIMENSION
             table_type = cls.get_table_type(AGGREGATION_TYPE.PAM, dim0, dim1)
 
             # Dimension/Axis 0/row is always region or other analysis dimension
@@ -743,7 +767,7 @@ class SNKeys(Enum):
             Exception: on un-implemented table type.
         """
         dim_dataset = ANALYSIS_DIM.DATASET["code"]
-        dim_species = SPECIES_DIM["code"]
+        dim_species = ANALYSIS_DIM.SPECIES["code"]
         dataset_species_matrix_type = SUMMARY.get_table_type(
             "matrix", dim_dataset, dim_species)
         dataset_species_summary_type = SUMMARY.get_table_type(

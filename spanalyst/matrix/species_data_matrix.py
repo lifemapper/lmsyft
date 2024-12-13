@@ -20,10 +20,8 @@ class _SpeciesDataMatrix:
         """Constructor for species by dataset comparisons.
 
         Args:
-            dim0 (specnet.common.constants.ANALYSIS_DIM/
-                spanalyst.common.constants.SPECIES_DIM): dimension for axis 0, rows
-            dim1 (specnet.common.constants.ANALYSIS_DIM/
-                spanalyst.common.constants.SPECIES_DIM): dimension for axis 1, columns
+            dim0 (specnet.common.constants.ANALYSIS_DIM: dimension for axis 0, rows
+            dim1 (specnet.common.constants.ANALYSIS_DIM: dimension for axis 1, columns
             table_type (code from specnet.common.constants.SUMMARY): predefined type of
                 data indicating type and contents.
             datestr (str): date of the source data in YYYY_MM_DD format.
@@ -80,8 +78,7 @@ class _SpeciesDataMatrix:
         """Return analysis dimension for axis 0.
 
         Returns:
-        (specnet.common.constants.ANALYSIS_DIM/spanalyst.common.constants.SPECIES_DIM):
-            Data dimension for axis 0 (rows).
+        (specnet.common.constants.ANALYSIS_DIM): Data dimension for axis 0 (rows).
         """
         return self._row_dim
 
@@ -91,8 +88,7 @@ class _SpeciesDataMatrix:
         """Return analysis dimension for axis 1.
 
         Returns:
-        (specnete.common.constants.ANALYSIS_DIM/spanalyst.common.constants.SPECIES_DIM):
-            Data dimension for axis 1 (columns).
+        (specnete.common.constants.ANALYSIS_DIM): Data dimension for axis 1 (columns).
         """
         return self._col_dim
 

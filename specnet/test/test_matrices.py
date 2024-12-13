@@ -3,7 +3,7 @@ import os
 
 from spanalyst.aws.constants import REGION
 from spanalyst.aws.tools import S3
-from spanalyst.common.constants import TMP_PATH, SUMMARY_FIELDS, SPECIES_DIM
+from spanalyst.common.constants import TMP_PATH, SUMMARY_FIELDS
 from spanalyst.common.log import logit
 from spanalyst.common.util import get_current_datadate_str
 from spanalyst.matrix.heatmap_matrix import HeatmapMatrix
@@ -167,7 +167,7 @@ def test_heatmap_vs_summary(
         count_total_dim = summ_mtx.x_dimension
         count_total_code = count_total_dim["code"]
         # each_value_in_dim = summ_mtx.y_dimension
-        if count_total_dim == SPECIES_DIM:
+        if count_total_dim == ANALYSIS_DIM.SPECIES:
             axis = 0
         else:
             axis = 1
@@ -411,7 +411,7 @@ if __name__ == "__main__":
     logger = None
 
     dim_region = ANALYSIS_DIM.DATASET["code"]
-    dim_species = SPECIES_DIM["code"]
+    dim_species = ANALYSIS_DIM.SPECIES["code"]
     stacked_data_table_type = SUMMARY.get_table_type("list", dim_region, dim_species)
     # Species are always columns (for PAM)
     mtx_table_type = SUMMARY.get_table_type("matrix", dim_region, dim_species)

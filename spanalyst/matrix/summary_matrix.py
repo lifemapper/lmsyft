@@ -28,11 +28,9 @@ class SummaryMatrix(_SpeciesDataMatrix):
                 * Column 2 contains the total of values in that row.
             table_type (aws_constants.SUMMARY_TABLE_TYPES): type of aggregated data
             datestr (str): date of the source data in YYYY_MM_DD format.
-            dim0 (specnet.common.constants.ANALYSIS_DIM/
-                spanalyst.common.constants.SPECIES_DIM): dimension for axis 0, rows for
+            dim0 (specnet.common.constants.ANALYSIS_DIM): dimension for axis 0, rows for
                 which we will count and total dimension 1
-            dim1 (specnet.common.constants.ANALYSIS_DIM/
-                spanalyst.common.constants.SPECIES_DIM): dimension for axis 1, with two
+            dim1 (specnet.common.constants.ANALYSIS_DIM): dimension for axis 1, with two
                 columns (count and total) for each value in dimension 0.
 
         Note: Count and total dim1 for every value in dim0

@@ -8,7 +8,7 @@ from flask_app.common.s2n_type import AnalystOutput, APIService
 
 from spanalyst.aws.constants import REGION, S3_BUCKET, S3_SUMMARY_DIR
 from spanalyst.aws.tools import S3
-from spanalyst.common.constants import SPECIES_DIM, SUMMARY_FIELDS
+from spanalyst.common.constants import SUMMARY_FIELDS
 from spanalyst.common.log import Logger
 from spanalyst.common.util import (
     add_errinfo, get_current_datadate_str, get_today_str, get_traceback
@@ -209,7 +209,7 @@ class _AnalystService(_SpecifyNetworkService):
         sp_mtx = None
         data_datestr = get_current_datadate_str()
         dim_dataset = ANALYSIS_DIM.DATASET
-        dim_species = SPECIES_DIM
+        dim_species = ANALYSIS_DIM.SPECIES
         dataset_species_matrix_type = SUMMARY.get_table_type(
             "matrix", dim_dataset["code"], dim_species["code"])
         # mtx_table_type = SUMMARY_TABLE_TYPES.SPECIES_DATASET_MATRIX
@@ -276,9 +276,9 @@ class _AnalystService(_SpecifyNetworkService):
 
         if summary_type == "dataset":
             dim0 = ANALYSIS_DIM.DATASET
-            dim1 = SPECIES_DIM
+            dim1 = ANALYSIS_DIM.SPECIES
         else:
-            dim0 = SPECIES_DIM
+            dim0 = ANALYSIS_DIM.SPECIES
             dim1 = ANALYSIS_DIM.DATASET
         mtx_table_type = SUMMARY.get_table_type(
             "summary", dim0["code"], dim1["code"])

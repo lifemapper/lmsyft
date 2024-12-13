@@ -38,13 +38,6 @@ class SUMMARY_FIELDS:
 
 
 # .............................................................................
-SPECIES_DIM = {
-    "code": "species",
-    "key_fld": COMPOUND_SPECIES_FLD
-}
-
-
-# .............................................................................
 class STATISTICS_TYPE:
     """Biodiversity statistics for a Site by Species presence-absence matrix (PAM)."""
     SIGMA_SITE = "sigma-site"
