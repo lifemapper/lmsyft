@@ -1,5 +1,56 @@
 AWS Setup
 ####################
+Security
+**********************
+
+Create a Security Group for the region
+===========================================================
+
+* Test this group!
+* Create a security group for the instance (and all other instances in region)
+
+  * Must be tied to the region of instance
+  * inbound: SSH from campus (use VPN if elsewhere), HTTP/HTTPS from all
+
+
+
+
+Create an IAM role for the EC2/S3 interaction (specnet_task_role)
+===========================================================
+
+* Create a Role for EC2 instance access to S3
+
+  1. First, create Policy allowing FullAccess to SpecifyNetwork bucket
+     (specnet_S3bucket_FullAccess)
+
+     * Make sure to add each S3 bucket subfolder - permissions are not recursive.
+
+  2. Trusted entity type = AWS service, Use Case = S3.
+
+  3. Add permissions
+
+    * specnet_S3bucket_FullAccess
+
+  4. Save and name role (specnet_ec2_s3_role)
+
+
+Create an IAM role for the EC2/S3/Redshift interaction (specnet_workflow_role)
+===========================================================
+
+* Create a Role for workflow including EC2 instance access to Redshift and S3
+
+  1. Trusted entity type = AWS service, Use Case = Redshift - Customizable.
+
+    * TODO: change to Redshift - Scheduler when we automate the workflow
+
+  3. Add permissions
+
+    * AmazonRedshiftAllCommandsFullAccess (AWS managed)
+    * AmazonS3FullAccess (AWS managed)
+    * specnet_S3bucket_FullAccess
+
+  4. Save and name role (specnet_workflow_role)
+
 
 Resource-Variable Setup
 ********************
@@ -102,63 +153,6 @@ should have the following settings, some in Quickstart::
 
 EC2 Instance for API Deployment
 =========================
-
-
-Security
-**********************
-
-Create a Security Group for the region
-===========================================================
-
-* Test this group!
-* Create a security group for the instance (and all other instances in region)
-
-  * Must be tied to the region of instance
-  * inbound: SSH from campus (use VPN if elsewhere), HTTP/HTTPS from all
-
-
-
-
-Create an IAM role for the EC2/S3 interaction (specnet_task_role)
-===========================================================
-
-* Create a Role for EC2 instance access to S3
-
-  1. First, create Policy allowing FullAccess to SpecifyNetwork bucket
-     (specnet_S3bucket_FullAccess)
-
-     * Make sure to add each S3 bucket subfolder - permissions are not recursive.
-
-  2. Trusted entity type = AWS service, Use Case = S3.
-
-  3. Add permissions
-
-    * specnet_S3bucket_FullAccess
-
-  4. Save and name role (specnet_ec2_s3_role)
-
-
-Create an IAM role for the EC2/S3/Redshift interaction (specnet_workflow_role)
-===========================================================
-
-* Create a Role for workflow including EC2 instance access to Redshift and S3
-
-  1. Trusted entity type = AWS service, Use Case = Redshift - Customizable.
-
-    * TODO: change to Redshift - Scheduler when we automate the workflow
-
-  3. Add permissions
-
-    * AmazonRedshiftAllCommandsFullAccess (AWS managed)
-    * AmazonS3FullAccess (AWS managed)
-    * specnet_S3bucket_FullAccess
-
-  4. Save and name role (specnet_workflow_role)
-  5. **In Redshift**, GRANT permissions to database::
-
-    GRANT CREATE
-        ON DATABASE dev
-        TO 'arn:aws:iam::321942852011:role/service-role/bison_redshift_lambda_role'
 
 
 
@@ -361,20 +355,27 @@ Create a new workgroup (and namespace)
   workgroup and namespace.  The resulting form shows 3 steps.
 
   * Step 1, define the Workgroup name, Capacity, and Network and Security.
-    Choose a name, i.e. **specnet**, and keep the defaults for the Capacity, VPC, and
-    Subnets
-  * Step 2, set up a namespace.  Create a new one, i.e. **specnet** (we are using
-    the same name for the worksgroup and namespace).  Retain the first database name
-    (dev) and leave the Admin user credentials as the default (unchecked Customize
-    box).  Check the the default Associated IAM role or create a new role.
-    Leave Encryption and security settings unchanged.
+    Choose a name, i.e. the project name, **specnet**, and keep the defaults for the
+    Capacity, VPC, and Subnets
+  * Step 2, set up a namespace.  Create a new one, i.e. the project name, **specnet**
+    (we are use the same name for the worksgroup and namespace).  Retain the first
+    database name (dev) and leave the Admin user credentials as the default (unchecked
+    Customize box).  Use the workflow role (specnet_workflow_role) for Security and
+    Permissions, and set it as the default. Leave other Encryption and security settings
+    unchanged.
 
-    * Make sure that the Associated IAM role has permission to access the bucket
-      you will write to (use Redshift-S3 created above)
-    * Make new Redshift-S3 Role the default for Redshift operations in this
-      namespace
+    * Make sure that the Associated IAM (workflow) role has permission to access the
+      bucket you will write to
+    * Make the workflow Role the default for Redshift operations in this namespace
 
   * Step 3, review and create workspace.  This will take some time.
+
+  5. **In Redshift Editor**, GRANT permissions to database::
+
+    GRANT CREATE
+        ON DATABASE dev
+        TO 'arn:aws:iam::321942852011:role/service-role/specnet_workflow_role'
+
 
 Connect to new namespace in Query Editor
 =============================================
