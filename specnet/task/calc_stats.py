@@ -114,7 +114,7 @@ if __name__ == "__main__":
     dim_region = ANALYSIS_DIM.DATASET["code"]
     dim_species = ANALYSIS_DIM.SPECIES["code"]
     stacked_data_table_type = SUMMARY.get_table_type(
-        "list", dim_species, dim_region)
+        "list", dim_region, dim_species)
     # Species are always columns (for PAM)
     mtx_table_type = SUMMARY.get_table_type("matrix", dim_region, dim_species)
 
