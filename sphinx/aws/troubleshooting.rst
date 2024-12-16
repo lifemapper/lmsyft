@@ -1,6 +1,12 @@
 Troubleshooting AWS
 ***************************
 
+Lambda
+===================
+
+If a Lambda function consistently fails, logging "Killed", the timeout period (which
+defaults to 3 seconds) may be too short.
+
 Redshift
 ===================
 
