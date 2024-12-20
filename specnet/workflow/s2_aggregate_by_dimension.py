@@ -33,7 +33,8 @@ S3_SUMMARY_DIR = "summary"
 s3_prj_datestr = prj_datestr.replace('_', '-')
 s3_summary_prefix = f"{S3_SUMMARY_DIR}/"
 s3_summary_suffix = "_000.parquet"
-s3_out = f"s3://{S3_BUCKET}/summary"
+s3_summary = f"s3://{S3_BUCKET}/{S3_SUMMARY_DIR}"
+s3_out = f"s3://{S3_BUCKET}/{S3_OUT_DIR}"
 
 # Redshift
 db_user = f"IAMR:{WORKFLOW_ROLE_NAME}"
@@ -85,21 +86,21 @@ ds_counts_stmt = f"""
 ds_counts_export_stmt = f"""
     UNLOAD (
         'SELECT * FROM {pub_schema}.{ds_counts_tbl} ORDER BY {gbif_ds_fld}')
-        TO '{s3_out}/{ds_counts_tbl}_'
+        TO '{s3_summary}/{ds_counts_tbl}_'
         IAM_role DEFAULT
         FORMAT AS PARQUET
         PARALLEL OFF;
 """
-ds_counts_export_stmt2 = f"""
-    UNLOAD (
-        'SELECT * FROM {pub_schema}.{ds_counts_tbl} ORDER BY {gbif_ds_fld}')
-        TO '{s3_out}/{ds_counts_tbl}_csv_'
-        IAM_role DEFAULT
-        ALLOWOVERWRITE
-        CSV DELIMITER AS ','
-        HEADER
-        PARALLEL OFF;
-"""
+# ds_counts_export_stmt2 = f"""
+#     UNLOAD (
+#         'SELECT * FROM {pub_schema}.{ds_counts_tbl} ORDER BY {gbif_ds_fld}')
+#         TO '{s3_out}/{ds_counts_tbl}_csv_'
+#         IAM_role DEFAULT
+#         ALLOWOVERWRITE
+#         CSV DELIMITER AS ','
+#         HEADER
+#         PARALLEL OFF;
+# """
 # ...............................................
 # Records of species, occ_count by dimension
 # ...............................................
@@ -114,21 +115,21 @@ ds_list_stmt = f"""
 ds_list_export_stmt = f"""
     UNLOAD (
         'SELECT * FROM {pub_schema}.{ds_list_tbl} ORDER BY {gbif_ds_fld}, {gbif_sp_fld}')
-        TO '{s3_out}/{ds_list_tbl}_'
+        TO '{s3_summary}/{ds_list_tbl}_'
         IAM_role DEFAULT
         FORMAT AS PARQUET
         PARALLEL OFF;
 """
-ds_list_export_stmt2 = f"""
-    UNLOAD (
-        'SELECT * FROM {pub_schema}.{ds_list_tbl} ORDER BY {gbif_ds_fld}, {gbif_sp_fld}')
-        TO '{s3_out}/{ds_list_tbl}_csv_'
-        IAM_role DEFAULT
-        ALLOWOVERWRITE
-        CSV DELIMITER AS ','
-        HEADER
-        PARALLEL OFF;
-"""
+# ds_list_export_stmt2 = f"""
+#     UNLOAD (
+#         'SELECT * FROM {pub_schema}.{ds_list_tbl} ORDER BY {gbif_ds_fld}, {gbif_sp_fld}')
+#         TO '{s3_out}/{ds_list_tbl}_csv_'
+#         IAM_role DEFAULT
+#         ALLOWOVERWRITE
+#         CSV DELIMITER AS ','
+#         HEADER
+#         PARALLEL OFF;
+# """
 query_tables_stmt = f"SHOW TABLES FROM SCHEMA {database}.{pub_schema};"
 
 REDSHIFT_COMMANDS = [
