@@ -5,8 +5,9 @@ from botocore.client import Config
 from datetime import datetime
 import time
 
-print("*** Loading function s2_aggregate_region")
 PROJECT = "specnet"
+TASK = "aggregate_by_dimension"
+print(f"*** Loading function {PROJECT} workflow step {TASK}")
 
 # .............................................................................
 # Dataload filename postfixes
@@ -30,9 +31,6 @@ S3_IN_DIR = "input"
 S3_OUT_DIR = "output"
 S3_LOG_DIR = "log"
 S3_SUMMARY_DIR = "summary"
-s3_prj_datestr = prj_datestr.replace('_', '-')
-s3_summary_prefix = f"{S3_SUMMARY_DIR}/"
-s3_summary_suffix = "_000.parquet"
 s3_summary = f"s3://{S3_BUCKET}/{S3_SUMMARY_DIR}"
 s3_out = f"s3://{S3_BUCKET}/{S3_OUT_DIR}"
 
@@ -54,7 +52,7 @@ timeout = 300
 session = boto3.session.Session()
 bc_session = bc.get_session()
 session = boto3.Session(botocore_session=bc_session, region_name=REGION)
-# Initialize Redshift client
+# Initialize AWS clients
 config = Config(connect_timeout=timeout, read_timeout=timeout)
 s3_client = session.client("s3", config=config, region_name=REGION)
 rs_client = session.client("redshift-data", config=config)
@@ -72,7 +70,7 @@ out_spcount_fld = "species_count"
 
 ds_counts_tbl = f"dataset_counts_{prj_datestr}"
 ds_list_tbl = f"dataset_x_species_list_{prj_datestr}"
-# ...............................................
+
 # ...............................................
 # Aggregate occurrence, species counts by dimension
 ds_counts_stmt = f"""
@@ -91,16 +89,17 @@ ds_counts_export_stmt = f"""
         FORMAT AS PARQUET
         PARALLEL OFF;
 """
-# ds_counts_export_stmt2 = f"""
-#     UNLOAD (
-#         'SELECT * FROM {pub_schema}.{ds_counts_tbl} ORDER BY {gbif_ds_fld}')
-#         TO '{s3_out}/{ds_counts_tbl}_csv_'
-#         IAM_role DEFAULT
-#         ALLOWOVERWRITE
-#         CSV DELIMITER AS ','
-#         HEADER
-#         PARALLEL OFF;
-# """
+# Export CSV to output folder?
+ds_counts_export_stmt2 = f"""
+    UNLOAD (
+        'SELECT * FROM {pub_schema}.{ds_counts_tbl} ORDER BY {gbif_ds_fld}')
+        TO '{s3_out}/{ds_counts_tbl}_csv_'
+        IAM_role DEFAULT
+        ALLOWOVERWRITE
+        CSV DELIMITER AS ','
+        HEADER
+        PARALLEL OFF;
+"""
 # ...............................................
 # Records of species, occ_count by dimension
 # ...............................................
@@ -120,24 +119,27 @@ ds_list_export_stmt = f"""
         FORMAT AS PARQUET
         PARALLEL OFF;
 """
-# ds_list_export_stmt2 = f"""
-#     UNLOAD (
-#         'SELECT * FROM {pub_schema}.{ds_list_tbl} ORDER BY {gbif_ds_fld}, {gbif_sp_fld}')
-#         TO '{s3_out}/{ds_list_tbl}_csv_'
-#         IAM_role DEFAULT
-#         ALLOWOVERWRITE
-#         CSV DELIMITER AS ','
-#         HEADER
-#         PARALLEL OFF;
-# """
+# Export CSV to output folder?
+ds_list_export_stmt2 = f"""
+    UNLOAD (
+        'SELECT * FROM {pub_schema}.{ds_list_tbl} ORDER BY {gbif_ds_fld}, {gbif_sp_fld}')
+        TO '{s3_out}/{ds_list_tbl}_csv_'
+        IAM_role DEFAULT
+        ALLOWOVERWRITE
+        CSV DELIMITER AS ','
+        HEADER
+        PARALLEL OFF;
+"""
 query_tables_stmt = f"SHOW TABLES FROM SCHEMA {database}.{pub_schema};"
 
 REDSHIFT_COMMANDS = [
     ("query_tables", query_tables_stmt, None),
+
     # Create tables of dataset with species counts, occurrence counts
     ("create_counts_by_dataset", ds_counts_stmt, ds_counts_tbl),
     ("export_dataset_counts", ds_counts_export_stmt, ds_counts_tbl),
     # ("export_dataset_counts_csv", ds_counts_export_stmt2, ds_counts_tbl),
+
     # Create lists of dataset with species, occurrence counts, then export
     ("create_list_dataset_species", ds_list_stmt, ds_list_tbl),
     ("export_dataset_species", ds_list_export_stmt, ds_list_tbl),
@@ -164,25 +166,27 @@ def lambda_handler(event, context):
     # -------------------------------------
     # FIRST: List current summary data from S3
     # -------------------------------------
+    sum_prefix = f"{S3_SUMMARY_DIR}/"
+    sum_suffix = "_000.parquet"
     try:
         tr_response = s3_client.list_objects_v2(
-            Bucket=S3_BUCKET, Prefix=s3_summary_prefix, MaxKeys=10)
+            Bucket=S3_BUCKET, Prefix=sum_prefix, MaxKeys=10)
     except Exception as e:
-        print(f"*** Error querying for objects in s3://{S3_BUCKET}/{s3_summary_prefix} ({e})")
+        print(f"*** Error querying for objects in s3://{S3_BUCKET}/{sum_prefix} ({e})")
     else:
         try:
             contents = tr_response["Contents"]
         except KeyError:
-            print(f"*** No values in s3://{S3_BUCKET}/{s3_summary_prefix}")
+            print(f"*** No values in s3://{S3_BUCKET}/{sum_prefix}")
         else:
-            prefix_len = len(s3_summary_prefix)
-            suffix_len = len(s3_summary_suffix)
+            prefix_len = len(sum_prefix)
+            suffix_len = len(sum_suffix)
             print(f"*** Contents: {contents}")
-            print(f"*** Objects in s3://{S3_BUCKET}/{s3_summary_prefix}")
+            print(f"*** Objects in s3://{S3_BUCKET}/{sum_prefix}")
             for rec in contents:
                 print(f"***    {rec}")
                 fullkey = rec["Key"]
-                if fullkey.find(s3_prj_datestr) > prefix_len:
+                if fullkey.find(prj_datestr) > prefix_len:
                     key = fullkey[prefix_len:-suffix_len]
                     s3objs_present.append(key)
                     print(f"***      {key}")

@@ -5,8 +5,9 @@ from botocore.client import Config
 from datetime import datetime
 import time
 
-print("*** Loading function s1_subset_gbif")
 PROJECT = "specnet"
+TASK = "subset_gbif"
+print(f"*** Loading function {PROJECT} workflow step {TASK}")
 
 # .............................................................................
 # Dataload filename postfixes

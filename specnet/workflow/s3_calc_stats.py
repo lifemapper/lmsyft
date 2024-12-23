@@ -1,12 +1,13 @@
-"""Lambda to start an EC2 instance to create/analyze a PAM from specimen records."""
+"""Lambda to start an EC2 instance (t4g.medium?) to create/analyze a PAM."""
 import boto3
 from botocore.exceptions import ClientError, NoCredentialsError
 import botocore.session as bc
 from botocore.client import Config
 from datetime import datetime
 
-print("*** Loading function s3_calc_stats")
 PROJECT = "specnet"
+TASK = "calc_stats"
+print(f"*** Loading function {PROJECT} workflow step {TASK} lambda")
 
 # .............................................................................
 # Dataload filename postfixes
@@ -14,7 +15,8 @@ PROJECT = "specnet"
 dt = datetime.now()
 yr = dt.year
 mo = dt.month
-prj_datestr = f"{yr}_{mo:02d}_01"
+bison_datestr = f"{yr}_{mo:02d}_01"
+gbif_datestr = f"{yr}-{mo:02d}-01"
 
 # .............................................................................
 # AWS constants
@@ -23,16 +25,18 @@ REGION = "us-east-1"
 AWS_ACCOUNT = "321942852011"
 AWS_METADATA_URL = "http://169.254.169.254/latest/"
 WORKFLOW_ROLE_NAME = f"{PROJECT}_workflow_role"
+WORKFLOW_ROLE_ARN = f"arn:aws:iam::{PROJECT}:role/service-role/{WORKFLOW_ROLE_NAME}"
+WORKFLOW_USER = f"project.{PROJECT}"
 
 # EC2 launch template/version
 EC2_SPOT_TEMPLATE = f"{PROJECT}_spot_task_template"
-TASK = "calc_stats"
 EC2_INSTANCE_NAME = f"{PROJECT}_{TASK}"
 
 # .............................................................................
 # Initialize Botocore session
 # .............................................................................
 timeout = 300
+
 session = boto3.session.Session()
 bc_session = bc.get_session()
 session = boto3.Session(botocore_session=bc_session, region_name=REGION)
@@ -51,6 +55,9 @@ def lambda_handler(event, context):
 
     Returns:
         instance_id (number): ID of the EC2 instance started.
+
+    Note:
+        The calc_stats script requires a larger EC2 instance to successfully complete.
 
     Raises:
         Exception: on requested template does not exist.
@@ -115,5 +122,6 @@ def lambda_handler(event, context):
 
     return {
         "statusCode": 200,
-        "body": f"Executed {PROJECT}_s3_calc_stats lambda starting EC2 {instance_id}"
+        "body":
+            f"Executed {PROJECT} workflow step {TASK} lambda starting EC2 {instance_id}"
     }

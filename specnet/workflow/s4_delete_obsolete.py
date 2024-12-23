@@ -6,8 +6,9 @@ from datetime import datetime
 
 import time
 
-print("*** Loading function bison_s7_delete_obsolete")
-PROJECT = "bison"
+PROJECT = "specnet"
+TASK = "delete_obsolete"
+print(f"*** Loading function {PROJECT} workflow step {TASK} lambda")
 
 # .............................................................................
 # Dataload filename postfixes
@@ -15,25 +16,21 @@ PROJECT = "bison"
 dt = datetime.now()
 yr = dt.year
 mo = dt.month
+prj_datestr = f"{yr}_{mo:02d}_01"
+# Last month
 prev_yr = yr
 prev_mo = mo - 1
 if mo == 1:
     prev_mo = 12
     prev_yr = yr - 1
-# Redshift date format
-bison_datestr = f"{yr}_{mo:02d}_01"
-old_bison_datestr = f"{prev_yr}_{prev_mo:02d}_01"
-# S3 date format
-gbif_datestr = f"{yr}-{mo:02d}-01"
-bison_s3_datestr = bison_datestr.replace('_', '-')
-old_bison_s3_datestr = old_bison_datestr.replace('_', '-')
+old_prj_datestr = f"{prev_yr}_{prev_mo:02d}_01"
 
 # .............................................................................
 # AWS constants
 # .............................................................................
 REGION = "us-east-1"
 AWS_ACCOUNT = "321942852011"
-WORKFLOW_ROLE_NAME = f"{PROJECT}_redshift_lambda_role"
+WORKFLOW_ROLE_NAME = f"{PROJECT}_workflow_role"
 
 # S3 locations
 S3_BUCKET = f"{PROJECT}-{AWS_ACCOUNT}-{REGION}"
@@ -41,7 +38,6 @@ S3_IN_DIR = "input"
 S3_OUT_DIR = "output"
 S3_LOG_DIR = "log"
 S3_SUMMARY_DIR = "summary"
-s3_summary_prefix = f"{S3_SUMMARY_DIR}/"
 
 # Redshift
 # namespace, workgroup both = 'bison'
@@ -65,59 +61,27 @@ s3_client = session.client("s3", config=config, region_name=REGION)
 rs_client = session.client("redshift-data", config=config)
 
 # .............................................................................
-# Ancillary data parameters
+# Data dimension parameters (species x dataset)
 # .............................................................................
-RIIS_BASENAME = "USRIISv2_MasterList"
-s3_riis_prefix = f"{S3_IN_DIR}/{RIIS_BASENAME}"
-riis_fname = f"{RIIS_BASENAME}_annotated_{bison_datestr}.csv"
-annotated_riis_key = f"{S3_IN_DIR}/{riis_fname}"
-old_annotated_riis_key = f"{S3_IN_DIR}/{RIIS_BASENAME}_annotated_{old_bison_datestr}.csv"
-riis_tbl = f"riisv2_{bison_datestr}"
-old_riis_tbl = f"riisv2_{old_bison_datestr}"
+gbif_tx_fld = "taxonkey"
+gbif_sp_fld = "species"
+gbif_ds_fld = "datasetkey"
+# Fields concatenated to ensure uniqueness
+unique_sp_fld = "taxonkey_species"
+out_occcount_fld = "occ_count"
+out_spcount_fld = "species_count"
 
-# Each fields tuple contains original fieldname, bison fieldname and bison fieldtype
-ancillary_data = {
-    "aiannh": {
-        "table": "aiannh2023",
-        "filename": "cb_2023_us_aiannh_500k.shp",
-        "fields": {
-            "name": ("namelsad", "aiannh_name", "VARCHAR(100)"),
-            "geoid": ("geoid", "aiannh_geoid", "VARCHAR(4)")
-        }
-    },
-    "county": {
-        "table": "county2023",
-        "filename": "cb_2023_us_county_500k.shp",
-        "fields": {
-            "state": ("stusps", "census_state", "VARCHAR(2)"),
-            "county": ("namelsad", "census_county", "VARCHAR(100)"),
-            # Field constructed to ensure uniqueness
-            "state_county": (None, "state_county", "VARCHAR(102)")
-        }
-    },
-    "riis": {
-        "table": riis_tbl,
-        "filename": riis_fname,
-        "fields": {
-            "locality": ("locality", "riis_region", "VARCHAR(3)"),
-            "occid": ("occurrenceid", "riis_occurrence_id", "VARCHAR(50)"),
-            "assess": ("degreeofestablishment", "riis_assessment", "VARCHAR(50)")
-        }
-    }
-}
+ds_counts_tbl = f"dataset_counts_{prj_datestr}"
+ds_list_tbl = f"dataset_x_species_list_{prj_datestr}"
 
-aiannh_fname = ancillary_data["aiannh"]["filename"]
-aiannh_tbl = ancillary_data["aiannh"]["table"]
-county_fname = ancillary_data["county"]["filename"]
-county_tbl = ancillary_data["county"]["table"]
-
-
-# Current temp tables to be deleted
-tmp_prefix = "tmp_bison"
+# .............................................................................
+# Current, temporary, obsolete Redshift tables
+# .............................................................................
+tmp_prefix = "tmp_"
 query_new_stmt = \
-    f"SHOW TABLES FROM SCHEMA {database}.{pub_schema} LIKE '%{bison_datestr}';"
+    f"SHOW TABLES FROM SCHEMA {database}.{pub_schema} LIKE '%{prj_datestr}';"
 query_old_stmt = \
-    f"SHOW TABLES FROM SCHEMA {database}.{pub_schema} LIKE '%{old_bison_datestr}';"
+    f"SHOW TABLES FROM SCHEMA {database}.{pub_schema} LIKE '%{old_prj_datestr}';"
 query_tmp_stmt = \
     f"SHOW TABLES FROM SCHEMA {database}.{pub_schema} LIKE '{tmp_prefix}%';"
 
@@ -224,8 +188,8 @@ def lambda_handler(event, context):
     print(f"***      {tmp_tables}")
     # Make sure new table exists before removing old table
     for old_tbl in old_tables:
-        prefix = old_tbl[:-len(old_bison_datestr)]
-        new_tbl = f"{prefix}{bison_datestr}"
+        prefix = old_tbl[:-len(old_prj_datestr)]
+        new_tbl = f"{prefix}{prj_datestr}"
         if new_tbl in new_tables:
             tables_to_remove.add(old_tbl)
             print(f"***      {old_tbl}")
@@ -271,65 +235,42 @@ def lambda_handler(event, context):
                     elapsed_time += waittime
 
     # -------------------------------------
-    # Find obsolete annotated RIIS input data from S3
-    # -------------------------------------
-    keys_to_delete = set()
-    riis_keys = []
-    try:
-        tr_response = s3_client.list_objects_v2(
-            Bucket=S3_BUCKET, Prefix=s3_riis_prefix, MaxKeys=10)
-    except Exception as e:
-        print(f"*** Error querying for bucket/object {s3_riis_prefix} ({e})")
-    else:
-        try:
-            contents = tr_response["Contents"]
-        except KeyError:
-            print(f"*** Objects like {s3_riis_prefix} not present")
-        else:
-            print("*** RIIS inputs found:")
-            for rec in contents:
-                key = rec["Key"]
-                riis_keys.append(key)
-                print(f"***      {key}")
-
-    if annotated_riis_key in riis_keys and old_annotated_riis_key in riis_keys:
-        keys_to_delete.add(old_annotated_riis_key)
-
-    # -------------------------------------
     # Last: List then remove obsolete summary data from S3
     # -------------------------------------
+    sum_prefix = f"{S3_SUMMARY_DIR}/"
     # Find old and new versions of data
     old_keys = []
     new_keys = []
     try:
         tr_response = s3_client.list_objects_v2(
-            Bucket=S3_BUCKET, Prefix=s3_summary_prefix, MaxKeys=10)
+            Bucket=S3_BUCKET, Prefix=sum_prefix, MaxKeys=10)
     except Exception as e:
-        print(f"*** Error querying for objects in {s3_summary_prefix} ({e})")
+        print(f"*** Error querying for objects in {sum_prefix} ({e})")
     else:
         try:
             contents = tr_response["Contents"]
         except KeyError:
-            print(f"!!! No values in {S3_BUCKET}/{s3_summary_prefix}")
+            print(f"!!! No values in {S3_BUCKET}/{sum_prefix}")
         else:
             print("*** Keys found:")
             for rec in contents:
                 key = rec["Key"]
-                if key.find(old_bison_s3_datestr) > len(s3_summary_prefix):
+                if key.find(old_prj_datestr) > len(sum_prefix):
                     old_keys.append(key)
                     print(f"***      {key}")
-                elif key.find(bison_s3_datestr) > len(s3_summary_prefix):
+                elif key.find(prj_datestr) > len(sum_prefix):
                     new_keys.append(key)
                     print(f"***      {key}")
 
     # -------------------------------------
     # Determine which objects to remove from S3
     print("*** ---------------------------------------")
+    keys_to_delete = set()
     print("*** Keys to remove:")
     # Make sure new table exists before removing old table
     for old_key in old_keys:
-        prefix = old_key[:-len(old_bison_datestr)]
-        new_key = f"{prefix}{bison_datestr}"
+        prefix = old_key[:-len(old_prj_datestr)]
+        new_key = f"{prefix}{prj_datestr}"
         if new_key in new_keys:
             keys_to_delete.add(old_key)
             print(f"***      {old_key}")
@@ -345,5 +286,5 @@ def lambda_handler(event, context):
 
     return {
         "statusCode": 200,
-        "body": "Executed bison_s7_delete_obsolete lambda"
+        "body": f"Executed {PROJECT} workflow step {TASK} lambda"
     }
