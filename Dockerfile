@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 # ........................................................
 # Backend base image
-#FROM python:3.12.3-alpine3.20 as base
+# ........................................................
 FROM python:3.12-slim-bookworm as base
 
 LABEL maintainer="Specify Network <github.com/specifysystems>"
@@ -31,13 +31,30 @@ RUN python3 -m venv venv \
  && venv/bin/pip install --upgrade pip \
  && venv/bin/pip install --no-cache-dir -r ./requirements.txt
 
-# This assumes that the sp_network repository is present on the host machine and \
-# docker is run from the top of directory (with specnet directly below).
-COPY --chown=specify:specify specnet ./sppy
+# This assumes that the sp_network repository is present on the host machine
+# (cloned on instantiation) and docker is run from the top of directory (with
+# specnet, spanalyst directly below).
+COPY --chown=specify:specify ./specnet ./specnet
+COPY --chown=specify:specify ./spanalyst ./spanalyst
 
+# ........................................................
+# Task image from base
+# ........................................................
+FROM base as task
+# Install dev dependencies for debugging
+RUN venv/bin/pip install debugpy
+
+# Keeps Python from generating .pyc files in the container
+ENV PYTHONDONTWRITEBYTECODE 1
+# Turns off buffering for easier container logging
+ENV PYTHONUNBUFFERED 1
+COPY --chown=specify:specify ./config/aws.conf ./.aws/config
+
+CMD venv/bin/python -m ${TASK_APP}
 
 # ........................................................
 # Development flask image from base
+# ........................................................
 FROM base as dev-flask
 # Install dev dependencies for debugging
 RUN venv/bin/pip install debugpy
@@ -49,18 +66,18 @@ ENV PYTHONUNBUFFERED 1
 ENV FLASK_ENV=development
 CMD venv/bin/python -m debugpy --listen 0.0.0.0:${DEBUG_PORT} -m ${FLASK_MANAGE} run --host=0.0.0.0
 
-
 # ........................................................
 # Production flask image from base
+# ........................................................
 FROM base as flask
 
 COPY --chown=specify:specify ./flask_app ./flask_app
 ENV FLASK_ENV=production
 CMD venv/bin/python -m gunicorn -w 4 --bind 0.0.0.0:5000 ${FLASK_APP}
 
-
 # ........................................................
 # Frontend base image (for development)
+# ........................................................
 FROM node:16.10.0-buster as base-front-end
 
 LABEL maintainer="Specify Collections Consortium <github.com/specify>"
@@ -76,9 +93,9 @@ RUN mkdir dist \
 
 COPY --chown=node:node specnet/frontend/js_src .
 
-
 # ........................................................
 # Frontend image (for production) from base-front-end
+# ........................................................
 FROM base-front-end as front-end
 
 RUN npm run build
