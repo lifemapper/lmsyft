@@ -588,12 +588,14 @@ class PAM(HeatmapMatrix):
 
         Returns:
             sp_range_size_vct (numpy.ndarray): 1D ndarray of range `sizes`
-                (site-count), one element for each species (axis 1) of PAM.
+                (site-count), one element for each species (axis 1) of PAM,
+                datatype int32.
 
         Note:
             function assumes all `sites` (analysis dimension) are equal size.
         """
         sp_range_size_vct = self._coo_array.sum(axis=0)
+        sp_range_size_vct = sp_range_size_vct.astype(np.int32)
         return sp_range_size_vct
 
     # ...........................
@@ -651,9 +653,10 @@ class PAM(HeatmapMatrix):
 
         Returns:
             sp_count_vct (numpy.ndarray): 1D ndarray of species count for each
-                site in the PAM.
+                site in the PAM, datatype int32.
         """
         sp_count_vct = self._coo_array.sum(axis=1)
+        sp_count_vct = sp_count_vct.astype(np.int32)
         return sp_count_vct
 
     # .............................................................................
