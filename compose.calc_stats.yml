@@ -13,7 +13,7 @@ services:
       driver: awslogs
       options:
         awslogs-region: us-east-1
-        awslogs-create-group: true
+        awslogs-create-group: "true"
         awslogs-group: specnet_task
         awslogs-stream: calc_stats
     volumes:
