@@ -22,12 +22,6 @@ gbif_datestr = f"{yr}-{mo:02d}-01"
 # AWS constants
 # .............................................................................
 REGION = "us-east-1"
-AWS_ACCOUNT = "321942852011"
-AWS_METADATA_URL = "http://169.254.169.254/latest/"
-WORKFLOW_ROLE_NAME = f"{PROJECT}_workflow_role"
-WORKFLOW_ROLE_ARN = f"arn:aws:iam::{PROJECT}:role/service-role/{WORKFLOW_ROLE_NAME}"
-WORKFLOW_USER = f"project.{PROJECT}"
-
 # EC2 launch template/version
 EC2_SPOT_TEMPLATE = f"{PROJECT}_spot_task_template"
 EC2_INSTANCE_NAME = f"{PROJECT}_{TASK}"
@@ -47,7 +41,7 @@ ec2_client = session.client("ec2", config=config)
 
 # --------------------------------------------------------------------------------------
 def lambda_handler(event, context):
-    """Start an EC2 instance to resolve RIIS records, then write the results to S3.
+    """Start an EC2 instance to create and calculate statistics on a PAM, save to S3.
 
     Args:
         event: AWS event triggering this function.
@@ -67,7 +61,7 @@ def lambda_handler(event, context):
         Exception: on unknown error.
     """
     # -------------------------------------
-    # Start instance to run task
+    # Find EC2 template for task
     ver_num = None
     print("*** ---------------------------------------")
     print("*** Find template version")
@@ -84,6 +78,8 @@ def lambda_handler(event, context):
             f"!!! Template {EC2_SPOT_TEMPLATE} version {TASK} does not exist")
     print(f"*** Found template {EC2_SPOT_TEMPLATE} version {ver_num} for {TASK}.")
 
+    # -------------------------------------
+    # Launch EC2 instance from template
     print("*** ---------------------------------------")
     print("*** Launch EC2 instance with task template version")
 
