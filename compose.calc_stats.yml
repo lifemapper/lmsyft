@@ -14,8 +14,8 @@ services:
       options:
         awslogs-region: us-east-1
         awslogs-create-group: true
-        awslogs-group: specnet_task
-        awslogs-stream: calc_stats
+        awslogs-group: specnet_calc_stats
+#        awslogs-stream: calc_stats
     volumes:
       # volumes
       - "scratch-path:/scratch-path"
