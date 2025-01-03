@@ -887,7 +887,7 @@ class SNKeys(Enum):
                     cls.ALL_MEDIAN_COUNT: "median_species_count_of_all_datasets",
                     cls.ALL_MAX_COUNT: "max_species_count_of_all_datasets",
                 }
-            elif dim0 == dim_dataset and dim1 == dim_species:
+            elif dim0 == dim_species and dim1 == dim_dataset:
                 keys = {
                     # ----------------------------------------------------------------------
                     # Column

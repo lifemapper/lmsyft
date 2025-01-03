@@ -58,5 +58,6 @@ For each task, the lambda function should create a Spot EC2 instance with a temp
 containing userdata that will either 1) pull the Github repo, then build the docker
 image, or 2) pull a docker image directly.
 
-Annotating the RIIS records with GBIF accepted taxa takes about 1 hour and uses
-multiple bison modules.
+Creating a heatmap, PAM, and calculating statistics, does not take long, but uses
+multiple project modules and requires a larger EC2 instance (t4g.small) than less
+memory-intensive functions.
