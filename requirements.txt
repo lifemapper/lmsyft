@@ -13,3 +13,4 @@ botocore
 boto3>=1.34.60
 s3fs
 fastparquet
+memory_profiler

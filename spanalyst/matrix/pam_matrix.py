@@ -1,6 +1,6 @@
 """Matrix of sites as rows, species as columns, values are presence or absence (1/0)."""
 from copy import deepcopy
-
+from memory_profiler import profile
 import numpy as np
 import os
 import pandas as pd
@@ -496,6 +496,7 @@ class PAM(HeatmapMatrix):
     # Diversity metrics
     # .............................................................................
     # TODO: test the matrices created by sigma functions within these diversity stats
+    @profile
     def schluter_species_variance_ratio(self):
         """Calculate Schluter's species variance ratio.
 
@@ -508,6 +509,7 @@ class PAM(HeatmapMatrix):
         return schl_sp
 
     # .............................................................................
+    @profile
     def schluter_site_variance_ratio(self):
         """Calculate Schluter's site variance ratio.
 
@@ -520,6 +522,7 @@ class PAM(HeatmapMatrix):
         return schl_site
 
     # .............................................................................
+    @profile
     def whittaker(self):
         """Calculate Whittaker's beta diversity metric for a PAM.
 
@@ -532,6 +535,7 @@ class PAM(HeatmapMatrix):
         return whit
 
     # .............................................................................
+    @profile
     def lande(self):
         """Calculate Lande's beta diversity metric for a PAM.
 
@@ -545,6 +549,7 @@ class PAM(HeatmapMatrix):
         return land
 
     # .............................................................................
+    @profile
     def legendre(self):
         """Calculate Legendre's beta diversity metric for a PAM.
 
@@ -557,6 +562,7 @@ class PAM(HeatmapMatrix):
         return leg
 
     # ...........................
+    @profile
     def c_score(self):
         """Calculate the checkerboard score for the PAM.
 
@@ -583,6 +589,7 @@ class PAM(HeatmapMatrix):
     # .............................................................................
     # Species metrics
     # .............................................................................
+    @profile
     def omega(self):
         """Calculate the range `size` (number of sites) per species.
 
@@ -599,6 +606,7 @@ class PAM(HeatmapMatrix):
         return sp_range_size_vct
 
     # ...........................
+    @profile
     def omega_proportional(self, omg=None):
         """Calculate the mean proportional range size of each species.
 
@@ -615,6 +623,7 @@ class PAM(HeatmapMatrix):
         return omega_prp
 
     # .............................................................................
+    @profile
     def psi(self):
         """Calculate the range richness of each species.
 
@@ -629,6 +638,7 @@ class PAM(HeatmapMatrix):
         return sp_range_richness_vct
 
     # .............................................................................
+    @profile
     def psi_average_proportional(self, psi_vct=None):
         """Calculate the mean proportional range richness of each species.
 
@@ -648,6 +658,7 @@ class PAM(HeatmapMatrix):
     # .............................................................................
     # Site-based statistics
     # .............................................................................
+    @profile
     def alpha(self):
         """Calculate alpha diversity, the number of species in each site.
 
@@ -660,6 +671,7 @@ class PAM(HeatmapMatrix):
         return sp_count_vct
 
     # .............................................................................
+    @profile
     def alpha_proportional(self, alpha_vct=None):
         """Calculate proportional alpha diversity.
 
@@ -676,6 +688,7 @@ class PAM(HeatmapMatrix):
         return alpha_prop_vct
 
     # .............................................................................
+    @profile
     def phi(self):
         """Calculate phi, the range size per site.
 
@@ -689,6 +702,7 @@ class PAM(HeatmapMatrix):
         return phi_vct
 
     # .............................................................................
+    @profile
     def phi_average_proportional(self, phi_vct=None):
         """Calculate proportional range size per site.
 
@@ -709,6 +723,7 @@ class PAM(HeatmapMatrix):
     # .............................................................................
     # Covariance metrics
     # .............................................................................
+    @profile
     def sigma_sites(self):
         """Compute the site sigma metric for a PAM.
 
@@ -731,6 +746,7 @@ class PAM(HeatmapMatrix):
         return mtx, headers
 
     # .............................................................................
+    @profile
     def sigma_species(self):
         """Compute the species sigma metric for a PAM.
 

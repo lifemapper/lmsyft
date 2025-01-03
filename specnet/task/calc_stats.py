@@ -1,10 +1,10 @@
 """Create a matrix of occurrence or species counts by (geospatial) analysis dimension."""
 import os
+from memory_profiler import profile
 
 from spanalyst.aws.constants import REGION, S3_BUCKET, S3_OUT_DIR, S3_SUMMARY_DIR
 from spanalyst.aws.tools import S3
 from spanalyst.common.constants import AGGREGATION_TYPE, TMP_PATH
-from spanalyst.common.log import logit
 from spanalyst.common.util import get_current_datadate_str
 from spanalyst.matrix.heatmap_matrix import HeatmapMatrix
 from spanalyst.matrix.pam_matrix import PAM
@@ -21,6 +21,7 @@ Note:
 
 
 # .............................................................................
+@profile
 def create_heatmap_from_records(
         s3, stacked_table_type, mtx_table_type, datestr):
     """Read stacked records from S3, aggregate into a sparse matrix of species x dim.
