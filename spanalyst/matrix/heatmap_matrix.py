@@ -1248,6 +1248,7 @@ class HeatmapMatrix(_SpeciesDataMatrix):
 
         Returns:
             sparse_coo (scipy.sparse.coo_array): Sparse Matrix containing data.
+            meta_dict (dict): dictionary containing metadata about matrix.
             row_categ (pandas.api.types.CategoricalDtype): row categories
             col_categ (pandas.api.types.CategoricalDtype): column categories
             table_type (specnet.tools.s2n.constants.SUMMARY_TABLE_TYPES): type of table

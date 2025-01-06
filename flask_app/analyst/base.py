@@ -193,14 +193,15 @@ class _AnalystService(_SpecifyNetworkService):
             success, msg = cls._test_download(zip_filename)
             if success:
                 try:
-                    sparse_coo, row_categ, col_categ, table_type, _data_datestr = \
-                        HeatmapMatrix.uncompress_zipped_data(
+                    (
+                        sparse_coo, meta_dict, row_categ, col_categ, table_type,
+                        _data_datestr) = HeatmapMatrix.uncompress_zipped_data(
                             zip_filename, local_path=local_path, overwrite=False)
                 except Exception as e:
                     errinfo = add_errinfo(errinfo, "error", str(e))
             else:
                 errinfo = add_errinfo(errinfo, "error", [msg])
-        return sparse_coo, row_categ, col_categ, table_type, errinfo
+        return sparse_coo, meta_dict, row_categ, col_categ, table_type, errinfo
 
     # ...............................................
     @classmethod
@@ -224,7 +225,7 @@ class _AnalystService(_SpecifyNetworkService):
                 mtx_filename, meta_filename)
         else:
             # or Download to working path and read
-            sparse_coo, row_categ, col_categ, _table_type, errinfo = \
+            sparse_coo, meta_dict, row_categ, col_categ, _table_type, errinfo = \
                 cls._retrieve_sparse_matrix(
                     os.path.basename(zip_filename), WORKING_PATH)
         # Create
